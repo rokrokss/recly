@@ -116,10 +116,12 @@ object TranscriptEdits {
  * The folder's copies follow through the pending write (`RemoteRecordings.pushTranscripts`).
  */
 internal class TranscriptWriter(private val deps: CoreDeps) {
-    suspend fun writeLocal(record: RecordingRecord, transcript: Transcript, markdown: Boolean) = withContext(deps.io) {
+    /** [result] also replaces the transcription's own result file of that name (docs/08 "Titles and speaker names"). */
+    suspend fun writeLocal(record: RecordingRecord, transcript: Transcript, markdown: Boolean, result: String? = null) = withContext(deps.io) {
         val base = MetaWriter.baseName(record.meta)
         resultFileMutex.withLock {
             deps.fileSystem.createDirectories(record.dir)
+            if (result != null) atomic(record.dir / result, recJson.encodeToString(transcript))
             atomic(record.dir / TranscribeRunner.jsonFileName(base), recJson.encodeToString(transcript))
             atomic(record.dir / TranscribeRunner.textFileName(base), TranscriptNormalizer.text(transcript))
             if (markdown) atomic(record.dir / TranscribeRunner.markdownFileName(base), TranscriptNormalizer.markdown(transcript, record.meta))

@@ -43,6 +43,7 @@ import recly.core.privacy.TransferConsents
 import recly.core.privacy.TransferTargets
 import recly.core.recording.RecordingRepository
 import recly.core.transcribe.Transcript
+import recly.core.transcribe.TranscriptEdits
 import recly.core.transcribe.TranscriptNormalizer
 import recly.core.transcribe.providerJson
 
@@ -81,13 +82,16 @@ enum class SummaryFormat(val wire: String) {
 
 /**
  * docs/08 "Summaries": what this device asks every summary for — Settings → ChatGPT. [format] is the one Summarize
- * uses; [customFormat] is My format's instructions; [aboutMe] tells ChatGPT who the notes are for. Local to this
- * device, like the model, and kept while signed out.
+ * uses; [customFormat] is My format's instructions; [aboutMe] tells ChatGPT who the notes are for. [autoTitle] and
+ * [autoSpeakers] are the switches of docs/08 "Titles and speaker names", off until the user turns them on. Local to
+ * this device, like the model, and kept while signed out.
  */
 data class SummaryPreferences(
     val format: SummaryFormat = SummaryFormat.AUTO,
     val customFormat: String = "",
     val aboutMe: String = "",
+    val autoTitle: Boolean = false,
+    val autoSpeakers: Boolean = false,
 ) {
     /** The formats on offer: My format only once it has words. */
     val formats: List<SummaryFormat> get() = SummaryFormat.entries.filter { it != SummaryFormat.CUSTOM || customFormat.isNotBlank() }
@@ -302,7 +306,7 @@ class Summaries internal constructor(
     }
 
     /** One request to the plan's Responses API; its text, trimmed and never empty. */
-    private suspend fun complete(model: String, instructions: String, input: String): String {
+    private suspend fun complete(model: String, instructions: String, input: String, timeoutSec: Int = 600): String {
         val body = buildJsonObject {
             put("model", model)
             put("instructions", instructions)
@@ -330,7 +334,7 @@ class Summaries internal constructor(
                     body = HttpBody.Text(body.toString(), "application/json"),
                     followRedirects = false,
                     // A long meeting with a reasoning model can think for minutes before its first word.
-                    timeoutSec = 600,
+                    timeoutSec = timeoutSec,
                 ),
             )
         }
@@ -338,6 +342,22 @@ class Summaries internal constructor(
         val text = ResponseStream.text(result.body.decodeToString()).trim()
         if (text.isEmpty()) throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "empty answer"))
         return text
+    }
+
+    // --- Titles and speaker names (docs/08 "Titles and speaker names") ---
+
+    /**
+     * One request for what a publication fills in: a title when [title], and a name for each of [speakers] — the
+     * transcript's lines, as a summary sends them, and nothing else. Throws [ChatGptFailure]; what ChatGPT could not
+     * tell is absent from the answer.
+     */
+    internal suspend fun fill(transcript: Transcript, title: Boolean, speakers: List<String>): FillAnswer {
+        val text = TranscriptNormalizer.text(transcript).takeIf { it.isNotBlank() }
+            ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
+        val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
+        val instructions = fillInstructions(SummaryLanguage.of(transcript.language, locale.value), title, speakers, transcript.speakers.any { it.me == true })
+        // The transcript waits for this before it goes up: a model that has not answered in two minutes is not waited for.
+        return FillAnswer.parse(complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC), title, speakers)
     }
 
     // --- Preferences (Settings → ChatGPT) ---
@@ -354,6 +374,8 @@ class Summaries internal constructor(
             format = SummaryFormat.of(db.recQueries.kvGet(PREF_FORMAT).executeAsOneOrNull()),
             customFormat = db.recQueries.kvGet(PREF_CUSTOM).executeAsOneOrNull().orEmpty(),
             aboutMe = db.recQueries.kvGet(PREF_ABOUT).executeAsOneOrNull().orEmpty(),
+            autoTitle = db.recQueries.kvGet(PREF_AUTO_TITLE).executeAsOneOrNull() == ON,
+            autoSpeakers = db.recQueries.kvGet(PREF_AUTO_SPEAKERS).executeAsOneOrNull() == ON,
         )
     }.also { loaded -> prefs.compareAndSet(null, loaded) }
 
@@ -364,12 +386,16 @@ class Summaries internal constructor(
             format = preferences.format,
             customFormat = preferences.customFormat.trim().take(SummaryPreferences.CUSTOM_MAX),
             aboutMe = preferences.aboutMe.trim().take(SummaryPreferences.ABOUT_MAX),
+            autoTitle = preferences.autoTitle,
+            autoSpeakers = preferences.autoSpeakers,
         )
         withContext(deps.io) {
             db.recQueries.transaction {
                 db.recQueries.kvSet(PREF_FORMAT, kept.format.wire)
                 if (kept.customFormat.isEmpty()) db.recQueries.kvDelete(PREF_CUSTOM) else db.recQueries.kvSet(PREF_CUSTOM, kept.customFormat)
                 if (kept.aboutMe.isEmpty()) db.recQueries.kvDelete(PREF_ABOUT) else db.recQueries.kvSet(PREF_ABOUT, kept.aboutMe)
+                if (kept.autoTitle) db.recQueries.kvSet(PREF_AUTO_TITLE, ON) else db.recQueries.kvDelete(PREF_AUTO_TITLE)
+                if (kept.autoSpeakers) db.recQueries.kvSet(PREF_AUTO_SPEAKERS, ON) else db.recQueries.kvDelete(PREF_AUTO_SPEAKERS)
             }
         }
         prefs.value = kept
@@ -506,6 +532,11 @@ class Summaries internal constructor(
         const val PREF_FORMAT = "summary/prefs/format"
         const val PREF_CUSTOM = "summary/prefs/custom"
         const val PREF_ABOUT = "summary/prefs/about"
+        const val PREF_AUTO_TITLE = "summary/prefs/auto_title"
+        const val PREF_AUTO_SPEAKERS = "summary/prefs/auto_speakers"
+        private const val ON = "1"
+
+        const val FILL_TIMEOUT_SEC = 120
 
         /** The longest question the user can ask in their own words. */
         const val ASK_MAX = 500
@@ -533,6 +564,26 @@ class Summaries internal constructor(
             append("For an action item whose owner the transcript does not name, write the word for \"unassigned\" in $language instead of guessing.\n")
             append(context(language, preferences, hasMe, marked))
             append("Call people what the transcript calls them. Do not add anything the transcript does not say.")
+        }
+
+        /**
+         * docs/08 "Titles and speaker names": a JSON object with a `title` when [title] and a `speakers` object for
+         * [speakers] — names only as the transcript itself gives them, never guessed.
+         */
+        fun fillInstructions(language: String, title: Boolean, speakers: List<String>, hasMe: Boolean = false): String = buildString {
+            append("You fill in details of a recording from its transcript. Each line starts with [HH:MM:SS] and who is speaking.\n")
+            append("Answer with one JSON object and nothing else: no Markdown, no code fence, no other text.\n")
+            if (title) {
+                append("\"title\": a short title for the recording in $language, at most 60 characters, naming what it is about. ")
+                append("No date or time, no quotation marks, no final period.\n")
+            }
+            if (speakers.isNotEmpty()) {
+                append("\"speakers\": an object with one key for each of these speaker ids: ${speakers.joinToString(", ")}. ")
+                append("Each value is what the transcript calls that speaker — the name they give for themselves, or the name or form of ")
+                append("address the others use for them — written as the transcript writes it, or null when the transcript does not make it clear. ")
+                append("Never guess from how someone speaks or what they talk about, and never give two speakers the same name.\n")
+            }
+            if (hasMe) append("\"${TranscriptNormalizer.ME}\" in the transcript is the person who made the recording; it is not one of the ids.\n")
         }
 
         /** An answer to one question about the transcript (docs/08 "Ask"). [appLanguage] is the language Translate writes in. */
@@ -601,6 +652,41 @@ Follow-ups: a list.
             AskPreset.TRANSLATE -> "Translate the whole transcript, line by line, keeping each line's [HH:MM:SS] time and speaker name."
             AskPreset.MY_SPEAKING -> "Give the person labelled \"${TranscriptNormalizer.ME}\" feedback on how they spoke: clarity, pace, filler words, and how much they talked compared with the others, with examples. Three to six points."
         }
+    }
+}
+
+/** docs/08 "Titles and speaker names": what ChatGPT suggested — a title, and names by speaker id. */
+internal data class FillAnswer(val title: String?, val speakers: Map<String, String>) {
+    companion object {
+        /** Cut to this, though the instructions ask for 60: the exported file names keep 100 characters of a title. */
+        const val TITLE_MAX = 100
+
+        /**
+         * The JSON object in [text], read leniently — a code fence or words around it are skipped — keeping only what was
+         * asked for: a title on one line, and the names of [speakers] that fit a speaker's name and that no other speaker
+         * was given too. An answer with no object in it is a [ChatGptFailure].
+         */
+        fun parse(text: String, title: Boolean, speakers: List<String>): FillAnswer {
+            val start = text.indexOf('{')
+            val end = text.lastIndexOf('}')
+            val json = (if (start in 0 until end) runCatching { providerJson.parseToJsonElement(text.substring(start, end + 1)) as? JsonObject }.getOrNull() else null)
+                ?: throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "unreadable answer"))
+            val named = if (title) string(json["title"])?.lineSequence()?.map { it.trim().trim('"', '\'', '“', '”', '「', '」') }?.firstOrNull { it.isNotEmpty() }?.take(TITLE_MAX) else null
+            val given = (json["speakers"] as? JsonObject)?.let { all ->
+                speakers.mapNotNull { id ->
+                    string(all[id])?.trim()
+                        ?.takeIf { it.isNotEmpty() && it.length <= TranscriptEdits.SPEAKER_NAME_MAX && '\n' !in it }
+                        ?.takeIf { name -> !name.equals(TranscriptNormalizer.ME, ignoreCase = true) && speakers.none { it.equals(name, ignoreCase = true) } }
+                        ?.let { id to it }
+                }
+            }.orEmpty()
+            // Two speakers with one name would be one person to every reader: neither is named.
+            val shared = given.groupBy { it.second.lowercase() }.filterValues { it.size > 1 }.keys
+            return FillAnswer(named, given.filter { it.second.lowercase() !in shared }.toMap())
+        }
+
+        private fun string(element: kotlinx.serialization.json.JsonElement?): String? =
+            (element as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content
     }
 }
 

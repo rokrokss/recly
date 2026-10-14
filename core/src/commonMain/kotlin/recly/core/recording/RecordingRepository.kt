@@ -426,9 +426,18 @@ class RecordingRepository(
      *
      * @return false when there is nothing to rename: no such recording, or one still recording.
      */
-    suspend fun rename(recordingId: String, title: String?): Boolean = locked {
-        val record = record(recordingId) ?: return@locked false
-        if (record.meta.status == RecordingStatus.RECORDING) return@locked false
+    suspend fun rename(recordingId: String, title: String?): Boolean = locked { retitle(recordingId, title, untitledOnly = false) }
+
+    /**
+     * docs/08 "Titles and speaker names": [rename], for a title ChatGPT suggested — only while the recording still has
+     * none when it is written, so a title the user gave in the meantime stays.
+     */
+    suspend fun fillTitle(recordingId: String, title: String): Boolean = locked { retitle(recordingId, title, untitledOnly = true) }
+
+    private fun retitle(recordingId: String, title: String?, untitledOnly: Boolean): Boolean {
+        val record = record(recordingId) ?: return false
+        if (record.meta.status == RecordingStatus.RECORDING) return false
+        if (untitledOnly && !record.meta.title.isNullOrBlank()) return false
         val meta = record.meta.copy(title = title?.trim()?.takeIf { it.isNotEmpty() })
         db.transaction {
             writeMeta(meta)
@@ -436,7 +445,7 @@ class RecordingRepository(
         }
         MetaWriter.write(deps.fileSystem, record.dir, meta)
         deps.logger.log(Logger.Level.INFO, "rec.rename", mapOf("recordingId" to recordingId))
-        true
+        return true
     }
 
     /** Titles renamed here that Drive has not been told about yet, by recording id ("" = none). */
