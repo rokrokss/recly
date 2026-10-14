@@ -1,5 +1,7 @@
 package app.recly.windows.ui.component
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,7 +38,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.MinTouch
+import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.ProcessingPhase
 import app.recly.windows.ui.theme.ProcessingState
 import app.recly.windows.ui.theme.Radius
@@ -205,34 +209,45 @@ fun ProcessingButton(
         }
     }
 
-    when (phase) {
-        ProcessingPhase.IDLE -> BlueprintButton(
-            label = label,
-            onClick = {
-                startedAt = System.nanoTime()
-                phase = ProcessingPhase.PROCESSING
-                onClick()
-            },
-            modifier = modifier,
-            tone = tone,
-            enabled = enabled,
-        )
+    val button: @Composable (ProcessingPhase) -> Unit = { shown ->
+        when (shown) {
+            ProcessingPhase.IDLE -> BlueprintButton(
+                label = label,
+                onClick = {
+                    startedAt = System.nanoTime()
+                    phase = ProcessingPhase.PROCESSING
+                    onClick()
+                },
+                tone = tone,
+                enabled = enabled,
+            )
 
-        ProcessingPhase.PROCESSING -> BlueprintButton(
-            label = strings[Str.ACTION_PROCESSING],
-            onClick = {},
-            modifier = modifier,
-            tone = tone,
-            busy = true,
-        )
+            ProcessingPhase.PROCESSING -> BlueprintButton(
+                label = strings[Str.ACTION_PROCESSING],
+                onClick = {},
+                tone = tone,
+                busy = true,
+            )
 
-        ProcessingPhase.DONE -> BlueprintButton(
-            label = label,
-            onClick = {},
+            ProcessingPhase.DONE -> BlueprintButton(
+                label = label,
+                onClick = {},
+                tone = tone,
+                busy = true,
+                leading = strings[Str.ACTION_DONE],
+            )
+        }
+    }
+    // docs/09 "Motion": the label fades between its three states in a badge's time, as RecKit's does; with reduce
+    // motion it simply changes.
+    if (LocalReduceMotion.current) {
+        Box(modifier, propagateMinConstraints = true) { button(phase) }
+    } else {
+        Crossfade(
+            targetState = phase,
             modifier = modifier,
-            tone = tone,
-            busy = true,
-            leading = strings[Str.ACTION_DONE],
+            animationSpec = tween(durationMillis = Motion.BADGE_FADE_MS, easing = Motion.Standard),
+            content = button,
         )
     }
 }

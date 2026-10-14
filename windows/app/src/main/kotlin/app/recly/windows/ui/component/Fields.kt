@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
@@ -395,19 +397,36 @@ fun <T> BlueprintDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val current = options.firstOrNull { it.first == selected }?.second.orEmpty()
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.node)
+    // Data — a provider id — reads left to right in every language (docs/09 "Typography"), at a button's 14.
+    val style = if (monospace) mono.bodySmall.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.labelLarge
     Box(modifier) {
-        BlueprintButton(
-            label = "$current $DROPDOWN_MARK",
-            onClick = { expanded = true },
-            // docs/09 "Accessibility": the button says the value, and the row above it says what the value
-            // is of — a reader given only the value would hear "한국어, button" and no question.
-            modifier = Modifier.semantics {
-                contentDescription = label
-                stateDescription = current
-            },
-            tone = ButtonTone.QUIET,
-            monospace = monospace,
-        )
+        // The phone's box (`android/.../component/Dropdown.kt`): the input border, the value and [DROPDOWN_MARK] as two
+        // texts — the mark is what says "this is a choice" — and a button's padding.
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+                .border(palette.line, palette.inputBorder, shape)
+                .focusRing(shape)
+                .clickable(role = Role.Button) { expanded = true }
+                // One element: the value and the mark are two texts, and a reader walking them would say the value and
+                // then "down-pointing triangle". Cleared after the click, so the role and the action stay; it says what
+                // the value is of and then the value — given only the value it would say "한국어, button" and no question.
+                .clearAndSetSemantics {
+                    contentDescription = label
+                    stateDescription = current
+                }
+                .padding(horizontal = Space.s, vertical = Space.xs),
+            horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // A value is read whole: at a narrow width or a large type it wraps, rather than losing its end — and it
+            // never pushes the mark out.
+            Text(current, style = style, color = palette.textMuted, maxLines = 3, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false))
+            Text(DROPDOWN_MARK, style = MaterialTheme.typography.labelLarge, color = palette.textMuted)
+        }
         // A menu like the detail's (2026-10-10): flat rows under the box, its end on the box's end, as wide as its
         // longest choice.
         BlueprintMenu(expanded = expanded, onDismissRequest = { expanded = false }, end = true) {

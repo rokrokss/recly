@@ -350,7 +350,8 @@ private fun Sidebar(
                     EmptyList(strings[Str.LIST_LOADING], Modifier.fillParentMaxSize())
                 } else {
                     EmptyList(strings[Str.LEDGER_EMPTY], Modifier.fillParentMaxSize(), hint = strings[Str.LEDGER_EMPTY_HINT]) {
-                        BlueprintButton(strings[Str.TRAY_START], model::start, enabled = model.ready && !model.recording)
+                        // The list's one action, filled as the Mac's is.
+                        BlueprintButton(strings[Str.TRAY_START], model::start, tone = ButtonTone.PRIMARY, enabled = model.ready && !model.recording)
                     }
                 }
             }
