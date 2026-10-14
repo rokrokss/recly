@@ -42,6 +42,29 @@ final class BlueprintContrastTests: XCTestCase {
     }
     #endif
 
+    #if os(macOS)
+    /// docs/09 "Disabled, focus and structure" (2026-10-15): a button showing its own work — `…`, `✓` — takes no press
+    /// but keeps its ink and edge, drawn exactly as the live button is; only a disabled one is drawn in `disabled`.
+    @MainActor
+    func testAButtonShowingItsWorkKeepsItsInk() throws {
+        func drawn(_ view: some View) throws -> Data {
+            let host = NSHostingView(rootView: view.environment(\.blueprint, Blueprint()).background(Color.white))
+            host.setFrameSize(host.fittingSize)
+            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = host
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            return try XCTUnwrap(bitmap.tiffRepresentation)
+        }
+        for tone in [ButtonTone.primary, .accent, .quiet] {
+            let live = try drawn(BlueprintButton("…", tone: tone) {})
+            XCTAssertEqual(try drawn(BlueprintButton("…", tone: tone) {}.showingWork()), live, "\(tone) dimmed while it works")
+            XCTAssertNotEqual(try drawn(BlueprintButton("…", tone: tone) {}.disabled(true)), live, "\(tone) disabled looks live")
+        }
+    }
+    #endif
+
     func testEveryTextPairClears4_5To1InEveryPalette() {
         for (name, palette) in Self.palettes {
             for ink in Self.inks {

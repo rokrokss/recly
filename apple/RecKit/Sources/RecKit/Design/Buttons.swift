@@ -20,6 +20,10 @@ public struct BlueprintButton: View {
     private let mono: Bool
     private let minWidth: CGFloat?
     private let action: () -> Void
+    /// docs/09 "Disabled, focus and structure" (2026-10-15): showing its own work — [ProcessingButton]'s `…` and `✓` —
+    /// the button cannot be pressed, but it is not disabled: it keeps its ink and edge, because that state is what the
+    /// user is meant to read. Only an action that is genuinely unavailable draws in `disabled`.
+    private var showsWork = false
 
     /// docs/09 "Shape": the narrowest a worded button is on the phone (2026-09-29), so a two-letter
     /// label — `열기` in Korean, `Open` — no longer makes the narrowest thing on the screen, and
@@ -91,6 +95,27 @@ public struct BlueprintButton: View {
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
+        // No press while it shows its work — and not `.disabled`, which the plain style would dim. A screen reader
+        // hears the state as words, not as a button to press.
+        .allowsHitTesting(!showsWork)
+        .modifier(NotAFocusStop(active: showsWork))
+        .accessibilityRemoveTraits(showsWork ? .isButton : [])
+    }
+
+    /// Off the keyboard's path while it shows its work; a live button's focus is left to the system.
+    private struct NotAFocusStop: ViewModifier {
+        let active: Bool
+
+        func body(content: Content) -> some View {
+            if active { content.focusable(false) } else { content }
+        }
+    }
+
+    /// The button while it shows its own work ([showsWork]).
+    func showingWork() -> BlueprintButton {
+        var button = self
+        button.showsWork = true
+        return button
     }
 
     /// The disabled border's dash and gap, Windows' 3 and 3.
@@ -361,14 +386,16 @@ public struct ProcessingButton: View {
                 action()
             }
 
+        // Not `.disabled`: the processing state and its ✓ are what the user reads, so they keep the button's ink
+        // (docs/09 "Disabled, focus and structure"); they only take no press.
         case .processing:
             BlueprintButton("…", tone: tone) {}
-                .disabled(true)
+                .showingWork()
                 .accessibilityLabel(Text("Working…", bundle: .module))
 
         case .done:
             BlueprintButton(label, tone: tone, leading: "✓") {}
-                .disabled(true)
+                .showingWork()
         }
     }
 
