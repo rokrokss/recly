@@ -28,6 +28,7 @@ import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 import recly.core.chatgpt.ChatGptAccount.Companion.API
 import recly.core.chatgpt.ChatGptAccount.Companion.failure
 import recly.core.chatgpt.ChatGptAccount.Companion.string
@@ -306,9 +307,10 @@ class Summaries internal constructor(
     }
 
     /** One request to the plan's Responses API; its text, trimmed and never empty. */
-    private suspend fun complete(model: String, instructions: String, input: String, timeoutSec: Int = 600): String {
+    private suspend fun complete(model: String, instructions: String, input: String, timeoutSec: Int = 600, effort: String? = null): String {
         val body = buildJsonObject {
             put("model", model)
+            effort?.let { putJsonObject("reasoning") { put("effort", it) } }
             put("instructions", instructions)
             putJsonArray("input") {
                 addJsonObject {
@@ -354,10 +356,20 @@ class Summaries internal constructor(
     internal suspend fun fill(transcript: Transcript, title: Boolean, speakers: List<String>): FillAnswer {
         val text = TranscriptNormalizer.text(transcript).takeIf { it.isNotBlank() }
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
-        val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
+        // The first of the models measured for this that the plan offers, at the effort measured (docs/08 "Titles and speaker
+        // names"); otherwise the one a summary uses, at its own default effort.
+        val chosen = FILL_MODELS.firstOrNull { (id, _) -> account.offers(id) }
+        val model = chosen?.first ?: account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         val instructions = fillInstructions(SummaryLanguage.of(transcript.language, locale.value), title, speakers, transcript.speakers.any { it.me == true })
         // The transcript waits for this before it goes up: a model that has not answered in two minutes is not waited for.
-        return FillAnswer.parse(complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC), title, speakers)
+        val answer = try {
+            complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC, effort = chosen?.second)
+        } catch (e: ChatGptFailure) {
+            // The plan's API documents no `reasoning` field either way: refused, the request goes again without it.
+            if (chosen == null || !e.reason.startsWith(CoreMessage.PROVIDER_ERROR.code(detail = "400"))) throw e
+            complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC)
+        }
+        return FillAnswer.parse(answer, title, speakers)
     }
 
     // --- Preferences (Settings → ChatGPT) ---
@@ -538,6 +550,14 @@ class Summaries internal constructor(
 
         const val FILL_TIMEOUT_SEC = 120
 
+        /**
+         * docs/08 "Titles and speaker names": model and reasoning effort, best first, as measured with Codex CLI on 2026-10-15 —
+         * twelve transcripts (Korean, English, Japanese, mixed; memos, calls, a lecture, names only talked about), twice
+         * each. `gpt-6.1-sol` at `low` named all 56 speakers right and invented none, in 7.5 s (median); `gpt-5.6-terra` at
+         * `medium` invented one, in 5.9 s; `gpt-6-luna` invented two or three at any effort, and `gpt-6-astra` took 50 s.
+         */
+        val FILL_MODELS: List<Pair<String, String>> = listOf("gpt-6.1-sol" to "low", "gpt-5.6-terra" to "medium")
+
         /** The longest question the user can ask in their own words. */
         const val ASK_MAX = 500
 
@@ -579,8 +599,10 @@ class Summaries internal constructor(
             }
             if (speakers.isNotEmpty()) {
                 append("\"speakers\": an object with one key for each of these speaker ids: ${speakers.joinToString(", ")}. ")
-                append("Each value is what the transcript calls that speaker — the name they give for themselves, or the name or form of ")
-                append("address the others use for them — written as the transcript writes it, or null when the transcript does not make it clear. ")
+                append("Each value is that speaker's name as the transcript gives it — the name they give for themselves, or the name or form ")
+                append("of address the others use when talking to them — or null when the transcript does not make it clear. ")
+                append("A name said to someone belongs to the person spoken to, not to the one speaking, and someone who is only talked about is not one of the speakers. ")
+                append("Leave out honorifics that only go with a name, such as 님, 씨, さん or Mr.; a form of address used on its own, such as 팀장님, stays as it is. ")
                 append("Never guess from how someone speaks or what they talk about, and never give two speakers the same name.\n")
             }
             if (hasMe) append("\"${TranscriptNormalizer.ME}\" in the transcript is the person who made the recording; it is not one of the ids.\n")

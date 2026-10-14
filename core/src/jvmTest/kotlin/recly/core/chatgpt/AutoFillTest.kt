@@ -184,6 +184,43 @@ class AutoFillTest {
     }
 
     @Test
+    fun `the fill uses its own model and effort when the plan offers it, else the summary's model as it is`() = runBlocking {
+        val f = Fixture()
+        f.recordings.create(f.meta, f.dir)
+        f.h.signIn(models = """{"models":[{"slug":"gpt-a","display_name":"GPT A","visibility":"list"},
+            {"slug":"gpt-5.6-terra","display_name":"Second","visibility":"list"},
+            {"slug":"gpt-6.1-sol","display_name":"First","visibility":"list"}]}""")
+        f.summaries.setPreferences(SummaryPreferences(autoTitle = true))
+        f.h.server.reply(answer("""{"title":"Launch plan"}"""), headers = SSE)
+        f.fill.fill(f.record, TRANSCRIPT)
+        val body = f.h.server.requests.last().json()
+        assertEquals("gpt-6.1-sol", body["model"]!!.jsonPrimitive.content, "the best measured model the plan offers")
+        assertEquals("low", body["reasoning"]!!.jsonObject["effort"]!!.jsonPrimitive.content)
+
+        val other = Fixture()
+        other.ready(autoSpeakers = false)
+        other.h.server.reply(answer("""{"title":"Launch plan"}"""), headers = SSE)
+        other.fill.fill(other.record, TRANSCRIPT)
+        val plain = other.h.server.requests.last().json()
+        assertEquals("gpt-a", plain["model"]!!.jsonPrimitive.content, "the model Settings picked")
+        assertNull(plain["reasoning"], "at the model's own effort")
+    }
+
+    @Test
+    fun `a plan that refuses the effort is asked again without it`() = runBlocking {
+        val f = Fixture()
+        f.recordings.create(f.meta, f.dir)
+        f.h.signIn(models = """{"models":[{"slug":"gpt-5.6-terra","display_name":"Second","visibility":"list"}]}""")
+        f.summaries.setPreferences(SummaryPreferences(autoTitle = true))
+        f.h.server.reply("""{"error":{"code":"unsupported_parameter","message":"reasoning"}}""", status = 400)
+        f.h.server.reply(answer("""{"title":"Launch plan"}"""), headers = SSE)
+        assertEquals("Launch plan", f.fill.fill(f.record, TRANSCRIPT).title)
+        val (first, second) = f.h.server.requests.filter { it.url.endsWith("/responses") }.map { it.json() }
+        assertEquals("medium", first["reasoning"]!!.jsonObject["effort"]!!.jsonPrimitive.content)
+        assertNull(second["reasoning"])
+    }
+
+    @Test
     fun `the answer is read leniently and only for what was asked`() {
         val ids = listOf("S1", "S2", "S3")
         assertEquals(
