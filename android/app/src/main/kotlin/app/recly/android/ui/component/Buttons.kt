@@ -107,7 +107,7 @@ private fun ButtonBox(
             // docs/09 "Accessibility": the label is small, the button is not — in both directions. A height
             // alone left the two-letter template variables (`MM`, `dd`) a target some 30dp wide.
             .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
-            .focusRing(palette, Radius.node)
+            .focusRing(palette, Radius.node, onFill = fill != Color.Transparent)
             .background(fill, RoundedCornerShape(Radius.node))
             // A disabled button is dashed, as on Windows: a shape is the cue that survives high contrast,
             // which promotes the muted ink to the body colour.
