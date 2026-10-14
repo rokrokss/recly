@@ -469,7 +469,8 @@ Examples:
 - **Imports use `_import_`**, matching `"source": "import"` (2026-10-07): an audio or video file the user picked, which the shell
   transcodes into ADR-006 parts on this device (`platform` is this device's, one `mono` track). `ReclyCore.importAudio(sourcePath,
   displayName, startedAt, importer)` names it after the file without its extension, starts it at the file's own date when the shell
-  passes one (else now — the `recordingId` carries the same instant, §1 "Identifiers · time"), and queues the fixed plan once it is
+  passes one (else now — the `recordingId` carries the same instant, §1 "Identifiers · time"; every shell passes the file's creation date
+  where the platform has one, else its modification date, 2026-10-15), and queues the fixed plan once it is
   complete; afterwards it is a recording like any other. While the shell's `AudioImporter` transcodes, the row is in the list with
   `status: recording` and no parts (`RecordingRecord.importing`; the shells show `IMPORTING`), and the parts are written to
   `{dataDir}/import-tmp/{recordingId}/` — beside the recordings, so nothing that scans a recording directory meets half of them. Only
@@ -589,7 +590,7 @@ The delete action on a list row. **One recording at a time**, and every time it 
 - The confirmation dialog shows both branches on one screen: `Delete local only` (the default) / `Also delete the Drive folder`. The default is "keep"
   because the files in Drive already **belong to the user**, and downstream automation may already have consumed that folder.
   **The irreversible option is never the default.** A recording whose row has no Drive link (it never reached Drive) has nothing to
-  choose, so the two branches are not shown (Android · Apple 2026-09-29).
+  choose, so the two branches are not shown (Android · Apple 2026-09-29, Windows 2026-10-15).
 - If there is audio that has not been uploaded yet (the retention rule is keeping it), the dialog says so first — `Audio not yet in Drive is deleted with it.` It does not say how many parts
   (2026-09-29: the part count is data the user does not see).
 - A running (`RUNNING`) Job — an upload in progress, or one stuck in it — does not hold the deletion back (2026-10-08): the core
@@ -1497,7 +1498,7 @@ recording is parked at `NEEDS_AUTH`.
   the activity calls `authorize()` again without the user pressing anything (2026-09-04) — for an account that has already allowed it,
   this passes silently and the Job returns to `PENDING`; if consent is really needed, the consent screen appears right there. If the user cancels, the banner
   stays and the next start asks again. The buttons on the banner and the row make the same call (when signed out, they lead to sign-in in Settings).
-- The Drive row in Settings shows connected (account email + `Disconnect Drive`) only when **both the account and the Drive permission are present** (2026-09-29).
+- The Drive row in Settings shows connected (account email + `Disconnect`) only when **both the account and the Drive permission are present** (2026-09-29).
   The state where the consent screen was closed after sign-in, leaving only the email saved and no permission, shows, as on iPhone, `Drive not connected` + a `Connect Drive` row,
   and that button tries again (starting from account selection; there is no separate "Allow again" row). Permission = an access token is in secure storage
   (`AndroidTokenProvider.held`). While a disconnect is owed (`disconnectPhase.owed`), it is the disconnect row regardless of the permission.
@@ -1660,7 +1661,7 @@ Quantity sentences are written in a form whose grammar does not break with the n
 | Platform | Resources | Language setting UI | Switching |
 |---|---|---|---|
 | Android phone | `values/strings.xml` (en) + per-language `values-*/`, `android:localeConfig` | Settings → language row → dropdown | Platform `LocaleManager.applicationLocales` (API 33+; the app is a plain ComponentActivity, so the AppCompat path is a no-op) |
-| Galaxy Watch | Same approach, system language only (no settings UI) | — | System |
+| Galaxy Watch | Same approach (no settings UI) | — | Follows the phone app's language, as the Apple Watch follows the iPhone's: the phone sends its app language over the Data Layer and the watch applies it as its per-app locale (`LocaleManager`, API 33+); the system language until one has arrived (2026-10-15) |
 | iPhone · Apple Watch · macOS | String Catalog (`Localizable.xcstrings`) — RecKit has the shared catalog and each app has its own | Settings → language row → dropdown | SwiftUI `\.locale`; AppKit/UIKit strings use an explicit locale lookup; `AppleLanguages` is not touched |
 | Windows desktop | `strings_{language}.properties` + `Str` enum keys | Settings window → language row → dropdown | Locale `StateFlow` → recomposition, tray menu rebuilt |
 | Core | `CoreMessage` keys | — | — |
@@ -2253,6 +2254,13 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      node and the timer already say them. The line keeps its height even when empty, so the node does not move, and it is cleared when the user goes to another tab and
      comes back — it is news of that moment, not a message to leave on the tab. This decision applies only to the two phones; the desktop menu's and the watch's
      lines are unchanged.
+   - **What a start or a stop says** (2026-10-15, every shell and both watches, in the line each one has): a recording that ends without the
+     user stopping it (the capture failed or the helper stopped) says `The recording failed`, is queued untitled and asks for no title; a start
+     that fails says the same. After `Save` the line says what the queue did with the recording when that is not the usual —
+     `Too short — skipped`, `Review recording settings to continue`, `The audio has already been cleaned up`, `Already handled`; a queue that
+     refused it says `Could not create the job`, and a title that arrived after the upload took the folder name says `Too late to save the title —
+     the upload has started`. The record control is disabled while `Starting` and while `Saving` — there is no Stop during a start. With the
+     microphone off, a start is refused with `The microphone permission is required.` and the platform's settings button.
    - The **device node value** is the source's name in the app language — `Phone` / `Desktop` (ko `폰` / `데스크톱`); until 2026-10-08 it was the
      source code `phone` / `desktop`. The record screen's header is the app name only: the meta line `<source> · <first 8 characters of the device ID>`
      was removed from all four shells (2026-10-08, user decision — the device ID is in Settings → About).
@@ -2283,7 +2291,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      Desktop has nothing to receive, so it is unchanged.
    - The **highlight node** (phones, 2026-10-07, §3 "Metadata"): while recording, a second square node — 56, radius 4, 1.5 accent border, a filled
      14 accent square inside, no text; accessibility name `Highlight` — stands 24 to the end side of the record node, vertically centred with it. The record
-     node stays exactly centred, and idle shows nothing. A tap marks the moment (`recordings.addHighlight`): a light haptic, the node filled accent for
+     node stays exactly centred, and idle shows nothing. A tap marks the moment (`recordings.addHighlight`, at the recorder's written-audio time, not the wall clock — 2026-10-15,
+     every shell): a light haptic, the node filled accent for
      150 ms (instant with reduce motion), and `Highlight · 00:12:34` (mono time) on the line below the record node, under that line's rule above.
    - **Quick start** (iPhone, 2026-10-07): a Home Screen widget (small: the square record node; while recording, the mono timer and a stop node) and Lock
      Screen widgets (circular: the record icon or the timer; rectangular: `Recly` + `Record` or the timer) run the existing start and stop App Intents,
@@ -2380,6 +2389,17 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    (2026-09-03: the parts table in rows was removed — part numbers, tracks, bytes and sha are not shown to the user)
    The detail additions of 2026-10-07 (§3 "Metadata", §8 "Editing" · "Exports", §10 "Re-transcription" · "Search" · "Shared rules for the shells") keep
    the rule above: the original stays the main content, the transcript a layer beside it, and nothing is offered on the user's behalf.
+   - **The same list on every surface** (2026-10-15, flow-parity pass): the desktop Details windows' headers count like the phones' list
+     header — `12 · 2 waiting · 1 failed` — and their rows are time · title · length · status; the popover and tray ledgers say `Loading…`
+     before their first read, as the lists do. An expanded row of a job waiting on the provider draws `Waiting for the transcription result —
+     12 min elapsed` on every surface (phones, popover, tray, Details windows), and a `Retry pending` reason is in the warning tone, not red.
+     `Retry` on a row waiting for Drive (`NEEDS_AUTH`) runs the Drive fix — the sign-in — instead of queuing a retry that cannot pass, and the
+     list banner's `Connect Drive` starts the sign-in as the detail's does; a retry the core refuses says `This cannot be retried right now`.
+     What a list action did is said above the list it was pressed in — the Details windows included, not only the popover's or tray's status
+     line; a delete that went as asked is not announced (the row leaving says it), and one the core answers `Busy` for says `Still
+     transcribing on this device — try again once it has finished`. The banner's count line is `Recordings waiting: 3`. A full Drive's
+     popover and tray rows offer `Open Drive storage`, and the Details windows' More menu has `Open in Drive` (Drive) or `Show in Finder` /
+     `Open the folder` (a local folder) for the open recording.
    - **Import**: phones put an `Import` icon button at the end of the list header (accessibility `Import audio`), which opens the system picker for audio
      and video; the share sheet reaches it too (Android lists `Recly` for audio and video, iPhone has the share extension `Import to Recly`, which only saves the file into the app group's inbox, says `Open Recly to import.` and closes — it does
      not open the app; Recly imports the inbox when it next opens or becomes active). The Mac's
@@ -2394,7 +2414,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      ledger: the time column · the title with its matches tinted · up to two snippet lines (secondary; a match's background is the accent at 16 %) · the
      mono time of the first transcript hit at the row end. A result opens the detail at that hit, every match tinted, with the **find bar** at the top of
      the transcript — `‹  2 / 7  ›` and a close `×`; the arrows move between matches and do not seek; closing it removes the tints. Phones get the find
-     bar only from search; on the desktops ⌘F / Ctrl+F also opens it for the open transcript, or else focuses the list's field. No results: the centred
+     bar only from search; on the desktops ⌘F / Ctrl+F also opens it for the open transcript, with a query field of its own (2026-10-15, both desktops), or else
+     focuses the list's field. No results: the centred
      `No recordings match` over the dimmed `Search looks in titles and in transcripts on this device.`
    - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in three groups parted by a hairline (2026-10-10, the same
@@ -2410,7 +2431,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - **Share / export**: on phones `Share` opens a bottom sheet titled `Share`, one row per format (icon · label · format): `Transcript`
      (`Text · .txt`), `Transcript for notes` (`Markdown · .md`), `Subtitles` (`SubRip · .srt`), `Subtitles for the web` (`WebVTT · .vtt`), `Audio`
      (`M4A`), then `Copy all`. A file row calls `exportFile` and shows `LoadingText` `Preparing…` in its trailing area until the system share sheet
-     opens with the file. Rows that need a transcript are disabled with `No transcript yet`, `Audio` with `No audio on this device`. The Mac's toolbar
+     opens with the file. Rows that need a transcript are disabled with `No transcript yet`, `Audio` with `No audio on this device`, and every
+     row — `Audio` included — with `Still recording` while it is being written (2026-10-15, every shell). The Mac's toolbar
      `Share` menu has the same formats (`NSSharingServicePicker` under the button), `Copy all` and `Save as…` (`NSSavePanel`, the core's file name);
      Windows' `Export…` has the five formats, each a save dialog with the core's file name, and `Copy all`.
    - **Transcript reader**: while playing, the utterance group under the playhead gets a 2 px accent bar on its start edge and an accent time button;
@@ -2418,7 +2440,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      If the user scrolls during playback, following pauses and a **`Back to playback`** pill (accent outline, radius 8, height 32, centred above the
      player) appears; tapping it scrolls back and follows again, and it goes away when playback stops. **Speaker badges**: each group header shows its
      speaker as a quiet badge (radius 2, secondary border) — the name the user gave (sans) or the id `S1` (mono) — and tapping it opens the speaker menu,
-     in reading mode too. A transcript without speakers shows no badge, and there is no legend: speakers are told apart by label only, with **no speaker
+     in reading mode too — disabled with `Transcribing…` while a transcription of the recording runs (2026-10-15, every shell). A transcript
+     without speakers shows no badge, and there is no legend: speakers are told apart by label only, with **no speaker
      colours** — not on the waveform bars, not as tinted rows (2026-10-02 user decision, restated 2026-10-07). While a re-transcription runs, the old text
      stays under a one-line status, the square loader and `Transcribing again…` (external) or `Transcribing on this device` (local), until the new
      transcript replaces it (the reading position goes back to the top only if the user had not scrolled).
@@ -2434,7 +2457,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      its speaker badge (the menu acts on the draft; a transcript without speakers offers `Add speaker` on each line). The header reads `Edit transcript`
      with end-aligned `Cancel` · `Save` (`Save` accent; `Done` alone while nothing changed); on phones they sit below the content, above the keyboard, as
      in principle 3. `Save` → `Saving…` → `✓` → reading mode. Leaving with changes asks `Discard your changes?` / `Your edits to this transcript will be
-     lost.` with `Keep editing` · `Discard`. Editing is unavailable while a transcription job of the recording runs (reason `Transcribing…`). The
+     lost.` with `Keep editing` · `Discard` — by any route: Back, another tab, re-tapping the list tab, another row, a search hit, the
+     popover's or tray's `Details`, closing the window (2026-10-15, every shell); a draft belongs to its recording and is never saved into another. Editing is unavailable while a transcription job of the recording runs (reason `Transcribing…`). The
      editor's footer (secondary, 12) says `Saving updates the transcript files in your storage. It does not start your agent again.` — with iCloud or a
      local folder only its first sentence, because the agent line is about recly-events on Drive (§15 §9).
    - **Playback**: one quiet chip shows the speed (`1×`, mono) and opens a menu — `0.75×` `1×` `1.25×` `1.5×` `1.75×` `2×` (`✓` on the current one) and
@@ -2472,7 +2496,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    switches to that provider's) clear the entered value, and coming back to the same provider does not restore it. `Cancel` on the settings draft only reverts to the saved
    settings, so if the provider is unchanged the key field is unchanged too.
    On mobile, switching tabs preserves drafts, and Android's back applies only to the current tab.
-4. **Settings = sectioned table**: Account / Language / Theme / Capture (per platform) / Uploads (phone) / Recording processing / Settings file (desktop) / Privacy (phone) / About (version · build · device ID · open-source notices, mono) — in this order, and a section the shell does not have is skipped (2026-09-29).
+4. **Settings = sectioned table**: Account / Language / Theme / Capture (per platform) / Uploads (phone) / Recording processing / Settings file (desktop) / Privacy (phone) / About (version · build · device ID · open-source notices, mono; the desktops add `Open data folder` and the `Privacy Policy` link, which the phones keep under Privacy — 2026-10-15) — in this order, and a section the shell does not have is skipped (2026-09-29).
    The settings file — export and import of the recording processing settings — is a utility, so the desktops show it as a section of its own after the features,
    ChatGPT included ("Summary view"); the phones keep it at the end of Recording processing (2026-10-06). **Theme**
    is three chips common to all four shells, `System default` · `Light` · `Dark`, and like language it is a local setting of this
@@ -2489,7 +2513,10 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    space is added equally to each chip's own width — no chip gets narrower than its own width. If they do not fit on one line, they wrap, and each line is filled (Android
    `FillRow`, Apple `FillLayout`). In desktop windows the three words would stretch to the panel edge, so they stay left-aligned.
    The Drive connection status also uses the common settings row. On the right is a single quiet `Disconnect` button (2026-10-08: no longer red — disconnecting deletes no recording), and one confirmation dialog,
-   whose confirm button is the primary one, completes it. Google Drive and iCloud store recordings in a folder a
+   whose confirm button is the primary one, completes it. Signed out, the row's `Connect Drive` is an accent outline button on every shell, as the
+   local folder's `Choose folder` / `Change folder` is in every state (2026-10-15). What a connect or a disconnect did is said under the Drive row
+   in Settings — `Could not connect Drive` in the danger tone, without the platform's raw reason, and no modal panel; the popover's or tray's
+   status line may carry a short copy (2026-10-15, every shell). Google Drive and iCloud store recordings in a folder a
    month (`recly/memo/{{yyyy}}-{{MM}}`) and show no folder setting; only with a **local folder** is the folder a choice — two chips, `Monthly folders`
    (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved path in mono under them, shown only while the storage is
    the local folder (2026-10-09, user decision; the core's `ProcessingStorage.uploadFolder()`). The stored value is still the template, and a value
@@ -2498,7 +2525,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    `Recording can’t start on this PC. Reinstall Recly.`, and what went wrong stays in the log (`shell.ready`) (2026-10-09, user decision —
    no helper version, path or self-test in Settings).
    The outside shortcut that is always in place, `Microphone` → `Open System Settings`, is a quiet (gray) button — it is nothing to draw
-   attention to. **A control whose only effect is to open a web page outside the app is a text link, not a button** (2026-10-09, user
+   attention to. The desktops show that row in Capture whether or not access is on, with the guidance as its subtitle while it is off
+   (Windows: `Open Windows Settings`; Windows reads the microphone setting again at every start, 2026-10-15). **A control whose only effect is to open a web page outside the app is a text link, not a button** (2026-10-09, user
    decision): the accent color, the size of the text it sits in (12 in a secondary line), a dotted underline in the accent color, no
    border or fill, 60 % opacity while pressed, the link role for accessibility and invisible padding up to the minimum target (`TextLink`
    among each shell's Blueprint components). `Privacy Policy` is the link itself, the row's only content; ChatGPT's `Manage usage` is the
@@ -2507,7 +2535,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    Their text uses the same `14sp` token as the surrounding rows, buttons and links, and they keep the minimum click target (Apple · Windows 44, Android 48) and the user's font scaling.
    - **Vocabulary** (2026-10-07, §5 "Fixed processing settings"): a `Vocabulary` row right after `Spoken language` in all four shells, edited as chips — a
      field (`Add a name or term`) where Enter/Return or `Add` adds a chip, a remove `×` on each chip (accessibility `Remove {term}`), one chip per line of a
-     paste. Past 50 terms or 40 characters an inline warning-tone line says `Up to 50 terms, 40 characters each.` The description under it says where the
+     paste — the row reads its label, then the chips, then the field (2026-10-15, every shell). Past 50 terms or 40 characters an inline
+     warning-tone line says `Up to 50 terms, 40 characters each.` and the refused entry is cleared from the field. The description under it says where the
      list goes: `Names and terms to spell correctly. They are sent with the audio to {provider}.` (external), `Names and terms to spell correctly, used on
      this device.` (local), or `{provider} does not use a vocabulary.` / `On-device transcription does not use a vocabulary.` — the list is kept. It is part
      of the processing draft, so `Cancel` · `Save` appear when it changes (principle 8).
@@ -2523,7 +2552,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 5. **Notifications · dialogs**: **title + one-line description + at most 2 buttons.** The processing state is inline (the button changes to "Saving…"), and on completion
    a badge. A two-way question does not get a third option. The detail's dialogs of 2026-10-07 keep this shape: `Transcribe again?` with one line built
    from the current settings — `With AssemblyAI · Korean.` or `With on-device transcription · Korean.`, plus ` Your edits are replaced.` when the transcript
-   was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`). The title sheet after Stop has `Discard recording` · `Save` — the red
+   was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`); `Rename` opens `Recording title` with the field `Title` (`Cancel` · `Save`), the same field label as the
+   title sheet after Stop (2026-10-15, every shell). The title sheet after Stop has `Discard recording` · `Save` — the red
    `Discard recording` deletes the recording that just ended, as `Cancel` did (§3 "Titles"; relabelled 2026-10-08, user decision).
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
@@ -2547,6 +2577,15 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    has no gesture. The status line says `Highlight · 00:12:34` in the accent for 2 seconds (both watches), then goes back to its rule.
    The Galaxy Watch tile draws the app's square record node (outlined; filled with the inner square while recording), not a Material pill button,
    and says nothing when idle with nothing to send (2026-10-08).
+   **Both watches alike** (2026-10-15): the screen reads timer (`00:00` when idle) → status line → record node; the recorder's words are the
+   phones' — `Starting`, `Saving` — on the screen, tiles and complications; a recording that failed says `The recording failed` without the
+   platform's reason; a transfer the phone refused says `Transfer failed`, tiles and complications included; the node is disabled while
+   starting and saving. Haptics: start, stop, a light tick when a highlight is kept, and the success haptic when the phone acks a recording's
+   meta — the transfer is complete only then, not when the recording is queued. A tap on a complication never stops a recording (a face is
+   brushed by accident): the Apple Watch's starts one when idle and only opens the app while recording; the Galaxy Watch's only opens the app,
+   because its one-tap starts are the tile and `Recly Quick Rec`. The Galaxy Watch's setup guide (double home key) has no Apple Watch
+   counterpart — the Action button is assigned in the system's own settings. After a permanent microphone deny, the Galaxy Watch adds a
+   warning-tone line saying where in Settings to allow it.
 8. **Button placement** (2026-09-25, common to mobile and desktop; directions are by start/end, so they flip in RTL):
    - A button group inside a form or settings block is **end-aligned (right)**. The confirming action is at the very end, and `Cancel` is right before it. In the recording processing
      settings, `Cancel` · `Save` appear **only when something has changed** — two disabled buttons do not take up room all the time, and their appearing
@@ -2570,20 +2609,21 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 - **Settings → ChatGPT**, after Recording processing, laid out like the Drive rows. Signed out: `Use
   your ChatGPT plan` / `Summarize recordings with the plan you already have. Recly charges nothing for it.` with `Continue with ChatGPT`
   (OpenAI's wording for the action, checked 2026-10-09). While the browser is open the button shows its processing state and a line
-  `Finish signing in in your browser` has a quiet `Cancel`. Signed in: the account's email / `Using your ChatGPT plan` with a quiet
+  `Finish signing in in your browser` has a quiet `Cancel`; when no browser opened within 30 seconds it says `Could not sign in to ChatGPT`
+  with the detail `no browser opened` (2026-10-15, every shell). Signed in: the account's email / `Using your ChatGPT plan` with a quiet
   `Sign out` (no confirmation — signing in again restores it; when OpenAI did not confirm the revocation, a muted footnote under the
   account row says so, on every shell — 2026-10-11) and, under that line, the text link `Manage usage` (ChatGPT's usage
   settings, principle 4), then a `Model` picker of the plan's models (hidden when the list could not be read). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
   to sign in again.` in the warning tone, with `Continue with ChatGPT`. Then, signed in or not (2026-10-10): `Summary format`, a dropdown of
   `General` · `One-on-one` · `Lecture` · `Interview` · `My format`, saved on choosing; only while it is My format, the `My format` field
   under it (two lines growing to eight; `Used when the summary format is My format.`, or `Write your format here; until then summaries use
-  General.` while it is empty); `About you`, a field of up to three lines (`Summaries and answers use this to judge what matters to you.`) —
+  General.` while the field is empty — as typed, not as saved); `About you`, a field of up to three lines (`Summaries and answers use this to judge what matters to you.`) —
   the fields save when editing ends; Return adds a line in My format and ends About you. The footnote says what goes — the transcript text,
   the highlighted moments and what is written there, never the audio — for summaries and questions, and that they count toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
   ChatGPT plan. You can manage usage in ChatGPT settings.` with `Manage usage` and `Got it`. The whole section and the More item are
   absent where the core says `Unavailable` (§15 "China mainland App Store").
-- **The detail.** More → `Summarize` / `Summarize again`, then `Summarize as…` (a submenu on the desktops, a picker on the phones, `✓` on
-  the summary's format) and, after `Edit summary`, `Ask about this recording…` — disabled with their reason like the other items: `No transcript yet`,
+- **The detail.** More → `Summarize` / `Summarize again`, then `Summarize as…` (a submenu on the desktops; on the phones the More menu turns
+  into the format list with a back row — 2026-10-15, iPhone as Android; `✓` on the summary's format) and, after `Edit summary`, `Ask about this recording…` — disabled with their reason like the other items: `No transcript yet`,
   `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. Once a summary exists or one was asked for, two
   chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects
   `Summary`; no chips while editing). The summary is selectable plain text with its line breaks, then `ChatGPT · <model>` (secondary, 12),
@@ -2591,7 +2631,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   (2026-10-10: seek and play): mono, accent, no underline — a dotted underline means a web page — with a target of at least the minimum each
   way, laid over the selectable text; where two targets overlap, the citation whose glyphs are nearest the tap wins; each has its own
   accessibility element `Play from 00:12:34`; past the recording's end, or with no audio, it is muted and inert; `Copy all` copies the
-  brackets too. While it runs: the square loader and `Summarizing…` over the previous text. A failure: a centred notice — the
+  brackets too. While it runs: the square loader and `Summarizing…` over the previous text and its footer. A failure: a centred notice — the
   `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage` (primary) for the usage limit,
   `Retry` (quiet) for the rest, none when the sentence already says to sign in or that the plan cannot be used; the previous text and its
   footer stay under it.
@@ -2605,12 +2645,13 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   the `Transcript` chip — asks `Discard your changes?` / `Your edits to this summary will be lost.` (`Keep editing` · `Discard`). An
   edited summary's footer reads `ChatGPT · <model> · Edited`, and `Summarize again` on it first asks `Replace your edited summary?` /
   `Summarizing again replaces the summary you edited.` (`Cancel` · `Replace`, not red — no recording is deleted).
-- **Ask** (2026-10-10, §8 "Ask"). A dialog on the desktops, a full-height sheet on the phones: the title `Ask about this recording` with a ✕
+- **Ask** (2026-10-10, §8 "Ask"). A modal dialog on the desktops (a scrim over the detail; Windows as the Mac, 2026-10-15), a full-height sheet on the phones: the title `Ask about this recording` with a ✕
   in its row (the one close control on every shell; the title row stays while the body scrolls), the preset chips (`Follow-up email`,
   `Action items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows; a tap asks; `✓` on the one
   behind the shown answer), `Ask your own question` with a primary `Ask` (Enter asks and Shift+Enter adds a line on the desktops; the phone
-  keyboard's Send asks), then the answer the way the summary is shown — `Asking…` with the square loader, citations, `ChatGPT · <model>` and
-  `Copy all`, or the summary's failure notice. No swipe closes it; closing it drops the answer.
+  keyboard's Send or Return asks), then the answer the way the summary is shown — `Asking…` with the square loader, citations, `ChatGPT · <model>` and
+  `Copy all`, or the summary's failure notice. No swipe closes it; closing it, or opening another recording, drops the answer and the
+  question (2026-10-15).
 - **Elsewhere.** Share lists `Summary` (`.txt`) after `Transcript for notes`, disabled with `No summary yet`; a search hit shows a matching
   summary line as `Summary · …` and opens on the Summary chip when nothing else matched; an unnamed `me` speaker is `Me` (§8 "Me and others").
 
@@ -2625,6 +2666,9 @@ not a warning; the desktop `Stop recording` belongs to it. Drive `Disconnect` is
 its start edge, not only a tint. Node borders, transcript time boxes, quiet buttons and dropdown boxes keep at least 3:1 against the background in
 light and dark, and a disabled quiet button has a dashed border and muted ink (2026-10-08). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason in the expanded row, use the same
 warning tone as the badge or a dimmed color, and never red. `Remove highlight` and `Discard` (an edit) are not red either: they delete no recording (2026-10-07).
+**The tone of a status sentence** (2026-10-15, every shell): a failure — `Could not …`, `The recording failed`, a model download that
+failed — is red; waiting, or blocked by something the user can act on (a disconnect still owed, a Drive permission, a model to fetch), is the
+warning tone; an informational limitation (`… is not supported here`, `… is unavailable on this device`) is muted.
 **Speakers are told apart by their label only** — no speaker colours anywhere (2026-10-02, restated 2026-10-07; screen principle 2 "Transcript reader"). **Korean does not break lines inside a word**: Android sets `WordBreak.Phrase` in the `LineBreak` of the app Typography
 (the Compose default turns off Android 15+'s phrase-based line breaking for Korean), Windows (Compose Desktop)
 has the string table insert U+2060 between Hangul syllables inside a word when the UI language is Korean (user text is left as is), and on Apple the default is already word-based.
@@ -3152,7 +3196,7 @@ android/
 | W3 | `OngoingActivity` (Wear OS 6) / Live Updates (7): watch face chip, tapping opens the app |
 | W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
 | W5 | Entry points: tile (`launchAction`), complication (state — the app's square record glyph; while recording the filled square and the elapsed time the face counts itself, where the slot has room, instead of `REC`; 2026-10-11), **a second launcher item "Recly Quick Rec"** with its own icon (§9 "App icon"; 2026-10-14) (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
-| W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, tick on transfer complete |
+| W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, TICK on a kept highlight, and the transfer-complete haptic when the phone acks a recording's meta (2026-10-15, as the Apple Watch) |
 | W7 | Battery: no Wi-Fi request while recording, no keep-screen-on; transfer prefers charging (optional) |
 
 ### Caveats
@@ -3297,7 +3341,7 @@ With the built-in speakers the microphone's input node runs with voice processin
   (d) as the `nextRunAt` follow-up. Launch at login via `SMAppService`.
 - **Highlight** (2026-10-07): while recording, the popover's command row has `Highlight` right after `Stop recording`; it calls
   `recordings.addHighlight(id, recordedSec)` (the recording's own clock, a second mark within 1 s ignored) and the line under the row says
-  `Highlighted at 00:12:34` for 2 seconds.
+  `Highlight · 00:12:34` for 2 seconds.
 - **Quick start** (2026-10-07): App Intents `Start recording`, `Stop recording` and `Add Highlight`, with App Shortcuts phrases like the iPhone's
   (`Start recording with Recly`, `Recly start recording`, `Stop recording with Recly`, `Add a highlight with Recly`; `AppShortcuts.xcstrings`).
   They run in the app's process on the menu's own model, waiting up to 10 s for the core to open when the intent launched the app; a start still asks the
@@ -3333,7 +3377,7 @@ set up by hand (`docs/mcp.md`).
 | M5 | Auth (AppAuth macOS) + `BackgroundTransport` + runner hookup |
 | M6 | Meeting detection + notifications |
 | M7 | **Retired (2026-09-24)** — **workflow editing window** + workflow export/import in settings (§5): `NSSavePanel` (default name `recly-workflows.json`) · `NSOpenPanel`, import applies after a replace confirmation, a note that keys are not included in the file |
-| M8 | Consent reminder (once at the first recording, can be turned off in settings) + jurisdiction notices (the speaker warning was removed with voice processing, 2026-10-07). The reminder asks before the *first* recording, and if "Do not ask again" is chosen, it can be turned back on in settings |
+| M8 | Consent reminder (before every new recording, can be turned off in settings) + jurisdiction notices (the speaker warning was removed with voice processing, 2026-10-07). The desktops ask before *every* recording (the phones only before the first, "Consent reminder · jurisdiction notices" below), and if "Do not ask again" is chosen, it can be turned back on in settings |
 | M9 | Distribution: Developer ID signing, hardened runtime, notarytool, DMG (`apple/scripts/release-mac.sh`). There is no Sparkle auto-update |
 
 ### Consent reminder · jurisdiction notices
@@ -3347,7 +3391,11 @@ So the duty to notify lies entirely with the user, and all the app can do is say
    Its body is the reminder paragraph only; the jurisdiction notes are behind the `What's my jurisdiction?` link, not in the dialog (2026-10-08).
    It can be turned off in settings (turning it off is also the user's choice, and turning it off does not shift the responsibility). When it appears differs by device —
    Mac and Windows ask for every new recording (regardless of detection, meeting mode fixed), while phones (iPhone · Android) have no way to tell a meeting apart, so they
-   ask **only once, before the first recording**, and the settings wording states that difference. **The two watches have none** (the screen is small, the phone is the source of truth, and
+   ask **only once, before the first recording**, and the settings wording states that difference: the row is `Consent reminder` on every shell,
+   described `Asked once, before the first recording.` on the phones and `Asked before every recording.` on the desktops (2026-10-15). The
+   question comes **before** the system's permission prompts (microphone, notifications), so a recording the user then cancels has asked
+   for nothing; a quick start (widget, tile, Control, Siri) brings the app forward, asks, and starts on confirmation. `Do not ask again`
+   applies whichever button is pressed (2026-10-15, every shell). **The two watches have none** (the screen is small, the phone is the source of truth, and
    the responsibility when recording with a watch is the same).
 2. **Jurisdiction notice** — tapping "What's my jurisdiction?" opens a screen that summarizes the table below. It is a per-language resource; the list of jurisdictions and the links are shared.
    The wording is identical, letter for letter, across the four shells and is bound together by a comparison test.
@@ -3407,8 +3455,11 @@ macOS.
   Play switches the session to `.playback`/`.default` and activates it. The `.playAndRecord` category that remains after recording ends is not
   taken as a sign of whether a recording is in progress.
 - **Display**: Live Activity (elapsed time, stop button) — Lock Screen · Dynamic Island · watch Smart Stack. It is **renewed at the 8-hour limit**.
-- **Entry points**: App Intents `StartRecordingIntent`, `StopRecordingIntent` → Siri · Shortcuts · Action button.
+- **Entry points**: App Intents `StartRecordingIntent`, `StopRecordingIntent` and `AddHighlightIntent` (2026-10-15, as the Mac's
+  `Add Highlight`) → Siri · Shortcuts · Action button.
   An iOS 18 Control starts by opening the app with `OpenIntent` (starting a long-running audio session from a widget extension is unreliable).
+  A quick start while the consent reminder is owed opens the Record tab, asks, and starts on confirmation (2026-10-15; it used to be refused
+  with `Open Recly once to answer the recording reminder`).
 - **Auth**: AppAuth requests only `drive.file`, and `TokenProvider` handles token refresh, expiry and 401. RecKit `GoogleAuth` and `AppleTokenProvider` are shared with macOS, and the iPhone uses
   `signIn(presenting: UIViewController)`.
 - **Storage location** (§3 "Storage location"): the top row of settings chooses Google Drive, iCloud or a local folder picked in Files. iCloud uploads are done by the system, so
@@ -3462,7 +3513,7 @@ that is not moved inside the callback is deleted. Sending the workflow summary t
 - **Transfer**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` per part + the meta last.
   The `didFinish` callback can be missed, so **the phone's ack (`didReceiveUserInfo`)** is the completion criterion. Acked parts are deleted.
   Retry: unacked parts are resent when the app becomes active (the phone ignores duplicates by sha256).
-- **Entry points**: complication (state + tap to start; the square record glyph when idle, the red filled square and the elapsed time while
+- **Entry points**: complication (state + tap to start when idle — while recording a tap only opens the app, never stops, 2026-10-15; the square record glyph when idle, the red filled square and the elapsed time while
   recording — the system's self-updating timer, so it reads `0:12`; 2026-10-11), App Shortcut → Watch Ultra Action button, Double
   Tap (`handGestureShortcut(.primaryAction)`) for stop.
 - No auth or network. (Receiving the workflow summary was retired 2026-09-24)
@@ -3473,7 +3524,7 @@ that is not moved inside the callback is deleted. Sending the workflow summary t
 | WA2 | Recording + background audio |
 | WA3 | `transferFile` queue + ack |
 | WA4 | Complication · App Shortcut · Double Tap |
-| WA5 | Haptics (`WKInterfaceDevice.play(.start/.stop/.success)`) — the third haptic (transfer complete) means "it has now left my hands" |
+| WA5 | Haptics (`WKInterfaceDevice.play(.start/.stop/.success)`) — the third haptic (transfer complete) means "it has now left my hands", so it plays when the phone acks the recording's meta, not when it is queued (2026-10-15) |
 | WA6 | Interruption (phone call · Siri) handling |
 
 ### Caveats
@@ -3517,7 +3568,11 @@ File names are built from the `base` the app gives — the helper does not name 
   The mode picker UI and the applying of previously chosen values are removed. `mono` support for phones, watches and existing recording meta stays.
   The Mac's system audio permission guidance and Windows' loopback handling follow the existing platform paths.
 - **Permissions**: there is no prompt. If Settings → Privacy → Microphone → "Let desktop apps access your microphone" is off, the app detects it through the registry
-  (`HKCU\…\ConsentStore\microphone`) and shows guidance.
+  (`HKCU\…\ConsentStore\microphone`) and shows guidance. The registry is read again at every start, and a start with access off is refused with
+  `The microphone permission is required.` and `Open Windows Settings` (2026-10-15).
+- **Not yet: capture status lines.** The Mac's popover says `Microphone: …`, `System audio: …`, `Reconnecting microphone…`,
+  `Reconnecting system audio…` and `System audio unavailable. Microphone recording continues.` while recording (§12). The helper protocol has
+  no device or recovery events, so the tray says none of these; adding them needs those events in the helper first (2026-10-15, deferred).
 
 ### Detection
 
