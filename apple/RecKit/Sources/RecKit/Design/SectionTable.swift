@@ -278,6 +278,7 @@ extension EnvironmentValues {
 /// track next to a title it cannot see (docs/09 "Accessibility").
 public struct SwitchRow: View {
     @Environment(\.blueprint) private var blueprint
+    @Environment(\.isEnabled) private var isEnabled
     private let title: String
     private let subtitle: String?
     @Binding private var isOn: Bool
@@ -291,14 +292,15 @@ public struct SwitchRow: View {
     public var body: some View {
         VStack(spacing: 0) {
             Toggle(isOn: $isOn) {
+                // The row is the control: off, its words are in `disabled` too, as its track is.
                 VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(verbatim: title)
                         .font(blueprint.fonts.bodySmall)
-                        .foregroundStyle(blueprint.palette.text)
+                        .foregroundStyle(isEnabled ? blueprint.palette.text : blueprint.palette.disabled)
                     if let subtitle {
                         Text(verbatim: subtitle)
                             .font(blueprint.fonts.sans(TypeSize.small))
-                            .foregroundStyle(blueprint.palette.textMuted)
+                            .foregroundStyle(isEnabled ? blueprint.palette.textMuted : blueprint.palette.disabled)
                     }
                 }
             }
@@ -331,7 +333,7 @@ public struct BlueprintSwitchStyle: ToggleStyle {
             // The whole row is the control, so the ring goes round the row — square, as a table row is.
             .blueprintFocusRing(radius: 0)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
         .accessibilityRepresentation {
             Toggle(isOn: configuration.$isOn) { configuration.label }
@@ -556,7 +558,7 @@ public struct BlueprintChip: View {
                 .contentShape(Rectangle())
                 .blueprintFocusRing()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
         // The mark is decoration to a screen reader, which is told the same fact as a trait.
         .accessibilityLabel(Text(verbatim: label))

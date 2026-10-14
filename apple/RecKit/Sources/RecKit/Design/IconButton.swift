@@ -18,7 +18,7 @@ public struct BlueprintIconButton: View {
 
     public var body: some View {
         Button(action: action) { BlueprintIconLabel(systemName) }
-            .buttonStyle(.plain)
+            .buttonStyle(BlueprintPressStyle())
             .focusEffectDisabled()
             .accessibilityLabel(Text(verbatim: label))
     }

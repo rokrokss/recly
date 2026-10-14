@@ -44,24 +44,86 @@ final class BlueprintContrastTests: XCTestCase {
 
     #if os(macOS)
     /// docs/09 "Disabled, focus and structure" (2026-10-15): a button showing its own work — `…`, `✓` — takes no press
-    /// but keeps its ink and edge, drawn exactly as the live button is; only a disabled one is drawn in `disabled`.
+    /// but keeps its ink and edge, drawn exactly as the live button is; only a disabled one is drawn otherwise.
     @MainActor
     func testAButtonShowingItsWorkKeepsItsInk() throws {
-        func drawn(_ view: some View) throws -> Data {
-            let host = NSHostingView(rootView: view.environment(\.blueprint, Blueprint()).background(Color.white))
-            host.setFrameSize(host.fittingSize)
-            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
-            window.contentView = host
-            host.layoutSubtreeIfNeeded()
-            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-            host.cacheDisplay(in: host.bounds, to: bitmap)
-            return try XCTUnwrap(bitmap.tiffRepresentation)
+        for (name, palette) in Self.palettes {
+            for tone in [ButtonTone.primary, .accent, .quiet] {
+                let live = try Self.drawn(BlueprintButton("…", tone: tone) {}, on: palette).tiffRepresentation
+                let working = try Self.drawn(BlueprintButton("…", tone: tone) {}.showingWork(), on: palette).tiffRepresentation
+                let disabled = try Self.drawn(BlueprintButton("…", tone: tone) {}.disabled(true), on: palette).tiffRepresentation
+                XCTAssertEqual(working, live, "\(name)/\(tone) is dimmed while it works")
+                XCTAssertNotEqual(disabled, live, "\(name)/\(tone) disabled looks live")
+            }
         }
-        for tone in [ButtonTone.primary, .accent, .quiet] {
-            let live = try drawn(BlueprintButton("…", tone: tone) {})
-            XCTAssertEqual(try drawn(BlueprintButton("…", tone: tone) {}.showingWork()), live, "\(tone) dimmed while it works")
-            XCTAssertNotEqual(try drawn(BlueprintButton("…", tone: tone) {}.disabled(true)), live, "\(tone) disabled looks live")
+    }
+
+    /// docs/09 "Disabled, focus and structure": a disabled control is drawn in `disabled` — the secondary colour at half
+    /// opacity — and nothing lighter: the plain button style's own dimming on top of it made it fainter than §9 says.
+    /// The inkiest pixel drawn — the fully covered middle of the dashed edge or of a stem — is that ink over the page,
+    /// as a swatch of `disabled` drawn the same way shows it.
+    @MainActor
+    func testADisabledControlIsDrawnInTheDisabledInkAndNoLighter() throws {
+        for (name, palette) in Self.palettes {
+            let page = palette.hex(.background)
+            let swatch = try Self.drawn(Rectangle().fill(palette.disabled).frame(width: 24, height: 24), on: palette)
+            let wanted = try XCTUnwrap(Self.inkiest(swatch, from: page))
+            let controls: [(String, AnyView)] = [
+                ("button", AnyView(BlueprintButton("MMMM", tone: .quiet) {}.disabled(true))),
+                ("primary button", AnyView(BlueprintButton("MMMM", tone: .primary) {}.disabled(true))),
+                ("chip", AnyView(BlueprintChip("MMMM", selected: false) {}.disabled(true))),
+                ("icon button", AnyView(BlueprintIconButton("square.and.arrow.down", label: "Import") {}.disabled(true))),
+                ("dropdown", AnyView(BlueprintDropdown("Language", options: [Choice.one], selection: .constant(Choice.one)) { _ in "MMMM" }.disabled(true))),
+            ]
+            for (control, view) in controls {
+                let drawn = try Self.drawn(view, on: palette)
+                let inkiest = try XCTUnwrap(Self.inkiest(drawn, from: page), "\(name)/\(control) drew nothing")
+                for shift in [UInt32(16), 8, 0] {
+                    let got = Int((inkiest >> shift) & 0xFF)
+                    let expected = Int((wanted >> shift) & 0xFF)
+                    XCTAssertLessThanOrEqual(
+                        abs(got - expected), 4,
+                        "\(name)/\(control) is drawn in \(String(format: "%06X", inkiest)), not `disabled` \(String(format: "%06X", wanted))"
+                    )
+                }
+            }
         }
+    }
+
+    private enum Choice: String, Identifiable, Hashable { case one; var id: String { rawValue } }
+
+    /// [view] in a window, on [palette]'s page, as the screen draws it.
+    @MainActor
+    private static func drawn(_ view: some View, on palette: BlueprintPalette) throws -> NSBitmapImageRep {
+        let host = NSHostingView(rootView: view
+            .environment(\.blueprint, Blueprint(palette: palette))
+            .padding(Space.s)
+            .background(palette.background))
+        host.setFrameSize(host.fittingSize)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        return bitmap
+    }
+
+    /// The drawn pixel farthest from the page, as an sRGB hex.
+    private static func inkiest(_ bitmap: NSBitmapImageRep, from page: UInt32) -> UInt32? {
+        func channels(_ hex: UInt32) -> [Int] { [Int((hex >> 16) & 0xFF), Int((hex >> 8) & 0xFF), Int(hex & 0xFF)] }
+        let ground = channels(page)
+        var best: (distance: Int, hex: UInt32)?
+        for x in 0..<bitmap.pixelsWide {
+            for y in 0..<bitmap.pixelsHigh {
+                guard let colour = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), colour.alphaComponent > 0.99 else { continue }
+                let hex = UInt32((colour.redComponent * 255).rounded()) << 16
+                    | UInt32((colour.greenComponent * 255).rounded()) << 8
+                    | UInt32((colour.blueComponent * 255).rounded())
+                let distance = zip(channels(hex), ground).map { abs($0 - $1) }.reduce(0, +)
+                if distance > (best?.distance ?? 0) { best = (distance, hex) }
+            }
+        }
+        return best?.hex
     }
     #endif
 

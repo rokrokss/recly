@@ -32,3 +32,13 @@ extension View {
         modifier(FocusRing(radius: radius, onFill: onFill))
     }
 }
+
+/// docs/09 "Disabled, focus and structure" (2026-10-15): the press style of the Blueprint controls. The label is drawn
+/// exactly as the control draws it — a disabled one already in `disabled`, ink and dashed edge — with none of the plain
+/// style's own dimming on top, which made a disabled control lighter than §9's ink. `.disabled` still does the rest: no
+/// press, no focus stop, and "dimmed" to VoiceOver. Pressed, the label dims for the moment of the press, as a link does.
+struct BlueprintPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}

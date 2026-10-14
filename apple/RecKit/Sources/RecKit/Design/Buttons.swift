@@ -93,10 +93,10 @@ public struct BlueprintButton: View {
             .contentShape(Rectangle())
             .blueprintFocusRing(onFill: isEnabled && tone == .primary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
-        // No press while it shows its work — and not `.disabled`, which the plain style would dim. A screen reader
-        // hears the state as words, not as a button to press.
+        // No press while it shows its work — and not `.disabled`, which is the unavailable action's look and
+        // "dimmed" to VoiceOver. A screen reader hears the state as words, not as a button to press.
         .allowsHitTesting(!showsWork)
         .modifier(NotAFocusStop(active: showsWork))
         .accessibilityRemoveTraits(showsWork ? .isButton : [])
@@ -226,7 +226,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
             box
         }
         .menuStyle(.button)
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
         .menuIndicator(.hidden)
         .focusEffectDisabled()
         // One element, deliberately (the AlertBanner/LedgerRow idiom): a `Menu` publishes its own

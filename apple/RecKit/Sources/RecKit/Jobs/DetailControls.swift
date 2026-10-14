@@ -132,7 +132,7 @@ struct DetailMoreMenu: View {
             BlueprintIconLabel("ellipsis.circle")
         }
         .menuIndicator(.hidden)
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("More")))
@@ -255,7 +255,7 @@ public struct FindBar: View {
                     .contentShape(Rectangle())
                     .blueprintFocusRing()
             }
-            .buttonStyle(.plain)
+            .buttonStyle(BlueprintPressStyle())
             .focusEffectDisabled()
             .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Close search")))
             .accessibilityIdentifier("find-close")
@@ -276,7 +276,7 @@ public struct FindBar: View {
                 .contentShape(Rectangle())
                 .blueprintFocusRing()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
         .disabled(count < 2)
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized(label)))
