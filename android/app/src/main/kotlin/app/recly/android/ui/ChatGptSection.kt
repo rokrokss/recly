@@ -31,7 +31,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDirection
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -118,7 +117,7 @@ fun ChatGptSection() {
     if (ui.signingIn) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.chatgpt_finish_in_browser), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
@@ -128,7 +127,7 @@ fun ChatGptSection() {
     }
     ui.failure?.let { reason ->
         // A failure in the failure colour; under it what OpenAI or the core said, as it came.
-        Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
             Text(stringResource(R.string.chatgpt_sign_in_failed), style = MaterialTheme.typography.bodySmall, color = palette.danger)
             val spoken = spokenReason(reason)
             if (spoken != null) {

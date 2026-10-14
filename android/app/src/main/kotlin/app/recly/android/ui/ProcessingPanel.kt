@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -53,6 +52,7 @@ import recly.core.transcribe.TranscriptionLanguages
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.workflow.InvokeUrlUse
 import recly.core.workflow.WorkflowParser
+import app.recly.android.ui.component.focusRing
 
 @Composable
 fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
@@ -82,7 +82,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     // One block of the section table, as the theme chips and the about lines are: the table's
     // surface, its insets, and its rule under it.
     Column(
-        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = 12.dp),
+        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.sm),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         val draft = state.draft
@@ -219,7 +219,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 SectionHeader(stringResource(R.string.processing_other_keys))
                 // docs/09 screen principle 8: an action that belongs to one item sits at the end of its row.
                 others.forEach { name ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
                         Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
                         BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.DANGER, minWidth = MinTouch)
                     }
@@ -386,13 +386,14 @@ private fun VocabularyChip(term: String, onRemove: () -> Unit) {
     val palette = blueprint
     val remove = stringResource(R.string.vocabulary_remove, term)
     Row(
-        Modifier.border(palette.line, palette.grid, androidx.compose.foundation.shape.RoundedCornerShape(app.recly.android.ui.theme.Radius.node))
+        // docs/09 "Component measurements": a chip's edge is the input border — the grid is decoration only.
+        Modifier.border(palette.line, palette.inputBorder, androidx.compose.foundation.shape.RoundedCornerShape(app.recly.android.ui.theme.Radius.node))
             .padding(start = Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(term, style = MaterialTheme.typography.labelLarge, color = palette.text)
         Box(
-            Modifier.size(MinTouch).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onRemove)
+            Modifier.size(MinTouch).focusRing(palette).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onRemove)
                 .semantics { contentDescription = remove },
             contentAlignment = Alignment.Center,
         ) { Text("×", style = MaterialTheme.typography.labelLarge, color = palette.textMuted, modifier = Modifier.clearAndSetSemantics {}) }
@@ -408,7 +409,7 @@ private fun VocabularyChip(term: String, onRemove: () -> Unit) {
 private fun ProcessingRow(title: String, trailing: @Composable () -> Unit) {
     Row(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = MinTouch),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Space.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
@@ -470,7 +471,7 @@ private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save
     var value by remember(name) { mutableStateOf("") }
     var replacing by remember(name) { mutableStateOf(false) }
     if (name.isNotBlank() && name in saved && !replacing) {
-        Row(Modifier.fillMaxWidth().padding(vertical = Space.s), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Space.s), horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(label), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
             Text("${stringResource(R.string.action_done)} ${stringResource(R.string.processing_key_on_device)}",
                 style = MaterialTheme.typography.bodyMedium, color = blueprint.success)

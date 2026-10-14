@@ -79,9 +79,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * docs/09 "Accessibility": nothing to recreate — the theme is read in the composition, so the store
-     * emitting the new value is the whole of the change (the language's activity recreation is
-     * `setLanguage`'s, and only its).
+     * docs/09 "Accessibility": the theme is read in the composition, so the store emitting the new value redraws
+     * the screen. `RecApp` also hands it to the system (`setApplicationNightMode`) for the launch window, and the
+     * system recreates the activity for that; the screens' state survives it as it does a rotation.
      */
     fun setTheme(value: AppTheme) {
         viewModelScope.launch { settings.setTheme(value) }

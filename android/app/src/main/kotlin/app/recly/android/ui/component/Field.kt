@@ -44,6 +44,9 @@ import app.recly.android.ui.theme.blueprint
  * [modifier] is the whole block's (a `weight` goes here); [fieldModifier] is the editable text's own
  * (its test tag). [supporting] is a quiet line under the box. One line by default; [maxLines] above one makes a
  * box that starts [minLines] tall, grows with the text up to [maxLines] and then scrolls.
+ *
+ * docs/09 "Component measurements": the text is inset 12 × 8. [leading] (the list's search glyph) and [trailing]
+ * (its clear) sit inside the border but outside that inset, so a 48dp clear appearing does not make the box taller.
  */
 @Composable
 fun BlueprintField(
@@ -61,6 +64,8 @@ fun BlueprintField(
     minLines: Int = 1,
     maxLines: Int = 1,
     enabled: Boolean = true,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
     var focused by remember { mutableStateOf(false) }
@@ -93,16 +98,19 @@ fun BlueprintField(
                         .defaultMinSize(minHeight = MinTouch)
                         .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, shape)
                         .background(palette.surface, shape)
-                        .padding(horizontal = Space.s, vertical = if (maxLines == 1) 0.dp else Space.s),
+                        .padding(start = Space.sm, end = if (trailing != null) 0.dp else Space.sm),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.weight(1f)) {
+                    leading?.invoke()
+                    Box(Modifier.weight(1f).padding(vertical = Space.s)) {
                         // A placeholder longer than the box ends in "…" rather than mid-sentence.
                         if (value.isEmpty() && placeholder != null) {
                             Text(placeholder, style = textStyle, color = palette.textMuted, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
                         }
                         field()
                     }
+                    trailing?.invoke()
                 }
             },
         )

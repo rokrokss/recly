@@ -37,10 +37,16 @@ object WearBlueprint {
     val nodeEdge: Dp = 3.dp
     val radius: Dp = 4.dp
 
-    /** docs/09 "Typography": the watch is small enough that the scale stops at 34. */
+    /** docs/09 "Shape": half a node — the small filled squares inside the record and highlight nodes. */
+    val badge: Dp = 2.dp
+
+    /**
+     * docs/09 "Typography": the watch is small enough that the scale stops at 34 — and nothing is under 12, at the
+     * 227dp layout basis a smaller face scales as a whole.
+     */
     val timer: TextStyle = mono(34f)
     val label: TextStyle = mono(13f)
-    val small: TextStyle = mono(11f)
+    val small: TextStyle = mono(12f)
 
     private fun mono(size: Float) = TextStyle(
         fontFamily = FontFamily.Monospace,

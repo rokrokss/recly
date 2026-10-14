@@ -23,6 +23,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import app.recly.wear.ui.theme.WearBlueprint
+import androidx.compose.ui.graphics.toArgb
 
 /**
  * docs/11 W5: "tap the tile → recording starts at once". The record node and at most one line of
@@ -87,7 +89,7 @@ class RecTileService : TileService() {
             .setPrimaryLabelTextContent(
                 Text.Builder(this, getString(R.string.app_name))
                     .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                    .setColor(argb(0xFFB0B0B0.toInt()))
+                    .setColor(argb(MUTED))
                     .build(),
             )
             .setContent(content.build())
@@ -109,7 +111,7 @@ class RecTileService : TileService() {
                     .setBackground(
                         ModifiersBuilders.Background.Builder()
                             .setColor(argb(if (recording) BACKGROUND else DANGER))
-                            .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(2f)).build())
+                            .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(WearBlueprint.badge.value)).build())
                             .build(),
                     )
                     .build(),
@@ -176,9 +178,11 @@ class RecTileService : TileService() {
         const val INNER = 18f
         const val EDGE = 3f
         const val RADIUS = 4f
-        const val DANGER = 0xFFFA4D56.toInt()
-        const val BACKGROUND = 0xFF0E0F12.toInt()
-        const val TEXT = 0xFFF2F2F0.toInt()
+        // docs/09 "Tokens": the watch palette itself, not a copy of its hex.
+        val DANGER = WearBlueprint.danger.toArgb()
+        val BACKGROUND = WearBlueprint.background.toArgb()
+        val TEXT = WearBlueprint.text.toArgb()
+        val MUTED = WearBlueprint.textMuted.toArgb()
         const val CLICK_START = "start"
         const val FRESHNESS_MILLIS = 60_000L
     }

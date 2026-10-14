@@ -120,6 +120,9 @@ import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
 import kotlinx.coroutines.delay
 import recly.core.transcribe.TranscriptAvailability
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
 
 /**
  * What the detail can do beyond reading — the More menu, Share, the editor, playback speed and the
@@ -747,13 +750,17 @@ internal fun Waveform(
     // it says it, because that is what the playhead is.
     val label = stringResource(R.string.player_position)
     val stamp = hms(positionSec.toLong())
+    // docs/09 "Disabled, focus and structure": times, the waveform and its ticks run left to right in every
+    // language. The bars are drawn at absolute x, so the tick targets below are laid out left to right as
+    // well — in Arabic, Persian and Urdu a mirrored `offset` put each target on the other side from its tick.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
     Box(Modifier.fillMaxWidth()) {
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
             .height(MinTouch)
             .testTag("waveform")
-            .border(if (focused) 2.dp else 0.dp, if (focused) palette.accent else androidx.compose.ui.graphics.Color.Transparent)
+            .border(if (focused) palette.selectedLine else 0.dp, if (focused) palette.accent else androidx.compose.ui.graphics.Color.Transparent)
             .onFocusChanged { focused = it.isFocused }
             .semantics {
                 contentDescription = label
@@ -868,6 +875,7 @@ internal fun Waveform(
                 )
             }
         }
+    }
     }
     }
 }

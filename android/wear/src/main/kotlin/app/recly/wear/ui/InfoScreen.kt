@@ -26,6 +26,8 @@ import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import app.recly.wear.R
 import app.recly.wear.ui.theme.WearBlueprint
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.compose.foundation.BorderStroke
 
 /**
  * docs/11 W5 "setup guide screen", and text is deliberately all it is. Both things the user has to do
@@ -61,13 +63,16 @@ fun InfoScreen(onBack: () -> Unit) {
             sections.forEach { (title, body) -> section(title, body, inset) }
             item {
                 Spacer(Modifier.height(8.dp))
-                // docs/09 "Shape": square on the theme's 4dp, like every other control on the watch.
+                // docs/09 "Shape": square on the theme's 4dp, like every other control on the watch — and outlined
+                // in the input border's level like the record screen's Help, not a filled accent block.
                 Button(
                     onClick = onBack,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = inset),
                     shape = RoundedCornerShape(WearBlueprint.radius),
+                    colors = ButtonDefaults.outlinedButtonColors(),
+                    border = BorderStroke(WearBlueprint.line, WearBlueprint.textMuted),
                     label = { Text(stringResource(R.string.info_back)) },
                 )
             }

@@ -79,6 +79,7 @@ import recly.core.recording.ExportFormat
 import recly.core.transcribe.SttProviders
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptNormalizer
+import app.recly.android.ui.component.focusRing
 
 /** What the More menu can do for this page, and why not where it cannot (docs/09 "Detail header and More menu"). */
 internal class MoreActions(
@@ -280,14 +281,16 @@ private fun ShareLine(
         modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 56.dp)
+            .focusRing(palette)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Space.m, vertical = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.m),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GlyphIcon(glyph, if (enabled) palette.textMuted else palette.grid)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) palette.text else palette.textMuted)
+        // docs/09 "Disabled, focus and structure": a disabled line draws in `disabled`, never in the grid.
+        GlyphIcon(glyph, if (enabled) palette.textMuted else palette.disabled)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) palette.text else palette.disabled)
             secondary?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
         }
         trailing()
@@ -334,6 +337,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
         Box(
             Modifier
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+                .focusRing(palette, Radius.node)
                 .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
                 .clickable(role = Role.Button) { open = true }
                 .clearAndSetSemantics { contentDescription = description }
@@ -356,6 +360,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .focusRing(palette)
                     .toggleable(value = skipSilence, role = Role.Switch, onValueChange = onSkipSilence)
                     .padding(horizontal = Space.m),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),

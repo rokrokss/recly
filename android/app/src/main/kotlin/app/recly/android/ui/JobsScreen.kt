@@ -8,11 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.remember
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -26,17 +23,13 @@ import app.recly.android.ui.component.GlyphIcon
 import recly.core.recording.SearchHit
 import recly.core.recording.SearchRange
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -45,13 +38,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,10 +52,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.Hyphens
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
@@ -86,13 +72,10 @@ import app.recly.android.ui.component.LedgerStatus
 import app.recly.android.ui.component.ProcessingButton
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.ui.component.ScreenHeader
-import app.recly.android.ui.component.StatusBadge
 import app.recly.android.ui.component.ink
 import app.recly.android.ui.component.ledgerColumns
 import app.recly.android.ui.component.ledgerLayout
-import app.recly.android.ui.component.statusColumnWidth
 import app.recly.android.ui.theme.MinTouch
-import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
@@ -106,6 +89,11 @@ import kotlin.time.ExperimentalTime
 import recly.core.job.StepReport
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import app.recly.android.ui.component.focusRing
+import app.recly.android.ui.component.BlueprintField
+import app.recly.android.ui.component.MessageBanner
+import app.recly.android.ui.component.AlertLine
+import app.recly.android.ui.component.EmptyList
 
 /**
  * docs/11 A4, drawn as docs/09 screen principle 2 asks: a ledger. One row per recording — when, what, how
@@ -215,29 +203,21 @@ fun JobsScreen(
                 // A list of one page-sized item, so the pull reaches it however little is in it.
                 LazyColumn(Modifier.fillMaxSize()) {
                     item {
-                        Column(
-                            modifier = Modifier.fillParentMaxSize().padding(Space.l),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            if (state.loading) {
+                        if (state.loading) {
+                            Column(
+                                modifier = Modifier.fillParentMaxSize().padding(Space.l),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
                                 Text(stringResource(R.string.list_loading), color = palette.textMuted)
-                            } else {
-                                // docs/09 screen principle 8: no button here — the tab bar right below already says Record.
-                                Text(
-                                    stringResource(R.string.jobs_empty),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = palette.text,
-                                    textAlign = TextAlign.Center,
-                                )
-                                Text(
-                                    stringResource(R.string.jobs_empty_hint),
-                                    modifier = Modifier.padding(top = Space.xs),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = palette.textMuted,
-                                    textAlign = TextAlign.Center,
-                                )
                             }
+                        } else {
+                            // docs/09 screen principle 8: no button here — the tab bar right below already says Record.
+                            EmptyList(
+                                title = stringResource(R.string.jobs_empty),
+                                hint = stringResource(R.string.jobs_empty_hint),
+                                modifier = Modifier.fillParentMaxSize(),
+                            )
                         }
                     }
                 }
@@ -363,7 +343,7 @@ private fun ExpandedRow(
             .background(palette.background)
             // From the row's own leading gutter, as on the iPhone (2026-10-12): past the time column a done
             // row's three buttons do not always fit one line, and Delete went to a line of its own.
-            .padding(start = Space.m, end = Space.m, top = Space.s, bottom = 12.dp),
+            .padding(start = Space.m, end = Space.m, top = Space.s, bottom = Space.sm),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
@@ -383,7 +363,7 @@ private fun ExpandedRow(
         // A recording waiting for the model says nothing of it while the download runs: the banner
         // carries the progress, and "not downloaded yet" would be wrong a minute later.
         item.error?.takeIf { item.state != ItemState.NEEDS_AUTH && !(item.state == ItemState.NEEDS_MODEL && download.active) }?.let { error ->
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(
                     coreMessage(error).text(),
                     style = MaterialTheme.typography.bodySmall,
@@ -583,104 +563,6 @@ private fun AlertBanner(
             }
         }
         HairLine()
-    }
-}
-
-/**
- * One reason: what it is, how many recordings are behind it, the code (none for the Drive wait), and what
- * to press — the iPhone's `AlertLine`. On a phone the sentence has the row's whole width and the code and
- * the button sit under it, at the end (N5, UX decisions of 2026-10-11): beside it, they squeezed a
- * sentence such as the quota's to a few words a line. A wider window keeps them beside it, in at most
- * half the row, folding onto a second line there when they do not fit side by side, so a long code such
- * as `LOCAL_TRANSCRIPTION_UNAVAILABLE` never squeezes the sentence to a word per line. Either way a word
- * too long for its line breaks at a hyphen, not anywhere (N2).
- */
-@Composable
-private fun AlertLine(
-    code: String?,
-    lines: @Composable ColumnScope.() -> Unit,
-    tone: BadgeTone = BadgeTone.WARNING,
-    description: String? = null,
-    onClick: (() -> Unit)? = null,
-    action: @Composable () -> Unit,
-) {
-    val sentence = Modifier
-        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-        .then(
-            if (description != null) {
-                Modifier.semantics(mergeDescendants = true) { contentDescription = description }
-            } else {
-                Modifier
-            },
-        )
-    val trailing: @Composable () -> Unit = {
-        code?.let { StatusBadge(LedgerStatus(it, tone)) }
-        action()
-    }
-    CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(hyphens = Hyphens.Auto)) {
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
-            if (maxWidth + Space.m * 2 < PHONE_WIDTH) {
-                Column(Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = sentence.fillMaxWidth().padding(vertical = Space.s),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        content = lines,
-                    )
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Space.s),
-                        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-                        verticalArrangement = Arrangement.spacedBy(Space.xs),
-                        itemVerticalAlignment = Alignment.CenterVertically,
-                    ) { trailing() }
-                }
-                return@BoxWithConstraints
-            }
-            // Half the row, or the code's own width where that is more: a code is never cut.
-            val half = maxOf(maxWidth / 2, code?.let { statusColumnWidth(listOf(it)) } ?: 0.dp)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = sentence.weight(1f).padding(vertical = Space.s),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    content = lines,
-                )
-                FlowRow(
-                    modifier = Modifier.widthIn(max = half).padding(vertical = Space.s),
-                    horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(Space.xs),
-                    itemVerticalAlignment = Alignment.CenterVertically,
-                ) { trailing() }
-            }
-        }
-    }
-}
-
-/** A window narrower than this is a phone's (the compact width class): the banner stacks its lines. */
-private val PHONE_WIDTH = 600.dp
-
-/**
- * What the last delete or retry had to say, as the iPhone's warning banner: the sentence in the
- * warning's ink on the surface, inside the warning's edge. A tap puts it away.
- */
-@Composable
-private fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = blueprint
-    val shape = RoundedCornerShape(Radius.node)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = MinTouch)
-            .background(palette.surface, shape)
-            .border(palette.line, palette.warning, shape)
-            .clickable(onClickLabel = stringResource(R.string.action_close), onClick = onDismiss)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .testTag("message"),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(text, style = MaterialTheme.typography.bodySmall, color = palette.warningInk)
     }
 }
 
@@ -962,44 +844,23 @@ private const val EMPTY_LENGTH = "--:--"
 private fun duration(seconds: Double): String = clock(seconds.toLong())
 
 /**
- * docs/09 "Search": the field at the top of the list — the input border, a leading search glyph, and a clear
- * at the end once there is something to clear.
+ * docs/09 "Search": the field at the top of the list — the settings' own [BlueprintField], with a leading search
+ * glyph and a clear at the end once there is something to clear. The placeholder ends in "…" where a long
+ * language does not fit — never cut mid-word.
  */
 @Composable
 private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modifier = Modifier) {
-    val palette = blueprint
-    var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(Radius.node)
-    BasicTextField(
+    BlueprintField(
         value = query,
         onValueChange = onQuery,
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text),
-        cursorBrush = SolidColor(palette.accent),
-        modifier = modifier
-            .fillMaxWidth()
-            .onFocusChanged { focused = it.isFocused }
-            .testTag("search-field"),
-        decorationBox = { field ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = MinTouch)
-                    .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, shape)
-                    .background(palette.surface, shape)
-                    .padding(start = Space.s),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-            ) {
-                GlyphIcon(Glyph.SEARCH, palette.textMuted, size = 20.dp)
-                Box(Modifier.weight(1f)) {
-                    // One line, ended in "…" where a long language does not fit — never cut mid-word.
-                    if (query.isEmpty()) Text(stringResource(R.string.search_placeholder), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    field()
-                }
-                if (query.isNotEmpty()) GlyphButton(Glyph.CLOSE, stringResource(R.string.transcript_clear_search), { onQuery("") }, Modifier.testTag("search-clear"))
-            }
+        modifier = modifier.fillMaxWidth(),
+        placeholder = stringResource(R.string.search_placeholder),
+        fieldModifier = Modifier.testTag("search-field"),
+        leading = { GlyphIcon(Glyph.SEARCH, blueprint.textMuted, size = 20.dp) },
+        trailing = if (query.isNotEmpty()) {
+            { GlyphButton(Glyph.CLOSE, stringResource(R.string.transcript_clear_search), { onQuery("") }, Modifier.testTag("search-clear")) }
+        } else {
+            null
         },
     )
 }
@@ -1023,14 +884,10 @@ private fun SearchResults(
         return
     }
     if (hits.isEmpty()) {
-        Column(modifier.padding(Space.l), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.search_empty), style = MaterialTheme.typography.bodyMedium, color = palette.text, textAlign = TextAlign.Center)
-            Text(stringResource(R.string.search_empty_hint), Modifier.padding(top = Space.xs), style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted, textAlign = TextAlign.Center)
-        }
+        EmptyList(stringResource(R.string.search_empty), stringResource(R.string.search_empty_hint), modifier)
         return
     }
-    val tint = palette.accent.copy(alpha = 0.16f)
+    val tint = palette.accent.copy(alpha = MATCH_TINT)
     LazyColumn(modifier.testTag("search-results")) {
         items(hits, key = { it.recordingId }) { hit ->
             val title = hit.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.jobs_untitled)
@@ -1039,8 +896,9 @@ private fun SearchResults(
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .focusRing(palette)
                         .clickable(role = Role.Button) { onOpen(hit) }
-                        .padding(horizontal = Space.m, vertical = 12.dp)
+                        .padding(horizontal = Space.m, vertical = Space.sm)
                         .testTag("hit-${hit.recordingId}"),
                     horizontalArrangement = Arrangement.spacedBy(Space.s),
                 ) {

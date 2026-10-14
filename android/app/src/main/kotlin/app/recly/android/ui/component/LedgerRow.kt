@@ -1,5 +1,8 @@
 package app.recly.android.ui.component
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.recly.android.ui.theme.LocalReduceMotion
+import app.recly.android.ui.theme.Motion
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
@@ -188,6 +193,7 @@ fun LedgerRow(
         // are on the body, and the two layouts below only rearrange what it wraps.
         val body = Modifier
             .fillMaxWidth()
+            .focusRing(palette)
             .clickable(onClick = onClick)
             .semantics(mergeDescendants = true) {
                 contentDescription = announce
@@ -198,7 +204,8 @@ fun LedgerRow(
                     expand(label = toggleLabel) { onClick(); true }
                 }
             }
-            .padding(horizontal = Space.m, vertical = 12.dp)
+            // docs/09 "Component measurements": 12 top and bottom.
+            .padding(horizontal = Space.m, vertical = Space.sm)
         when (layout) {
             LedgerLayout.COLUMNS -> Row(
                 modifier = body,
@@ -283,9 +290,21 @@ private fun LengthCell(length: String, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * docs/09 "Motion" · "Component measurements": a badge whose state changes fades to the new one in 150 ms — with
+ * reduce motion it is swapped at once, and the word itself is the state either way.
+ */
 @Composable
 private fun StatusCell(status: LedgerStatus, modifier: Modifier = Modifier) {
-    Box(modifier.clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-        StatusBadge(status)
+    val reduce = LocalReduceMotion.current
+    Crossfade(
+        targetState = status,
+        modifier = modifier.clearAndSetSemantics {},
+        animationSpec = if (reduce) snap() else tween(Motion.BADGE_FADE_MS, easing = Motion.Standard),
+        label = "badge",
+    ) { shown ->
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            StatusBadge(shown)
+        }
     }
 }
