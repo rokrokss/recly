@@ -566,5 +566,10 @@
   "{0} failed": "{0} thất bại",
   "Something went wrong at the provider.": "Đã xảy ra lỗi ở phía nhà cung cấp.",
   "Open data folder": "Mở thư mục dữ liệu",
-  "Recording, {0}": "Đang ghi, {0}"
+  "Recording, {0}": "Đang ghi, {0}",
+  "Fill in titles": "Tự điền tiêu đề",
+  "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Khi thiết bị này chép lời một bản ghi chưa có tiêu đề, bản chép lời được gửi tới ChatGPT để đặt tiêu đề. Việc này được tính vào mức sử dụng ChatGPT của bạn.",
+  "Fill in speaker names": "Tự điền tên người nói",
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Khi thiết bị này chép lời một bản ghi, bản chép lời được gửi tới ChatGPT để đặt tên cho những người nói được gọi tên trong đó. Việc này được tính vào mức sử dụng ChatGPT của bạn.",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Khi bật Tự điền tiêu đề hoặc Tự điền tên người nói, bản chép lời của mỗi bản ghi mà iPhone này chép lời cũng được gửi tới đây."
 }

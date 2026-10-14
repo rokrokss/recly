@@ -566,5 +566,10 @@
   "{0} failed": "{0} nabigo",
   "Something went wrong at the provider.": "May nangyaring mali sa provider.",
   "Open data folder": "Buksan ang data folder",
-  "Recording, {0}": "Nagre-record, {0}"
+  "Recording, {0}": "Nagre-record, {0}",
+  "Fill in titles": "Kusang lagyan ng pamagat",
+  "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Kapag nag-transcribe ang device na ito ng recording na walang pamagat, ipinapadala ang transcript sa ChatGPT para sa pamagat. Kasama ito sa paggamit mo ng ChatGPT.",
+  "Fill in speaker names": "Kusang lagyan ng pangalan ang mga nagsasalita",
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Kapag nag-transcribe ang device na ito ng recording, ipinapadala ang transcript sa ChatGPT para pangalanan ang mga nagsasalitang tinatawag sa pangalan dito. Kasama ito sa paggamit mo ng ChatGPT.",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Kapag naka-on ang Kusang lagyan ng pamagat o Kusang lagyan ng pangalan ang mga nagsasalita, ipinapadala rin dito ang transcript ng bawat recording na tina-transcribe ng iPhone na ito."
 }

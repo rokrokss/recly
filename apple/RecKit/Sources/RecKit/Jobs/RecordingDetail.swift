@@ -1214,7 +1214,7 @@ public struct RecordingDetailView: View {
         // docs/15 "iPhone providers": the transcript goes to OpenAI only once the user has allowed it — asked
         // here, or in the Ask sheet when the question came from there.
         .blueprintDialogOverlay(isPresented: Binding(get: { !asking && !model.summaryConsent.isEmpty }, set: { _ in })) {
-            SummaryConsentDialog(model: model, trainingOff: $trainingOff, answer: answerSummaryConsent)
+            SummaryConsentDialog(targets: model.summaryConsent, trainingOff: $trainingOff, answer: answerSummaryConsent)
         }
         .sheet(isPresented: $sharing) { DetailShareSheet(model: model) }
         // docs/09 "Ask": a full-height sheet of its own, presented from a node of its own — the page already
@@ -1223,7 +1223,7 @@ public struct RecordingDetailView: View {
             Color.clear.sheet(isPresented: $asking, onDismiss: closeAsk) {
                 AskFrame(close: { asking = false }) { askPanel }
                     .blueprintDialogOverlay(isPresented: Binding(get: { !model.summaryConsent.isEmpty }, set: { _ in })) {
-                        SummaryConsentDialog(model: model, trainingOff: $trainingOff, answer: answerSummaryConsent)
+                        SummaryConsentDialog(targets: model.summaryConsent, trainingOff: $trainingOff, answer: answerSummaryConsent)
                     }
                     .presentationDetents([.large])
                     // 2026-10-10 (1.4): an answer, or a question still being answered, is not thrown away by a

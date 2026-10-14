@@ -219,6 +219,50 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertEqual(last.aboutMe, "PM, deadlines")
     }
 
+    /// docs/08 "Titles and speaker names": the switches are off until turned on, save at once — signed out too, on
+    /// the Mac with nothing to ask — and stay as they are when the format or About you changes.
+    func testTheFillSwitchesSaveAndSurviveTheOtherPreferences() async throws {
+        let bridge = try await bridge()
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertFalse(model.preferences.autoTitle)
+        XCTAssertFalse(model.preferences.autoSpeakers)
+
+        model.setAutoTitle(true)
+        try await until { model.preferences.autoTitle }
+        XCTAssertTrue(model.fillConsent.isEmpty, "the Mac never asks")
+        model.setAutoSpeakers(true)
+        try await until { model.preferences.autoSpeakers }
+        var saved = try await bridge.core.summaries.preferences()
+        XCTAssertTrue(saved.autoTitle)
+        XCTAssertTrue(saved.autoSpeakers)
+
+        model.selectFormat(.lecture)
+        model.aboutMe = "PM"
+        model.savePreferences()
+        try await until { model.preferences.aboutMe == "PM" && model.preferences.format == .lecture }
+        XCTAssertTrue(model.preferences.autoTitle)
+        XCTAssertTrue(model.preferences.autoSpeakers)
+        saved = try await bridge.core.summaries.preferences()
+        XCTAssertEqual(saved.format, .lecture)
+        XCTAssertEqual(saved.aboutMe, "PM")
+        XCTAssertTrue(saved.autoTitle)
+        XCTAssertTrue(saved.autoSpeakers)
+
+        // Off at once, the other one left as it was.
+        model.setAutoTitle(false)
+        XCTAssertFalse(model.preferences.autoTitle, "off is shown at once")
+        var last = try await bridge.core.summaries.preferences()
+        for _ in 0..<200 where last.autoTitle {
+            try await Task.sleep(for: .milliseconds(25))
+            last = try await bridge.core.summaries.preferences()
+        }
+        XCTAssertFalse(last.autoTitle)
+        XCTAssertTrue(last.autoSpeakers)
+        XCTAssertEqual(last.format, .lecture)
+        XCTAssertEqual(last.aboutMe, "PM")
+    }
+
     private func bridge() async throws -> CoreBridge {
         try await CoreBridge.make(
             deviceName: "ChatGptSettingsTests", dataDirectory: directory,
@@ -496,6 +540,66 @@ final class SummaryTransferTests: XCTestCase {
         XCTAssertTrue(model.summaryConsent.isEmpty)
         let state = try await bridge.core.summaries.state(recordingId: model.recordingId)
         XCTAssertTrue(state is SummaryState.Failed, "\(state)")
+    }
+
+    /// docs/08 "Titles and speaker names": on the iPhone a fill-in switch asks for the ChatGPT permission before it
+    /// goes on — declined, it stays off; allowed, it goes on, and the other one then goes on without asking again.
+    func testTheIPhoneAsksBeforeAFillSwitchGoesOn() async throws {
+        let bridge = try await CoreBridge.make(
+            platform: .ios, deviceName: "Test iPhone",
+            dataDirectory: directory, databaseName: "fill-consent.db", secureStore: InMemorySecureStore(),
+            transcriptionPolicy: TranscriptionPolicy(region: nil)
+        )
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        let chatGpt = TransferTargets.shared.chatGptSummary()
+        // The saved preferences arrive first, as they do long before anyone reaches a switch.
+        try await Task.sleep(for: .milliseconds(300))
+
+        model.setAutoTitle(true)
+        try await until { !model.fillConsent.isEmpty }
+        XCTAssertEqual(model.fillConsent.map(\.id), [chatGpt.id])
+        XCTAssertFalse(model.preferences.autoTitle, "nothing goes on before the answer")
+
+        await model.answerFillConsent(allow: false)
+        XCTAssertTrue(model.fillConsent.isEmpty)
+        XCTAssertFalse(model.preferences.autoTitle)
+        let still = try await bridge.core.transferConsents.missing(targets: [chatGpt])
+        XCTAssertEqual(still.count, 1)
+        let declined = try await bridge.core.summaries.preferences()
+        XCTAssertFalse(declined.autoTitle)
+
+        model.setAutoSpeakers(true)
+        try await until { !model.fillConsent.isEmpty }
+        XCTAssertFalse(model.preferences.autoSpeakers)
+        await model.answerFillConsent(allow: true)
+        try await until { model.preferences.autoSpeakers }
+        XCTAssertTrue(model.fillConsent.isEmpty)
+        let missing = try await bridge.core.transferConsents.missing(targets: [chatGpt])
+        XCTAssertTrue(missing.isEmpty)
+
+        model.setAutoTitle(true)
+        try await until { model.preferences.autoTitle }
+        XCTAssertTrue(model.fillConsent.isEmpty, "allowed once is allowed")
+        var saved = try await bridge.core.summaries.preferences()
+        for _ in 0..<200 where !saved.autoTitle {
+            try await Task.sleep(for: .milliseconds(25))
+            saved = try await bridge.core.summaries.preferences()
+        }
+        XCTAssertTrue(saved.autoTitle)
+        XCTAssertTrue(saved.autoSpeakers)
+
+        // Off never asks.
+        model.setAutoSpeakers(false)
+        XCTAssertFalse(model.preferences.autoSpeakers)
+        XCTAssertTrue(model.fillConsent.isEmpty)
+    }
+
+    private func until(_ condition: () -> Bool) async throws {
+        for _ in 0..<200 {
+            if condition() { return }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTFail("timed out")
     }
 }
 

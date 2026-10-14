@@ -203,10 +203,10 @@ struct AskFrame<Content: View>: View {
     }
 }
 
-/// docs/15 "iPhone providers": the permission a summary or a question waits on — drawn where the user is, the
-/// detail or the Ask sheet over it.
+/// docs/15 "iPhone providers": the permission a summary, a question or a fill-in switch waits on — drawn where the
+/// user is, the detail, the Ask sheet over it, or Settings → ChatGPT.
 struct SummaryConsentDialog: View {
-    @ObservedObject var model: RecordingDetailModel
+    let targets: [TransferTarget]
     @Binding var trainingOff: Bool
     let answer: (Bool) -> Void
     @Environment(\.locale) private var locale
@@ -215,10 +215,10 @@ struct SummaryConsentDialog: View {
         BlueprintDialog(title: RecKitStrings.localized("Transfer permission needed")) {
             BlueprintButton(RecKitStrings.localized("Cancel"), tone: .quiet, minWidth: minTouch) { answer(false) }
             BlueprintButton(RecKitStrings.localized("Allow transfers and continue"), tone: .primary) { answer(true) }
-                .disabled(TrainingOptOut.required(model.summaryConsent) && !trainingOff)
+                .disabled(TrainingOptOut.required(targets) && !trainingOff)
                 .accessibilityIdentifier("summary-allow-transfer")
         } content: {
-            TransferDisclosureList(targets: model.summaryConsent, trainingOff: $trainingOff)
+            TransferDisclosureList(targets: targets, trainingOff: $trainingOff)
         }
     }
 }
