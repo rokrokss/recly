@@ -175,6 +175,11 @@ fun RecordingDetailScreen(
     onReload: () -> Unit,
     modifier: Modifier = Modifier,
     actions: DetailActions = DetailActions(),
+    /**
+     * D7: what an editor on this page holds that is not saved — the discard question's body, or null when
+     * nothing — so a way out of the page that is not this page's own Back can ask first.
+     */
+    onUnsaved: (Int?) -> Unit = {},
 ) {
     // One player per recording: opening another one releases the one this was playing, and so does
     // leaving the page. Nothing keeps playing behind a screen nobody is looking at.
@@ -339,6 +344,15 @@ fun RecordingDetailScreen(
         if (summaryDraft?.changed == true) summaryLeaving = to else { summaryDraft = null; view = to }
     }
     BackHandler(enabled = summaryDraft != null) { leaveSummaryEditor(DetailView.SUMMARY) }
+    // D7: the tabs, the List tab tapped again and every other way off the page ask the same question Back does.
+    val unsaved = when {
+        draft?.changed == true -> R.string.edit_discard_body
+        summaryDraft?.changed == true -> R.string.summary_discard_body
+        else -> null
+    }
+    val reportUnsaved by rememberUpdatedState(onUnsaved)
+    LaunchedEffect(unsaved) { reportUnsaved(unsaved) }
+    DisposableEffect(Unit) { onDispose { reportUnsaved(null) } }
     summaryLeaving?.let { to ->
         DiscardDialog(onKeep = { summaryLeaving = null }, onDiscard = { summaryLeaving = null; summaryDraft = null; view = to },
             body = R.string.summary_discard_body)
@@ -506,7 +520,10 @@ fun RecordingDetailScreen(
                             }
                         },
                         onSpeaker = { speakerMenu = it },
-                        speakersEnabled = savingGroup == null,
+                        // D13: nor while a job of this recording may still rewrite the transcript — the reason is
+                        // the More menu's own for Edit transcript (`Transcribing…` while one really runs).
+                        speakersEnabled = savingGroup == null && !detail.transcribing,
+                        speakersReason = if (detail.transcribing) stringResource(detail.busyReason) else null,
                         speakerMenuFor = speakerMenu?.index,
                         speakerMenu = {
                             speakerMenu?.let { group ->

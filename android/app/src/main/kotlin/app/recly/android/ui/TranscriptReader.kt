@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -120,6 +121,8 @@ internal fun TranscriptReader(
     onSpeaker: (ReaderGroup) -> Unit = {},
     /** False while a speaker change saves: the badges wait for it rather than start a second one. */
     speakersEnabled: Boolean = true,
+    /** Why the badges are disabled, when it is not a save of their own — said by each badge to a screen reader. */
+    speakersReason: String? = null,
     /** The group whose speaker menu is open, and the menu — drawn beside its badge so it opens there. */
     speakerMenuFor: Int? = null,
     speakerMenu: @Composable () -> Unit = {},
@@ -199,7 +202,8 @@ internal fun TranscriptReader(
                         }
                         if (group.speaker.isNotEmpty()) Box {
                             SpeakerBadge(speakerLabel(transcript, group.speaker, me), named = speakerIsWord(transcript, group.speaker),
-                                onClick = { onSpeaker(group) }, enabled = speakersEnabled, modifier = Modifier.testTag("transcript-speaker-${group.index}"))
+                                onClick = { onSpeaker(group) }, enabled = speakersEnabled, modifier = Modifier.testTag("transcript-speaker-${group.index}"),
+                                reason = speakersReason.takeUnless { speakersEnabled })
                             if (speakerMenuFor == group.index) speakerMenu()
                         }
                         if (savingGroup == group.index && savingLabel != null) {
@@ -232,10 +236,13 @@ private val ACTIVE_BAR = 2.dp
  * as the time button beside it, on the same centre line.
  */
 @Composable
-internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
+    /** Why it is disabled, for a screen reader; the dashed edge is what the eye gets. */
+    reason: String? = null) {
     val palette = blueprint
     Box(
         modifier
+            .then(if (reason != null) Modifier.semantics { stateDescription = reason } else Modifier)
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
             .focusRing(palette, Radius.badge)
             // docs/09 "Disabled, focus and structure": the secondary edge (`inputBorder`) while it can be tapped, and

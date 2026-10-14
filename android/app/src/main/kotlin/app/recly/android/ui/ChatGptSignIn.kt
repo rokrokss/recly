@@ -84,7 +84,11 @@ class ChatGptSignIn private constructor(private val context: Context) {
                 logger.log(Logger.Level.INFO, "shell.chatgpt.listening", mapOf("port" to receiver.port))
                 val started = account.beginSignIn(receiver.redirectUri)
                 if (!withContext(Dispatchers.Main) { open(started.authorizationUrl) }) {
+                    // D20: nothing on the phone could show the page — a failure, said as the desktops say it,
+                    // not a quiet return to Continue.
                     account.cancelSignIn()
+                    outcome = ProcessingState.FAILED
+                    _state.update { it.copy(failure = CoreMessage.PROVIDER_ERROR.code(detail = NO_BROWSER)) }
                     return@launch
                 }
                 _state.update { it.copy(signingIn = true) }
@@ -186,6 +190,9 @@ class ChatGptSignIn private constructor(private val context: Context) {
 
         /** docs/09 "Summary view": then the listener closes, as Cancel does. */
         private val TIMEOUT = 5.minutes
+
+        /** The diagnostic under "Could not sign in to ChatGPT" when no browser took the page — Windows' own words. */
+        private const val NO_BROWSER = "no browser opened"
 
         @Volatile private var instance: ChatGptSignIn? = null
 

@@ -463,4 +463,15 @@ class DisconnectGuardTest {
         assertEquals(0, result.deletedRecordings)
         assertEquals(listOf(DisconnectPhase.REVOKED_CLEANUP_OWED), written)
     }
+
+    /** D22: the line under the Drive row is red only for a failure, the warning for what the user can act on. */
+    @Test
+    fun `a failure is red, a blocker is a warning, and what happened is muted`() {
+        assertEquals(MessageTone.DANGER, DisconnectGuard.tone(UiMessage.Res(R.string.disconnect_cleanup_failed, listOf("x"))))
+        assertEquals(MessageTone.DANGER, DisconnectGuard.tone(DisconnectGuard.saveFailed))
+        assertEquals(MessageTone.WARNING, DisconnectGuard.tone(DisconnectGuard.liveBlocker(recording = true)!!))
+        assertEquals(MessageTone.WARNING, DisconnectGuard.tone(UiMessage.Res(R.string.disconnect_pending_sign_in)))
+        assertEquals(MessageTone.MUTED, DisconnectGuard.tone(UiMessage.Res(R.string.disconnect_done)))
+        assertEquals(MessageTone.MUTED, DisconnectGuard.tone(UiMessage.Text("as it came")))
+    }
 }

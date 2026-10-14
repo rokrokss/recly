@@ -155,6 +155,32 @@ class MainActivity : ComponentActivity() {
                 val recorder by recordingModel.recorder.collectAsState()
                 val jobs by jobsModel.state.collectAsState()
                 var tab by rememberSaveable { mutableStateOf(Tab.RECORD) }
+                // D7: a recording's detail with an editor holding changes ([RecordingDetailScreen]'s
+                // `onUnsaved`) — the discard question's body — and the way off the page waiting on it.
+                var unsaved by remember { mutableStateOf<Int?>(null) }
+                var leaving by remember { mutableStateOf<(() -> Unit)?>(null) }
+                // Every way off the detail goes through here — a tab, the List tab tapped again, a
+                // notification's fix, a tile's recording — and asks first while an edit is unsaved.
+                val leaveDetail: (() -> Unit) -> Unit = { go ->
+                    if (tab == Tab.JOBS && jobs.detail != null && unsaved != null) leaving = go else go()
+                }
+                val goTo: (Tab) -> Unit = { to -> if (to != tab) leaveDetail { tab = to } }
+                leaving?.let { go ->
+                    DiscardDialog(
+                        // Staying with the edit is not a recording either: a tile's request waiting
+                        // on this answer goes with it.
+                        onKeep = {
+                            leaving = null
+                            recordingModel.dropAutoStart()
+                        },
+                        onDiscard = {
+                            leaving = null
+                            unsaved = null
+                            go()
+                        },
+                        body = unsaved ?: R.string.edit_discard_body,
+                    )
+                }
                 // Leaving the tab already closes the list's open row — the list leaves composition
                 // with it. A tap on the List tab while it is showing is the one that has to say so.
                 var listTaps by remember { mutableIntStateOf(0) }
@@ -163,7 +189,7 @@ class MainActivity : ComponentActivity() {
                 // request left lying behind another tab used to be spent on whatever switch to
                 // Record came next — a recording the user had asked for minutes or hours earlier.
                 LaunchedEffect(recording.autoStart) {
-                    if (recording.autoStart != null) tab = Tab.RECORD
+                    if (recording.autoStart != null) goTo(Tab.RECORD)
                 }
                 LaunchedEffect(tab) {
                     // Leaving the Record tab forgets an auto-start the user has navigated away from —
@@ -185,7 +211,7 @@ class MainActivity : ComponentActivity() {
                 // docs/06 Android: signed in, the fix is the Drive consent itself, right here;
                 // signed out, it is the sign-in button, which lives in Settings.
                 val fixAuth = {
-                    if (state.email == null) tab = Tab.SETTINGS else model.reauthorizeDrive(this)
+                    if (state.email == null) goTo(Tab.SETTINGS) else model.reauthorizeDrive(this)
                 }
                 val goFix: (AlertReason) -> Unit = { reason ->
                     when (reason.fix) {
@@ -194,13 +220,13 @@ class MainActivity : ComponentActivity() {
                             Intent(Intent.ACTION_VIEW, DRIVE_STORAGE_URL.toUri()),
                         )
 
-                        FixSurface.SECRETS, FixSurface.PROCESSING -> { tab = Tab.SETTINGS }
+                        FixSurface.SECRETS, FixSurface.PROCESSING -> goTo(Tab.SETTINGS)
                     }
                 }
 
                 // A file shared into Recly lands on the list, where its IMPORTING row appears.
                 LaunchedEffect(importRequest.value) {
-                    if (importRequest.value > 0) tab = Tab.JOBS
+                    if (importRequest.value > 0) goTo(Tab.JOBS)
                 }
 
                 LaunchedEffect(fixRequest.value) {
@@ -230,9 +256,9 @@ class MainActivity : ComponentActivity() {
                                     // list it closes the open row (docs/09 screen principle 2).
                                     onClick = {
                                         if (entry == Tab.JOBS && tab == Tab.JOBS) {
-                                            if (jobs.detail != null) jobsModel.closeDetail() else listTaps++
+                                            if (jobs.detail != null) leaveDetail { jobsModel.closeDetail() } else listTaps++
                                         }
-                                        tab = entry
+                                        goTo(entry)
                                     },
                                 )
                             },
@@ -243,7 +269,7 @@ class MainActivity : ComponentActivity() {
                     when (tab) {
                         Tab.RECORD -> RecordTab(
                             recording, recorder, jobs, recordingModel, content,
-                            onOpenProcessing = { tab = Tab.SETTINGS },
+                            onOpenProcessing = { goTo(Tab.SETTINGS) },
                             // A new recording is where the list's last message stops being news, as
                             // on the iPhone.
                             onStart = {
@@ -257,11 +283,12 @@ class MainActivity : ComponentActivity() {
                             model = jobsModel,
                             // docs/08 AUTH_REJECTED: the key is kept in the processing settings, so
                             // that is where "check the key" has to land.
-                            onCheckKey = { tab = Tab.SETTINGS },
+                            onCheckKey = { goTo(Tab.SETTINGS) },
                             onFix = { alert -> goFix(alert.reason) },
                             onConnectDrive = { fixAuth() },
                             modifier = content,
                             collapse = listTaps,
+                            onUnsaved = { unsaved = it },
                         )
 
                         Tab.SETTINGS -> SettingsTab(
@@ -435,6 +462,7 @@ private fun JobsTab(
     onConnectDrive: () -> Unit,
     modifier: Modifier,
     collapse: Int,
+    onUnsaved: (Int?) -> Unit,
 ) {
     val detail = state.detail
     if (detail != null) {
@@ -443,6 +471,7 @@ private fun JobsTab(
             onRename = { title -> model.rename(detail.recordingId, title) },
             onReload = model::reloadDetail,
             modifier = modifier,
+            onUnsaved = onUnsaved,
             actions = DetailActions(
                 playbackSpeed = state.playbackSpeed,
                 skipSilence = state.skipSilence,

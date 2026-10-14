@@ -221,6 +221,21 @@ object DisconnectGuard {
     }
 
     /**
+     * D22: the colour of a line under the Drive row — a failure ("Could not …") in red, something in the way that
+     * the user can act on in the warning, and what simply happened muted.
+     */
+    fun tone(message: UiMessage): MessageTone = when ((message as? UiMessage.Res)?.id) {
+        R.string.disconnect_revoke_failed, R.string.disconnect_cleanup_failed, R.string.disconnect_save_failed ->
+            MessageTone.DANGER
+
+        R.string.disconnect_stop_recording, R.string.disconnect_pending_sign_in, R.string.disconnect_in_progress,
+        R.string.disconnect_busy, R.string.disconnect_still_listed,
+        -> MessageTone.WARNING
+
+        else -> MessageTone.MUTED
+    }
+
+    /**
      * The local half of a disconnect with the phase written around it: owed *before* it is tried,
      * cleared only once it has actually finished.
      *
@@ -341,3 +356,6 @@ object DisconnectGate {
         }
     }
 }
+
+/** D22's three tones for a line of text: a failure, something to act on, and information. */
+enum class MessageTone { DANGER, WARNING, MUTED }
