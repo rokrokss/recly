@@ -66,8 +66,9 @@ fun BlueprintButton(
 ) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false)
 
 /**
- * [BlueprintButton]'s box. [working] is [ProcessingButton]'s "…" and "✓": not pressable, like a disabled button,
- * but a state the user is meant to read, so it keeps the secondary ink rather than fading to `disabled`.
+ * [BlueprintButton]'s box. [working] is [ProcessingButton]'s "…" and "✓" (docs/09 "Disabled, focus and structure"):
+ * it cannot be pressed meanwhile, but it is not disabled — it keeps its tone's ink, edge and fill, because that state
+ * is what the user is meant to read. Only a button that is genuinely unavailable draws in `disabled`.
  */
 @Composable
 private fun ButtonBox(
@@ -82,25 +83,24 @@ private fun ButtonBox(
     working: Boolean,
 ) {
     val palette = blueprint
+    val drawnEnabled = enabled || working
     val ink = when {
-        working -> palette.textMuted
         // docs/09 "Disabled, focus and structure": a disabled control draws in `disabled`.
-        !enabled -> palette.disabled
+        !drawnEnabled -> palette.disabled
         tone == ButtonTone.PRIMARY -> palette.onAccent
         tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         else -> palette.textMuted
     }
     val edge = when {
-        working -> palette.inputBorder
-        !enabled -> palette.disabled
+        !drawnEnabled -> palette.disabled
         tone == ButtonTone.PRIMARY || tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         // docs/09 "Accessibility": a control's edge is 3:1 against the page, light and dark — the
         // input border's level, not the grid's (UX decisions of 2026-10-08).
         else -> palette.inputBorder
     }
-    val fill = if (enabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
+    val fill = if (drawnEnabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
 
     Row(
         modifier = modifier
@@ -112,7 +112,7 @@ private fun ButtonBox(
             // A disabled button is dashed, as on Windows: a shape is the cue that survives high contrast,
             // which promotes the muted ink to the body colour.
             .then(
-                if (enabled && !working) {
+                if (drawnEnabled) {
                     Modifier.border(palette.line, edge, RoundedCornerShape(Radius.node))
                 } else {
                     Modifier.dashedBorder(palette.line, edge, Radius.node)
