@@ -40,7 +40,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.recly.android.R
 import app.recly.android.core.CoreModule
+import app.recly.android.settings.AppLanguage
 import app.recly.android.settings.coreLocaleTag
+import app.recly.android.wear.WatchLanguage
 import app.recly.android.ui.component.BlueprintNavBar
 import app.recly.android.ui.component.NavGlyph
 import app.recly.android.ui.component.NavItem
@@ -114,6 +116,8 @@ class MainActivity : ComponentActivity() {
         // language screen. Either one recreates this activity, so this is where the core is told.
         val locale = coreLocaleTag(resources.configuration.locales[0])
         lifecycleScope.launch { CoreModule.get(applicationContext).core.summaries.setLocale(locale) }
+        // And the watch app, which shows itself in the language this app is in — the same moments tell it.
+        WatchLanguage.publish(applicationContext, AppLanguage.effective(resources.configuration.locales[0]).tag)
         setContent {
             val settings by settingsModel.state.collectAsState()
             // docs/09 "Accessibility": the system decides the font scale and reduce motion, and the theme is

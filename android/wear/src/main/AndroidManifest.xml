@@ -68,6 +68,19 @@
             </intent-filter>
         </service>
 
+        <!-- The phone app's language (`/rec/language`, a data item the phone writes): the watch app follows it. -->
+        <service
+            android:name=".language.PhoneLanguageService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:host="*"
+                    android:path="/rec/language"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+
         <!-- docs/11 W5: the tile. It opens MainActivity through `launchAction` and recording starts
              there — a microphone FGS started straight from the tile is blocked as a background
              start. -->

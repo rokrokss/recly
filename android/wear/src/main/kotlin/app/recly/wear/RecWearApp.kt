@@ -18,6 +18,7 @@ import app.recly.wear.core.CoreModule
 import app.recly.wear.core.WearLogger
 import app.recly.wear.entry.RecComplicationService
 import app.recly.wear.entry.RecTileService
+import app.recly.wear.language.PhoneLanguage
 import app.recly.wear.transfer.FileTransferQueue
 import app.recly.wear.transfer.Recordings
 import app.recly.wear.transfer.TransferScheduler
@@ -105,6 +106,11 @@ class RecWearApp : Application(), RecorderHost {
             // mid-transfer gets before the six-hour periodic.
             TransferScheduler.runNow(this@RecWearApp)
             TransferScheduler.armPeriodic(this@RecWearApp)
+        }
+        // The phone app's language, as it last wrote it — an item from before this install never arrives as a change.
+        scope.launch {
+            runCatching { PhoneLanguage.adoptStored(this@RecWearApp) }
+                .onFailure { logger.log(Logger.Level.DEBUG, "shell.wear.language.failed", emptyMap(), it) }
         }
         // The tile and the complication render outside this process and nothing else would tell
         // them a recording started or a transfer finished. `drop(1)` because the first emission is

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   docs/07: English is the base language, `values-ko` is the translation. The watch has no language
-  setting of its own — it follows the system, which is what Wear OS offers.
+  setting of its own — it follows the phone app's language (`/rec/language`), and the system's until
+  the phone has said one.
 -->
 <resources>
     <string name="app_name">Recly</string>
