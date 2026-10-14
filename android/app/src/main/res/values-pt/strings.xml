@@ -430,6 +430,10 @@
     <string name="summary_about">Sobre você</string>
     <string name="summary_about_placeholder">ex.: Gerente de produto; me importo com prazos e decisões.</string>
     <string name="summary_about_note">Resumos e respostas usam isso para avaliar o que importa para você.</string>
+    <string name="summary_auto_title">Preencher títulos</string>
+    <string name="summary_auto_title_note">Quando este dispositivo transcreve uma gravação sem título, a transcrição vai para o ChatGPT para receber um. Isso conta no seu uso do ChatGPT.</string>
+    <string name="summary_auto_speakers">Preencher nomes dos falantes</string>
+    <string name="summary_auto_speakers_note">Quando este dispositivo transcreve uma gravação, a transcrição vai para o ChatGPT para dar nome aos falantes chamados pelo nome nela. Isso conta no seu uso do ChatGPT.</string>
     <string name="summary_as">Resumir como…</string>
     <string name="summary_play_from">Reproduzir a partir de %1$s</string>
     <string name="ask_menu">Perguntar sobre esta gravação…</string>

@@ -430,6 +430,10 @@
     <string name="summary_about">Về bạn</string>
     <string name="summary_about_placeholder">ví dụ: Quản lý sản phẩm; tôi quan tâm đến hạn chót và quyết định.</string>
     <string name="summary_about_note">Bản tóm tắt và câu trả lời dùng thông tin này để biết điều gì quan trọng với bạn.</string>
+    <string name="summary_auto_title">Tự điền tiêu đề</string>
+    <string name="summary_auto_title_note">Khi thiết bị này chép lời một bản ghi chưa có tiêu đề, bản chép lời được gửi tới ChatGPT để đặt tiêu đề. Việc này được tính vào mức sử dụng ChatGPT của bạn.</string>
+    <string name="summary_auto_speakers">Tự điền tên người nói</string>
+    <string name="summary_auto_speakers_note">Khi thiết bị này chép lời một bản ghi, bản chép lời được gửi tới ChatGPT để đặt tên cho những người nói được gọi tên trong đó. Việc này được tính vào mức sử dụng ChatGPT của bạn.</string>
     <string name="summary_as">Tóm tắt theo dạng…</string>
     <string name="summary_play_from">Phát từ %1$s</string>
     <string name="ask_menu">Hỏi về bản ghi này…</string>

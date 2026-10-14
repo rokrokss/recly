@@ -430,6 +430,10 @@
     <string name="summary_about">عنك</string>
     <string name="summary_about_placeholder">مثلاً: مدير منتج؛ تهمّني المواعيد النهائية والقرارات.</string>
     <string name="summary_about_note">تستخدم الملخصات والإجابات هذا لتقدير ما يهمّك.</string>
+    <string name="summary_auto_title">ملء العناوين تلقائيًا</string>
+    <string name="summary_auto_title_note">عندما ينسخ هذا الجهاز تسجيلًا بلا عنوان، يُرسَل نص النسخة إلى ChatGPT للحصول على عنوان. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.</string>
+    <string name="summary_auto_speakers">ملء أسماء المتحدثين تلقائيًا</string>
+    <string name="summary_auto_speakers_note">عندما ينسخ هذا الجهاز تسجيلًا، يُرسَل نص النسخة إلى ChatGPT لتسمية المتحدثين الذين يُنادَون بأسمائهم فيه. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.</string>
     <string name="summary_as">تلخيص بتنسيق…</string>
     <string name="summary_play_from">تشغيل من %1$s</string>
     <string name="ask_menu">اسأل عن هذا التسجيل…</string>
