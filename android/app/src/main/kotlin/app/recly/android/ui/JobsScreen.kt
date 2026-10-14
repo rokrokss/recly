@@ -106,6 +106,7 @@ import kotlin.time.ExperimentalTime
 import recly.core.job.StepReport
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import app.recly.android.ui.component.focusRing
 
 /**
  * docs/11 A4, drawn as docs/09 screen principle 2 asks: a ledger. One row per recording — when, what, how
@@ -363,7 +364,7 @@ private fun ExpandedRow(
             .background(palette.background)
             // From the row's own leading gutter, as on the iPhone (2026-10-12): past the time column a done
             // row's three buttons do not always fit one line, and Delete went to a line of its own.
-            .padding(start = Space.m, end = Space.m, top = Space.s, bottom = 12.dp),
+            .padding(start = Space.m, end = Space.m, top = Space.s, bottom = Space.sm),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
@@ -383,7 +384,7 @@ private fun ExpandedRow(
         // A recording waiting for the model says nothing of it while the download runs: the banner
         // carries the progress, and "not downloaded yet" would be wrong a minute later.
         item.error?.takeIf { item.state != ItemState.NEEDS_AUTH && !(item.state == ItemState.NEEDS_MODEL && download.active) }?.let { error ->
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(
                     coreMessage(error).text(),
                     style = MaterialTheme.typography.bodySmall,
@@ -605,7 +606,7 @@ private fun AlertLine(
     action: @Composable () -> Unit,
 ) {
     val sentence = Modifier
-        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        .then(if (onClick != null) Modifier.focusRing(blueprint).clickable(onClick = onClick) else Modifier)
         .then(
             if (description != null) {
                 Modifier.semantics(mergeDescendants = true) { contentDescription = description }
@@ -623,7 +624,7 @@ private fun AlertLine(
                 Column(Modifier.fillMaxWidth()) {
                     Column(
                         modifier = sentence.fillMaxWidth().padding(vertical = Space.s),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(Space.xxs),
                         content = lines,
                     )
                     FlowRow(
@@ -644,7 +645,7 @@ private fun AlertLine(
             ) {
                 Column(
                     modifier = sentence.weight(1f).padding(vertical = Space.s),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(Space.xxs),
                     content = lines,
                 )
                 FlowRow(
@@ -673,10 +674,11 @@ private fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifie
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing(palette, Radius.node)
             .background(palette.surface, shape)
             .border(palette.line, palette.warning, shape)
             .clickable(onClickLabel = stringResource(R.string.action_close), onClick = onDismiss)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(horizontal = Space.sm, vertical = Space.s)
             .testTag("message"),
         contentAlignment = Alignment.CenterStart,
     ) {
@@ -1039,8 +1041,9 @@ private fun SearchResults(
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .focusRing(palette)
                         .clickable(role = Role.Button) { onOpen(hit) }
-                        .padding(horizontal = Space.m, vertical = 12.dp)
+                        .padding(horizontal = Space.m, vertical = Space.sm)
                         .testTag("hit-${hit.recordingId}"),
                     horizontalArrangement = Arrangement.spacedBy(Space.s),
                 ) {

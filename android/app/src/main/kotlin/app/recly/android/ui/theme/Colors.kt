@@ -38,6 +38,13 @@ data class BlueprintColors(
 
     /** What a chosen thing — a selected graph node, a selected chip — draws instead of [line]. */
     val selectedLine: Dp get() = line + 1.dp
+
+    /**
+     * docs/09 "Derived tokens": the ink of anything disabled — the secondary colour at half strength. Derived
+     * rather than written out, so high contrast, which promotes the secondary colour to the body colour, keeps
+     * a disabled control lighter than an enabled one. Never [grid]: that is decoration only.
+     */
+    val disabled: Color get() = textMuted.copy(alpha = 0.5f)
 }
 
 /** docs/09 Palette — Light. */

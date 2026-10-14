@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.unit.dp
 import app.recly.android.BuildConfig
 import app.recly.android.R
 import app.recly.android.settings.AppLanguage
@@ -98,7 +97,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(palette.surface)
-                    .padding(horizontal = Space.m, vertical = 12.dp),
+                    .padding(horizontal = Space.m, vertical = Space.sm),
             ) {
                 // A product name, never translated (docs/07 rule 1).
                 BlueprintChip(
@@ -230,7 +229,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(palette.surface)
-                    .padding(horizontal = Space.m, vertical = 12.dp),
+                    .padding(horizontal = Space.m, vertical = Space.sm),
             ) {
                 AppTheme.entries.forEach { choice ->
                     BlueprintChip(
@@ -302,8 +301,8 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(palette.surface)
-                    .padding(horizontal = Space.m, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                    .padding(horizontal = Space.m, vertical = Space.sm),
+                verticalArrangement = Arrangement.spacedBy(Space.xxs),
             ) {
                 About(
                     stringResource(

@@ -91,6 +91,7 @@ fun <T> BlueprintDropdown(
             modifier = Modifier
                 // docs/09 "Accessibility": the label is small, the target is not — in both directions.
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+                .focusRing(palette, Radius.node)
                 .border(palette.line, palette.inputBorder, shape)
                 .clickable(role = Role.Button) { expanded = true }
                 // One element, deliberately (the iOS dropdown's own rule): the value and the mark are
@@ -183,6 +184,7 @@ fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing(palette)
             .selectable(selected = selected, role = role, onClick = onSelect)
             .padding(horizontal = Space.m, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -213,6 +215,7 @@ fun MenuBack(label: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing(palette)
             .clickable(role = Role.Button, onClick = onBack)
             .semantics { heading() }
             .padding(horizontal = Space.m, vertical = Space.xs),
@@ -248,11 +251,13 @@ fun MenuAction(label: AnnotatedString, onClick: () -> Unit, enabled: Boolean = t
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing(palette)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Space.m, vertical = Space.xs),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) palette.text else palette.textMuted)
+        // docs/09 "Disabled, focus and structure": a disabled item's words are `disabled`; its reason stays readable.
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) palette.text else palette.disabled)
         reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
     }
 }

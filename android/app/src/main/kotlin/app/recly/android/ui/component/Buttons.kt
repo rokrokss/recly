@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import app.recly.android.R
 import app.recly.android.ui.theme.ButtonMinWidth
@@ -62,18 +63,37 @@ fun BlueprintButton(
     monospace: Boolean = false,
     /** [ButtonMinWidth] for a worded button; [MinTouch] for data and for Close, Delete and Cancel. */
     minWidth: Dp = if (monospace) MinTouch else ButtonMinWidth,
+) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false)
+
+/**
+ * [BlueprintButton]'s box. [working] is [ProcessingButton]'s "…" and "✓": not pressable, like a disabled button,
+ * but a state the user is meant to read, so it keeps the secondary ink rather than fading to `disabled`.
+ */
+@Composable
+private fun ButtonBox(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    tone: ButtonTone,
+    enabled: Boolean,
+    leading: String?,
+    monospace: Boolean,
+    minWidth: Dp,
+    working: Boolean,
 ) {
     val palette = blueprint
     val ink = when {
-        !enabled -> palette.textMuted
+        working -> palette.textMuted
+        // docs/09 "Disabled, focus and structure": a disabled control draws in `disabled`.
+        !enabled -> palette.disabled
         tone == ButtonTone.PRIMARY -> palette.onAccent
         tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         else -> palette.textMuted
     }
     val edge = when {
-        // The dash is in the input border too: the grid's colour left a disabled button stray grey text.
-        !enabled -> palette.inputBorder
+        working -> palette.inputBorder
+        !enabled -> palette.disabled
         tone == ButtonTone.PRIMARY || tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         // docs/09 "Accessibility": a control's edge is 3:1 against the page, light and dark — the
@@ -87,11 +107,12 @@ fun BlueprintButton(
             // docs/09 "Accessibility": the label is small, the button is not — in both directions. A height
             // alone left the two-letter template variables (`MM`, `dd`) a target some 30dp wide.
             .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
+            .focusRing(palette, Radius.node)
             .background(fill, RoundedCornerShape(Radius.node))
             // A disabled button is dashed, as on Windows: a shape is the cue that survives high contrast,
-            // which promotes the muted ink and the grid to the body colour.
+            // which promotes the muted ink to the body colour.
             .then(
-                if (enabled) {
+                if (enabled && !working) {
                     Modifier.border(palette.line, edge, RoundedCornerShape(Radius.node))
                 } else {
                     Modifier.dashedBorder(palette.line, edge, Radius.node)
@@ -110,9 +131,10 @@ fun BlueprintButton(
                 modifier = if (it == "+") Modifier.clearAndSetSemantics { } else Modifier,
             )
         }
+        // docs/09 "Typography": a button's label is 14, sans or mono.
         Text(
             label,
-            style = if (monospace) mono.small else MaterialTheme.typography.labelLarge,
+            style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge,
             color = ink,
             maxLines = 3,
         )
@@ -162,10 +184,11 @@ fun BlueprintChip(
     role: Role = Role.RadioButton,
 ) {
     val palette = blueprint
-    // A disabled chip is the disabled button: muted words in a dashed input border, which stay readable where the
-    // grid's colour vanished.
+    // A disabled chip is the disabled button: `disabled` words in a dashed `disabled` edge (docs/09 "Disabled, focus
+    // and structure"). An unselected one's edge is the input border, never the grid (docs/09 "Tokens").
     val ink = when {
-        selected && enabled -> palette.accent
+        !enabled -> palette.disabled
+        selected -> palette.accent
         else -> palette.textMuted
     }
     Row(
@@ -175,15 +198,16 @@ fun BlueprintChip(
             // wants a chip square anyway, so the box grows to the target rather than hiding behind
             // an invisible one.
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .focusRing(palette, Radius.node)
             .then(
                 if (enabled) {
                     Modifier.border(
                         width = if (selected) palette.selectedLine else palette.line,
-                        color = ink,
+                        color = if (selected) ink else palette.inputBorder,
                         shape = RoundedCornerShape(Radius.node),
                     )
                 } else {
-                    Modifier.dashedBorder(palette.line, palette.inputBorder, Radius.node)
+                    Modifier.dashedBorder(palette.line, palette.disabled, Radius.node)
                 },
             )
             // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
@@ -196,15 +220,17 @@ fun BlueprintChip(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val style = if (monospace) mono.small else MaterialTheme.typography.labelLarge
+        // docs/09 "Component measurements": a chip's label is 14, sans or mono.
+        val style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge
         // UX decisions of 2026-10-08: a chosen chip says so with `✓` as well as its border. The chip is
         // as wide as it is with the mark either way, so choosing one does not move its neighbours.
         Box(contentAlignment = Alignment.Center) {
             Text("$SELECTION_MARK $label", style = style, color = Color.Transparent, maxLines = 1,
-                modifier = Modifier.clearAndSetSemantics {})
-            // One line of text, so the mark sits on the label's own baseline; a reader hears the label.
+                overflow = TextOverflow.Ellipsis, modifier = Modifier.clearAndSetSemantics {})
+            // One line of text, so the mark sits on the label's own baseline; a reader hears the label. A label
+            // wider than the room the row leaves it ends in "…" rather than being cut mid-letter.
             Text(if (selected) "$SELECTION_MARK $label" else label, style = style, color = ink, maxLines = 1,
-                modifier = Modifier.clearAndSetSemantics { contentDescription = label })
+                overflow = TextOverflow.Ellipsis, modifier = Modifier.clearAndSetSemantics { contentDescription = label })
         }
     }
 }
@@ -277,21 +303,28 @@ fun ProcessingButton(
             enabled = enabled,
         )
 
-        ProcessingPhase.PROCESSING -> BlueprintButton(
+        ProcessingPhase.PROCESSING -> ButtonBox(
             label = stringResource(R.string.action_processing),
             onClick = {},
             modifier = modifier,
             tone = tone,
             enabled = false,
+            leading = null,
+            monospace = false,
+            minWidth = ButtonMinWidth,
+            working = true,
         )
 
-        ProcessingPhase.DONE -> BlueprintButton(
+        ProcessingPhase.DONE -> ButtonBox(
             label = label,
             onClick = {},
             modifier = modifier,
             tone = tone,
             enabled = false,
             leading = stringResource(R.string.action_done),
+            monospace = false,
+            minWidth = ButtonMinWidth,
+            working = true,
         )
     }
 }

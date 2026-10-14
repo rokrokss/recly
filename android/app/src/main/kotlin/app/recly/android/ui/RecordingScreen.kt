@@ -87,6 +87,7 @@ import app.recly.recording.RecorderState
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.delay
+import app.recly.android.ui.component.focusRing
 
 /** docs/09 screen principle 1: the recording screen is a dashboard — three state nodes, a monospace timer
  * and one square node that starts and stops it. Everything slower than a tap — the service, the
@@ -190,7 +191,7 @@ fun RecordingSection(
 
         Column(
             modifier = Modifier.fillMaxWidth().then(if (scrollDashboard) Modifier.heightIn(min = 160.dp) else Modifier.weight(1f)),
-            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(Space.sm, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // docs/09 "Typography": a live timer follows the time itself — `00:12` … `59:59` → `01:00:00`.
@@ -340,6 +341,7 @@ private fun RecordNode(recorder: RecorderState, busy: Boolean, onStart: () -> Un
     Box(
         modifier = Modifier
             .size(72.dp)
+            .focusRing(palette, Radius.node)
             .border(3.dp, palette.danger, RoundedCornerShape(Radius.node))
             .background(
                 if (recording) palette.danger else palette.surface,
@@ -390,6 +392,7 @@ private fun HighlightNode(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(56.dp)
+            .focusRing(palette, Radius.node)
             .border(1.5.dp, palette.accent, RoundedCornerShape(Radius.node))
             .background(if (lit) palette.accent else palette.surface, RoundedCornerShape(Radius.node))
             .clickable(role = Role.Button) {

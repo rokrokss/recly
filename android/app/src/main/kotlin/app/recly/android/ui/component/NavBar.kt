@@ -52,6 +52,7 @@ fun BlueprintNavBar(items: List<NavItem>, modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
+                        .focusRing(palette)
                         .selectable(selected = item.selected, role = Role.Tab, onClick = item.onClick)
                         .padding(vertical = Space.xs),
                     horizontalAlignment = Alignment.CenterHorizontally,

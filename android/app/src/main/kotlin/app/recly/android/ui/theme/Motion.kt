@@ -21,7 +21,8 @@ object Motion {
     /** …and the processing state plus its completion badge do not run past this. */
     const val PROCESSING_MAX_MS: Long = 800
 
-    val Standard: Easing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
+    /** `cubic-bezier(0.42, 0, 0.58, 1)` — SwiftUI's `easeInOut`, so a transition moves the same on every shell. */
+    val Standard: Easing = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
 }
 
 /**

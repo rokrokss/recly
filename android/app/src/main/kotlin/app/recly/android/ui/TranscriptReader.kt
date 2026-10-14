@@ -39,6 +39,8 @@ import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import recly.core.recording.RecordingSearch
 import recly.core.transcribe.Transcript
+import app.recly.android.ui.component.dashedBorder
+import app.recly.android.ui.component.focusRing
 
 /**
  * One utterance group of the reader: the segments [segments] say, run together the way the core's
@@ -226,7 +228,16 @@ internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, mo
     Box(
         modifier
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .border(palette.line, if (enabled) palette.textMuted else palette.grid, RoundedCornerShape(Radius.badge))
+            .focusRing(palette, Radius.badge)
+            // docs/09 "Disabled, focus and structure": the secondary edge (`inputBorder`) while it can be tapped, and
+            // a dashed `disabled` one — words too — while it cannot.
+            .then(
+                if (enabled) {
+                    Modifier.border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.badge))
+                } else {
+                    Modifier.dashedBorder(palette.line, palette.disabled, Radius.badge)
+                },
+            )
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Space.s),
         contentAlignment = Alignment.Center,
@@ -234,7 +245,7 @@ internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, mo
         Text(
             label,
             style = if (named) MaterialTheme.typography.labelLarge else mono.small,
-            color = palette.textMuted,
+            color = if (enabled) palette.textMuted else palette.disabled,
             maxLines = 1,
         )
     }
@@ -251,6 +262,7 @@ internal fun HighlightMarker(atSec: Double, onClick: () -> Unit) {
     Box(
         Modifier
             .size(MinTouch)
+            .focusRing(blueprint)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label }
             .testTag("transcript-highlight"),
@@ -271,6 +283,7 @@ internal fun BackToPlayback(onClick: () -> Unit, modifier: Modifier = Modifier) 
     Box(
         modifier
             .heightIn(min = MinTouch)
+            .focusRing(palette, Radius.card)
             .clickable(role = Role.Button, onClick = onClick)
             .testTag("back-to-playback"),
         contentAlignment = Alignment.Center,

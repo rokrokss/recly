@@ -2,6 +2,7 @@ package app.recly.android.ui.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -31,6 +34,7 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.android.ui.theme.MinTouch
+import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 
 /**
@@ -48,6 +52,9 @@ fun TextLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
     val palette = blueprint
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    // docs/09 "Disabled, focus and structure": links show the focus ring too — round the words, square, and not
+    // round the invisible target, which reaches over the neighbours.
+    val focused by interaction.collectIsFocusedAsState()
     val ink = palette.accent.copy(alpha = if (pressed) PRESSED else 1f)
     val click by rememberUpdatedState(onClick)
     val linked = remember(label) { buildAnnotatedString { withLink(LinkAnnotation.Clickable(label) { click() }) { append(label) } } }
@@ -59,6 +66,12 @@ fun TextLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
                 modifier = Modifier
                     .clearAndSetSemantics {}
                     .drawBehind {
+                        if (focused) {
+                            val reach = RING_REACH.toPx()
+                            translate(-reach, -reach) {
+                                drawRing(palette.accent, palette.selectedLine.toPx(), 0f, Size(size.width + reach * 2, size.height + reach * 2))
+                            }
+                        }
                         val layout = lines ?: return@drawBehind
                         val dot = palette.line.toPx()
                         val dots = PathEffect.dashPathEffect(floatArrayOf(dot, DOT_GAP.toPx()))
@@ -92,5 +105,8 @@ fun TextLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
 /** The dots: the hairline's width, this far apart, this far under the baseline, at this share of the ink. */
 private val DOT_GAP: Dp = 2.dp
 private val UNDER_BASELINE: Dp = 2.dp
+
+/** How far outside the words the focus ring stands, so it does not touch the first and last letter. */
+private val RING_REACH: Dp = Space.xxs
 private const val DOTS = 0.7f
 private const val PRESSED = 0.6f
