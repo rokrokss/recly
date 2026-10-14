@@ -301,6 +301,13 @@ class ChatGptAccount internal constructor(
         return pick(listModels())
     }
 
+    /** The ids of the models the plan offers this app — Settings' list when it has one, else the plan's answer now. */
+    internal suspend fun offered(): Set<String> {
+        val current = state.value
+        val models = (current as? ChatGptConnection.SignedIn)?.models?.takeIf { it.isNotEmpty() } ?: listModels()
+        return models.map { it.id }.toSet()
+    }
+
     /**
      * What ChatGPT's connected apps call this installation — one per app, so the user can tell the phone's from
      * the desktop's (user decision 2026-10-09). Sent only with a new registration.

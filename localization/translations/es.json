@@ -566,5 +566,10 @@
   "{0} failed": "{0} con error",
   "Something went wrong at the provider.": "Algo salió mal en el proveedor.",
   "Open data folder": "Abrir carpeta de datos",
-  "Recording, {0}": "Grabando, {0}"
+  "Recording, {0}": "Grabando, {0}",
+  "Fill in titles": "Completar títulos",
+  "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Cuando este dispositivo transcribe una grabación sin título, la transcripción se envía a ChatGPT para obtener uno. Cuenta para tu uso de ChatGPT.",
+  "Fill in speaker names": "Completar nombres de hablantes",
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Cuando este dispositivo transcribe una grabación, la transcripción se envía a ChatGPT para poner nombre a los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT.",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Con Completar títulos o Completar nombres de hablantes activado, también se envía aquí la transcripción de cada grabación que transcribe este iPhone."
 }

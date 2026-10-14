@@ -40,12 +40,15 @@ public final class ChatGptSettingsModel: ObservableObject {
     @Published public private(set) var failure: Failure?
     /// The first sign-in on this device, confirmed once (docs/09 "Summary view").
     @Published public var welcome = false
-    /// docs/08 "Summaries": this device's summary format, My format and About you, as saved — shown and editable
-    /// signed in or out.
-    @Published public private(set) var preferences = SummaryPreferences(format: .auto, customFormat: "", aboutMe: "")
+    /// docs/08 "Summaries": this device's summary format, My format, About you and the two fill-in switches
+    /// ("Titles and speaker names"), as saved — shown and editable signed in or out.
+    @Published public private(set) var preferences = SummaryPreferences(format: .auto, customFormat: "", aboutMe: "", autoTitle: false, autoSpeakers: false)
     /// My format and About you as their fields hold them; saved when editing ends ([savePreferences]).
     @Published public var customFormat = ""
     @Published public var aboutMe = ""
+    /// docs/15 "iPhone providers": the ChatGPT destination a fill-in switch waits on before it goes on — asked about
+    /// only where the core requires the permission, so never on the Mac.
+    @Published public private(set) var fillConsent: [TransferTarget] = []
 
     /// ChatGPT's own usage page — where the plan's limits are, and where Recly can be disconnected.
     public static let usage = URL(string: "https://chatgpt.com/settings/usage")!
@@ -135,15 +138,86 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// What the section shows: the saved format over the fields as they are typed, so `My format` is offered
     /// once it has words and General stands in for it once they are gone (`effectiveFormat`).
     public var shownPreferences: SummaryPreferences {
-        SummaryPreferences(format: preferences.format, customFormat: customFormat, aboutMe: aboutMe)
+        SummaryPreferences(
+            format: preferences.format, customFormat: customFormat, aboutMe: aboutMe,
+            autoTitle: preferences.autoTitle, autoSpeakers: preferences.autoSpeakers
+        )
     }
 
     /// Saved at once, like the model — with the fields as they are, so a pick made while one is being typed in
     /// keeps what was typed. Shown at once too: a field that ends its editing as the menu closes saves with the
     /// format just picked, not the one before it.
     public func selectFormat(_ format: SummaryFormat) {
-        preferences = SummaryPreferences(format: format, customFormat: preferences.customFormat, aboutMe: preferences.aboutMe)
-        save(SummaryPreferences(format: format, customFormat: customFormat, aboutMe: aboutMe))
+        preferences = SummaryPreferences(
+            format: format, customFormat: preferences.customFormat, aboutMe: preferences.aboutMe,
+            autoTitle: preferences.autoTitle, autoSpeakers: preferences.autoSpeakers
+        )
+        save(shownPreferences)
+    }
+
+    /// docs/08 "Titles and speaker names": Fill in titles. Saved at once, like the format; see [switchFill].
+    public func setAutoTitle(_ on: Bool) {
+        switchFill(on) { [weak self] in
+            guard let self else { return }
+            showFill(title: on, speakers: preferences.autoSpeakers)
+        }
+    }
+
+    /// docs/08 "Titles and speaker names": Fill in speaker names. Saved at once, like the format; see [switchFill].
+    public func setAutoSpeakers(_ on: Bool) {
+        switchFill(on) { [weak self] in
+            guard let self else { return }
+            showFill(title: preferences.autoTitle, speakers: on)
+        }
+    }
+
+    /// Off goes at once and never asks. On sends transcripts to OpenAI, so where the ChatGPT destination needs the
+    /// user's permission and does not have it yet — the iPhone — it is asked for first ([fillConsent]), and the
+    /// switch stays off until it is given.
+    private func switchFill(_ on: Bool, apply: @escaping () -> Void) {
+        guard on else { apply(); return }
+        Task {
+            do {
+                let missing = try await core.transferConsents.missing(targets: [TransferTargets.shared.chatGptSummary()])
+                if missing.isEmpty {
+                    apply()
+                } else {
+                    afterFillConsent = apply
+                    fillConsent = missing
+                }
+            } catch {
+                logger.error("shell.chatgpt.preferences.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
+
+    /// The switches shown at once and saved, with the fields as they are — as [selectFormat] saves them.
+    private func showFill(title: Bool, speakers: Bool) {
+        preferences = SummaryPreferences(
+            format: preferences.format, customFormat: preferences.customFormat, aboutMe: preferences.aboutMe,
+            autoTitle: title, autoSpeakers: speakers
+        )
+        save(shownPreferences)
+    }
+
+    /// What [fillConsent] goes on to do once it is allowed: the switch it stood in front of.
+    private var afterFillConsent: (() -> Void)?
+
+    /// The answer to [fillConsent]: allowed, exactly the destination shown is granted and the switch goes on;
+    /// declined, it stays off and nothing is sent.
+    public func answerFillConsent(allow: Bool) async {
+        let shown = fillConsent
+        let next = afterFillConsent
+        fillConsent = []
+        afterFillConsent = nil
+        guard allow, !shown.isEmpty else { return }
+        do {
+            try await core.transferConsents.grant(targets: shown)
+        } catch {
+            logger.error("shell.chatgpt.preferences.failed error=\(String(describing: error), privacy: .private)")
+            return
+        }
+        next?()
     }
 
     /// The fields' end of editing — focus gone, Return, the screen closed. Nothing to do when what they hold is

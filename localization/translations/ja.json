@@ -566,5 +566,10 @@
   "{0} failed": "{0}件失敗",
   "Something went wrong at the provider.": "プロバイダー側で問題が発生しました。",
   "Open data folder": "データフォルダを開く",
-  "Recording, {0}": "録音中、{0}"
+  "Recording, {0}": "録音中、{0}",
+  "Fill in titles": "タイトルを自動で入力",
+  "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "この端末でタイトルのない録音を文字起こしすると、タイトルを付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。",
+  "Fill in speaker names": "話者の名前を自動で入力",
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "この端末で録音を文字起こしすると、会話の中で名前を呼ばれた話者に名前を付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "「タイトルを自動で入力」または「話者の名前を自動で入力」がオンのときは、このiPhoneで文字起こしした各録音の文字起こしもここへ送信します。"
 }

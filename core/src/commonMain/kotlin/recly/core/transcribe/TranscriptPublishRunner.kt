@@ -9,6 +9,7 @@ import recly.core.model.Step
 import recly.core.model.recJson
 import recly.core.platform.CoreDeps
 import recly.core.recording.MetaWriter
+import recly.core.recording.RecordingRecord
 import recly.core.storage.CloudStorage
 import recly.core.storage.StorageKind
 import recly.core.storage.StorageUnavailableException
@@ -19,10 +20,14 @@ import recly.core.storage.StorageUnavailableException
  * not failed (docs/03 "Storage location"). A local folder also gets the transcript as Markdown
  * (docs/08 "Result files").
  */
-class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
+class TranscriptPublishRunner(
+    private val deps: CoreDeps,
+    private val fill: TranscriptFill = TranscriptFill.NONE,
+) : StepRunner {
     override val type = "transcript.publish"
     private val api = CloudStorage.of(deps)
     private val files = ResultFiles(api, deps)
+    private val writer = TranscriptWriter(deps)
 
     override suspend fun run(ctx: StepContext): StepOutcome = try {
         publish(ctx)
@@ -42,7 +47,14 @@ class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
         require(resultName.matches(Regex("\\.result-[0-9A-Z]+\\.json")))
         val result = recJson.decodeFromString<Transcript>(deps.fileSystem.read(ctx.recording.dir / resultName) { readUtf8() })
         require(result.recordingId == ctx.recording.id)
-        val transcript = editedSince(ctx, jsonName, result) ?: result
+        val current = editedSince(ctx, jsonName, result) ?: result
+        // docs/08 "Titles and speaker names": before anything goes up, so the folder's first copy has them. Kept
+        // here before the upload is tried — in the result file too, unless the user's edit is what goes up — so a
+        // publish that has to try again finds nothing left to ask for.
+        val filled = fill.fill(ctx.recording, current)
+        val transcript = filled.transcript
+        if (transcript != current) writer.writeLocal(ctx.recording, transcript, markdown = false, result = resultName.takeIf { current === result })
+        val meta = filled.title?.let { ctx.recording.meta.copy(title = it) } ?: ctx.recording.meta
         val json = recJson.encodeToString(transcript).encodeToByteArray()
         val marks = TranscriptMarks.of(transcript)
         val published = files.write(ctx.recording.dir, folder, jsonName, json, TranscribeRunner.JSON_MIME, marks)
@@ -50,7 +62,7 @@ class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
             TranscriptNormalizer.text(transcript).encodeToByteArray(), TranscribeRunner.TEXT_MIME, marks)
         val markdown = if (StorageKind.ofId(folder) != StorageKind.FOLDER) null else files.write(
             ctx.recording.dir, folder, TranscribeRunner.markdownFileName(base),
-            TranscriptNormalizer.markdown(transcript, ctx.recording.meta).encodeToByteArray(), TranscribeRunner.MARKDOWN_MIME,
+            TranscriptNormalizer.markdown(transcript, meta).encodeToByteArray(), TranscribeRunner.MARKDOWN_MIME,
         )
         stamp(folder, transcript)
         return StepOutcome.Done(StepOutput(buildJsonObject {
@@ -87,5 +99,20 @@ class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
      */
     private suspend fun stamp(folder: String, transcript: Transcript) {
         api.updateAppProperties(folder, mapOf(TranscriptMarks.FOLDER_STAMP to TranscriptMarks.version(transcript)))
+    }
+}
+
+/** What [TranscriptFill] made of a transcript: the one to publish, and the title the recording was given, if any. */
+data class TranscriptFilled(val transcript: Transcript, val title: String? = null)
+
+/**
+ * docs/08 "Titles and speaker names": what fills in a transcript's speaker names, and the recording's title, just
+ * before it is published. Never throws — a fill that fails publishes the transcript as it was.
+ */
+fun interface TranscriptFill {
+    suspend fun fill(recording: RecordingRecord, transcript: Transcript): TranscriptFilled
+
+    companion object {
+        val NONE: TranscriptFill = TranscriptFill { _, transcript -> TranscriptFilled(transcript) }
     }
 }

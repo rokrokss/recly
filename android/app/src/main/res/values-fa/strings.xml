@@ -430,6 +430,10 @@
     <string name="summary_about">دربارهٔ شما</string>
     <string name="summary_about_placeholder">مثلاً: مدیر محصول؛ ضرب‌الاجل‌ها و تصمیم‌ها برایم مهم‌اند.</string>
     <string name="summary_about_note">خلاصه‌ها و پاسخ‌ها از این برای تشخیص آنچه برایتان مهم است استفاده می‌کنند.</string>
+    <string name="summary_auto_title">تکمیل خودکار عنوان‌ها</string>
+    <string name="summary_auto_title_note">وقتی این دستگاه ضبطی بی‌عنوان را رونویسی می‌کند، رونوشت برای گرفتن عنوان به ChatGPT فرستاده می‌شود. این جزو مصرف ChatGPT شما حساب می‌شود.</string>
+    <string name="summary_auto_speakers">تکمیل خودکار نام گوینده‌ها</string>
+    <string name="summary_auto_speakers_note">وقتی این دستگاه ضبطی را رونویسی می‌کند، رونوشت به ChatGPT فرستاده می‌شود تا گوینده‌هایی که در آن با نام صدا زده می‌شوند نام بگیرند. این جزو مصرف ChatGPT شما حساب می‌شود.</string>
     <string name="summary_as">خلاصه با قالب…</string>
     <string name="summary_play_from">پخش از %1$s</string>
     <string name="ask_menu">پرسیدن دربارهٔ این ضبط…</string>

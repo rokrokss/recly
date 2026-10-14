@@ -430,6 +430,10 @@
     <string name="summary_about">あなたについて</string>
     <string name="summary_about_placeholder">例: プロダクトマネージャー。締め切りと決定事項を重視します。</string>
     <string name="summary_about_note">要約と回答は、あなたにとって何が重要かを判断するのにこれを使います。</string>
+    <string name="summary_auto_title">タイトルを自動で入力</string>
+    <string name="summary_auto_title_note">この端末でタイトルのない録音を文字起こしすると、タイトルを付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。</string>
+    <string name="summary_auto_speakers">話者の名前を自動で入力</string>
+    <string name="summary_auto_speakers_note">この端末で録音を文字起こしすると、会話の中で名前を呼ばれた話者に名前を付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。</string>
     <string name="summary_as">形式を選んで要約…</string>
     <string name="summary_play_from">%1$sから再生</string>
     <string name="ask_menu">この録音について質問…</string>

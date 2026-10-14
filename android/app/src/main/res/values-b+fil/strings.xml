@@ -430,6 +430,10 @@
     <string name="summary_about">Tungkol sa iyo</string>
     <string name="summary_about_placeholder">hal. Product manager; mahalaga sa akin ang mga deadline at desisyon.</string>
     <string name="summary_about_note">Ginagamit ito ng mga buod at sagot para matantya kung ano ang mahalaga sa iyo.</string>
+    <string name="summary_auto_title">Kusang lagyan ng pamagat</string>
+    <string name="summary_auto_title_note">Kapag nag-transcribe ang device na ito ng recording na walang pamagat, ipinapadala ang transcript sa ChatGPT para sa pamagat. Kasama ito sa paggamit mo ng ChatGPT.</string>
+    <string name="summary_auto_speakers">Kusang lagyan ng pangalan ang mga nagsasalita</string>
+    <string name="summary_auto_speakers_note">Kapag nag-transcribe ang device na ito ng recording, ipinapadala ang transcript sa ChatGPT para pangalanan ang mga nagsasalitang tinatawag sa pangalan dito. Kasama ito sa paggamit mo ng ChatGPT.</string>
     <string name="summary_as">Ibuod bilang…</string>
     <string name="summary_play_from">I-play mula %1$s</string>
     <string name="ask_menu">Magtanong tungkol sa recording na ito…</string>

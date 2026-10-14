@@ -74,7 +74,7 @@ the current rule.
 
 | Number | Rule |
 |---|---|
-| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) (Revised 2026-10-09: one exception — a summary of one recording, asked for in its detail, through the user's own ChatGPT plan with Sign in with ChatGPT. The subscription comes into the app rather than the app holding a key, so the rule "use what the user already pays for, no server" holds. It is never a step of the processing plan and never automatic, and there is no summarization with an API key; §8 "Summaries", §15 §10) |
+| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) (Revised 2026-10-09: one exception — a summary of one recording, asked for in its detail, through the user's own ChatGPT plan with Sign in with ChatGPT. The subscription comes into the app rather than the app holding a key, so the rule "use what the user already pays for, no server" holds. It is never a step of the processing plan and never automatic, and there is no summarization with an API key; §8 "Summaries", §15 §10) (Revised 2026-10-15: a second exception — with its switches on in Settings → ChatGPT, the publication of a transcript first asks the same plan for the recording's title and the speakers' names, so they go up with it (§8 "Titles and speaker names"). Off until the user turns it on: the switch is the user's express consent to that background use) |
 | ADR-002 | The Android phone, iPhone, macOS and Windows run workflows. Galaxy Watch hands files to the phone over the Data Layer, Apple Watch over WatchConnectivity. **The watches have no authentication or network code.** Standalone upload from a cellular watch is out of scope |
 | ADR-003 | When the phone and the watch record at the same time, there are two files and they are not linked. `recordingId` is an independent per-device ULID, and there is no session linking (session id) |
 | ADR-004 | The workflow engine, Drive client, webhooks, sync and job queue live in a single Kotlin Multiplatform `core/`. Workflow logic is not written twice. (Webhooks retired 2026-09-24) |
@@ -2012,7 +2012,7 @@ transcription languages; an unknown tag falls back to English. "The app's langua
 system's per-app language screen included (2026-10-11).
 
 - **On request only.** It is not a step, never runs on its own, and a recording never waits for it. OpenAI's terms ask for express
-  consent before any background use; there is none.
+  consent before any background use; the only one is §8 "Titles and speaker names", behind its own switches.
 - **Formats and About you** (2026-10-10, user decision). `SummaryFormat` is `AUTO` (`General`: Summary, Key points, Decisions, Action
   items), `ONE_ON_ONE` (Summary, Updates by person, Feedback, Decisions, Action items), `LECTURE` (Summary, Key ideas, Examples,
   Questions, To review), `INTERVIEW` (Summary, Questions and answers, Notable quotes, Follow-ups) and `CUSTOM` — `My format`, the user's
@@ -2070,6 +2070,51 @@ user's when `mic` sounds and `sys` is quiet, and the call's when `sys` sounds.
   track it transcribes, so it comes back without `me` (`transcribe.me.skipped`).
 - The files and the model write an unnamed `me` as `Me`, a fixed word like the ids; the shells show it in the app's language (`나`).
   Renaming it is renaming a speaker, and `me` stays.
+
+### Titles and speaker names
+
+2026-10-15 (user decision). Settings → ChatGPT has two switches, off until the user turns them on: `Fill in titles` and `Fill in
+speaker names` (`SummaryPreferences.autoTitle` and `autoSpeakers`, this device's, in `kv` beside the other preferences). With one on and
+the device signed in, `transcript.publish` (§5 "Fixed processing settings") first asks the user's ChatGPT plan for them
+(`AutoFill`, the publish runner's `TranscriptFill`) — **before anything of the transcript goes up**, so the folder's first copy has them,
+and so do recly-events' event and its `get_transcript` (§15 §9).
+
+- **What is asked.** A title when the recording has none at that moment — a title from the stop dialog, an import's file name or a rename
+  is never replaced — and a name for each speaker that has none and is not `me` (§8 "Me and others"). Nothing is sent when there is
+  nothing to fill: nothing said, no speakers identified and the title set.
+- **The request** is a summary's (§15 §10) with other instructions: the transcript's lines with their times and the speakers' names — no
+  title, no highlights, never audio — and the answer asked for is one JSON object: `title` in the summary's language (§8 "Summaries"), at
+  most 60 characters, and `speakers`, each asked id's name only as the transcript gives it — what they call themselves, or what the others
+  call them when talking to them, without honorifics that go with a name (`님`, `씨`, `さん`, `Mr.`), a form of address used alone
+  (`팀장님`) kept — else null. A name said to someone is the listener's, and someone only talked about is no speaker. The
+  model is the first of `Summaries.FILL_MODELS` the plan offers — `gpt-6.1-sol` at reasoning effort `low`, then `gpt-5.6-terra` at
+  `medium` — else the one Settings picked, at its own effort; a plan that refuses `reasoning` (it is not in OpenAI's list of fields to
+  leave out, nor confirmed) is asked again without it. The order was measured with Codex CLI on 2026-10-15: twelve transcripts in
+  Korean, English, Japanese and a mix — meetings, a call, a lecture, a memo, names only talked about — twice each; `gpt-6.1-sol` at
+  `low` named all 56 speakers right and invented none, in 7.5 s median, `gpt-5.6-terra` at `medium` invented one in 5.9 s, `gpt-6-luna`
+  invented two or three at any effort, and `gpt-6-astra` took about 50 s. It is given two minutes (`Summaries.FILL_TIMEOUT_SEC`).
+- **The answer** is read leniently (`FillAnswer.parse`: the object inside any fence or prose) and only for what was asked: the title's
+  first line, cut to 100 characters; a name for an asked id only, up to 100 characters (§8 "Editing"), never `Me` or an id, and never
+  one two speakers were both given — neither gets it.
+- **Applied as part of the transcription, not as an edit**: no `editedAt`, and the files go up marked `transcribed` (§8 "Result files").
+  The title is set only if the recording is still untitled (`RecordingRepository.fillTitle`) and is pushed to the folder — its
+  `description` and `meta.json` — before the transcript. The names go into the result file and the local copy before the first upload
+  is tried, so a publication that has to try again finds nothing left to ask. When the user's edit is what goes up (a failed publication
+  retried after an edit, §8 "Editing"), only the local copy is rewritten.
+- **Never in the way.** A skip or a failure publishes the transcript as it was, and the step is not retried for it
+  (`summary.fill.start`, `.done`, `.skipped`, `.failed`; ids and counts only, never a title or a name). Signed out, or ChatGPT not offered
+  in the storefront: skipped, the switches stay on. iPhone: skipped until ChatGPT is an allowed destination (§15 "iPhone providers"); the
+  shell asks for that permission when a switch is turned on. OpenAI asks apps to stop requests at the usage limit and when the plan no
+  longer covers the app (developers.openai.com/siwc "Errors and recovery", 2026-10-15): `CHATGPT_USAGE_LIMIT` pauses the fills for five
+  hours — the plan's shorter usage window — and `CHATGPT_PLAN_REQUIRED` for a day (`summary/fill/paused_until`). A pass cut short (an iOS
+  background task's end) publishes later, asking again.
+- **Where it runs.** On the device that runs the recording's job — the phone for its own and its watch's recordings, the Mac or the
+  Windows PC for theirs — and a re-transcription (§10 "Re-transcription") asks again, the title only if the recording is still untitled.
+  In the offline pass (a local folder, on-device transcription) it is the one network call: offline it fails at once and the transcript
+  is published without it. Other devices' recordings, and recordings published before a switch was turned on, are not touched.
+- **Consent.** OpenAI's Sign in with ChatGPT terms (2026-09-29, checked 2026-10-15) ask for express consent before background use of the
+  plan. The switches are that consent: each says what is sent, when, and that it counts toward the plan's usage. Summaries and Ask stay
+  on request only.
 
 ### What is not included
 
@@ -3825,6 +3870,9 @@ connections:
 
 - No audio, STT key or long-lived Recly credential passes through it. Transcript text does, on request only: when the agent calls `get_transcript`, recly-events downloads that transcript from Drive, keeps it in memory for that answer only, and sends it to the user's ChatGPT through the user's tunnel, marked as untrusted content (what people said, not instructions). The event delivery itself still carries names and links only, and nothing is read from Drive for it beyond metadata (2026-10-07). The agent therefore needs no Google Drive connector of its own (2026-10-07); a Work chat that has one can still open the files by the event's Drive IDs.
 - **An edit is not a new transcript** (2026-10-07). The apps mark each `{base}.transcript.txt` version they write with the appProperty `reclyTranscript`: `transcribed` from a transcription, `edited` when the user changed the text or a speaker's name. recly-events notes a version marked `edited` as seen without announcing it when it already saw an earlier version of that file — the first version it sees is announced even if marked `edited`, since a transcript edited before the next poll shows up only that way (2026-10-07); any other version — a transcription run again, or one with no mark — is announced as before. The mark must be written in the same request as the content, or the change feed can show the new content with the old mark. Only Recly's own client sees appProperties, so with a client of the user's own an edit is announced.
+- **Titles and speaker names arrive with the transcript** (2026-10-15). A device with §8 "Titles and speaker names" switched on puts the
+  title in the folder's description, and the names in the transcript, before the transcript goes up, so the event of a new transcript
+  and `get_transcript` carry them. Nothing changes here: they are a title and names like the ones a user gives.
 - "Disconnect" in any Recly app ends its Drive access: its sign-in is a grant of Recly's Cloud project, so that revoke (§6) ends its token too and it asks to be signed in again. recly-events itself never revokes, which would disconnect every Recly device.
 - It reads no email, name or profile at all: the CLI's `init` check confirms Drive with `about?fields=user(permissionId)` and prints only that it is connected — Google's consent screen has just shown the account (2026-10-06).
 - Its home directory (`~/Library/Application Support/recly-events`, `$XDG_CONFIG_HOME/recly-events`, `%AppData%\recly-events`) is owner-only and holds the config, the CLI's Google client and token, the tunnel key, `state.json` (Drive cursor, subscriptions with their signing secrets, the event inbox including titles, the delivery queue) and logs (event IDs and outcomes, no titles).
@@ -3841,7 +3889,7 @@ chosen by the user, as with the skills (`skills/`). `--print-config` prints the 
 ### §10 Sign in with ChatGPT — the user's own ChatGPT plan (2026-10-09)
 
 The Android phone, iPhone, Mac and Windows apps can sign in to the user's ChatGPT account and use its plan for summaries (§8
-"Summaries"). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
+"Summaries") and, with their switches on, for the titles and speaker names of new transcripts (§8 "Titles and speaker names"). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
 the device registers as a public client the first time (`client_id=dynamic_agent_client`, no secret, no API key, and
 `agent_name_hint` `Recly Android`, `Recly iPhone`, `Recly macOS` or `Recly Windows`, so ChatGPT's connected apps tell the devices apart;
 recly-events never signs in to ChatGPT, so it has no entry there) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
@@ -3855,9 +3903,11 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`); Recly offers those marked `list`, less `HIDDEN_MODELS` (§8) |
 | Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `My format` and `About you` when set — and **the recording's transcript text with its times and the speakers' names**, plus each highlight's time and the words said then — no title, never audio | the summary as a stream (`store: false`) |
 | Ask | the same | the same, plus the preset's question or the user's own | the answer as a stream (`store: false`); kept in memory only |
+| Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, no highlights, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published |
 
-- Only when the user asks: signing in, and choosing `Summarize`, `Summarize as…` or a question in `Ask about this recording…` on one recording. There is no background use (OpenAI's terms require
-  express consent for it).
+- Only when the user asks: signing in, and choosing `Summarize`, `Summarize as…` or a question in `Ask about this recording…` on one
+  recording. The one background use is titles and speaker names: only with `Fill in titles` or `Fill in speaker names` turned on — the
+  user's express consent, which OpenAI's terms require — when this device publishes a new transcript.
 - The tokens stay in the device's secure storage (§5, namespace `chatgpt`); the ID token's claims are checked (issuer, audience = the
   client id, expiry, `nonce`, the same `sub` on a later sign-in) without its signature, which OpenID Connect allows for a token received
   directly from the token endpoint over TLS. Requests that carry a code or token are never logged.

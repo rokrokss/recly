@@ -203,7 +203,8 @@ class ReclyCore(
                 deps,
                 jobStore,
                 recordings,
-                defaultRunners(db, deps, localTranscription),
+                // Read when a transcript is published, long after construction (docs/08 "Titles and speaker names").
+                defaultRunners(db, deps, localTranscription, recly.core.transcribe.TranscriptFill { record, transcript -> autoFill.fill(record, transcript) }),
                 marker = folderMarker,
                 transferConsents = transferConsents,
                 prepare = { driveJobAccess.prepare() },
@@ -269,6 +270,15 @@ class ReclyCore(
         icloudChosen = { processingSettings.storage() == StorageKind.ICLOUD },
         transcriptsChanged = { resultChanges.value++ },
         summariesChanged = { summaries.changed() },
+    )
+
+    /** docs/08 "Titles and speaker names": what a transcript asks the user's ChatGPT plan for before it is published. */
+    private val autoFill = recly.core.chatgpt.AutoFill(
+        db, deps, summaries, transferConsents, recordings,
+        setTitle = { recordingId, title ->
+            // In the folder before the transcript: whatever sees the transcript arrive reads the title with it.
+            recordings.fillTitle(recordingId, title).also { if (it) remote.pushTitles() }
+        },
     )
 
     private val searchIndex = recly.core.recording.RecordingSearch(recordings, deps)

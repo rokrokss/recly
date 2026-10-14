@@ -430,6 +430,10 @@
     <string name="summary_about">关于你</string>
     <string name="summary_about_placeholder">例如：产品经理，关注截止日期和决定。</string>
     <string name="summary_about_note">摘要和回答会据此判断哪些内容对你重要。</string>
+    <string name="summary_auto_title">自动填写标题</string>
+    <string name="summary_auto_title_note">本设备转录没有标题的录音时，会把转写文本发送给ChatGPT来生成标题。这会计入你的ChatGPT用量。</string>
+    <string name="summary_auto_speakers">自动填写说话人名称</string>
+    <string name="summary_auto_speakers_note">本设备转录录音时，会把转写文本发送给ChatGPT，为对话中被叫到名字的说话人命名。这会计入你的ChatGPT用量。</string>
     <string name="summary_as">按格式总结…</string>
     <string name="summary_play_from">从 %1$s 开始播放</string>
     <string name="ask_menu">询问这段录音…</string>

@@ -430,6 +430,10 @@
     <string name="summary_about">Su di te</string>
     <string name="summary_about_placeholder">ad es. Product manager; mi interessano scadenze e decisioni.</string>
     <string name="summary_about_note">Riepiloghi e risposte lo usano per capire cosa conta per te.</string>
+    <string name="summary_auto_title">Completa i titoli</string>
+    <string name="summary_auto_title_note">Quando questo dispositivo trascrive una registrazione senza titolo, la trascrizione viene inviata a ChatGPT per ottenerne uno. Conta nel tuo utilizzo di ChatGPT.</string>
+    <string name="summary_auto_speakers">Completa i nomi degli interlocutori</string>
+    <string name="summary_auto_speakers_note">Quando questo dispositivo trascrive una registrazione, la trascrizione viene inviata a ChatGPT per dare un nome agli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT.</string>
     <string name="summary_as">Riepiloga come…</string>
     <string name="summary_play_from">Riproduci da %1$s</string>
     <string name="ask_menu">Chiedi su questa registrazione…</string>

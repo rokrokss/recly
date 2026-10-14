@@ -742,6 +742,39 @@ class CrossShellDictionaryTest {
                 phone = "Take this app’s access to your Google account away.",
                 pending = setOf("windows"),
             ),
+            // docs/08 "Titles and speaker names": the two switches, and the sentence under each that is the consent to them.
+            Line(
+                what = "the title fill switch",
+                en = "Fill in titles",
+                ko = "제목 자동으로 채우기",
+                android = "summary_auto_title",
+                windows = "summary.auto.title",
+                reckit = "Fill in titles",
+            ),
+            Line(
+                what = "what the title fill sends",
+                en = "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.",
+                ko = "이 기기에서 제목 없는 녹음을 전사하면 전사본을 ChatGPT에 보내 제목을 받습니다. ChatGPT 사용량에 포함됩니다.",
+                android = "summary_auto_title_note",
+                windows = "summary.auto.title.note",
+                reckit = "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.",
+            ),
+            Line(
+                what = "the speaker name fill switch",
+                en = "Fill in speaker names",
+                ko = "화자 이름 자동으로 채우기",
+                android = "summary_auto_speakers",
+                windows = "summary.auto.speakers",
+                reckit = "Fill in speaker names",
+            ),
+            Line(
+                what = "what the speaker name fill sends",
+                en = "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.",
+                ko = "이 기기에서 녹음을 전사하면 전사본을 ChatGPT에 보내, 대화에서 이름이 불린 화자에게 이름을 붙입니다. ChatGPT 사용량에 포함됩니다.",
+                android = "summary_auto_speakers_note",
+                windows = "summary.auto.speakers.note",
+                reckit = "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.",
+            ),
         )
     }
 }

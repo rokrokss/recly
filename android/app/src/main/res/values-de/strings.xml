@@ -430,6 +430,10 @@
     <string name="summary_about">Über dich</string>
     <string name="summary_about_placeholder">z. B. Produktmanagerin; mir sind Fristen und Entscheidungen wichtig.</string>
     <string name="summary_about_note">Zusammenfassungen und Antworten nutzen das, um einzuschätzen, was dir wichtig ist.</string>
+    <string name="summary_auto_title">Titel automatisch ergänzen</string>
+    <string name="summary_auto_title_note">Transkribiert dieses Gerät eine Aufnahme ohne Titel, geht das Transkript für einen Titel an ChatGPT. Das zählt zu deiner ChatGPT-Nutzung.</string>
+    <string name="summary_auto_speakers">Sprechernamen automatisch ergänzen</string>
+    <string name="summary_auto_speakers_note">Transkribiert dieses Gerät eine Aufnahme, geht das Transkript an ChatGPT, um die Sprecher zu benennen, die darin mit Namen angesprochen werden. Das zählt zu deiner ChatGPT-Nutzung.</string>
     <string name="summary_as">Zusammenfassen als…</string>
     <string name="summary_play_from">Ab %1$s abspielen</string>
     <string name="ask_menu">Zu dieser Aufnahme fragen…</string>
