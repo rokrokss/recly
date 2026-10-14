@@ -8,7 +8,7 @@
     <string name="recording_active">Nagre-record</string>
     <string name="recording_stopping">Sine-save…</string>
     <string name="recording_mic_denied">Kailangan ang pahintulot sa mikropono</string>
-    <string name="recording_save_deferred">Hindi natapos ang pag-save — mababawi sa susunod</string>
+    <string name="recording_save_deferred">Kulang ang pag-save — mababawi mamaya</string>
     <string name="recording_failed">Nabigo: %1$s</string>
     <string name="pending_badge">Naghihintay maipadala</string>
     <string name="sending_badge">Ipinapadala</string>

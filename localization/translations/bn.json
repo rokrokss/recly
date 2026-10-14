@@ -53,7 +53,7 @@
   "Could not fetch from Drive": "Drive থেকে আনা যায়নি",
   "Could not fetch from iCloud": "iCloud থেকে আনা যায়নি",
   "Could not finish saving — it is recovered on the next run": "সেভ করা শেষ হয়নি; পরের বার চালু হলে পুনরুদ্ধার করা হবে",
-  "Could not finish saving — recovered next time": "সেভ করা শেষ হয়নি; পরের বার পুনরুদ্ধার করা হবে",
+  "Could not finish saving — recovered next time": "সেভ অসম্পূর্ণ — পরে পুনরুদ্ধার হবে",
   "Could not load the transcript. Try again.": "ট্রান্সক্রিপ্ট লোড করা যায়নি। আবার চেষ্টা করুন।",
   "Could not play this recording. Try playing it again.": "এই রেকর্ডিং চালানো যায়নি। আবার চালিয়ে দেখুন।",
   "Could not read from the local folder": "লোকাল ফোল্ডার থেকে পড়া যায়নি",

@@ -8,7 +8,7 @@
     <string name="recording_active">Kayıt yapılıyor</string>
     <string name="recording_stopping">Kaydediliyor…</string>
     <string name="recording_mic_denied">Mikrofon izni gerekiyor</string>
-    <string name="recording_save_deferred">Kaydetme tamamlanamadı — sonraki açılışta kurtarılacak</string>
+    <string name="recording_save_deferred">Kayıt tamamlanmadı — sonra kurtarılacak</string>
     <string name="recording_failed">Başarısız: %1$s</string>
     <string name="pending_badge">Gönderim bekliyor</string>
     <string name="sending_badge">Gönderiliyor</string>

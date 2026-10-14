@@ -8,7 +8,7 @@
     <string name="recording_active">रिकॉर्डिंग जारी</string>
     <string name="recording_stopping">सहेजा जा रहा है…</string>
     <string name="recording_mic_denied">माइक्रोफ़ोन की अनुमति चाहिए</string>
-    <string name="recording_save_deferred">सहेजना पूरा नहीं हो सका; अगली बार खोलने पर बहाल होगा</string>
+    <string name="recording_save_deferred">सहेजना अधूरा — बाद में बहाल होगा</string>
     <string name="recording_failed">विफल: %1$s</string>
     <string name="pending_badge">भेजने की प्रतीक्षा में</string>
     <string name="sending_badge">भेजा जा रहा है</string>

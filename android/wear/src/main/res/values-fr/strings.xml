@@ -8,7 +8,7 @@
     <string name="recording_active">Enregistrement</string>
     <string name="recording_stopping">Enregistrement en cours…</string>
     <string name="recording_mic_denied">L’autorisation du microphone est nécessaire</string>
-    <string name="recording_save_deferred">Enregistrement incomplet ; récupération au prochain lancement</string>
+    <string name="recording_save_deferred">Enregistrement incomplet — repris plus tard</string>
     <string name="recording_failed">Échec : %1$s</string>
     <string name="pending_badge">En attente d\'envoi</string>
     <string name="sending_badge">Envoi</string>

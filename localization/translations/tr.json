@@ -53,7 +53,7 @@
   "Could not fetch from Drive": "Drive'dan alınamadı",
   "Could not fetch from iCloud": "iCloud'dan alınamadı",
   "Could not finish saving — it is recovered on the next run": "Kaydetme tamamlanamadı — bir sonraki çalıştırmada kurtarılacak",
-  "Could not finish saving — recovered next time": "Kaydetme tamamlanamadı — sonraki açılışta kurtarılacak",
+  "Could not finish saving — recovered next time": "Kayıt tamamlanmadı — sonra kurtarılacak",
   "Could not load the transcript. Try again.": "Transkript yüklenemedi. Yeniden deneyin.",
   "Could not play this recording. Try playing it again.": "Bu kayıt oynatılamadı. Yeniden oynatmayı deneyin.",
   "Could not read from the local folder": "Yerel klasörden okunamadı",

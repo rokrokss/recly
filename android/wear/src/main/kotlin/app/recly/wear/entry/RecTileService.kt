@@ -126,7 +126,7 @@ class RecTileService : TileService() {
                 ModifiersBuilders.Modifiers.Builder()
                     .setBackground(
                         ModifiersBuilders.Background.Builder()
-                            .setColor(argb(if (recording) DANGER else BACKGROUND))
+                            .setColor(argb(if (recording) DANGER else SURFACE))
                             .setCorner(corner)
                             .build(),
                     )
@@ -181,6 +181,7 @@ class RecTileService : TileService() {
         // docs/09 "Tokens": the watch palette itself, not a copy of its hex.
         val DANGER = WearBlueprint.danger.toArgb()
         val BACKGROUND = WearBlueprint.background.toArgb()
+        val SURFACE = WearBlueprint.surface.toArgb()
         val TEXT = WearBlueprint.text.toArgb()
         val MUTED = WearBlueprint.textMuted.toArgb()
         const val CLICK_START = "start"

@@ -8,7 +8,7 @@
     <string name="recording_active">Aufnahme läuft</string>
     <string name="recording_stopping">Wird gespeichert…</string>
     <string name="recording_mic_denied">Mikrofonberechtigung erforderlich</string>
-    <string name="recording_save_deferred">Speichern nicht abgeschlossen; Wiederherstellung beim nächsten Start</string>
+    <string name="recording_save_deferred">Nicht fertig gespeichert — später repariert</string>
     <string name="recording_failed">Fehlgeschlagen: %1$s</string>
     <string name="pending_badge">Senden ausstehend</string>
     <string name="sending_badge">Wird gesendet</string>

@@ -53,7 +53,7 @@
   "Could not fetch from Drive": "Nie można pobrać z Drive",
   "Could not fetch from iCloud": "Nie można pobrać z iCloud",
   "Could not finish saving — it is recovered on the next run": "Nie można dokończyć zapisywania — nagranie zostanie odzyskane przy następnym uruchomieniu",
-  "Could not finish saving — recovered next time": "Nie dokończono zapisu — nagranie zostanie odzyskane później",
+  "Could not finish saving — recovered next time": "Zapis niepełny — odzyskany później",
   "Could not load the transcript. Try again.": "Nie można wczytać transkrypcji. Spróbuj ponownie.",
   "Could not play this recording. Try playing it again.": "Nie można odtworzyć tego nagrania. Spróbuj odtworzyć je ponownie.",
   "Could not read from the local folder": "Nie można odczytać z folderu lokalnego",
