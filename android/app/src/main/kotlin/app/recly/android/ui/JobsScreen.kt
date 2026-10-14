@@ -8,11 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.remember
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -107,6 +104,7 @@ import recly.core.job.StepReport
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import app.recly.android.ui.component.focusRing
+import app.recly.android.ui.component.BlueprintField
 
 /**
  * docs/11 A4, drawn as docs/09 screen principle 2 asks: a ledger. One row per recording — when, what, how
@@ -964,44 +962,23 @@ private const val EMPTY_LENGTH = "--:--"
 private fun duration(seconds: Double): String = clock(seconds.toLong())
 
 /**
- * docs/09 "Search": the field at the top of the list — the input border, a leading search glyph, and a clear
- * at the end once there is something to clear.
+ * docs/09 "Search": the field at the top of the list — the settings' own [BlueprintField], with a leading search
+ * glyph and a clear at the end once there is something to clear. The placeholder ends in "…" where a long
+ * language does not fit — never cut mid-word.
  */
 @Composable
 private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modifier = Modifier) {
-    val palette = blueprint
-    var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(Radius.node)
-    BasicTextField(
+    BlueprintField(
         value = query,
         onValueChange = onQuery,
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text),
-        cursorBrush = SolidColor(palette.accent),
-        modifier = modifier
-            .fillMaxWidth()
-            .onFocusChanged { focused = it.isFocused }
-            .testTag("search-field"),
-        decorationBox = { field ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = MinTouch)
-                    .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, shape)
-                    .background(palette.surface, shape)
-                    .padding(start = Space.s),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-            ) {
-                GlyphIcon(Glyph.SEARCH, palette.textMuted, size = 20.dp)
-                Box(Modifier.weight(1f)) {
-                    // One line, ended in "…" where a long language does not fit — never cut mid-word.
-                    if (query.isEmpty()) Text(stringResource(R.string.search_placeholder), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    field()
-                }
-                if (query.isNotEmpty()) GlyphButton(Glyph.CLOSE, stringResource(R.string.transcript_clear_search), { onQuery("") }, Modifier.testTag("search-clear"))
-            }
+        modifier = modifier.fillMaxWidth(),
+        placeholder = stringResource(R.string.search_placeholder),
+        fieldModifier = Modifier.testTag("search-field"),
+        leading = { GlyphIcon(Glyph.SEARCH, blueprint.textMuted, size = 20.dp) },
+        trailing = if (query.isNotEmpty()) {
+            { GlyphButton(Glyph.CLOSE, stringResource(R.string.transcript_clear_search), { onQuery("") }, Modifier.testTag("search-clear")) }
+        } else {
+            null
         },
     )
 }
@@ -1032,7 +1009,7 @@ private fun SearchResults(
         }
         return
     }
-    val tint = palette.accent.copy(alpha = 0.16f)
+    val tint = palette.accent.copy(alpha = MATCH_TINT)
     LazyColumn(modifier.testTag("search-results")) {
         items(hits, key = { it.recordingId }) { hit ->
             val title = hit.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.jobs_untitled)

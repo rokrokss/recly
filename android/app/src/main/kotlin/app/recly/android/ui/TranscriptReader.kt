@@ -41,6 +41,7 @@ import recly.core.recording.RecordingSearch
 import recly.core.transcribe.Transcript
 import app.recly.android.ui.component.dashedBorder
 import app.recly.android.ui.component.focusRing
+import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * One utterance group of the reader: the segments [segments] say, run together the way the core's
@@ -168,9 +169,14 @@ internal fun TranscriptReader(
                 Column(
                     Modifier
                         .padding(horizontal = Space.m)
-                        // docs/09 "Transcript reader": the group under the playhead, by a bar on its start edge.
+                        // docs/09 "Transcript reader": the group under the playhead, by a bar on its start edge — the
+                        // right one in Arabic, Persian and Urdu.
                         .drawBehind {
-                            if (now) drawRect(palette.accent, topLeft = Offset(-Space.s.toPx(), 0f), size = Size(2.dp.toPx(), size.height))
+                            if (!now) return@drawBehind
+                            val bar = ACTIVE_BAR.toPx()
+                            val gap = Space.s.toPx()
+                            val x = if (layoutDirection == LayoutDirection.Ltr) -gap else size.width + gap - bar
+                            drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(bar, size.height))
                         },
                 ) {
                     val stamp = clock(group.start.toLong(), scaleSec)
@@ -213,9 +219,12 @@ internal fun TranscriptReader(
     }
 }
 
-/** A find match's tint, and the current one's. */
-private const val MATCH_TINT = 0.16f
+/** A find match's tint, and the current one's (docs/09 "Derived tokens"); the list's search tints with the first. */
+internal const val MATCH_TINT = 0.16f
 private const val CURRENT_MATCH_TINT = 0.4f
+
+/** The active group's bar on its start edge (docs/09 "Accessibility": 2px). */
+private val ACTIVE_BAR = 2.dp
 
 /**
  * docs/09 "Transcript reader": who speaks, as a quiet badge — the name in the body face, an id like `S1` in

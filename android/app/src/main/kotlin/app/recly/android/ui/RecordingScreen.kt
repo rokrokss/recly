@@ -88,6 +88,8 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.delay
 import app.recly.android.ui.component.focusRing
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 
 /** docs/09 screen principle 1: the recording screen is a dashboard — three state nodes, a monospace timer
  * and one square node that starts and stops it. Everything slower than a tap — the service, the
@@ -233,8 +235,16 @@ fun RecordingSection(
             Text(
                 if (highlighted != null || blank) monoStamp(stringResource(R.string.highlight_status, stamp), stamp, mono.bodySmall)
                 else AnnotatedString(said),
+                // docs/09 "Disabled, focus and structure": news that arrives while the user looks is said politely. The
+                // node stays when the line is blank, so news arriving is a change of its text, not a node appearing.
                 modifier = Modifier.padding(horizontal = Space.m).testTag("status")
-                    .then(if (blank) Modifier.clearAndSetSemantics {} else Modifier),
+                    .then(
+                        if (blank) {
+                            Modifier.clearAndSetSemantics { liveRegion = LiveRegionMode.Polite }
+                        } else {
+                            Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                        },
+                    ),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (blank) Color.Transparent else palette.textMuted,
                 textAlign = TextAlign.Center,
