@@ -83,11 +83,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.composed
-import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
@@ -120,8 +115,6 @@ import app.recly.windows.ui.component.EmptyList
 import app.recly.windows.ui.component.FadingStatusBadge
 import app.recly.windows.ui.component.VerticalHairLine
 import app.recly.windows.ui.component.focusRing
-import app.recly.windows.ui.component.LocalTypingFocus
-import app.recly.windows.ui.component.TypingFocus
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -217,18 +210,10 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
     val searchFocus = remember { FocusRequester() }
     var findOpen by remember { mutableStateOf(false) }
     var findRequest by remember { mutableIntStateOf(0) }
-    val typing = remember { TypingFocus() }
     Row(
         Modifier.fillMaxSize().background(blueprint.background)
             // Only the kind of data while dragging: the file list itself is readable once it is dropped.
             .dragAndDropTarget(shouldStartDragAndDrop = { carriesFiles(it) }, target = drop)
-            // Space: Play or Pause, as the bar's button — while there is a recording on show that the button is offered for.
-            .spaceKey(typing) {
-                val detail = model.detail
-                if (detail == null || (!player.playing && detail.driveFetch == DriveFetch.FETCHING)) return@spaceKey false
-                playOrPause(model, detail, player)
-                true
-            }
             // Ctrl+F: find in the transcript on show, or the list's search when there is none to find in.
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown || event.key != Key.F || !(event.isCtrlPressed || event.isMetaPressed)) {
@@ -244,47 +229,44 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                 true
             },
     ) {
-        // The fields of this window tell it when they have the focus, so Space is theirs then.
-        CompositionLocalProvider(LocalTypingFocus provides typing) {
-            Sidebar(
-                model, strings, query, { query = it }, hits, searchFocus,
-                onOpen = { item -> leave { model.openDetail(item) } },
-                onOpenHit = { hit ->
-                    leave {
-                        // A hit in the title alone has nothing to find: no bar left open from before either.
-                        if (hit.snippets.isEmpty()) findOpen = false
-                        model.openSearchHit(hit, query.trim())
-                    }
-                },
-                modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
-            )
-            VerticalHairLine(Modifier.fillMaxHeight())
-            Column(Modifier.weight(1f).fillMaxHeight()) {
-                val detail = model.detail
-                if (detail == null) {
-                    // With no recordings at all there is nothing to pick, and the pane says nothing (2026-10-10): the list
-                    // beside it says what to do.
-                    if (model.recents.isNotEmpty()) Placeholder(strings[Str.DETAIL_PICK])
-                } else {
-                    Detail(
-                        model, detail, player,
-                        waveforms = WaveformKeeping(
-                            kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
-                            keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
-                        ),
-                        draft = draft,
-                        onDraft = { draft = it },
-                        // Only over the recording it was opened on: the tray can open another one under it.
-                        summaryDraft = summaryDraft?.takeIf { it.recordingId == detail.recordingId },
-                        onSummaryDraft = { summaryDraft = it },
-                        onLeaveEditor = leave,
-                        findOpen = findOpen,
-                        onFindOpen = { findOpen = it },
-                        findRequest = findRequest,
-                        theme = theme,
-                        strings = strings,
-                    )
+        Sidebar(
+            model, strings, query, { query = it }, hits, searchFocus,
+            onOpen = { item -> leave { model.openDetail(item) } },
+            onOpenHit = { hit ->
+                leave {
+                    // A hit in the title alone has nothing to find: no bar left open from before either.
+                    if (hit.snippets.isEmpty()) findOpen = false
+                    model.openSearchHit(hit, query.trim())
                 }
+            },
+            modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
+        )
+        VerticalHairLine(Modifier.fillMaxHeight())
+        Column(Modifier.weight(1f).fillMaxHeight()) {
+            val detail = model.detail
+            if (detail == null) {
+                // With no recordings at all there is nothing to pick, and the pane says nothing (2026-10-10): the list
+                // beside it says what to do.
+                if (model.recents.isNotEmpty()) Placeholder(strings[Str.DETAIL_PICK])
+            } else {
+                Detail(
+                    model, detail, player,
+                    waveforms = WaveformKeeping(
+                        kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
+                        keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
+                    ),
+                    draft = draft,
+                    onDraft = { draft = it },
+                    // Only over the recording it was opened on: the tray can open another one under it.
+                    summaryDraft = summaryDraft?.takeIf { it.recordingId == detail.recordingId },
+                    onSummaryDraft = { summaryDraft = it },
+                    onLeaveEditor = leave,
+                    findOpen = findOpen,
+                    onFindOpen = { findOpen = it },
+                    findRequest = findRequest,
+                    theme = theme,
+                    strings = strings,
+                )
             }
         }
     }
@@ -864,6 +846,8 @@ private fun PlayerBar(
                 onRemoveHighlight = { at -> model.setHighlights(detail.recordingId, detail.highlights - at) },
                 strings = strings,
                 spanSec = detail.spanSec,
+                // As the Play button beside it, which is not offered while the parts come back from Drive.
+                onPlayPause = { if (player.playing || detail.driveFetch != DriveFetch.FETCHING) playOrPause(model, detail, player) },
             )
         } else if (detail.driveFetch == DriveFetch.FETCHING) {
             // While the parts are coming back from Drive the row is already there, loading, so the
@@ -1056,7 +1040,8 @@ private const val GROW_SPREAD = 0.6f
  * docs/09 Accessibility: and the one place on it a second can be pointed at without a pointer. The row is
  * a focus stop that reports itself as the recording's position — the reading a screen reader gives
  * is the stamp the clock beside it shows, because that is what the playhead is — and the arrow keys
- * move it by [WaveformStepSec], which is the adjustable action RecKit's own bar has.
+ * move it by [WaveformStepSec], which is the adjustable action RecKit's own bar has. Space plays and
+ * pauses while it has the focus ([onPlayPause]), as on the Mac.
  *
  * @param peaks the recording's own timeline, or empty until [RecordingPlayer.prepare]'s decode is
  *   through — the row keeps its height and its playhead either way, so the bar does not change
@@ -1065,7 +1050,7 @@ private const val GROW_SPREAD = 0.6f
  * @param onScrub where the pointer is, while it is down, and null when it lets go.
  */
 @Composable
-private fun Waveform(
+internal fun Waveform(
     audio: RecordingPlaylist.Selection,
     peaks: FloatArray,
     positionSec: Double,
@@ -1080,6 +1065,8 @@ private fun Waveform(
     strings: Strings? = null,
     /** The recording's length, for the format of the times its menus draw ([LedgerFormat.clock]). */
     spanSec: Double? = null,
+    /** Space while the row has the focus: the Play button's press. */
+    onPlayPause: (() -> Unit)? = null,
 ) {
     val palette = blueprint
     val hair = palette.line
@@ -1121,6 +1108,7 @@ private fun Waveform(
                         when (event.key) {
                             Key.DirectionLeft -> onSeek(positionSec - WaveformStepSec)
                             Key.DirectionRight -> onSeek(positionSec + WaveformStepSec)
+                            Key.Spacebar -> onPlayPause?.invoke() ?: return@onPreviewKeyEvent false
                             else -> return@onPreviewKeyEvent false
                         }
                         true
@@ -1220,28 +1208,7 @@ private fun Waveform(
 }
 
 /**
- * Space as a window's key ([onSpace], which says whether it took it) — never while one of the window's fields has the
- * focus ([typing]), where the space is the field's. After a click, which focuses what it lands on and puts the window in
- * touch input, the window takes Space before that control can read it as its own press; under the keyboard a focused
- * button keeps its Space, and the window has it only when nothing took it. With nothing focused at all, Compose hands a
- * key to nobody, so the window's first Space comes after its first click or Tab.
- */
-internal fun Modifier.spaceKey(typing: TypingFocus, onSpace: () -> Boolean): Modifier = composed {
-    val input = LocalInputModeManager.current
-    // The key-up goes where its key-down went, so a focused control never sees half a press.
-    val took = remember { BooleanArray(1) }
-    val space: (KeyEvent) -> Boolean = { event ->
-        when {
-            event.key != Key.Spacebar || typing.typing -> false
-            event.type == KeyEventType.KeyDown -> onSpace().also { took[0] = it }
-            else -> took[0].also { took[0] = false }
-        }
-    }
-    onPreviewKeyEvent { input.inputMode == InputMode.Touch && space(it) }.onKeyEvent(space)
-}
-
-/**
- * Play, or pause what plays — the Play button's press and Space's. The recorder and the gate as they are at the press,
+ * Play, or pause what plays — the Play button's press, and Space's on the waveform. The recorder and the gate as they are at the press,
  * not as the last frame drew them: a start or a delete that lands between the two would otherwise get a press meant
  * for a bar that no longer offers Play.
  */

@@ -21,14 +21,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
@@ -226,23 +222,12 @@ internal fun fieldSemantics(label: String, hint: String?): FieldSemantics =
  * [BlueprintTextField]'s (2026-10-10): the input border, and the accent a step heavier while the field has the focus,
  * which is the same cue the chips and the graph nodes use. Disabled, a dashed edge in the disabled ink (docs/09
  * "Disabled, focus and structure").
- *
- * A field that has the focus also says so to the window's [LocalTypingFocus], so a key the window means something by
- * (Space plays) stays the field's while the user types.
  */
 fun Modifier.fieldBox(enabled: Boolean = true): Modifier = composed {
     val palette = blueprint
-    val typing = LocalTypingFocus.current
     var focused by remember { mutableStateOf(false) }
-    // A field removed while it had the focus no longer has it.
-    DisposableEffect(typing) { onDispose { if (focused) typing?.let { it.fields-- } } }
     val shape = RoundedCornerShape(Radius.node)
-    onFocusChanged {
-        if (it.hasFocus != focused) {
-            focused = it.hasFocus
-            typing?.let { t -> t.fields += if (focused) 1 else -1 }
-        }
-    }
+    onFocusChanged { focused = it.hasFocus }
         .then(
             when {
                 !enabled -> Modifier.dashedBorder(palette.line, palette.disabled, Radius.node)
@@ -252,16 +237,6 @@ fun Modifier.fieldBox(enabled: Boolean = true): Modifier = composed {
         )
         .background(palette.surface, shape)
 }
-
-/** How many of a window's text fields have the focus — one at most, counted so a hand-over cannot leave it wrong. */
-class TypingFocus {
-    var fields by mutableIntStateOf(0)
-
-    val typing: Boolean get() = fields > 0
-}
-
-/** The window's [TypingFocus], where one asks; null elsewhere, and a field then tells nobody. */
-val LocalTypingFocus: ProvidableCompositionLocal<TypingFocus?> = staticCompositionLocalOf { null }
 
 /**
  * docs/09 "Shape" · "Motion": a menu, as a square bordered card on the grid. Material's `DropdownMenu`
