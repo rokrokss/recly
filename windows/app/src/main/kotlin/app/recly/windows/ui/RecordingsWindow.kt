@@ -1,5 +1,8 @@
 package app.recly.windows.ui
 
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -80,6 +83,11 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.composed
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
@@ -111,6 +119,8 @@ import app.recly.windows.ui.component.SidebarWidth
 import app.recly.windows.ui.component.FadingStatusBadge
 import app.recly.windows.ui.component.VerticalHairLine
 import app.recly.windows.ui.component.focusRing
+import app.recly.windows.ui.component.LocalTypingFocus
+import app.recly.windows.ui.component.TypingFocus
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -206,10 +216,18 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
     val searchFocus = remember { FocusRequester() }
     var findOpen by remember { mutableStateOf(false) }
     var findRequest by remember { mutableIntStateOf(0) }
+    val typing = remember { TypingFocus() }
     Row(
         Modifier.fillMaxSize().background(blueprint.background)
             // Only the kind of data while dragging: the file list itself is readable once it is dropped.
             .dragAndDropTarget(shouldStartDragAndDrop = { carriesFiles(it) }, target = drop)
+            // Space: Play or Pause, as the bar's button — while there is a recording on show that the button is offered for.
+            .spaceKey(typing) {
+                val detail = model.detail
+                if (detail == null || (!player.playing && detail.driveFetch == DriveFetch.FETCHING)) return@spaceKey false
+                playOrPause(model, detail, player)
+                true
+            }
             // Ctrl+F: find in the transcript on show, or the list's search when there is none to find in.
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown || event.key != Key.F || !(event.isCtrlPressed || event.isMetaPressed)) {
@@ -225,44 +243,47 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                 true
             },
     ) {
-        Sidebar(
-            model, strings, query, { query = it }, hits, searchFocus,
-            onOpen = { item -> leave { model.openDetail(item) } },
-            onOpenHit = { hit ->
-                leave {
-                    // A hit in the title alone has nothing to find: no bar left open from before either.
-                    if (hit.snippets.isEmpty()) findOpen = false
-                    model.openSearchHit(hit, query.trim())
+        // The fields of this window tell it when they have the focus, so Space is theirs then.
+        CompositionLocalProvider(LocalTypingFocus provides typing) {
+            Sidebar(
+                model, strings, query, { query = it }, hits, searchFocus,
+                onOpen = { item -> leave { model.openDetail(item) } },
+                onOpenHit = { hit ->
+                    leave {
+                        // A hit in the title alone has nothing to find: no bar left open from before either.
+                        if (hit.snippets.isEmpty()) findOpen = false
+                        model.openSearchHit(hit, query.trim())
+                    }
+                },
+                modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
+            )
+            VerticalHairLine(Modifier.fillMaxHeight())
+            Column(Modifier.weight(1f).fillMaxHeight()) {
+                val detail = model.detail
+                if (detail == null) {
+                    // With no recordings at all there is nothing to pick, and the pane says nothing (2026-10-10): the list
+                    // beside it says what to do.
+                    if (model.recents.isNotEmpty()) Placeholder(strings[Str.DETAIL_PICK])
+                } else {
+                    Detail(
+                        model, detail, player,
+                        waveforms = WaveformKeeping(
+                            kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
+                            keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
+                        ),
+                        draft = draft,
+                        onDraft = { draft = it },
+                        // Only over the recording it was opened on: the tray can open another one under it.
+                        summaryDraft = summaryDraft?.takeIf { it.recordingId == detail.recordingId },
+                        onSummaryDraft = { summaryDraft = it },
+                        onLeaveEditor = leave,
+                        findOpen = findOpen,
+                        onFindOpen = { findOpen = it },
+                        findRequest = findRequest,
+                        theme = theme,
+                        strings = strings,
+                    )
                 }
-            },
-            modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
-        )
-        VerticalHairLine(Modifier.fillMaxHeight())
-        Column(Modifier.weight(1f).fillMaxHeight()) {
-            val detail = model.detail
-            if (detail == null) {
-                // With no recordings at all there is nothing to pick, and the pane says nothing (2026-10-10): the list
-                // beside it says what to do.
-                if (model.recents.isNotEmpty()) Placeholder(strings[Str.DETAIL_PICK])
-            } else {
-                Detail(
-                    model, detail, player,
-                    waveforms = WaveformKeeping(
-                        kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
-                        keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
-                    ),
-                    draft = draft,
-                    onDraft = { draft = it },
-                    // Only over the recording it was opened on: the tray can open another one under it.
-                    summaryDraft = summaryDraft?.takeIf { it.recordingId == detail.recordingId },
-                    onSummaryDraft = { summaryDraft = it },
-                    onLeaveEditor = leave,
-                    findOpen = findOpen,
-                    onFindOpen = { findOpen = it },
-                    findRequest = findRequest,
-                    theme = theme,
-                    strings = strings,
-                )
             }
         }
     }
@@ -915,24 +936,7 @@ private fun PlayerBar(
                     ) {
                         BlueprintButton(
                             label = if (player.playing) strings[Str.PLAYER_PAUSE] else strings[Str.PLAYER_PLAY],
-                            onClick = {
-                                if (player.playing) {
-                                    player.pause()
-                                } else if (
-                                    // The recorder and the gate as they are at the press, not as
-                                    // the last frame drew them: a start or a delete that lands
-                                    // between the two would otherwise get a press meant for a bar
-                                    // that no longer offers Play.
-                                    RecordingPlaylist.canPlay(
-                                        !recording(),
-                                        fetchDecided,
-                                        !detail.audio.isEmpty,
-                                        blocked(),
-                                    )
-                                ) {
-                                    player.play(detail.audio)
-                                }
-                            },
+                            onClick = { playOrPause(model, detail, player) },
                             tone = ButtonTone.PRIMARY,
                         )
                     }
@@ -1115,128 +1119,178 @@ private fun Waveform(
     val hair = palette.line
     val totalSec = audio.totalSec
     var tickMenu by remember(audio) { mutableStateOf<Double?>(null) }
-    BoxWithConstraints(Modifier.fillMaxWidth().height(MinTouch)) {
-        val width = maxWidth
-        // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks —
-        // and are simply there with reduce motion.
-        val still = LocalReduceMotion.current
-        val reveal = remember(audio) { Animatable(if (growIn && !still) 0f else 1f) }
-        LaunchedEffect(audio, peaks.isNotEmpty()) {
-            if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(growMs, easing = LinearEasing))
-        }
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(MinTouch)
-                .testTag("waveform")
-                .focusRing()
-                .semantics {
-                    contentDescription = label
-                    progressBarRangeInfo =
-                        ProgressBarRangeInfo(positionSec.toFloat(), 0f..totalSec.toFloat().coerceAtLeast(0f))
-                    setProgress { target ->
-                        onSeek(target.toDouble())
+    // docs/09 "Disabled, focus and structure": the row is a timeline, left to right in every language — the bars are
+    // drawn from the left, so the ticks' targets and their menu are laid out from the left too, or in Arabic, Persian
+    // and Urdu a click on a tick would land on its mirror image. The menu's own words keep the language's direction.
+    val reading = LocalLayoutDirection.current
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        BoxWithConstraints(Modifier.fillMaxWidth().height(MinTouch)) {
+            val width = maxWidth
+            // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks —
+            // and are simply there with reduce motion.
+            val still = LocalReduceMotion.current
+            val reveal = remember(audio) { Animatable(if (growIn && !still) 0f else 1f) }
+            LaunchedEffect(audio, peaks.isNotEmpty()) {
+                if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(growMs, easing = LinearEasing))
+            }
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(MinTouch)
+                    .testTag("waveform")
+                    .focusRing()
+                    .semantics {
+                        contentDescription = label
+                        progressBarRangeInfo =
+                            ProgressBarRangeInfo(positionSec.toFloat(), 0f..totalSec.toFloat().coerceAtLeast(0f))
+                        setProgress { target ->
+                            onSeek(target.toDouble())
+                            true
+                        }
+                    }
+                    // Before [focusable], so the row's own node sees the key before the focus system takes
+                    // the arrows for moving between stops.
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.DirectionLeft -> onSeek(positionSec - WaveformStepSec)
+                            Key.DirectionRight -> onSeek(positionSec + WaveformStepSec)
+                            else -> return@onPreviewKeyEvent false
+                        }
                         true
                     }
-                }
-                // Before [focusable], so the row's own node sees the key before the focus system takes
-                // the arrows for moving between stops.
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.key) {
-                        Key.DirectionLeft -> onSeek(positionSec - WaveformStepSec)
-                        Key.DirectionRight -> onSeek(positionSec + WaveformStepSec)
-                        else -> return@onPreviewKeyEvent false
-                    }
-                    true
-                }
-                .focusable()
-                // Keyed on the recording and not on its seconds: what a release seeks is the selection
-                // this gesture was composed with, and two recordings can be the same length.
-                .pointerInput(audio) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        var sec = second(down.position.x, size.width, totalSec)
-                        onScrub(sec)
-                        down.consume()
-                        var pressed = true
-                        while (pressed) {
-                            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                            sec = second(change.position.x, size.width, totalSec)
+                    .focusable()
+                    // Keyed on the recording and not on its seconds: what a release seeks is the selection
+                    // this gesture was composed with, and two recordings can be the same length.
+                    .pointerInput(audio) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            var sec = second(down.position.x, size.width, totalSec)
                             onScrub(sec)
-                            change.consume()
-                            pressed = change.pressed
+                            down.consume()
+                            var pressed = true
+                            while (pressed) {
+                                val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                                sec = second(change.position.x, size.width, totalSec)
+                                onScrub(sec)
+                                change.consume()
+                                pressed = change.pressed
+                            }
+                            onSeek(sec)
+                            onScrub(null)
                         }
-                        onSeek(sec)
-                        onScrub(null)
+                    },
+            ) {
+                val playhead = if (totalSec > 0) (size.width * positionSec / totalSec).toFloat() else 0f
+                val step = WaveformStep.toPx()
+                val line = hair.toPx()
+                val bins = RecordingWaveform.bins(peaks, (size.width / step).toInt())
+                // docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
+                // playhead is the accent and ahead of it the muted colour, both at full opacity — docs/09
+                // "Accessibility" asks 3:1 of a graphic, and the muted token faded out to hint at "not played
+                // yet" is under 2:1 on the surface. The token promotes itself to the body colour in high contrast,
+                // so there is nothing here to special-case.
+                if (bins.isEmpty()) {
+                    drawRect(
+                        color = palette.grid,
+                        topLeft = Offset(0f, (size.height - line) / 2),
+                        size = Size(size.width, line),
+                    )
+                }
+                val shown = reveal.value
+                bins.forEachIndexed { index, bin ->
+                    val x = index * step
+                    // Left first: each bar starts a little after the one before it and rises in 40% of the time.
+                    val start = GROW_SPREAD * index / maxOf(1, bins.size - 1)
+                    val k = ((shown - start) / (1f - GROW_SPREAD)).coerceIn(0f, 1f)
+                    val rise = 1f - (1f - k) * (1f - k) * (1f - k)
+                    // Silence is a tick rather than nothing, so the row reads as the whole recording.
+                    val height = maxOf(WaveformMinBar.toPx(), bin * size.height * rise)
+                    drawRect(
+                        color = if (x <= playhead) palette.accent else palette.textMuted,
+                        topLeft = Offset(x, (size.height - height) / 2),
+                        size = Size(WaveformBar.toPx(), height),
+                    )
+                }
+                // Over the bars and under the playhead: a 2dp accent line the full height, capped with the mark's square.
+                if (totalSec > 0) {
+                    highlights.forEach { at ->
+                        val x = (size.width * at / totalSec).toFloat().coerceIn(0f, size.width - TickWidth.toPx())
+                        drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TickWidth.toPx(), size.height))
+                        val cap = HIGHLIGHT_MARK.toPx()
+                        drawRect(palette.accent, topLeft = Offset(x + (TickWidth.toPx() - cap) / 2, 0f), size = Size(cap, cap))
                     }
-                },
-        ) {
-            val playhead = if (totalSec > 0) (size.width * positionSec / totalSec).toFloat() else 0f
-            val step = WaveformStep.toPx()
-            val line = hair.toPx()
-            val bins = RecordingWaveform.bins(peaks, (size.width / step).toInt())
-            // docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
-            // playhead is the accent and ahead of it the muted colour, both at full opacity — docs/09
-            // "Accessibility" asks 3:1 of a graphic, and the muted token faded out to hint at "not played
-            // yet" is under 2:1 on the surface. The token promotes itself to the body colour in high contrast,
-            // so there is nothing here to special-case.
-            if (bins.isEmpty()) {
+                }
                 drawRect(
-                    color = palette.grid,
-                    topLeft = Offset(0f, (size.height - line) / 2),
-                    size = Size(size.width, line),
+                    color = palette.accent,
+                    topLeft = Offset(playhead.coerceIn(0f, size.width - line), 0f),
+                    size = Size(line, size.height),
                 )
             }
-            val shown = reveal.value
-            bins.forEachIndexed { index, bin ->
-                val x = index * step
-                // Left first: each bar starts a little after the one before it and rises in 40% of the time.
-                val start = GROW_SPREAD * index / maxOf(1, bins.size - 1)
-                val k = ((shown - start) / (1f - GROW_SPREAD)).coerceIn(0f, 1f)
-                val rise = 1f - (1f - k) * (1f - k) * (1f - k)
-                // Silence is a tick rather than nothing, so the row reads as the whole recording.
-                val height = maxOf(WaveformMinBar.toPx(), bin * size.height * rise)
-                drawRect(
-                    color = if (x <= playhead) palette.accent else palette.textMuted,
-                    topLeft = Offset(x, (size.height - height) / 2),
-                    size = Size(WaveformBar.toPx(), height),
-                )
-            }
-            // Over the bars and under the playhead: a 2dp accent line the full height, capped with the mark's square.
-            if (totalSec > 0) {
+            // Each tick is a target of its own (±12dp) that a reader hears as "Highlight 00:12:34".
+            if (totalSec > 0 && strings != null) {
                 highlights.forEach { at ->
-                    val x = (size.width * at / totalSec).toFloat().coerceIn(0f, size.width - TickWidth.toPx())
-                    drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TickWidth.toPx(), size.height))
-                    val cap = HIGHLIGHT_MARK.toPx()
-                    drawRect(palette.accent, topLeft = Offset(x + (TickWidth.toPx() - cap) / 2, 0f), size = Size(cap, cap))
+                    val x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)
+                    Box(
+                        Modifier
+                            .offset(x = x - TickTarget / 2)
+                            .width(TickTarget)
+                            .fillMaxHeight()
+                            .focusRing()
+                            .clickable(role = Role.Button) { tickMenu = at }
+                            .semantics { contentDescription = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed(millis(at))] },
+                    )
                 }
-            }
-            drawRect(
-                color = palette.accent,
-                topLeft = Offset(playhead.coerceIn(0f, size.width - line), 0f),
-                size = Size(line, size.height),
-            )
-        }
-        // Each tick is a target of its own (±12dp) that a reader hears as "Highlight 00:12:34".
-        if (totalSec > 0 && strings != null) {
-            highlights.forEach { at ->
-                val x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)
-                Box(
-                    Modifier
-                        .offset(x = x - TickTarget / 2)
-                        .width(TickTarget)
-                        .fillMaxHeight()
-                        .clickable(role = Role.Button) { tickMenu = at }
-                        .semantics { contentDescription = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed(millis(at))] },
-                )
-            }
-            tickMenu?.let { at ->
-                Box(Modifier.offset(x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)).fillMaxHeight()) {
-                    HighlightMenu(at, spanSec ?: totalSec, { tickMenu = null }, { onSeek(at) }, { onRemoveHighlight(at) }, strings)
+                tickMenu?.let { at ->
+                    Box(Modifier.offset(x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)).fillMaxHeight()) {
+                        CompositionLocalProvider(LocalLayoutDirection provides reading) {
+                            HighlightMenu(at, spanSec ?: totalSec, { tickMenu = null }, { onSeek(at) }, { onRemoveHighlight(at) }, strings)
+                        }
+                    }
                 }
             }
         }
+    }
+}
+
+/**
+ * Space as a window's key ([onSpace], which says whether it took it) — never while one of the window's fields has the
+ * focus ([typing]), where the space is the field's. After a click, which focuses what it lands on and puts the window in
+ * touch input, the window takes Space before that control can read it as its own press; under the keyboard a focused
+ * button keeps its Space, and the window has it only when nothing took it. With nothing focused at all, Compose hands a
+ * key to nobody, so the window's first Space comes after its first click or Tab.
+ */
+internal fun Modifier.spaceKey(typing: TypingFocus, onSpace: () -> Boolean): Modifier = composed {
+    val input = LocalInputModeManager.current
+    // The key-up goes where its key-down went, so a focused control never sees half a press.
+    val took = remember { BooleanArray(1) }
+    val space: (KeyEvent) -> Boolean = { event ->
+        when {
+            event.key != Key.Spacebar || typing.typing -> false
+            event.type == KeyEventType.KeyDown -> onSpace().also { took[0] = it }
+            else -> took[0].also { took[0] = false }
+        }
+    }
+    onPreviewKeyEvent { input.inputMode == InputMode.Touch && space(it) }.onKeyEvent(space)
+}
+
+/**
+ * Play, or pause what plays — the Play button's press and Space's. The recorder and the gate as they are at the press,
+ * not as the last frame drew them: a start or a delete that lands between the two would otherwise get a press meant
+ * for a bar that no longer offers Play.
+ */
+private fun playOrPause(model: ShellModel, detail: RecordingDetail, player: RecordingPlayer) {
+    if (player.playing) {
+        player.pause()
+    } else if (
+        RecordingPlaylist.canPlay(
+            !model.recording,
+            detail.driveFetch != DriveFetch.DECIDING,
+            !detail.audio.isEmpty,
+            model.playbackBlocked,
+        )
+    ) {
+        player.play(detail.audio)
     }
 }
 
