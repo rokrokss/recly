@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Pamagat ng recording</string>
     <string name="recording_title_field">Pamagat</string>
     <string name="recording_title_save">I-save</string>
-    <string name="recording_title_skip">Laktawan</string>
     <string name="recording_mic_required">Kinakailangan ang pahintulot sa mikropono.</string>
     <string name="recording_open_settings">Buksan ang Mga Setting</string>
     <string name="recording_title_too_late">Huli na para i-save ang pamagat — nagsimula na ang pag-upload</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Nalinis na ang audio</string>
     <string name="enqueue_skipped_short">Masyadong maikli — nilaktawan</string>
     <string name="enqueue_already_done">Naproseso na</string>
+    <string name="enqueue_failed">Hindi magawa ang gawain</string>
     <string name="jobs_title">Mga Recording</string>
     <string name="jobs_empty">Wala pang recording</string>
     <string name="jobs_empty_hint">Lalabas dito ang mga recording na gagawin mo.</string>

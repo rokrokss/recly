@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Título de la grabación</string>
     <string name="recording_title_field">Título</string>
     <string name="recording_title_save">Guardar</string>
-    <string name="recording_title_skip">Omitir</string>
     <string name="recording_mic_required">Se necesita permiso para el micrófono</string>
     <string name="recording_open_settings">Abrir ajustes</string>
     <string name="recording_title_too_late">Ya no se puede guardar el título: la subida ha empezado</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">El audio ya se ha eliminado</string>
     <string name="enqueue_skipped_short">Demasiado corto; omitido</string>
     <string name="enqueue_already_done">Ya procesado</string>
+    <string name="enqueue_failed">No se pudo crear la tarea</string>
     <string name="jobs_title">Grabaciones</string>
     <string name="jobs_empty">Aún no hay grabaciones</string>
     <string name="jobs_empty_hint">Tus grabaciones aparecerán aquí.</string>

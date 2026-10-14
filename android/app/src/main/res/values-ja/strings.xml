@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">録音タイトル</string>
     <string name="recording_title_field">タイトル</string>
     <string name="recording_title_save">保存</string>
-    <string name="recording_title_skip">スキップ</string>
     <string name="recording_mic_required">マイクの許可が必要です</string>
     <string name="recording_open_settings">設定を開く</string>
     <string name="recording_title_too_late">アップロード開始後はタイトルを保存できません</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">音声はすでに削除されています</string>
     <string name="enqueue_skipped_short">短すぎるためスキップしました</string>
     <string name="enqueue_already_done">処理済み</string>
+    <string name="enqueue_failed">ジョブを作成できませんでした</string>
     <string name="jobs_title">録音一覧</string>
     <string name="jobs_empty">録音はまだありません</string>
     <string name="jobs_empty_hint">録音するとここに表示されます。</string>

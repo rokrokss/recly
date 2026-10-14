@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">ชื่อการบันทึกเสียง</string>
     <string name="recording_title_field">ชื่อ</string>
     <string name="recording_title_save">บันทึก</string>
-    <string name="recording_title_skip">ข้าม</string>
     <string name="recording_mic_required">ต้องได้รับอนุญาตให้ใช้ไมโครโฟน</string>
     <string name="recording_open_settings">เปิดการตั้งค่า</string>
     <string name="recording_title_too_late">สายเกินไปที่จะบันทึกชื่อ การอัปโหลดเริ่มแล้ว</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">เสียงถูกล้างออกไปแล้ว</string>
     <string name="enqueue_skipped_short">สั้นเกินไป ข้ามแล้ว</string>
     <string name="enqueue_already_done">ดำเนินการแล้ว</string>
+    <string name="enqueue_failed">สร้างงานไม่ได้</string>
     <string name="jobs_title">การบันทึกเสียง</string>
     <string name="jobs_empty">ยังไม่มีการบันทึกเสียง</string>
     <string name="jobs_empty_hint">การบันทึกเสียงของคุณจะแสดงที่นี่</string>

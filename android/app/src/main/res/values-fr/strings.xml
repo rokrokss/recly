@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Titre de l’enregistrement</string>
     <string name="recording_title_field">Titre</string>
     <string name="recording_title_save">Enregistrer</string>
-    <string name="recording_title_skip">Passer</string>
     <string name="recording_mic_required">L’autorisation du microphone est nécessaire</string>
     <string name="recording_open_settings">Ouvrir les réglages</string>
     <string name="recording_title_too_late">Trop tard pour enregistrer le titre : l’envoi a commencé</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">L’audio a déjà été supprimé</string>
     <string name="enqueue_skipped_short">Trop court ; ignoré</string>
     <string name="enqueue_already_done">Déjà traité</string>
+    <string name="enqueue_failed">Impossible de créer la tâche</string>
     <string name="jobs_title">Enregistrements</string>
     <string name="jobs_empty">Aucun enregistrement</string>
     <string name="jobs_empty_hint">Vos enregistrements apparaîtront ici.</string>

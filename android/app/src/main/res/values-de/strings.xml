@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Aufnahmetitel</string>
     <string name="recording_title_field">Titel</string>
     <string name="recording_title_save">Speichern</string>
-    <string name="recording_title_skip">Überspringen</string>
     <string name="recording_mic_required">Mikrofonberechtigung erforderlich</string>
     <string name="recording_open_settings">Einstellungen öffnen</string>
     <string name="recording_title_too_late">Titel kann nicht mehr gespeichert werden: Upload gestartet</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Das Audio wurde bereits bereinigt</string>
     <string name="enqueue_skipped_short">Zu kurz; übersprungen</string>
     <string name="enqueue_already_done">Bereits verarbeitet</string>
+    <string name="enqueue_failed">Auftrag konnte nicht erstellt werden</string>
     <string name="jobs_title">Aufnahmen</string>
     <string name="jobs_empty">Noch keine Aufnahmen</string>
     <string name="jobs_empty_hint">Ihre Aufnahmen erscheinen hier.</string>

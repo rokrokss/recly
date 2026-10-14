@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Kayıt başlığı</string>
     <string name="recording_title_field">Başlık</string>
     <string name="recording_title_save">Kaydet</string>
-    <string name="recording_title_skip">Atla</string>
     <string name="recording_mic_required">Mikrofon izni gerekli.</string>
     <string name="recording_open_settings">Ayarlar\'ı aç</string>
     <string name="recording_title_too_late">Başlığı kaydetmek için çok geç — yükleme başladı</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Ses zaten temizlendi</string>
     <string name="enqueue_skipped_short">Çok kısa — atlandı</string>
     <string name="enqueue_already_done">Zaten işlendi</string>
+    <string name="enqueue_failed">İş oluşturulamadı</string>
     <string name="jobs_title">Kayıtlar</string>
     <string name="jobs_empty">Henüz kayıt yok</string>
     <string name="jobs_empty_hint">Yaptığınız kayıtlar burada görünür.</string>

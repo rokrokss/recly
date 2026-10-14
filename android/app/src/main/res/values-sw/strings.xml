@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Kichwa cha rekodi</string>
     <string name="recording_title_field">Kichwa</string>
     <string name="recording_title_save">Hifadhi</string>
-    <string name="recording_title_skip">Ruka</string>
     <string name="recording_mic_required">Ruhusa ya maikrofoni inahitajika.</string>
     <string name="recording_open_settings">Fungua Mipangilio</string>
     <string name="recording_title_too_late">Imechelewa kuhifadhi kichwa — upakiaji umeanza</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Sauti tayari imefutwa</string>
     <string name="enqueue_skipped_short">Fupi mno — imerukwa</string>
     <string name="enqueue_already_done">Tayari imeshughulikiwa</string>
+    <string name="enqueue_failed">Imeshindwa kuunda kazi</string>
     <string name="jobs_title">Orodha ya rekodi</string>
     <string name="jobs_empty">Bado hakuna rekodi</string>
     <string name="jobs_empty_hint">Rekodi zako zitaonekana hapa.</string>

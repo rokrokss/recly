@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">রেকর্ডিংয়ের শিরোনাম</string>
     <string name="recording_title_field">শিরোনাম</string>
     <string name="recording_title_save">সেভ করুন</string>
-    <string name="recording_title_skip">এড়িয়ে যান</string>
     <string name="recording_mic_required">মাইক্রোফোনের অনুমতি আবশ্যক।</string>
     <string name="recording_open_settings">সেটিংস খুলুন</string>
     <string name="recording_title_too_late">শিরোনাম সেভ করতে দেরি হয়ে গেছে; আপলোড শুরু হয়ে গেছে</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">অডিও আগেই মুছে ফেলা হয়েছে</string>
     <string name="enqueue_skipped_short">খুব ছোট; এড়িয়ে যাওয়া হয়েছে</string>
     <string name="enqueue_already_done">আগেই সম্পন্ন হয়েছে</string>
+    <string name="enqueue_failed">কাজটি তৈরি করা যায়নি</string>
     <string name="jobs_title">রেকর্ডিং</string>
     <string name="jobs_empty">এখনও কোনো রেকর্ডিং নেই</string>
     <string name="jobs_empty_hint">আপনার করা রেকর্ডিং এখানে দেখা যাবে।</string>

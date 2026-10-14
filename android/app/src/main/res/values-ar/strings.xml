@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">عنوان التسجيل</string>
     <string name="recording_title_field">العنوان</string>
     <string name="recording_title_save">حفظ</string>
-    <string name="recording_title_skip">تخطٍّ</string>
     <string name="recording_mic_required">يلزم إذن الميكروفون</string>
     <string name="recording_open_settings">فتح الإعدادات</string>
     <string name="recording_title_too_late">فات وقت حفظ العنوان؛ بدأ الرفع</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">تمت إزالة الصوت مسبقًا</string>
     <string name="enqueue_skipped_short">قصير جدًا؛ تم تخطيه</string>
     <string name="enqueue_already_done">تمت المعالجة مسبقًا</string>
+    <string name="enqueue_failed">تعذّر إنشاء المهمة</string>
     <string name="jobs_title">التسجيلات</string>
     <string name="jobs_empty">لا توجد تسجيلات بعد</string>
     <string name="jobs_empty_hint">ستظهر هنا التسجيلات التي تجريها.</string>

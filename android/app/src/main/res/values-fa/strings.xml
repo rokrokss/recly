@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">عنوان ضبط</string>
     <string name="recording_title_field">عنوان</string>
     <string name="recording_title_save">ذخیره</string>
-    <string name="recording_title_skip">رد شدن</string>
     <string name="recording_mic_required">اجازه میکروفون الزامی است.</string>
     <string name="recording_open_settings">باز کردن تنظیمات</string>
     <string name="recording_title_too_late">برای ذخیره عنوان دیر است؛ بارگذاری شروع شده است</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">صدا قبلاً پاک شده است</string>
     <string name="enqueue_skipped_short">خیلی کوتاه؛ رد شد</string>
     <string name="enqueue_already_done">قبلاً انجام شده</string>
+    <string name="enqueue_failed">وظیفه ایجاد نشد</string>
     <string name="jobs_title">ضبط‌ها</string>
     <string name="jobs_empty">هنوز ضبطی وجود ندارد</string>
     <string name="jobs_empty_hint">ضبط‌های شما اینجا نمایش داده می‌شوند.</string>

@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">录音标题</string>
     <string name="recording_title_field">标题</string>
     <string name="recording_title_save">保存</string>
-    <string name="recording_title_skip">跳过</string>
     <string name="recording_mic_required">需要麦克风权限</string>
     <string name="recording_open_settings">打开设置</string>
     <string name="recording_title_too_late">上传已开始，无法再保存标题</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">音频已被清理</string>
     <string name="enqueue_skipped_short">时长过短，已跳过</string>
     <string name="enqueue_already_done">已处理</string>
+    <string name="enqueue_failed">无法创建任务</string>
     <string name="jobs_title">录音</string>
     <string name="jobs_empty">暂无录音</string>
     <string name="jobs_empty_hint">录音后会显示在这里。</string>

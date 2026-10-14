@@ -33,7 +33,6 @@
     <string name="recording_title_prompt">녹음 제목</string>
     <string name="recording_title_field">제목</string>
     <string name="recording_title_save">저장</string>
-    <string name="recording_title_skip">건너뛰기</string>
     <string name="recording_mic_required">마이크 권한이 필요합니다.</string>
     <string name="recording_open_settings">설정 열기</string>
     <string name="recording_title_too_late">제목을 저장하기엔 이미 늦었습니다 — 업로드가 시작되었습니다</string>
@@ -44,6 +43,7 @@
     <string name="enqueue_parts_purged">파트가 이미 정리됨</string>
     <string name="enqueue_skipped_short">너무 짧아 건너뜀</string>
     <string name="enqueue_already_done">이미 처리됨</string>
+    <string name="enqueue_failed">작업을 만들지 못했습니다</string>
 
     <string name="jobs_title">목록</string>
     <string name="jobs_empty">아직 녹음이 없습니다</string>

@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Tiêu đề bản ghi âm</string>
     <string name="recording_title_field">Tiêu đề</string>
     <string name="recording_title_save">Lưu</string>
-    <string name="recording_title_skip">Bỏ qua</string>
     <string name="recording_mic_required">Cần cấp quyền truy cập micrô.</string>
     <string name="recording_open_settings">Mở Cài đặt</string>
     <string name="recording_title_too_late">Đã quá muộn để lưu tiêu đề — quá trình tải lên đã bắt đầu</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Âm thanh đã được dọn dẹp</string>
     <string name="enqueue_skipped_short">Quá ngắn — đã bỏ qua</string>
     <string name="enqueue_already_done">Đã xử lý</string>
+    <string name="enqueue_failed">Không thể tạo tác vụ</string>
     <string name="jobs_title">Bản ghi âm</string>
     <string name="jobs_empty">Chưa có bản ghi âm nào</string>
     <string name="jobs_empty_hint">Các bản ghi âm của bạn sẽ hiển thị ở đây.</string>

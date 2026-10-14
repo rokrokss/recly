@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">ریکارڈنگ کا عنوان</string>
     <string name="recording_title_field">عنوان</string>
     <string name="recording_title_save">محفوظ کریں</string>
-    <string name="recording_title_skip">نظر انداز کریں</string>
     <string name="recording_mic_required">مائیکروفون کی اجازت ضروری ہے۔</string>
     <string name="recording_open_settings">ترتیبات کھولیں</string>
     <string name="recording_title_too_late">عنوان محفوظ کرنے میں دیر ہو گئی — اپ لوڈ شروع ہو چکا ہے</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">آڈیو پہلے ہی ہٹایا جا چکا ہے</string>
     <string name="enqueue_skipped_short">بہت مختصر — نظر انداز کیا گیا</string>
     <string name="enqueue_already_done">پہلے ہی مکمل ہو چکا</string>
+    <string name="enqueue_failed">کام نہیں بنایا جا سکا</string>
     <string name="jobs_title">ریکارڈنگز</string>
     <string name="jobs_empty">ابھی کوئی ریکارڈنگ نہیں</string>
     <string name="jobs_empty_hint">آپ کی بنائی گئی ریکارڈنگز یہاں ظاہر ہوں گی۔</string>

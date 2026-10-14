@@ -48,7 +48,6 @@
     <string name="recording_title_prompt">Recording title</string>
     <string name="recording_title_field">Title</string>
     <string name="recording_title_save">Save</string>
-    <string name="recording_title_skip">Skip</string>
     <!-- Under the record node once the microphone has been refused, above `Open Settings`. -->
     <string name="recording_mic_required">The microphone permission is required.</string>
     <string name="recording_open_settings">Open Settings</string>
@@ -61,6 +60,7 @@
     <string name="enqueue_parts_purged">The audio has already been cleaned up</string>
     <string name="enqueue_skipped_short">Too short — skipped</string>
     <string name="enqueue_already_done">Already handled</string>
+    <string name="enqueue_failed">Could not create the job</string>
 
     <!-- Job list (docs/11 A4). The tab is `List`; the screen's own title is what is in it. -->
     <string name="jobs_title">Recordings</string>

@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Название записи</string>
     <string name="recording_title_field">Название</string>
     <string name="recording_title_save">Сохранить</string>
-    <string name="recording_title_skip">Пропустить</string>
     <string name="recording_mic_required">Нужно разрешение на микрофон</string>
     <string name="recording_open_settings">Открыть настройки</string>
     <string name="recording_title_too_late">Название сохранить уже нельзя: загрузка началась</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Аудио уже удалено</string>
     <string name="enqueue_skipped_short">Слишком коротко; пропущено</string>
     <string name="enqueue_already_done">Уже обработано</string>
+    <string name="enqueue_failed">Не удалось создать задачу</string>
     <string name="jobs_title">Записи</string>
     <string name="jobs_empty">Записей пока нет</string>
     <string name="jobs_empty_hint">Здесь появятся ваши записи.</string>

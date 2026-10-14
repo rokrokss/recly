@@ -398,6 +398,8 @@ private fun RecordTab(
         ledger = ledgerCode(jobs.items),
         onOpenProcessing = onOpenProcessing,
         onStart = onStart,
+        onPermitted = model::permitted,
+        onConsumePermissionAsk = model::consumePermissionAsk,
         onStop = model::stop,
         onHighlight = model::highlight,
         onMicDenied = model::micDenied,

@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Tytuł nagrania</string>
     <string name="recording_title_field">Tytuł</string>
     <string name="recording_title_save">Zapisz</string>
-    <string name="recording_title_skip">Pomiń</string>
     <string name="recording_mic_required">Wymagane uprawnienie do mikrofonu.</string>
     <string name="recording_open_settings">Otwórz Ustawienia</string>
     <string name="recording_title_too_late">Za późno na zapisanie tytułu — przesyłanie już się rozpoczęło</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Audio zostało już usunięte</string>
     <string name="enqueue_skipped_short">Za krótkie — pominięto</string>
     <string name="enqueue_already_done">Już przetworzone</string>
+    <string name="enqueue_failed">Nie można utworzyć zadania</string>
     <string name="jobs_title">Nagrania</string>
     <string name="jobs_empty">Brak nagrań</string>
     <string name="jobs_empty_hint">Tutaj pojawią się Twoje nagrania.</string>

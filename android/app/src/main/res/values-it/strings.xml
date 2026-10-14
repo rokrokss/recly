@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Titolo della registrazione</string>
     <string name="recording_title_field">Titolo</string>
     <string name="recording_title_save">Salva</string>
-    <string name="recording_title_skip">Salta</string>
     <string name="recording_mic_required">È necessaria l’autorizzazione per il microfono.</string>
     <string name="recording_open_settings">Apri Impostazioni</string>
     <string name="recording_title_too_late">Troppo tardi per salvare il titolo: il caricamento è iniziato</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">L’audio è già stato rimosso</string>
     <string name="enqueue_skipped_short">Troppo breve: ignorata</string>
     <string name="enqueue_already_done">Già elaborata</string>
+    <string name="enqueue_failed">Impossibile creare l’attività</string>
     <string name="jobs_title">Registrazioni</string>
     <string name="jobs_empty">Ancora nessuna registrazione</string>
     <string name="jobs_empty_hint">Le tue registrazioni appariranno qui.</string>
