@@ -2119,11 +2119,12 @@ The principle in one line: **intent, not decoration**.
   Examples elsewhere in this document written `00:12:34` stand for a time in this format.
 - **Shape**: corner radius 4 (nodes) / 8 (cards) / 0 (table rows) / **2 (badges)** — squares smaller than a node, such as status badges, checkboxes, radios and switch thumbs,
   use half the node radius (`Radius.badge`). The round record button is a **square node + thick border**
-  (72×72; while recording, filled + mono timer). On phones (Android · iPhone), **text buttons are at least 88 wide** (dp/pt, 2026-09-29):
+  (72×72; while recording, filled + mono timer). On phones (Android · iPhone, 2026-09-29) and the desktop (Mac · Windows, 2026-10-14), **text buttons are at least 88 wide** (dp/pt):
   a two-character button such as `Open` (`열기` in Korean) does not become the narrowest thing on the screen, and short buttons side by side line up at one width. `Close` · `Delete` ·
-  `Cancel` and data buttons in the fixed-width font (utterance times) keep their own width (user decision). At 360dp · 375pt, in Korean and English,
+  `Cancel` (with `Discard recording` and the desktop's `Quit`), data buttons in the fixed-width font (utterance times), glyph buttons (`⋯`) and the value of a dropdown keep their own width (user decision). At 360dp · 375pt, in Korean and English,
   this was tuned so that no new line breaks appear — list rows were changed to the flow of screen principle 2 below, and the mobile data confirmation dialog (three buttons)
-  always stacks vertically. Desktop is unchanged.
+  always stacks vertically. On the desktop a line of buttons that does not fit wraps rather than overflowing: the Windows recordings window's open row has the tray's flow with
+  `Delete` beside it, and the Mac's player bar wraps at the detail pane's narrowest. The watches are unchanged.
 - **Spacing**: multiples of 4, base rhythm 8/16/24. Visible grid: 8dp dotted background (6% opacity, off in high contrast).
 - **Lines**: connectors and dividers 1dp (2dp in high contrast), straight lines and right angles only.
 - **Motion**: standard easing `ease-in-out 200ms`, status-transition badges `fade 150ms`, processing state shown for at least 400ms (kept even when the real work is faster,

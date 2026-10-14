@@ -53,6 +53,7 @@ import app.recly.windows.ui.component.StatusBadge
 import app.recly.windows.ui.component.statusColumnWidth
 import app.recly.windows.ui.component.textColumnWidth
 import app.recly.windows.ui.theme.BlueprintColors
+import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.dotGrid
@@ -232,6 +233,7 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
             label = strings[if (model.recording) Str.TRAY_QUIT_SAVING else Str.TRAY_QUIT],
             onClick = onQuit,
             tone = ButtonTone.QUIET,
+            minWidth = MinTouch,
         )
     }
 }
@@ -461,6 +463,7 @@ private fun RecentRow(
                             label = strings[Str.DELETE],
                             onClick = { model.askToDelete(item) },
                             tone = ButtonTone.DANGER,
+                            minWidth = MinTouch,
                         )
                     }
                 }

@@ -72,6 +72,7 @@ import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.DialogTone
 import app.recly.windows.ui.devFlags
+import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.ReclyDesktopTheme
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.highContrastOf
@@ -421,7 +422,7 @@ private fun TitlePrompt(
         actions = {
             // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete
             // that cannot be undone (2026-10-08).
-            BlueprintButton(strings[Str.RECORDING_DISCARD], model::cancelTitle, tone = ButtonTone.DANGER)
+            BlueprintButton(strings[Str.RECORDING_DISCARD], model::cancelTitle, tone = ButtonTone.DANGER, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Str.SAVE],
                 onClick = { model.saveTitle(title, participants) },
@@ -494,7 +495,7 @@ private fun ConsentPrompt(
         // The reminder alone, the link and the box: sized to them.
         fitContent = true,
         actions = {
-            BlueprintButton(strings[Consent.CANCEL], model::consentCancelled, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Consent.CANCEL], model::consentCancelled, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Consent.CONFIRM],
                 onClick = { model.consentConfirmed(dontAskAgain) },

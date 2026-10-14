@@ -58,6 +58,7 @@ import app.recly.windows.ui.component.SectionHeader
 import app.recly.windows.ui.component.SectionFootnote
 import app.recly.windows.ui.component.SwitchRow
 import app.recly.windows.ui.component.TableRow
+import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -308,7 +309,7 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
                 Text(strings[Str.CHATGPT_FINISH_IN_BROWSER], style = MaterialTheme.typography.bodyMedium, color = blueprint.text,
                     modifier = Modifier.weight(1f))
-                BlueprintButton(strings[Str.CANCEL], chatGpt::cancelSignIn, tone = ButtonTone.QUIET)
+                BlueprintButton(strings[Str.CANCEL], chatGpt::cancelSignIn, tone = ButtonTone.QUIET, minWidth = MinTouch)
             }
         }
         HairLine()

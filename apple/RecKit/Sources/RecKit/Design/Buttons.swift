@@ -21,12 +21,12 @@ public struct BlueprintButton: View {
     private let minWidth: CGFloat?
     private let action: () -> Void
 
-    /// docs/09 "Shape": the narrowest a worded button is on the phone (2026-09-29), so a two-letter
-    /// label — `열기` in Korean, `Open` — no longer makes the narrowest thing on the screen, and
-    /// short buttons side by side come out one width. Close, Delete and Cancel keep their own width
-    /// (they pass [minTouch]), as do buttons whose label is data. Not on the Mac: its menu is too
-    /// narrow a panel to widen every button in, and the question was asked about the phones.
-    #if os(iOS)
+    /// docs/09 "Shape": the narrowest a worded button is on the phone (2026-09-29) and on the Mac
+    /// (2026-10-14), so a two-letter label — `열기` in Korean, `Open` — no longer makes the narrowest
+    /// thing on the screen, and short buttons side by side come out one width. Close, Delete and
+    /// Cancel keep their own width (they pass [minTouch]), as do buttons whose label is data. Not on
+    /// the watch, whose buttons are its own.
+    #if os(iOS) || os(macOS)
     public static let wordedMinWidth: CGFloat? = 88
     #else
     public static let wordedMinWidth: CGFloat? = nil

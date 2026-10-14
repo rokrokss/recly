@@ -397,6 +397,8 @@ fun <T> BlueprintDropdown(
             },
             tone = ButtonTone.QUIET,
             monospace = monospace,
+            // A value, not a word: as wide as what it says (docs/09 "Shape").
+            minWidth = MinTouch,
         )
         // A menu like the detail's (2026-10-10): flat rows under the box, its end on the box's end, as wide as its
         // longest choice.

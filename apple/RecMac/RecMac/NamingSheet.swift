@@ -27,7 +27,7 @@ struct NamingSheet: View {
         BlueprintDialog(title: loc("Recording title")) {
             // docs/03 "Titles" · 2026-10-08 §5: the second answer throws the recording away, so it says
             // so, in the red of every other irreversible delete.
-            BlueprintButton(loc("Discard recording"), tone: .danger) { onCancel() }
+            BlueprintButton(loc("Discard recording"), tone: .danger, minWidth: minTouch) { onCancel() }
             BlueprintButton(loc("Save"), tone: .primary, minWidth: 120) { onSave(trimmed, participants) }
         } content: {
             BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))

@@ -1573,81 +1573,91 @@ public struct RecordingDetailView: View {
 
     /// docs/08 "Result files": one button and the recording's own clock.
     private var controls: some View {
-        HStack(spacing: Space.s) {
-            if model.driveFetch == .fetching {
-                // docs/03 ADR-017: the button's place holds how far the trip is.
-                #if os(iOS)
-                fetchingWords
-                Spacer(minLength: Space.s)
-                fetchProgress
-                #else
-                fetchProgress
-                fetchingWords
-                #endif
-            } else if model.hasAudio {
-                #if os(iOS)
-                clock
-                Spacer(minLength: Space.s)
-                // docs/09 "Playback": the speed between the clock and Play.
-                PlaybackSpeedChip(player: player)
-                #endif
-                // Not while this device is recording: on the phone that session belongs to the
-                // recorder (see `RecordingPlayer`), and the Mac says the same thing so that the
-                // page does not offer one shell what it refuses the other. Nothing stands in its
-                // place — the clock alone says there is something here, later.
-                // Nor while the trip to Drive is still being decided: what this page will play is
-                // not settled yet, and a Play offered now would be answered by whatever the player
-                // last held. The clock stays, so the bar does not change shape when it appears.
-                if !model.deviceRecording, !player.captureBlocked, model.driveFetch != .deciding {
-                    BlueprintButton(
-                        player.active ? loc("Pause") : loc("Play"),
-                        tone: .primary,
-                        minWidth: playbackButtonMinWidth
-                    ) {
-                        if player.active {
-                            player.pause()
-                        } else {
-                            // This model's audio, at the press: the player holds nothing between
-                            // one recording and the next (see `RecordingPlayer.stop`).
-                            player.load(model.audio)
-                            player.play()
-                        }
-                    }
-                    .accessibilityIdentifier("play-pause")
-                }
-                // docs/07 rule 4: a clock is a stamp, not a sentence.
-                #if !os(iOS)
-                clock
-                // docs/09 "Playback" · "Highlights" (desktop): the speed, and a mark at the playhead.
-                PlaybackSpeedChip(player: player)
-                BlueprintButton(loc("Highlight"), tone: .quiet) {
-                    Task { await model.addHighlight(atSec: positionSec) }
-                }
-                .accessibilityIdentifier("detail-highlight")
-                #endif
-            } else if model.driveFetch == .idle {
-                // docs/03: nothing of this recording ever reached Drive, and what was here is gone
-                // — so there is nowhere left to play it from. Only once the fetch has been decided
-                // against: said while it is still `.deciding` it would be a sentence the next
-                // moment takes back.
-                Text(verbatim: loc("No audio on this device"))
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-            }
-            #if !os(iOS)
-            if model.driveFetch == .failed {
-                // Beside the clock when some parts are here and on its own when none are: either
-                // way it is what stands between the page and the whole recording.
-                Text(verbatim: model.folder
-                    ? loc("Could not read from the local folder")
-                    : loc(model.icloud ? "Could not fetch from iCloud" : "Could not fetch from Drive"))
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-            }
-            Spacer(minLength: 0)
+        #if os(iOS)
+        HStack(spacing: Space.s) { controlItems }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        #else
+        // 2026-10-14: Play at the narrowest a worded button is (docs/09 "Shape"), the clock, the speed and
+        // Highlight come to more than the detail pane's narrowest line holds — with an hour-long clock, more
+        // than the window's first width — so the bar wraps there rather than running past the pane's edge.
+        FlowLayout { controlItems }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        #endif
+    }
+
+    @ViewBuilder
+    private var controlItems: some View {
+        if model.driveFetch == .fetching {
+            // docs/03 ADR-017: the button's place holds how far the trip is.
+            #if os(iOS)
+            fetchingWords
+            Spacer(minLength: Space.s)
+            fetchProgress
+            #else
+            fetchProgress
+            fetchingWords
             #endif
+        } else if model.hasAudio {
+            #if os(iOS)
+            clock
+            Spacer(minLength: Space.s)
+            // docs/09 "Playback": the speed between the clock and Play.
+            PlaybackSpeedChip(player: player)
+            #endif
+            // Not while this device is recording: on the phone that session belongs to the
+            // recorder (see `RecordingPlayer`), and the Mac says the same thing so that the
+            // page does not offer one shell what it refuses the other. Nothing stands in its
+            // place — the clock alone says there is something here, later.
+            // Nor while the trip to Drive is still being decided: what this page will play is
+            // not settled yet, and a Play offered now would be answered by whatever the player
+            // last held. The clock stays, so the bar does not change shape when it appears.
+            if !model.deviceRecording, !player.captureBlocked, model.driveFetch != .deciding {
+                BlueprintButton(
+                    player.active ? loc("Pause") : loc("Play"),
+                    tone: .primary,
+                    minWidth: playbackButtonMinWidth
+                ) {
+                    if player.active {
+                        player.pause()
+                    } else {
+                        // This model's audio, at the press: the player holds nothing between
+                        // one recording and the next (see `RecordingPlayer.stop`).
+                        player.load(model.audio)
+                        player.play()
+                    }
+                }
+                .accessibilityIdentifier("play-pause")
+            }
+            // docs/07 rule 4: a clock is a stamp, not a sentence.
+            #if !os(iOS)
+            clock
+            // docs/09 "Playback" · "Highlights" (desktop): the speed, and a mark at the playhead.
+            PlaybackSpeedChip(player: player)
+            BlueprintButton(loc("Highlight"), tone: .quiet) {
+                Task { await model.addHighlight(atSec: positionSec) }
+            }
+            .accessibilityIdentifier("detail-highlight")
+            #endif
+        } else if model.driveFetch == .idle {
+            // docs/03: nothing of this recording ever reached Drive, and what was here is gone
+            // — so there is nowhere left to play it from. Only once the fetch has been decided
+            // against: said while it is still `.deciding` it would be a sentence the next
+            // moment takes back.
+            Text(verbatim: loc("No audio on this device"))
+                .font(blueprint.fonts.bodySmall)
+                .foregroundStyle(blueprint.palette.textMuted)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        #if !os(iOS)
+        if model.driveFetch == .failed {
+            // Beside the clock when some parts are here and on its own when none are: either
+            // way it is what stands between the page and the whole recording.
+            Text(verbatim: model.folder
+                ? loc("Could not read from the local folder")
+                : loc(model.icloud ? "Could not fetch from iCloud" : "Could not fetch from Drive"))
+                .font(blueprint.fonts.bodySmall)
+                .foregroundStyle(blueprint.palette.textMuted)
+        }
+        #endif
     }
 
     /// The recording's own clock — `00:12 / 02:30` — on one line, left to right in every language (2026-10-10,

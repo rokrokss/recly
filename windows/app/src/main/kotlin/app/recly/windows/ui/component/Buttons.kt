@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.ui.theme.ButtonMinWidth
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.ProcessingPhase
 import app.recly.windows.ui.theme.ProcessingState
@@ -59,6 +60,8 @@ fun BlueprintButton(
     leading: String? = null,
     /** Monospace for a button whose label is data — a secret name, a step id (docs/09 "Typography"). */
     monospace: Boolean = false,
+    /** [ButtonMinWidth] for a worded button; [MinTouch] for data and for Close, Delete and Cancel. */
+    minWidth: Dp = if (monospace) MinTouch else ButtonMinWidth,
 ) {
     val palette = blueprint
     val ink = when {
@@ -82,7 +85,7 @@ fun BlueprintButton(
     Row(
         modifier = modifier
             // docs/09 "Accessibility": the label is small, the button is not — either way.
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
             .background(fill, RoundedCornerShape(Radius.node))
             // docs/09 "High-contrast mode" promotes `grid` and `textMuted` to the body colour, which left a
             // disabled button drawn in exactly the ink and the border weight of a live QUIET one.

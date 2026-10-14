@@ -50,6 +50,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -388,6 +390,7 @@ private fun Sidebar(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, selected: Boolean, onOpen: () -> Unit) {
     val palette = blueprint
@@ -402,24 +405,34 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
         // here. And never over one that is still being written ([RecentItem.deletable]).
         controls = if (actions == RowActions.NONE) null else {
             {
-                // Waiting for the speech model: the download comes first.
-                if (actions.download) ModelDownloadChip(model, strings, item.modelLanguage)
-                if (actions.retry) {
-                    ProcessingButton(
-                        label = strings[Str.RECENT_RETRY],
-                        state = model.action,
-                        strings = strings,
-                        onClick = { model.retry(item) },
-                    )
+                // A line that wraps, Delete beside it, as the tray's expanded row has them: Retry, Check the key
+                // and Delete can all be here at once, and at the narrowest a worded button is (docs/09 "Shape")
+                // they no longer fit the sidebar's one line in English.
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s),
+                    verticalArrangement = Arrangement.spacedBy(Space.s),
+                ) {
+                    // Waiting for the speech model: the download comes first.
+                    if (actions.download) ModelDownloadChip(model, strings, item.modelLanguage)
+                    if (actions.retry) {
+                        ProcessingButton(
+                            label = strings[Str.RECENT_RETRY],
+                            state = model.action,
+                            strings = strings,
+                            onClick = { model.retry(item) },
+                        )
+                    }
+                    // docs/08 AUTH_REJECTED: in the actions line, as the tray's expanded row has it.
+                    if (actions.checkKey) CheckKeyButton(item, strings) { model.settingsOpen = true }
                 }
-                // docs/08 AUTH_REJECTED: in the actions line, as the tray's expanded row has it.
-                if (actions.checkKey) CheckKeyButton(item, strings) { model.settingsOpen = true }
-                Box(Modifier.weight(1f))
                 if (actions.delete) {
                     BlueprintButton(
                         label = strings[Str.DELETE],
                         onClick = { model.askToDelete(item) },
+                        modifier = Modifier.align(Alignment.Top),
                         tone = ButtonTone.DANGER,
+                        minWidth = MinTouch,
                     )
                 }
             }
@@ -773,7 +786,7 @@ private fun EditorHeader(title: String, changed: Boolean, save: InlineSave?, onC
         title = title,
         trailing = {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-                if (changed) BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, enabled = save == null)
+                if (changed) BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch, enabled = save == null)
                 BlueprintButton(
                     label = when (save) {
                         InlineSave.SAVING -> strings[Str.EDIT_SAVING]
