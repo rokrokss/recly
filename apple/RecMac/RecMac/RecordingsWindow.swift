@@ -256,7 +256,7 @@ struct RecordingsWindow: View {
                         .accessibilityIdentifier("check-key")
                     }
                     if item.alert == .needsSpace {
-                        BlueprintButton(loc("Open Drive storage")) {
+                        BlueprintButton(FixSurface.driveStorage.label) {
                             menu.openDriveStorage()
                         }
                         .accessibilityIdentifier("open-storage")
