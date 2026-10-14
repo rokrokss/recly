@@ -301,11 +301,11 @@ class ChatGptAccount internal constructor(
         return pick(listModels())
     }
 
-    /** Whether the plan lists [id] for this app — Settings' list when it has one, else the plan's answer now. */
-    internal suspend fun offers(id: String): Boolean {
+    /** The ids of the models the plan offers this app — Settings' list when it has one, else the plan's answer now. */
+    internal suspend fun offered(): Set<String> {
         val current = state.value
         val models = (current as? ChatGptConnection.SignedIn)?.models?.takeIf { it.isNotEmpty() } ?: listModels()
-        return models.any { it.id == id }
+        return models.map { it.id }.toSet()
     }
 
     /**

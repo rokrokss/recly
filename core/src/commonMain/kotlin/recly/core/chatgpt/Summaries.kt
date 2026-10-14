@@ -358,7 +358,8 @@ class Summaries internal constructor(
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
         // The first of the models measured for this that the plan offers, at the effort measured (docs/08 "Titles and speaker
         // names"); otherwise the one a summary uses, at its own default effort.
-        val chosen = FILL_MODELS.firstOrNull { (id, _) -> account.offers(id) }
+        val offered = account.offered()
+        val chosen = FILL_MODELS.firstOrNull { (id, _) -> id in offered }
         val model = chosen?.first ?: account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         val instructions = fillInstructions(SummaryLanguage.of(transcript.language, locale.value), title, speakers, transcript.speakers.any { it.me == true })
         // The transcript waits for this before it goes up: a model that has not answered in two minutes is not waited for.
