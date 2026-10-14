@@ -116,6 +116,7 @@ import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SidebarRow
 import app.recly.windows.ui.component.SidebarWidth
+import app.recly.windows.ui.component.EmptyList
 import app.recly.windows.ui.component.FadingStatusBadge
 import app.recly.windows.ui.component.VerticalHairLine
 import app.recly.windows.ui.component.focusRing
@@ -350,22 +351,7 @@ private fun Sidebar(
                 SearchResultRow(hit, strings[Str.UNTITLED], strings[Str.SUMMARY_TAB], length) { onOpenHit(hit) }
             }
             if (hits != null && found.isEmpty()) {
-                item {
-                    Column(
-                        Modifier.fillParentMaxSize().padding(Space.l),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(strings[Str.SEARCH_EMPTY], style = MaterialTheme.typography.bodyMedium, color = blueprint.text, textAlign = TextAlign.Center)
-                        Text(
-                            strings[Str.SEARCH_EMPTY_HINT],
-                            modifier = Modifier.padding(top = Space.xs),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = blueprint.textMuted,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
+                item { EmptyList(strings[Str.SEARCH_EMPTY], Modifier.fillParentMaxSize(), hint = strings[Str.SEARCH_EMPTY_HINT]) }
             }
             return@LazyColumn
         }
@@ -378,32 +364,11 @@ private fun Sidebar(
         }
         if (model.recents.isEmpty()) {
             item {
-                // docs/09 screen principle 8: an empty list says so in the middle of the space the list would
-                // fill — a line, a muted line under it, and the one action a clear step below, centred.
-                Column(
-                    Modifier.fillParentMaxSize().padding(Space.l),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        strings[if (model.recentsLoading) Str.LIST_LOADING else Str.LEDGER_EMPTY],
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = blueprint.text,
-                        textAlign = TextAlign.Center,
-                    )
-                    if (!model.recentsLoading) {
-                        Text(
-                            strings[Str.LEDGER_EMPTY_HINT],
-                            modifier = Modifier.padding(top = Space.xs),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = blueprint.textMuted,
-                            textAlign = TextAlign.Center,
-                        )
-                        BlueprintButton(
-                            strings[Str.TRAY_START], model::start,
-                            enabled = model.ready && !model.recording,
-                            modifier = Modifier.padding(top = Space.l),
-                        )
+                if (model.recentsLoading) {
+                    EmptyList(strings[Str.LIST_LOADING], Modifier.fillParentMaxSize())
+                } else {
+                    EmptyList(strings[Str.LEDGER_EMPTY], Modifier.fillParentMaxSize(), hint = strings[Str.LEDGER_EMPTY_HINT]) {
+                        BlueprintButton(strings[Str.TRAY_START], model::start, enabled = model.ready && !model.recording)
                     }
                 }
             }
