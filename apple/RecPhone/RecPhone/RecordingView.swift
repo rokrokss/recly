@@ -239,11 +239,10 @@ struct RecordingView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        // Only `.stopping` takes the node out while the recorder is working: `canStop` deliberately
-        // allows a stop while it is still `.starting` so a slow — or stuck — start can be parked.
-        // The tail of the hold does take it out, though; the node reads "…" there and a tap the
-        // user cannot see the effect of would start a second recording.
-        .disabled(!model.isReady || model.state == .stopping || (busy && !working))
+        // Off while the recorder is between two states — Starting and Saving, as on every shell — and
+        // through the tail of the hold too: the node reads "…" there, and a tap the user cannot see the
+        // effect of would start a second recording.
+        .disabled(!model.isReady || working || busy)
         .accessibilityIdentifier(model.canStop ? "stop" : "start")
         .accessibilityLabel(model.canStop ? Text("Stop") : Text("Start recording"))
         .task(id: working) { await holdBusy() }

@@ -24,5 +24,15 @@ struct ReclyShortcuts: AppShortcutsProvider {
             shortTitle: "Stop recording",
             systemImageName: "stop.circle"
         )
+        // docs/09 "Highlights": the Mac's phrase, word for word.
+        AppShortcut(
+            intent: AddHighlightIntent(),
+            phrases: [
+                "Add a highlight with \(.applicationName)",
+            ],
+            shortTitle: "Add Highlight",
+            // docs/09 "Highlights": the filled square every highlight is drawn with — never a flag.
+            systemImageName: "square.inset.filled"
+        )
     }
 }

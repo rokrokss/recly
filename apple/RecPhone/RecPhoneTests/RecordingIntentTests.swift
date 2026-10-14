@@ -25,21 +25,28 @@ final class RecordingIntentTests: XCTestCase {
         XCTAssertEqual(commands.stops, 0)
     }
 
-    /// docs/12 M8 · ADR-011: the consent reminder is a question, and an intent is served with the
-    /// phone locked and nobody to answer it. The regression was that the intent recorded anyway —
-    /// so a first meeting could be recorded by saying "Hey Siri" without the reminder the screen's
-    /// own start cannot get past. The refusal is reported rather than swallowed, so Siri says it.
+    /// docs/03: a start the model refuses — a disconnect is running — is reported rather than swallowed, so Siri
+    /// says it and Shortcuts shows it.
     func testAStartTheModelRefusesReportsWhyAndRecordsNothing() async throws {
-        commands.refusal = "Open Recly once to answer the recording reminder"
+        commands.refusal = "Wait for the disconnect to finish"
 
         do {
             _ = try await StartRecordingIntent().perform()
             XCTFail("the intent reported success over a start that never happened")
         } catch let refused as RecordingRefused {
-            XCTAssertEqual(refused.reason, "Open Recly once to answer the recording reminder")
+            XCTAssertEqual(refused.reason, "Wait for the disconnect to finish")
         }
 
         XCTAssertEqual(commands.starts, 0)
+    }
+
+    /// docs/09 "Highlights": "Add a highlight with Recly" marks the running recording — one call into the model.
+    func testTheHighlightIntentMarksTheRecording() async throws {
+        _ = try await AddHighlightIntent().perform()
+
+        XCTAssertEqual(commands.highlights, 1)
+        XCTAssertEqual(commands.starts, 0)
+        XCTAssertEqual(commands.stops, 0)
     }
 
     func testTheStopIntentStopsTheRecording() async throws {
@@ -56,14 +63,15 @@ final class RecordingIntentTests: XCTestCase {
 
         _ = try await StopRecordingIntent().perform()
         _ = try await StartRecordingIntent().perform()
+        _ = try await AddHighlightIntent().perform()
     }
 }
 
 /// The model, minus the microphone and the core.
 @MainActor
 final class FakeRecordingCommands: RecordingCommands {
-    /// What the model would refuse the next background start with, or nil to let it through
-    /// (docs/12 M8: the consent reminder is still owed).
+    /// What the model would refuse the next start with, or nil to let it through (docs/03: a disconnect is
+    /// running).
     var refusal: String?
     private(set) var starts = 0
     private(set) var stops = 0
@@ -76,5 +84,11 @@ final class FakeRecordingCommands: RecordingCommands {
 
     func stopFromIntent() async {
         stops += 1
+    }
+
+    private(set) var highlights = 0
+
+    func highlightFromIntent() async {
+        highlights += 1
     }
 }

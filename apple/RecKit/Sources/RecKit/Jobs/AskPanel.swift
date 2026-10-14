@@ -100,8 +100,9 @@ struct AskPanel: View {
     }
 
     /// The question, up to four lines. 2026-10-10 (3.3): on the Mac Return asks and Shift+Return starts a new line —
-    /// a text view, because a `TextField` there keeps the new line for ⌥Return; on the phone Return is the
-    /// keyboard's new line and `Ask` asks.
+    /// a text view, because a `TextField` there keeps the new line for ⌥Return. On the phone Return asks too, as on
+    /// Android: the keyboard's key says Send, and the new line a vertical field would take for it is the ask
+    /// instead — the question wraps onto its four lines by itself.
     @ViewBuilder
     private var questionField: some View {
         #if os(macOS)
@@ -114,7 +115,13 @@ struct AskPanel: View {
             .lineLimit(1...4)
             .textFieldStyle(.plain)
             .focused($questionFocused)
+            .submitLabel(.send)
             .onSubmit(askOwn)
+            .onChange(of: question) { _, typed in
+                guard typed.contains("\n") else { return }
+                question = typed.replacingOccurrences(of: "\n", with: "")
+                askOwn()
+            }
             .padding(FieldInset.field)
         #endif
     }

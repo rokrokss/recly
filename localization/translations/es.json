@@ -571,5 +571,6 @@
   "Fill in speaker names": "Completar nombres de hablantes",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Cuando este dispositivo transcribe una grabación, la transcripción se envía a ChatGPT para poner nombre a los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Con Completar títulos o Completar nombres de hablantes activado, también se envía aquí la transcripción de cada grabación que transcribe este iPhone.",
-  "Still transcribing on this device — try again once it has finished": "Aún se está transcribiendo en este dispositivo: inténtalo de nuevo cuando termine"
+  "Still transcribing on this device — try again once it has finished": "Aún se está transcribiendo en este dispositivo: inténtalo de nuevo cuando termine",
+  "Asked once, before the first recording.": "Se pregunta una vez, antes de la primera grabación."
 }

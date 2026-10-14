@@ -571,5 +571,6 @@
   "Fill in speaker names": "Заполнять имена говорящих",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Когда это устройство расшифровывает запись, расшифровка отправляется в ChatGPT, чтобы назвать говорящих, к которым в ней обращаются по имени. Это входит в ваше использование ChatGPT.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Если включено «Заполнять названия» или «Заполнять имена говорящих», сюда также отправляется расшифровка каждой записи, которую расшифровывает этот iPhone.",
-  "Still transcribing on this device — try again once it has finished": "На этом устройстве ещё идёт расшифровка — попробуйте снова, когда она завершится"
+  "Still transcribing on this device — try again once it has finished": "На этом устройстве ещё идёт расшифровка — попробуйте снова, когда она завершится",
+  "Asked once, before the first recording.": "Спрашивается один раз, перед первой записью."
 }

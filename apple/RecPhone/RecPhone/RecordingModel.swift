@@ -434,14 +434,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         return false
     }
 
-    /// The stop is offered while the microphone is still opening too — the session parks it and
-    /// serves it the moment there is a recording, which is the whole point of parking it.
-    var canStop: Bool {
-        switch state {
-        case .starting, .recording: return true
-        case .idle, .stopping: return false
-        }
-    }
+    /// Only a recording that is running can be stopped. While the microphone is still opening the
+    /// control is off rather than a Stop — the user waits for the start to answer, as on every shell —
+    /// and a stop from an intent in that moment is still parked by the session and served.
+    var canStop: Bool { isRecording }
 
     /// docs/09 screen principle 1: the line under the record button says something only when there is news —
     /// what the last start or stop had to say, while the recorder is idle. What the recorder is doing
@@ -492,6 +488,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         Task { await finish(askingForTitle: true) }
     }
 
+    /// A fatal capture error, from the recorder's own callback: the recording is finalized and queued untitled —
+    /// nobody stopped it, so nobody is asked for a name — and the line says it failed.
+    private func failed() {
+        Task { await finish(askingForTitle: false, failed: true) }
+    }
+
     /// - Returns: what refused the start, or nil when the recorder was asked for one.
     private func startRecording() async -> UiMessage? {
         guard let session, isReady else { return nil }
@@ -534,7 +536,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// A stop that came from an intent has nobody to ask — the phone is locked and the app is in
     /// the background — so it queues the job straight away. The name can still be given later, and
     /// a recording left unnamed and unqueued is what `RecordingRecovery` picks up anyway.
-    private func finish(askingForTitle: Bool) async {
+    ///
+    /// - Parameter failed: the capture ended on an error rather than at a stop: "The recording failed" is what
+    ///   the line says, over whatever the queue answered.
+    private func finish(askingForTitle: Bool, failed: Bool = false) async {
         guard let session else { return }
         switch await session.stop(title: nil) {
         case .notRecording:
@@ -566,6 +571,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 naming = Naming(id: outcome.recordingId)
             } else {
                 await enqueue(recordingId: outcome.recordingId)
+                if failed { statusMessage = StopLine.recordingFailed }
             }
         }
     }
@@ -579,14 +585,19 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         self.naming = nil
         let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = (trimmed?.isEmpty ?? true) ? nil : trimmed
+        var titleRefused = false
         if name != nil || participants != nil {
-            _ = try? await bridge?.core.recordings.updateTitle(
+            let saved = try? await bridge?.core.recordings.updateTitle(
                 recordingId: naming.id,
                 title: name,
                 participants: participants.map { KotlinInt(int: Int32($0)) }
             )
+            titleRefused = saved?.boolValue != true
         }
         await enqueue(recordingId: naming.id)
+        // docs/03 "Titles": the job had read the meta already, so the name is not the recording's. Said over the
+        // queue's own answer — the one thing on the line the user did not expect.
+        if titleRefused { statusMessage = StopLine.titleTooLate }
     }
 
     /// Claims the pending answer before suspending, so Save cannot queue a discarded recording.
@@ -663,8 +674,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             for url in urls {
                 let scoped = url.startAccessingSecurityScopedResource()
                 defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                // The file's own date, when it has one: a voice memo from last week starts last week.
-                let date = (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate
+                // The file's own date, when it has one: a voice memo from last week starts last week. The
+                // creation date first, else the date it was last written (a copy made by a share keeps that).
+                let values = try? url.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+                let date = values?.creationDate ?? values?.contentModificationDate
                 do {
                     let result = try await core.importAudio(
                         sourcePath: url.path,
@@ -716,10 +729,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         tab = .settings
     }
 
-    /// The core compiles the fixed plan from the settings the recording froze (docs/05).
+    /// The core compiles the fixed plan from the settings the recording froze (docs/05). What the queue made of
+    /// it is said on the line under the record node (`StopLine`) — nothing, for a recording queued as asked.
     private func enqueue(recordingId: String) async {
+        guard let core = bridge?.core else { return }
         do {
-            _ = try await bridge?.core.enqueue(recordingId: recordingId)
+            let result = try await core.enqueue(recordingId: recordingId)
+            statusMessage = StopLine.message(result)
             logger.info("shell.recording.enqueued id=\(recordingId, privacy: .public)")
             // docs/12 "Runner" (a): the job exists now, so a pass runs immediately rather than
             // waiting for the five-minute timer …
@@ -729,7 +745,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             // pocket, and the steps after the upload need the app to be running.
             background.schedule()
         } catch {
-            note = "Could not create the job"
+            statusMessage = StopLine.enqueueFailed
             logger.error("shell.recording.enqueue.failed error=\(String(describing: error), privacy: .public)")
         }
     }
@@ -744,27 +760,44 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             """
         )
         guard error.fatal else { return }
-        Task { await finish(askingForTitle: false) }
+        failed()
     }
 
     // MARK: - The intents (docs/13 I7)
 
-    /// docs/12 M8 · ADR-011: an intent is served with the phone locked and the app in the
-    /// background, where there is nobody to ask the consent question and no screen to ask it on.
-    /// That is a reason to *refuse*, not a reason to skip it — a first recording made by saying
-    /// "Hey Siri" is exactly the one the reminder is for. So the start is refused in words until
-    /// the reminder has been answered on the screen, or turned off.
+    /// docs/12 M8 · ADR-011: the start intent opens the app (`openAppWhenRun`), so by the time it runs
+    /// the app is in front — and the consent reminder a first recording owes is asked there, on the
+    /// Record tab, as the screen's own start asks it. Its confirmation starts the recording; Cancel
+    /// leaves it unstarted. Never skipped: a first recording made by saying "Hey Siri" is exactly the
+    /// one the reminder is for.
     ///
-    /// - Returns: nil when the recording was started, or the sentence the intent reports.
+    /// - Returns: nil when the recording was started or the reminder is up, or the sentence the intent
+    ///   reports.
     func startFromIntent() async -> String? {
         await loaded()
-        if let refusal = BackgroundStart.refusal(askConsent: Defaults.askConsent) {
-            logger.info("shell.intent.refused reason=consent")
-            return refusal
+        tab = .record
+        switch BackgroundStart.next(askConsent: Defaults.askConsent) {
+        case .askConsent:
+            // docs/03: a disconnect that is running refuses before the question, as the screen's start does.
+            if let blocker = DisconnectGate.startBlocker() {
+                logger.info("shell.intent.refused reason=disconnecting")
+                return blocker.text
+            }
+            logger.info("shell.intent.consent")
+            consentPrompt = true
+            return nil
+        case .start:
+            // docs/03: and the same for a disconnect that is running — the clean-up would delete the
+            // recording this intent is about to open. Siri reads the refusal out.
+            return await startRecording()?.text
         }
-        // docs/03: and the same for a disconnect that is running — the clean-up would delete the
-        // recording this intent is about to open. Siri reads the refusal out.
-        return await startRecording()?.text
+    }
+
+    /// docs/09 "Highlights": "Add a highlight with Recly", and the Live Activity's own — a mark on the
+    /// recording that is running, at the recorder's clock. Nothing to mark when nothing is.
+    func highlightFromIntent() async {
+        await loaded()
+        highlight()
     }
 
     func stopFromIntent() async {
@@ -1135,8 +1168,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         case .privacy:
             tab = .settings
             privacyPresented = true
+        // The banner's Connect Drive is the sign-in itself, as the detail's is — not a trip to the tab.
         case .signIn:
-            tab = .settings
+            signIn()
 
         case .driveStorage:
             openDriveStorage()
@@ -1218,8 +1252,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             guard outcome != .unavailable else { return false }
             defer { Task { await self.refreshRecents() } }
             switch outcome {
+            // The core stops an upload before it deletes, so what can still hold a recording here is a
+            // transcription on this device that did not stop in time.
             case .busy:
-                self.message = .key("Still uploading — try again once it has finished")
+                self.message = .key("Still transcribing on this device — try again once it has finished")
                 return false
 
             case .deleted(let driveError):
@@ -1317,6 +1353,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// the app is on screen, and a user who taps Retry and locks the phone asked for the upload,
     /// not for the app.
     func retry(_ item: RecentItem) {
+        // docs/06: a job waiting for Drive is not one a retry can move — the sign-in is what it waits for,
+        // and a sign-in that lands unparks it.
+        if item.alert == .needsAuth {
+            signIn()
+            return
+        }
         guard let jobId = item.jobId else { return }
         perform {
             guard let core = self.bridge?.core else { return false }

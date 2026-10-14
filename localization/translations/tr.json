@@ -571,5 +571,6 @@
   "Fill in speaker names": "Konuşmacı adlarını doldur",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Bu cihaz bir kaydı metne dönüştürdüğünde, dökümde adıyla seslenilen konuşmacılara ad vermek için döküm ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Başlıkları doldur veya Konuşmacı adlarını doldur açıkken, bu iPhone’un metne dönüştürdüğü her kaydın dökümü de buraya gönderilir.",
-  "Still transcribing on this device — try again once it has finished": "Bu cihazda metne dönüştürme sürüyor — bittiğinde yeniden deneyin"
+  "Still transcribing on this device — try again once it has finished": "Bu cihazda metne dönüştürme sürüyor — bittiğinde yeniden deneyin",
+  "Asked once, before the first recording.": "İlk kayıttan önce bir kez sorulur."
 }
