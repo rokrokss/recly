@@ -463,6 +463,10 @@
     <string name="summary_about">나에 대해</string>
     <string name="summary_about_placeholder">예: 프로덕트 매니저, 마감과 결정 사항이 중요합니다.</string>
     <string name="summary_about_note">요약과 답에서 무엇이 중요한지 판단하는 데 씁니다.</string>
+    <string name="summary_auto_title">제목 자동으로 채우기</string>
+    <string name="summary_auto_title_note">이 기기에서 제목 없는 녹음을 전사하면 전사본을 ChatGPT에 보내 제목을 받습니다. ChatGPT 사용량에 포함됩니다.</string>
+    <string name="summary_auto_speakers">화자 이름 자동으로 채우기</string>
+    <string name="summary_auto_speakers_note">이 기기에서 녹음을 전사하면 전사본을 ChatGPT에 보내, 대화에서 이름이 불린 화자에게 이름을 붙입니다. ChatGPT 사용량에 포함됩니다.</string>
     <string name="summary_as">다른 형식으로 요약…</string>
     <string name="summary_play_from">%1$s부터 재생</string>
     <string name="ask_menu">이 녹음에 대해 묻기…</string>

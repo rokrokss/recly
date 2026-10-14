@@ -430,6 +430,10 @@
     <string name="summary_about">آپ کے بارے میں</string>
     <string name="summary_about_placeholder">مثلاً پروڈکٹ مینیجر؛ میرے لیے ڈیڈ لائنز اور فیصلے اہم ہیں۔</string>
     <string name="summary_about_note">خلاصے اور جوابات اس سے اندازہ لگاتے ہیں کہ آپ کے لیے کیا اہم ہے۔</string>
+    <string name="summary_auto_title">عنوانات خود بخود بھریں</string>
+    <string name="summary_auto_title_note">جب یہ ڈیوائس بغیر عنوان والی ریکارڈنگ ٹرانسکرائب کرتی ہے تو عنوان کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔</string>
+    <string name="summary_auto_speakers">بولنے والوں کے نام خود بخود بھریں</string>
+    <string name="summary_auto_speakers_note">جب یہ ڈیوائس کوئی ریکارڈنگ ٹرانسکرائب کرتی ہے تو اس میں نام لے کر پکارے گئے بولنے والوں کے نام رکھنے کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔</string>
     <string name="summary_as">بطور خلاصہ…</string>
     <string name="summary_play_from">%1$s سے چلائیں</string>
     <string name="ask_menu">اس ریکارڈنگ کے بارے میں پوچھیں…</string>

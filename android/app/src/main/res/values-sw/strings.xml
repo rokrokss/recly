@@ -430,6 +430,10 @@
     <string name="summary_about">Kuhusu wewe</string>
     <string name="summary_about_placeholder">k.m. Meneja wa bidhaa; ninajali tarehe za mwisho na maamuzi.</string>
     <string name="summary_about_note">Muhtasari na majibu hutumia hili kupima kilicho muhimu kwako.</string>
+    <string name="summary_auto_title">Jaza vichwa kiotomatiki</string>
+    <string name="summary_auto_title_note">Kifaa hiki kinaponukuu rekodi isiyo na kichwa, nakala hutumwa kwa ChatGPT ili kupata kichwa. Hii huhesabiwa katika matumizi yako ya ChatGPT.</string>
+    <string name="summary_auto_speakers">Jaza majina ya wazungumzaji kiotomatiki</string>
+    <string name="summary_auto_speakers_note">Kifaa hiki kinaponukuu rekodi, nakala hutumwa kwa ChatGPT ili kuwapa majina wazungumzaji wanaoitwa kwa majina ndani yake. Hii huhesabiwa katika matumizi yako ya ChatGPT.</string>
     <string name="summary_as">Fupisha kama…</string>
     <string name="summary_play_from">Cheza kuanzia %1$s</string>
     <string name="ask_menu">Uliza kuhusu rekodi hii…</string>
