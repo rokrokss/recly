@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">Avvia</string>
     <string name="recording_stop">Interrompi</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">Avvio in corso</string>
     <string name="recording_active">In registrazione</string>
-    <string name="recording_stopping">Salvataggio…</string>
+    <string name="recording_stopping">Salvataggio</string>
     <string name="recording_mic_denied">Serve l’autorizzazione per il microfono</string>
+    <string name="recording_mic_settings">Attivala in Impostazioni → App → Recly → Autorizzazioni.</string>
     <string name="recording_save_deferred">Salvataggio incompleto — recupero dopo</string>
-    <string name="recording_failed">Errore: %1$s</string>
+    <string name="recording_failed">Registrazione non riuscita</string>
     <string name="pending_badge">In attesa di invio</string>
     <string name="sending_badge">Invio in corso</string>
     <string name="transfer_failed_badge">Trasferimento non riuscito</string>

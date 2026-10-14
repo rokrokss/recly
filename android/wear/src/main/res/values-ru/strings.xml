@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">Начать</string>
     <string name="recording_stop">Остановить</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">Запуск</string>
     <string name="recording_active">Идёт запись</string>
-    <string name="recording_stopping">Сохранение…</string>
+    <string name="recording_stopping">Сохранение</string>
     <string name="recording_mic_denied">Нужно разрешение на микрофон</string>
+    <string name="recording_mic_settings">Включите его в разделе Настройки → Приложения → Recly → Разрешения.</string>
     <string name="recording_save_deferred">Сохранено не полностью — восстановим позже</string>
-    <string name="recording_failed">Ошибка: %1$s</string>
+    <string name="recording_failed">Ошибка записи</string>
     <string name="pending_badge">Ожидает отправки</string>
     <string name="sending_badge">Отправка</string>
     <string name="transfer_failed_badge">Сбой передачи</string>

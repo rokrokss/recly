@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">เริ่ม</string>
     <string name="recording_stop">หยุด</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">กำลังเริ่ม</string>
     <string name="recording_active">กำลังบันทึกเสียง</string>
-    <string name="recording_stopping">กำลังบันทึก…</string>
+    <string name="recording_stopping">กำลังบันทึก</string>
     <string name="recording_mic_denied">ต้องได้รับอนุญาตให้ใช้ไมโครโฟน</string>
+    <string name="recording_mic_settings">เปิดได้ที่ การตั้งค่า → แอป → Recly → สิทธิ์</string>
     <string name="recording_save_deferred">บันทึกไม่เสร็จ จะกู้คืนในครั้งถัดไป</string>
-    <string name="recording_failed">ล้มเหลว: %1$s</string>
+    <string name="recording_failed">การบันทึกเสียงล้มเหลว</string>
     <string name="pending_badge">รอส่ง</string>
     <string name="sending_badge">กำลังส่ง</string>
     <string name="transfer_failed_badge">ถ่ายโอนไม่สำเร็จ</string>

@@ -43,7 +43,13 @@ class MainActivity : ComponentActivity() {
      * recording runs without it, but the watch-face chip (W3) is a notification and does not.
      */
     private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted[Manifest.permission.RECORD_AUDIO] == true) viewModel.start() else viewModel.micDenied()
+        if (granted[Manifest.permission.RECORD_AUDIO] == true) {
+            viewModel.start()
+        } else {
+            // P8: refused with no rationale left to show is the system saying it will not ask again —
+            // only the watch's Settings can turn it back on, and the screen says where.
+            viewModel.micDenied(permanent = !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO))
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

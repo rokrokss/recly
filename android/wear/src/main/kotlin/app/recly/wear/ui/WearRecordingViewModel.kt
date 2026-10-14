@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import app.recly.recording.RecorderEvent
 import app.recly.recording.RecorderState
 import app.recly.wear.transfer.TransferQueue
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.delay
@@ -62,9 +61,14 @@ data class WearUiState(
 sealed interface WearMessage {
     data object SaveDeferred : WearMessage
 
-    data class Failed(val reason: String) : WearMessage
+    /** The phones' sentence, with no reason: the cause is the recorder's own words and is logged there (P2). */
+    data object Failed : WearMessage
 
-    data object MicDenied : WearMessage
+    /**
+     * The microphone was refused. [permanent]: the system will not ask again, so the screen also says where in
+     * the watch's Settings it is turned back on (P8).
+     */
+    data class MicDenied(val permanent: Boolean = false) : WearMessage
 }
 
 /**
@@ -113,22 +117,24 @@ class WearRecordingViewModel(
         recorder.stop()
     }
 
-    fun micDenied() = _state.update { it.copy(message = WearMessage.MicDenied) }
+    fun micDenied(permanent: Boolean = false) = _state.update { it.copy(message = WearMessage.MicDenied(permanent)) }
 
     /** Marks kept so far: only the newest one's two seconds end the news. */
     private var marks = 0
 
     /**
-     * docs/03 "Metadata": marks this moment of the running recording. A mark the core kept is said on the
-     * status line for [HIGHLIGHT_NEWS_MS], then the line goes back to its own rule.
+     * docs/03 "Metadata": marks this moment of the running recording — on the recorder's written-audio clock,
+     * not the wall clock since the start (D6). A mark the core kept is felt as a light tick (P3) and said on
+     * the status line for [HIGHLIGHT_NEWS_MS], then the line goes back to its own rule.
      */
-    fun highlight(now: Instant = Clock.System.now()) {
+    fun highlight() {
         val recording = _state.value.recorder as? RecorderState.Recording ?: return
-        val atSec = (now - recording.startedAt).inWholeMilliseconds / 1000.0
         viewModelScope.launch {
+            val atSec = recorder.recordedSec() ?: return@launch
             if (!recorder.highlight(recording.recordingId, atSec)) return@launch
             // A slow write may land after that recording stopped and another started: its time is not the new one's news.
             if ((_state.value.recorder as? RecorderState.Recording)?.recordingId != recording.recordingId) return@launch
+            haptics.tick()
             val mark = ++marks
             _state.update { it.copy(highlightedSec = atSec.toLong()) }
             delay(HIGHLIGHT_NEWS_MS)
@@ -152,7 +158,7 @@ class WearRecordingViewModel(
                 _state.update { it.copy(message = WearMessage.SaveDeferred) }
             }
 
-            is RecorderEvent.Failed -> _state.update { it.copy(message = WearMessage.Failed(event.reason)) }
+            is RecorderEvent.Failed -> _state.update { it.copy(message = WearMessage.Failed) }
         }
     }
 }

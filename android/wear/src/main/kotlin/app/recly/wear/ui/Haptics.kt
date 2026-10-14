@@ -15,6 +15,15 @@ interface Haptics {
 
     /** Stopped — two taps, so it cannot be mistaken for a start that was felt late. */
     fun doubleClick()
+
+    /** A highlight was kept — the lightest of the four, as the phone's highlight node gives (P3). */
+    fun tick()
+
+    /**
+     * A recording reached the phone: its meta was acked, and only then (P4). Three short pulses — a pattern of its
+     * own, so the end of a transfer that lands a minute after a stop is not felt as a start or a stop.
+     */
+    fun success()
 }
 
 class SystemHaptics(context: Context) : Haptics {
@@ -22,12 +31,17 @@ class SystemHaptics(context: Context) : Haptics {
     private val vibrator: Vibrator =
         context.getSystemService(VibratorManager::class.java).defaultVibrator
 
-    override fun click() = vibrate(VibrationEffect.EFFECT_CLICK)
+    override fun click() = vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
 
-    override fun doubleClick() = vibrate(VibrationEffect.EFFECT_DOUBLE_CLICK)
+    override fun doubleClick() = vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK))
 
-    private fun vibrate(effect: Int) {
+    override fun tick() = vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+
+    // Off, on, off, on, off, on — the platform has no predefined "success".
+    override fun success() = vibrate(VibrationEffect.createWaveform(longArrayOf(0, 25, 70, 25, 70, 25), -1))
+
+    private fun vibrate(effect: VibrationEffect) {
         if (!vibrator.hasVibrator()) return
-        vibrator.vibrate(VibrationEffect.createPredefined(effect))
+        vibrator.vibrate(effect)
     }
 }

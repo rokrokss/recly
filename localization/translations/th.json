@@ -569,5 +569,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "เมื่ออุปกรณ์นี้ถอดเสียงบันทึก จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อตั้งชื่อผู้พูดที่ถูกเรียกชื่อในบทสนทนา ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "เมื่อเปิด ใส่ชื่ออัตโนมัติ หรือ ใส่ชื่อผู้พูดอัตโนมัติ ข้อความถอดเสียงของทุกบันทึกที่ iPhone เครื่องนี้ถอดเสียงจะถูกส่งมาที่นี่ด้วย",
   "Asked once, before the first recording.": "ถามครั้งเดียวก่อนการบันทึกครั้งแรก",
-  "Still transcribing on this device — try again once it has finished": "ยังถอดเสียงอยู่บนอุปกรณ์นี้ — ลองอีกครั้งเมื่อเสร็จแล้ว"
+  "Still transcribing on this device — try again once it has finished": "ยังถอดเสียงอยู่บนอุปกรณ์นี้ — ลองอีกครั้งเมื่อเสร็จแล้ว",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "เปิดได้ที่ การตั้งค่า → แอป → Recly → สิทธิ์"
 }

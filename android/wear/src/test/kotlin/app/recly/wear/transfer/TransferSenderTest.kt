@@ -14,6 +14,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import okio.FileSystem
 import okio.Path
@@ -647,6 +649,41 @@ class TransferSenderTest {
         assertEquals(TransferOutcome.DONE, sender(link).run())
 
         assertEquals(TransferSender.META_MISSING, queue.all().single().failedReason)
+    }
+
+    /** P4: the "done" the wrist feels is the phone filing the meta — not the last part going out. */
+    @Test
+    fun `a delivery is announced once the phone has filed the meta, and only then`() = runTest {
+        val heard = mutableListOf<String>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { TransferSender.delivered.collect { heard += it } }
+        recording()
+        val link = GatedLink()
+        val pass = async { sender(link).run() }
+
+        repeat(2) {
+            val (path, ack) = link.channel.inFlight()
+            ack.complete(ackFor(path))
+        }
+        val (_, ackMeta) = link.channel.inFlight()
+        assertEquals(emptyList(), heard, "every part acked is not yet the end of the transfer")
+        ackMeta.complete(AckMessage.Meta(ID, ok = true))
+
+        assertEquals(TransferOutcome.DONE, pass.await())
+        assertEquals(listOf(ID), heard)
+    }
+
+    @Test
+    fun `a recording the phone refused is not announced as delivered`() = runTest {
+        val heard = mutableListOf<String>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { TransferSender.delivered.collect { heard += it } }
+        recording()
+        val link = FakeLink { path ->
+            listOf(if (path.startsWith(TransferPath.META_PREFIX)) AckMessage.Meta(ID, ok = false, reason = "RECORDING_ID_MISMATCH") else ackFor(path))
+        }
+
+        assertEquals(TransferOutcome.DONE, sender(link).run())
+
+        assertEquals(emptyList(), heard)
     }
 
     private fun ackFor(path: String): AckMessage = when (val parsed = TransferPath.parse(path)) {

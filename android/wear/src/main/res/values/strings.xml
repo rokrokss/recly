@@ -7,12 +7,16 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">Start</string>
     <string name="recording_stop">Stop</string>
-    <string name="recording_busy">…</string>
+    <!-- P7: the phones' words for the moments either side of a recording. -->
+    <string name="recording_starting">Starting</string>
     <string name="recording_active">Recording</string>
-    <string name="recording_stopping">Saving…</string>
+    <string name="recording_stopping">Saving</string>
     <string name="recording_mic_denied">The microphone permission is needed</string>
+    <!-- P8: after a refusal the system will not ask again — where on the watch it is turned back on. -->
+    <string name="recording_mic_settings">Turn it on in Settings → Apps → Recly → Permissions.</string>
     <string name="recording_save_deferred">Could not finish saving — recovered next time</string>
-    <string name="recording_failed">Failed: %1$s</string>
+    <!-- P2: the phones' sentence; the cause is logged, not shown. -->
+    <string name="recording_failed">The recording failed</string>
     <!-- docs/11 W2: the same recordings, said as the pass sees them — waiting for a phone, or
          going over to one right now. No count: what the user asks is whether any are left. -->
     <string name="pending_badge">Waiting to send</string>

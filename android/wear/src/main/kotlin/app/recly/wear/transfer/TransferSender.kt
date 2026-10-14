@@ -7,8 +7,11 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
@@ -234,6 +237,7 @@ class TransferSender(
         recordings.delete(recordingId)
         store.remove(recordingId)
         logger.log(Logger.Level.INFO, "transfer.complete", mapOf("recordingId" to recordingId))
+        _delivered.tryEmit(recordingId)
     }
 
     private fun stalled(recordingId: String, what: String): Step {
@@ -302,6 +306,14 @@ class TransferSender(
          * waiting, which is what the badge then says.
          */
         val sending: StateFlow<Boolean> = _sending.asStateFlow()
+
+        private val _delivered = MutableSharedFlow<String>(extraBufferCapacity = 8)
+
+        /**
+         * P4: a recording the phone has filed — `ack-meta ok:true`, the real end of its transfer — by id. On the
+         * companion for the same reason [sending] is; the app turns it into the wrist's "done".
+         */
+        val delivered: SharedFlow<String> = _delivered.asSharedFlow()
 
         /** docs/11 W4. */
         val ACK_TIMEOUT: Duration = 5.minutes

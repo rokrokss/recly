@@ -569,5 +569,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Quando questo dispositivo trascrive una registrazione, la trascrizione viene inviata a ChatGPT per dare un nome agli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Con Completa i titoli o Completa i nomi degli interlocutori attivo, qui viene inviata anche la trascrizione di ogni registrazione trascritta da questo iPhone.",
   "Asked once, before the first recording.": "Chiesto una volta, prima della prima registrazione.",
-  "Still transcribing on this device — try again once it has finished": "Trascrizione ancora in corso su questo dispositivo: riprova quando è finita"
+  "Still transcribing on this device — try again once it has finished": "Trascrizione ancora in corso su questo dispositivo: riprova quando è finita",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "Attivala in Impostazioni → App → Recly → Autorizzazioni."
 }

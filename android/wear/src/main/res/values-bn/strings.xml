@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">শুরু করুন</string>
     <string name="recording_stop">থামান</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">শুরু হচ্ছে</string>
     <string name="recording_active">রেকর্ড হচ্ছে</string>
-    <string name="recording_stopping">সেভ হচ্ছে…</string>
+    <string name="recording_stopping">সেভ হচ্ছে</string>
     <string name="recording_mic_denied">মাইক্রোফোনের অনুমতি প্রয়োজন</string>
+    <string name="recording_mic_settings">সেটিংস → অ্যাপ → Recly → অনুমতি থেকে এটি চালু করুন।</string>
     <string name="recording_save_deferred">সেভ অসম্পূর্ণ — পরে পুনরুদ্ধার হবে</string>
-    <string name="recording_failed">ব্যর্থ: %1$s</string>
+    <string name="recording_failed">রেকর্ডিং ব্যর্থ হয়েছে</string>
     <string name="pending_badge">পাঠানোর অপেক্ষায়</string>
     <string name="sending_badge">পাঠানো হচ্ছে</string>
     <string name="transfer_failed_badge">ট্রান্সফার ব্যর্থ হয়েছে</string>

@@ -39,11 +39,23 @@ class ComplicationLookTest {
     }
 
     @Test
-    fun `starting and saving have no time to count, and keep the recording's square`() {
-        assertEquals(R.drawable.ic_complication_recording, complicationLook(RecorderState.Starting, 0, false).glyph)
+    fun `starting and saving have no time to count, keep the recording's square, and say the phones' words`() {
         assertEquals(
-            ComplicationLook.Words(R.string.recording_busy, R.string.recording_stopping, R.drawable.ic_complication_recording),
+            ComplicationLook.Words(R.string.recording_starting, R.string.recording_starting, R.drawable.ic_complication_recording),
+            complicationLook(RecorderState.Starting, pending = 0, sending = false),
+        )
+        assertEquals(
+            ComplicationLook.Words(R.string.recording_stopping, R.string.recording_stopping, R.drawable.ic_complication_recording),
             complicationLook(RecorderState.Stopping, pending = 0, sending = false),
+        )
+    }
+
+    /** P1: a refused transfer is said as the screen says it, ahead of the recordings still waiting. */
+    @Test
+    fun `a failed transfer outranks the waiting ones`() {
+        assertEquals(
+            ComplicationLook.Words(R.string.transfer_failed_badge, R.string.transfer_failed_badge, R.drawable.ic_complication_record),
+            complicationLook(RecorderState.Idle, pending = 2, sending = true, failed = 1),
         )
     }
 }

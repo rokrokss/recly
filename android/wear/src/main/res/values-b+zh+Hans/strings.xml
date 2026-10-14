@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">开始</string>
     <string name="recording_stop">停止</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">正在启动</string>
     <string name="recording_active">正在录音</string>
-    <string name="recording_stopping">正在保存…</string>
+    <string name="recording_stopping">正在保存</string>
     <string name="recording_mic_denied">需要麦克风权限</string>
+    <string name="recording_mic_settings">请在“设置→应用→Recly→权限”中开启。</string>
     <string name="recording_save_deferred">无法完成保存，将在下次运行时恢复</string>
-    <string name="recording_failed">失败：%1$s</string>
+    <string name="recording_failed">录音失败</string>
     <string name="pending_badge">等待发送</string>
     <string name="sending_badge">正在发送</string>
     <string name="transfer_failed_badge">传输失败</string>
