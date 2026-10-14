@@ -61,6 +61,12 @@ fun BlueprintButton(
     leading: String? = null,
     /** Monospace for a button whose label is data — a secret name, a step id (docs/09 "Typography"). */
     monospace: Boolean = false,
+    /**
+     * Showing its own work (`…`, `✓`, [ProcessingButton]): it cannot be pressed meanwhile, but it is not disabled — it
+     * keeps its ink and its edge, because that state is what the user is meant to read (docs/09 "Disabled, focus and
+     * structure").
+     */
+    busy: Boolean = false,
 ) {
     val palette = blueprint
     val ink = when {
@@ -99,7 +105,7 @@ fun BlueprintButton(
             )
             // On the accent fill an accent ring would vanish, so a filled button's ring is the ink on it.
             .focusRing(shape, color = if (fill == Color.Transparent) null else palette.onAccent)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick)
             // docs/09 "Component measurements": the minimum touch size decides the height, so the vertical padding is the small one.
             .padding(horizontal = Space.s, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
@@ -217,7 +223,7 @@ fun ProcessingButton(
             onClick = {},
             modifier = modifier,
             tone = tone,
-            enabled = false,
+            busy = true,
         )
 
         ProcessingPhase.DONE -> BlueprintButton(
@@ -225,7 +231,7 @@ fun ProcessingButton(
             onClick = {},
             modifier = modifier,
             tone = tone,
-            enabled = false,
+            busy = true,
             leading = strings[Str.ACTION_DONE],
         )
     }

@@ -67,14 +67,13 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (status.busy) BlueprintLoader(status.tone.ink())
-        // docs/09 "Component measurements": a word wider than the column ([statusColumnWidth]'s cap) takes a second line
-        // inside its badge, broken between words and centred — never cut short. Korean words carry their joiners
+        // docs/09 "Component measurements": words wider than the column ([statusColumnWidth]'s cap) wrap inside the
+        // badge, between words and centred — no word is ever cut short. Korean words carry their joiners
         // (`joinKoreanWords`), so they break between words as well.
         Text(
             text = status.label,
             style = mono.small.forWord(status.label),
             color = status.tone.ink(),
-            maxLines = 2,
             textAlign = TextAlign.Center,
         )
     }

@@ -805,7 +805,8 @@ private fun EditorHeader(title: String, changed: Boolean, save: InlineSave?, onC
                     },
                     onClick = onSave,
                     tone = if (changed) ButtonTone.PRIMARY else ButtonTone.QUIET,
-                    enabled = save == null,
+                    // Saving… and its check are the save's own work, read in the button's ink (docs/09).
+                    busy = save != null,
                 )
             }
         },
