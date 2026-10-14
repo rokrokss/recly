@@ -337,7 +337,7 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
 /**
  * docs/08 "Summaries": what every summary on this PC is shaped as and who it is for — under the model, and there
  * signed out too, since only running a summary needs the sign-in. The format is saved when it is chosen; the two
- * texts when their field is left.
+ * texts when their field is left; the fill-in switches under them when they are switched.
  *
  * Shorter since 2026-10-10: the format offers all five always, and My format's field is there only while the format
  * is My format — taking the cursor when it is chosen with nothing written yet, and saying until then that summaries
@@ -395,6 +395,20 @@ private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
         )
     }
     HairLine()
+    // docs/08 "Titles and speaker names": off until the user turns them on; each switch is the consent to send a
+    // transcript this PC makes to ChatGPT in the background (docs/15 §10).
+    SwitchRow(
+        title = strings[Str.SUMMARY_AUTO_TITLE],
+        subtitle = strings[Str.SUMMARY_AUTO_TITLE_NOTE],
+        checked = preferences.autoTitle,
+        onCheckedChange = chatGpt::toggleAutoTitle,
+    )
+    SwitchRow(
+        title = strings[Str.SUMMARY_AUTO_SPEAKERS],
+        subtitle = strings[Str.SUMMARY_AUTO_SPEAKERS_NOTE],
+        checked = preferences.autoSpeakers,
+        onCheckedChange = chatGpt::toggleAutoSpeakers,
+    )
 }
 
 /**
