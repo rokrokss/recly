@@ -312,6 +312,9 @@ class ShotsTest {
         }
         try {
             settle(scene)
+            // A click point read off an older layout lands on nothing, and the shot comes out as the plain window
+            // under the name of a state it never reached.
+            val untouched = if (clicks.isEmpty()) null else scene.render(System.nanoTime()).encodeToData(EncodedImageFormat.PNG)!!.bytes
             clicks.forEach { at ->
                 val px = Offset(at.x * SCALE, at.y * SCALE)
                 scene.sendPointerEvent(PointerEventType.Move, px)
@@ -331,8 +334,9 @@ class ShotsTest {
                 repeat(3) { scene.sendPointerEvent(PointerEventType.Scroll, px, scrollDelta = Offset(0f, 2f)) }
                 settle(scene)
             }
-            val image = scene.render(System.nanoTime())
-            File(out, "$name.png").writeBytes(image.encodeToData(EncodedImageFormat.PNG)!!.bytes)
+            val bytes = scene.render(System.nanoTime()).encodeToData(EncodedImageFormat.PNG)!!.bytes
+            File(out, "$name.png").writeBytes(bytes)
+            check(untouched == null || !untouched.contentEquals(bytes)) { "$name: the clicks at $clicks changed nothing — a stale click point?" }
         } finally {
             scene.close()
         }
@@ -364,7 +368,7 @@ class ShotsTest {
         val SPEED = Offset(560f, 150f)
         val BADGE = Offset(420f, 215f)
         val TICK = Offset(451f, 100f)
-        val MORE_EDIT = Offset(835f, 86f)
+        val MORE_EDIT = Offset(835f, 130f)
         val EDIT_FIELD = Offset(700f, 250f)
         val BADGE_CHANGE = Offset(534f, 307f)
         val SEARCH = Offset(150f, 103f)

@@ -225,7 +225,8 @@ struct MenuPopover: View {
             // it waits for the stop to finalize and queue the recording (see `AppDelegate`).
             BlueprintButton(
                 loc(model.isIdle ? "Quit" : "Save the recording and quit"),
-                tone: .quiet
+                tone: .quiet,
+                minWidth: minTouch
             ) {
                 NSApplication.shared.terminate(nil)
             }
@@ -404,7 +405,7 @@ struct MenuPopover: View {
             // the import are: sending the user to another window to answer "delete this?" is the
             // app changing the subject in the middle of its own question.
             if item.canDelete {
-                BlueprintButton(loc("Delete"), tone: .danger) {
+                BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) {
                     model.confirmDelete(item, from: .popover)
                 }
                 .accessibilityIdentifier("delete")

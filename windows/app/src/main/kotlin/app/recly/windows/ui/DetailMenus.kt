@@ -218,6 +218,8 @@ internal fun MoreButton(
             },
             modifier = Modifier.semantics { contentDescription = strings[Str.DETAIL_MORE] },
             tone = ButtonTone.QUIET,
+            // A mark, not a word (docs/09 "Shape").
+            minWidth = MinTouch,
         )
         BlueprintMenu(open, { open = false }, end = true, maxHeight = DETAIL_MENU_HEIGHT) { BlueprintMenuColumn {
             if (choosingFormat) {
@@ -424,7 +426,7 @@ internal fun SpeakerNameDialog(
         theme = theme,
         fitContent = true,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(strings[Str.SAVE], { onSave(name) }, tone = ButtonTone.PRIMARY)
         },
     ) {
@@ -472,7 +474,7 @@ internal fun SummaryReplaceDialog(
         theme = theme,
         fitContent = true,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(strings[Str.SUMMARY_REPLACE], onReplace, tone = ButtonTone.PRIMARY)
         },
     ) {
@@ -501,7 +503,7 @@ fun RetranscribeDialog(
         theme = theme,
         fitContent = true,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(strings[Str.RETRANSCRIBE_CONFIRM], { onConfirm(request) }, tone = ButtonTone.PRIMARY)
         },
     ) {

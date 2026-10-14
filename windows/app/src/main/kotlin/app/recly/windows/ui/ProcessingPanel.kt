@@ -46,9 +46,9 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
     val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
     var deletingKey by remember { mutableStateOf<String?>(null) }
     deletingKey?.let { name -> BlueprintDialog(title = strings[Str.DELETE_KEY_TITLE, SttProviders.displayName(name)], onDismissRequest = { deletingKey = null }, actions = {
-        BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET)
+        BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET, minWidth = MinTouch)
         // Irreversible, so the danger tone, as every Delete that cannot be undone wears it.
-        BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER)
+        BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER, minWidth = MinTouch)
     }) { Text(name, color = blueprint.text) } }
     // The same section heading as the rest of Settings (SettingsWindow `Section`).
     SectionHeader(strings[Str.PROCESSING_TITLE], Modifier.padding(horizontal = Space.m))
@@ -122,7 +122,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         // docs/09: a form's buttons are end-aligned, the commit last — and only there while the draft has changes, or
         // while Save is still showing that it saved.
         if (model.dirty || model.saveState != ProcessingState.IDLE) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-            if (model.dirty) BlueprintButton(strings[Str.CANCEL], { model.reload() }, tone = ButtonTone.QUIET, enabled = !model.busy)
+            if (model.dirty) BlueprintButton(strings[Str.CANCEL], { model.reload() }, tone = ButtonTone.QUIET, minWidth = MinTouch, enabled = !model.busy)
             ProcessingButton(
                 label = strings[Str.SAVE],
                 state = model.saveState,
@@ -140,7 +140,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
             SectionHeader(strings[Str.PROCESSING_OTHER_KEYS])
             others.forEach { name ->
                 LabelledRow(SttProviders.displayName(name)) {
-                    BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.DANGER)
+                    BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.DANGER, minWidth = MinTouch)
                 }
             }
         }
@@ -181,7 +181,7 @@ private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Str
         }
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
             BlueprintButton(strings[Str.PROCESSING_KEY_REPLACE], { replacing = true }, tone = ButtonTone.QUIET)
-            BlueprintButton(strings[Str.DELETE], delete, tone = ButtonTone.DANGER)
+            BlueprintButton(strings[Str.DELETE], delete, tone = ButtonTone.DANGER, minWidth = MinTouch)
         }
     } else {
         // The field every other field is (2026-10-10): its label over the box, never floating, and dots for what is typed.
@@ -194,7 +194,7 @@ private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Str
             monospace = true,
         )
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-            if (replacing) BlueprintButton(strings[Str.CANCEL], { value = ""; replacing = false }, tone = ButtonTone.QUIET)
+            if (replacing) BlueprintButton(strings[Str.CANCEL], { value = ""; replacing = false }, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(strings[Str.PROCESSING_SAVE_KEY], { model.saveKey(name, value) { value = ""; replacing = false } }, enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
         }
     }

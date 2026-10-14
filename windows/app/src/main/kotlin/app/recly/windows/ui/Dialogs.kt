@@ -17,6 +17,7 @@ import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.DialogTone
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.recly.windows.ui.theme.MinTouch
 
 /**
  * docs/03 "Deleting in the app": one recording, two answers about Drive, and the default is the one that can
@@ -41,11 +42,12 @@ fun DeleteDialog(
         theme = theme,
         height = if (request.remote) REMOTE_DELETE_HEIGHT else DELETE_HEIGHT,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Str.DELETE],
                 onClick = { onDelete(request, deleteDrive) },
                 tone = ButtonTone.DANGER,
+                minWidth = MinTouch,
             )
         },
     ) {
@@ -95,7 +97,7 @@ fun RenameDialog(
         theme = theme,
         height = RENAME_HEIGHT,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Str.SAVE],
                 onClick = { onSave(request, title) },
@@ -132,7 +134,7 @@ fun DisconnectDialog(
         // One explanation and, only when needed, the reason confirmation is blocked.
         height = DISCONNECT_HEIGHT,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             // The confirming action, filled in the accent, not red (2026-10-08): nothing is deleted, and Drive
             // can be connected again. The Settings row that opens this stays quiet.
             BlueprintButton(
@@ -172,7 +174,7 @@ fun MeteredDownloadDialog(
         // A title, one line and the answers: only as tall as that.
         fitContent = true,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(strings[Str.PROCESSING_DOWNLOAD], onDownload, tone = ButtonTone.PRIMARY)
         },
     ) {

@@ -266,7 +266,7 @@ struct RecordingsWindow: View {
                 // docs/03: a recording being written to, imported, or arriving from the watch is not one
                 // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
                 if item.canDelete {
-                    BlueprintButton(loc("Delete"), tone: .danger) {
+                    BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) {
                         menu.confirmDelete(item, from: .recordingsWindow)
                     }
                     .accessibilityIdentifier("delete")
