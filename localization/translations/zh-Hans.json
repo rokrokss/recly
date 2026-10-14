@@ -149,7 +149,6 @@
   "On-device transcription does not separate speakers.": "设备本地转录不区分说话人。",
   "Open Drive storage": "打开Drive存储空间",
   "Open Recly": "打开Recly",
-  "Open Recly once to answer the recording reminder": "请先打开Recly回应录音提醒",
   "Open Settings": "打开设置",
   "Open System Settings": "打开系统设置",
   "Open Windows Settings": "打开Windows设置",
@@ -571,5 +570,6 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "本设备转录没有标题的录音时，会把转写文本发送给ChatGPT来生成标题。这会计入你的ChatGPT用量。",
   "Fill in speaker names": "自动填写说话人名称",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "本设备转录录音时，会把转写文本发送给ChatGPT，为对话中被叫到名字的说话人命名。这会计入你的ChatGPT用量。",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "开启“自动填写标题”或“自动填写说话人名称”时，这台iPhone转录的每段录音的转写文本也会发送到这里。"
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "开启“自动填写标题”或“自动填写说话人名称”时，这台iPhone转录的每段录音的转写文本也会发送到这里。",
+  "Still transcribing on this device — try again once it has finished": "此设备仍在转录——完成后再试一次"
 }

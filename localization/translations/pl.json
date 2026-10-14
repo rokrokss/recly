@@ -187,7 +187,6 @@
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "Transkrypcja na urządzeniu wymaga Qwen3-ASR ({0}) — modelu rozpoznawania mowy typu open source.",
   "Open Drive storage": "Otwórz miejsce na dane Drive",
   "Open Recly": "Otwórz Recly",
-  "Open Recly once to answer the recording reminder": "Otwórz Recly, aby odpowiedzieć na przypomnienie o nagrywaniu",
   "Open Settings": "Otwórz Ustawienia",
   "Open System Settings": "Otwórz Ustawienia systemowe",
   "Open Windows Settings": "Otwórz Ustawienia systemu Windows",
@@ -571,5 +570,6 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Gdy to urządzenie transkrybuje nagranie bez tytułu, transkrypcja trafia do ChatGPT po tytuł. Wlicza się to do Twojego użycia ChatGPT.",
   "Fill in speaker names": "Uzupełniaj nazwy mówców",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Gdy to urządzenie transkrybuje nagranie, transkrypcja trafia do ChatGPT, aby nazwać mówców, do których ktoś zwraca się po imieniu. Wlicza się to do Twojego użycia ChatGPT.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Gdy włączone jest Uzupełniaj tytuły lub Uzupełniaj nazwy mówców, trafia tu też transkrypcja każdego nagrania transkrybowanego na tym iPhonie."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Gdy włączone jest Uzupełniaj tytuły lub Uzupełniaj nazwy mówców, trafia tu też transkrypcja każdego nagrania transkrybowanego na tym iPhonie.",
+  "Still transcribing on this device — try again once it has finished": "Transkrypcja na tym urządzeniu wciąż trwa — spróbuj ponownie po jej zakończeniu"
 }

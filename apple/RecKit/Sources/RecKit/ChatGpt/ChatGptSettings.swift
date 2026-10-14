@@ -15,7 +15,11 @@ public protocol ChatGptBrowser: AnyObject {
     /// Served by the loopback's queue for the callback it matched.
     var answer: @Sendable (URLComponents) -> ChatGptLoopback.Answer { get }
     /// [dismissed]: the user closed the browser before OpenAI sent it back — the iPhone's sheet only.
-    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void)
+    ///
+    /// - Returns: false when no browser opened at all — the Mac's default browser refused the URL, the iPhone's
+    ///   sheet would not start — which is a failure to say rather than a cancel (Windows gives the same answer after
+    ///   its 30 seconds; here the system answers at once).
+    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) -> Bool
     /// The sign-in is over: anything still on screen for it goes.
     @MainActor func close()
 }
@@ -253,6 +257,10 @@ public final class ChatGptSettingsModel: ObservableObject {
 
     private static func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    /// The sign-in's failure when no browser opened: `Could not sign in to ChatGPT`, with the detail in the words
+    /// Windows writes — untranslated, as every detail is.
+    static let noBrowser = CoreMessage.providerError.code(arg: nil, detail: "no browser opened")
+
     private func run(_ loopback: ChatGptLoopback) async {
         // The limit and Cancel hold from the first moment, before the browser is open too.
         let timeout = self.timeout
@@ -273,7 +281,13 @@ public final class ChatGptSettingsModel: ObservableObject {
             let started = try await core.chatGpt.beginSignIn(redirectUri: ChatGptLoopback.redirectUri(port: port))
             loopback.expect(state: started.state)
             guard let url = URL(string: started.authorizationUrl) else { throw URLError(.badURL) }
-            browser.open(url) { [weak loopback] in loopback?.stop() }
+            guard browser.open(url, dismissed: { [weak loopback] in loopback?.stop() }) else {
+                core.chatGpt.cancelSignIn()
+                logger.error("shell.chatgpt.signin.failed reason=no-browser")
+                failure = .signIn(Self.noBrowser)
+                signInState = .failed
+                return
+            }
             let callback = await loopback.callback()
             clock.cancel()
             waitingForBrowser = false
@@ -319,8 +333,8 @@ final class DefaultBrowser: ChatGptBrowser {
             : RecKitStrings.localized("ChatGPT is connected. Close this window and return to Recly.")))
     }
 
-    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) {
-        if !NSWorkspace.shared.open(url) { dismissed() }
+    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) -> Bool {
+        NSWorkspace.shared.open(url)
     }
 
     @MainActor func close() {}
@@ -336,7 +350,7 @@ final class AuthenticationSheet: NSObject, ChatGptBrowser, ASWebAuthenticationPr
     let answer: @Sendable (URLComponents) -> ChatGptLoopback.Answer = { _ in .redirect("\(AuthenticationSheet.scheme)://signed-in") }
     private var session: ASWebAuthenticationSession?
 
-    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) {
+    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) -> Bool {
         // An error is the sheet closed before the redirect — Cancel, or a swipe down. After the redirect
         // the loopback already has the callback, and a late error changes nothing.
         let completion: ASWebAuthenticationSession.CompletionHandler = { _, error in
@@ -353,7 +367,7 @@ final class AuthenticationSheet: NSObject, ChatGptBrowser, ASWebAuthenticationPr
         // The browser's ChatGPT sign-in is the one to use; an ephemeral sheet would ask for it every time.
         session.prefersEphemeralWebBrowserSession = false
         self.session = session
-        if !session.start() { dismissed() }
+        return session.start()
     }
 
     @MainActor func close() {

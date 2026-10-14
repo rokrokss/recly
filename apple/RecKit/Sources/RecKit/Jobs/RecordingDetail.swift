@@ -331,6 +331,25 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// waiting for Drive. Nil where the shell offers none, and then the page shows no button.
     public var connectDrive: (() -> Void)?
 
+    /// docs/09 "Detail header and More menu" (desktop): the recording's folder — Drive's page, or Finder for an iCloud
+    /// or local-folder recording — offered from the More menu, as the list row offers it. Nil where there is no folder
+    /// yet, or where the shell has the row's own buttons for it (the phone), and then the menu shows nothing.
+    public var openInDrive: (() -> Void)?
+    public var showInFinder: (() -> Void)?
+
+    /// Which of the page's editors holds changes nobody has saved, or nil — written by the page, read by a shell that
+    /// is about to put another recording (or nothing) where this one is, and asks first (docs/09 "Editing and
+    /// speakers": leaving an editor with changes asks, by every route).
+    @Published public internal(set) var unsavedEdits: UnsavedEdits?
+
+    public enum UnsavedEdits: Sendable { case transcript, summary }
+
+    /// The transcript is what the page is showing — not an editor, not the summary — so a find has something to
+    /// look in (the Mac's ⌘F).
+    @Published public internal(set) var findable = false
+    /// Bumped by ⌘F to put the cursor in the find bar's field, every press.
+    @Published public var findFocus = 0
+
     /// docs/09 "Highlights": a mark at [sec] — the More menu's, or the desktop's Highlight button.
     public func addHighlight(atSec sec: Double) async {
         await setHighlights(highlights + [sec])
@@ -362,6 +381,15 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     /// No audio here and none to fetch — the same answer the player bar's `No audio on this device` is.
     public var audioUnavailable: Bool { !hasAudio && driveFetch == .idle }
+
+    /// docs/08 "Exports": why the audio cannot be shared or saved now, or nil when it can — a take still being written
+    /// has no whole file yet, whatever else is true of it.
+    public var audioExportReason: String? { Self.audioExportReason(writing: writing, unavailable: audioUnavailable) }
+
+    static func audioExportReason(writing: Bool, unavailable: Bool) -> String? {
+        if writing { return stillRecording }
+        return unavailable ? RecKitStrings.localized("No audio on this device") : nil
+    }
 
     /// `Copy all`: the text with its times, as the `.txt` has it.
     public func copyAll() {
@@ -544,7 +572,11 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// The More menu's Summarize — as [format], or nil for Settings' format. The core runs it on a scope of its
     /// own, so it goes on when the page closes; its progress comes back through [followSummary]. On the iPhone
     /// a destination the user has not allowed yet is asked about first ([summaryConsent]).
-    public func summarize(format: SummaryFormat? = nil) async {
+    ///
+    /// - Returns: false when the core threw before any state followed — there is then no summary, running or
+    ///   failed, for the page to turn to.
+    @discardableResult
+    public func summarize(format: SummaryFormat? = nil) async -> Bool {
         summarizing = true
         defer { summarizing = false }
         do {
@@ -552,8 +584,10 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             if case .failed(let failed) = onEnum(of: state), ChatGptText.message(failed.reason) == .transferConsentRequired {
                 askConsent { [weak self] in await self?.summarize(format: format) }
             }
+            return true
         } catch {
             logger.error("shell.chatgpt.summarize.failed error=\(String(describing: error), privacy: .private)")
+            return false
         }
     }
 
@@ -938,6 +972,8 @@ public struct RecordingDetailView: View {
     /// docs/09 "Ask": the panel is up, and the question typed in it.
     @State private var asking = false
     @State private var question = ""
+    /// The summary editor's text view has the cursor (the iPhone puts the chips away while the keyboard is up).
+    @FocusState private var summaryFieldFocused: Bool
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -1057,7 +1093,7 @@ public struct RecordingDetailView: View {
             }
             // docs/09 "Summary view": Transcript | Summary, once there is a summary or one was asked for —
             // never over the transcript's editor; over the summary's, Transcript asks before it drops changes.
-            if !model.loading, draft == nil, model.hasSummaryView || showingSummary {
+            if !model.loading, draft == nil, model.hasSummaryView || showingSummary, !chipsYieldToKeyboard {
                 HStack(spacing: Space.s) {
                     BlueprintChip(loc("Transcript"), selected: !showingSummary, action: showTranscript)
                         .accessibilityIdentifier("detail-transcript-tab")
@@ -1077,7 +1113,8 @@ public struct RecordingDetailView: View {
                     staysHere: model.summaryStaysHere,
                     saving: model.saving == .processing,
                     cancel: leaveSummaryEditor,
-                    save: saveSummary
+                    save: saveSummary,
+                    focused: $summaryFieldFocused
                 )
             } else if draft == nil, showingSummary {
                 SummaryPane(model: model, retry: { summarize(lastFormat) }, seekableSec: model.totalSec, onSeek: citationSeek)
@@ -1130,7 +1167,9 @@ public struct RecordingDetailView: View {
                     ),
                     onSeek: { seek(toSec: $0) },
                     onRemoveHighlight: { mark in Task { await model.removeHighlight(mark) } },
-                    onCloseFind: { model.find = nil }
+                    onCloseFind: { model.find = nil },
+                    findQuery: findQuery,
+                    findFocus: model.findFocus
                 )
                 .id(model.recordingId)
             }
@@ -1170,15 +1209,7 @@ public struct RecordingDetailView: View {
         }
         // docs/09 "Editing and speakers" · "Summary view": leaving an editor with changes in it.
         .blueprintDialogOverlay(isPresented: Binding(get: { discarding != nil }, set: { if !$0 { discarding = nil } })) {
-            BlueprintDialog(title: loc("Discard your changes?")) {
-                BlueprintButton(loc("Keep editing"), tone: .quiet) { discarding = nil }
-                BlueprintButton(loc("Discard"), tone: .accent, action: discard)
-                    .accessibilityIdentifier("discard-edits")
-            } content: {
-                BlueprintDialogText(loc(discarding == .transcript
-                    ? "Your edits to this transcript will be lost."
-                    : "Your edits to this summary will be lost."))
-            }
+            DiscardEditsDialog(edits: discarding == .transcript ? .transcript : .summary, keep: { discarding = nil }, discard: discard)
         }
         // docs/09 "Summary view": a new summary would replace the user's own words. Not red: no recording
         // is deleted.
@@ -1222,9 +1253,9 @@ public struct RecordingDetailView: View {
                         SummaryConsentDialog(targets: model.summaryConsent, trainingOff: $trainingOff, answer: answerSummaryConsent)
                     }
                     .presentationDetents([.large])
-                    // 2026-10-10 (1.4): an answer, or a question still being answered, is not thrown away by a
-                    // swipe — only the close icon takes it.
-                    .interactiveDismissDisabled(model.ask is AskState.Running || model.ask is AskState.Ready)
+                    // The sheet closes only through its close icon, whatever it holds — a question half typed is
+                    // not thrown away by a swipe either, as Android's sheet keeps it.
+                    .interactiveDismissDisabled(true)
             }
         }
         #else
@@ -1262,6 +1293,9 @@ public struct RecordingDetailView: View {
         .task(id: ObjectIdentifier(model)) { await model.followSummaryPreferences() }
         .task(id: ObjectIdentifier(model)) { await model.followAsk() }
         .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
+        // docs/09 "Editing and speakers": what a shell about to put another recording here has to ask about first.
+        .onChange(of: unsavedEdits, initial: true) { _, edits in model.unsavedEdits = edits }
+        .onChange(of: findable, initial: true) { _, findable in model.findable = findable }
         .onChange(of: model.deviceRecording) { _, active in if active { player.stop() } }
         .onChange(of: model.audio) { _, audio in player.load(audio) }
         // Results can arrive while the audio or waveform is still loading. Start after the
@@ -1276,8 +1310,12 @@ public struct RecordingDetailView: View {
             }
         }
         // The window closed, the sheet dismissed, the split pane emptied: nothing keeps playing
-        // behind a page nobody is looking at.
-        .onDisappear { player.stop() }
+        // behind a page nobody is looking at — and docs/09 "Ask": the answer goes with the page, as it goes with
+        // the panel (the Mac keeps the model after its window has closed).
+        .onDisappear {
+            player.stop()
+            model.closeAsk()
+        }
     }
 
     /// docs/08 "Result files" · docs/09 screen principle 2: the recording itself, where this device still has
@@ -1679,7 +1717,10 @@ public struct RecordingDetailView: View {
     private func summarize(_ format: SummaryFormat?) {
         showingSummary = true
         lastFormat = format
-        Task { await model.summarize(format: format) }
+        Task {
+            // Nothing followed — no summary running, none failed — so there is nothing on the summary to show.
+            if await !model.summarize(format: format), !model.hasSummaryView { showingSummary = false }
+        }
     }
 
     /// The More menu's Summarize: over a summary the user edited, the question first.
@@ -1711,9 +1752,11 @@ public struct RecordingDetailView: View {
         Task { await model.openAsk() }
     }
 
-    /// Closing drops the answer; a question still running finishes, and reopening shows it running.
+    /// Closing drops the answer and the question typed for it; a question still running finishes, and reopening
+    /// shows it running.
     private func closeAsk() {
         model.closeAsk()
+        question = ""
     }
 
     private var askPanel: some View {
@@ -1747,6 +1790,37 @@ public struct RecordingDetailView: View {
 
     /// One of the two editors is up, and the lines that belong to reading stay off.
     private var editing: Bool { draft != nil || summaryDraft != nil }
+
+    /// The editor with changes in it, if any — the transcript's first, as only one is ever up.
+    private var unsavedEdits: RecordingDetailModel.UnsavedEdits? {
+        if draft?.changed == true { return .transcript }
+        if summaryDraft?.changed == true { return .summary }
+        return nil
+    }
+
+    /// docs/10 "Search": the find bar's field on the Mac, where ⌘F opens it; the phone's bar is opened from search
+    /// alone and has no field.
+    private var findQuery: Binding<String>? {
+        #if os(macOS)
+        Binding(get: { model.find?.query ?? "" }, set: { model.find = TranscriptFind(query: $0, atSec: 0) })
+        #else
+        nil
+        #endif
+    }
+
+    /// The transcript is on screen to be read: what ⌘F finds in.
+    private var findable: Bool {
+        !model.loading && !editing && !showingSummary && model.transcript != nil && model.availability != .empty
+    }
+
+    /// The iPhone's keyboard is up over the summary editor: the chips give it the room, as Android's do.
+    private var chipsYieldToKeyboard: Bool {
+        #if os(iOS)
+        summaryDraft != nil && summaryFieldFocused
+        #else
+        false
+        #endif
+    }
 
     /// Which editor `Discard your changes?` is about — and, from the Transcript chip, where the page goes.
     private enum Discarding { case transcript, summary, summaryForTranscript }
@@ -1837,6 +1911,38 @@ public struct RecordingDetailView: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
+#endif
+
+#if os(iOS) || os(macOS)
+/// docs/09 "Editing and speakers" · "Summary view": leaving an editor with changes in it — from its own Cancel, or (on
+/// the Mac) by picking another recording or closing the window. Keep editing is the answer Esc gives.
+public struct DiscardEditsDialog: View {
+    private let edits: RecordingDetailModel.UnsavedEdits
+    private let keep: () -> Void
+    private let discard: () -> Void
+    @Environment(\.locale) private var locale
+
+    public init(edits: RecordingDetailModel.UnsavedEdits, keep: @escaping () -> Void, discard: @escaping () -> Void) {
+        self.edits = edits
+        self.keep = keep
+        self.discard = discard
+    }
+
+    public var body: some View {
+        BlueprintDialog(title: loc("Discard your changes?")) {
+            BlueprintButton(loc("Keep editing"), tone: .quiet, action: keep)
+                .keyboardShortcut(.cancelAction)
+            BlueprintButton(loc("Discard"), tone: .accent, action: discard)
+                .accessibilityIdentifier("discard-edits")
+        } content: {
+            BlueprintDialogText(loc(edits == .transcript
+                ? "Your edits to this transcript will be lost."
+                : "Your edits to this summary will be lost."))
+        }
+    }
+
+    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
 #endif
 
 /// The lane's shared user-visible text: what both shells say about a job the `transcribe` step is

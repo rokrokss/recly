@@ -187,7 +187,6 @@
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "رونویسی روی دستگاه به Qwen3-ASR ({0})، یک مدل متن‌باز تشخیص گفتار، نیاز دارد.",
   "Open Drive storage": "باز کردن فضای ذخیره‌سازی Drive",
   "Open Recly": "باز کردن Recly",
-  "Open Recly once to answer the recording reminder": "یک بار Recly را باز کنید تا به یادآور ضبط پاسخ دهید",
   "Open Settings": "باز کردن تنظیمات",
   "Open System Settings": "باز کردن تنظیمات سیستم",
   "Open Windows Settings": "باز کردن تنظیمات Windows",
@@ -571,5 +570,6 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "وقتی این دستگاه ضبطی بی‌عنوان را رونویسی می‌کند، رونوشت برای گرفتن عنوان به ChatGPT فرستاده می‌شود. این جزو مصرف ChatGPT شما حساب می‌شود.",
   "Fill in speaker names": "تکمیل خودکار نام گوینده‌ها",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "وقتی این دستگاه ضبطی را رونویسی می‌کند، رونوشت به ChatGPT فرستاده می‌شود تا گوینده‌هایی که در آن با نام صدا زده می‌شوند نام بگیرند. این جزو مصرف ChatGPT شما حساب می‌شود.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "وقتی «تکمیل خودکار عنوان‌ها» یا «تکمیل خودکار نام گوینده‌ها» روشن است، رونوشت هر ضبطی که این iPhone رونویسی می‌کند نیز به اینجا فرستاده می‌شود."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "وقتی «تکمیل خودکار عنوان‌ها» یا «تکمیل خودکار نام گوینده‌ها» روشن است، رونوشت هر ضبطی که این iPhone رونویسی می‌کند نیز به اینجا فرستاده می‌شود.",
+  "Still transcribing on this device — try again once it has finished": "هنوز روی این دستگاه رونویسی می‌شود — پس از پایان دوباره امتحان کنید"
 }

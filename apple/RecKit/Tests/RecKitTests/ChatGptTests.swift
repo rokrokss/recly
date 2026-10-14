@@ -161,6 +161,21 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertTrue(ChatGptText.cancelled((late as? ChatGptResult.Failed)?.reason ?? ""))
     }
 
+    /// No browser came up for the authorization page. That is not the user cancelling — nothing on screen would
+    /// say what happened — so it is said, in Windows' words: `Could not sign in to ChatGPT` and `no browser opened`.
+    func testABrowserThatNeverOpenedIsAFailureToSay() async throws {
+        let bridge = try await bridge()
+        let browser = FakeBrowser(answer: { _ in .page("connected") })
+        browser.opens = false
+        let model = ChatGptSettingsModel(core: bridge.core, browser: browser)
+        model.signIn()
+        try await until { model.signInState != .processing }
+        XCTAssertEqual(model.signInState, .failed)
+        XCTAssertEqual(model.failure, .signIn(ChatGptSettingsModel.noBrowser))
+        XCTAssertFalse(model.waitingForBrowser)
+        XCTAssertEqual(ChatGptText.detail(ChatGptSettingsModel.noBrowser), "no browser opened")
+    }
+
     func testTheWaitEndsWhenTheUserCancelsOrTimeRunsOut() async throws {
         let bridge = try await bridge()
         let browser = FakeBrowser(answer: { _ in .page("connected") })
@@ -612,9 +627,13 @@ private final class FakeBrowser: ChatGptBrowser, @unchecked Sendable {
 
     init(answer: @escaping @Sendable (URLComponents) -> ChatGptLoopback.Answer) { self.answer = answer }
 
-    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) {
-        guard let onOpen else { return }
-        Task { try? await onOpen(url, dismissed) }
+    /// False is a browser that never opened (the Mac's `NSWorkspace.open`, the iPhone's `session.start()`).
+    var opens = true
+
+    @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) -> Bool {
+        guard opens else { return false }
+        if let onOpen { Task { try? await onOpen(url, dismissed) } }
+        return true
     }
 
     @MainActor func close() { closed = true }

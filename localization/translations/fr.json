@@ -149,7 +149,6 @@
   "On-device transcription does not separate speakers.": "La transcription sur l’appareil ne distingue pas les locuteurs.",
   "Open Drive storage": "Ouvrir l’espace de stockage Drive",
   "Open Recly": "Ouvrir Recly",
-  "Open Recly once to answer the recording reminder": "Ouvrez Recly une fois pour répondre au rappel d’enregistrement",
   "Open Settings": "Ouvrir les réglages",
   "Open System Settings": "Ouvrir les réglages système",
   "Open Windows Settings": "Ouvrir les paramètres Windows",
@@ -571,5 +570,6 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Quand cet appareil transcrit un enregistrement sans titre, la transcription est envoyée à ChatGPT pour en obtenir un. Cela compte dans votre utilisation de ChatGPT.",
   "Fill in speaker names": "Compléter les noms des locuteurs",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Quand cet appareil transcrit un enregistrement, la transcription est envoyée à ChatGPT pour nommer les locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Si Compléter les titres ou Compléter les noms des locuteurs est activé, la transcription de chaque enregistrement transcrit par cet iPhone est aussi envoyée ici."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Si Compléter les titres ou Compléter les noms des locuteurs est activé, la transcription de chaque enregistrement transcrit par cet iPhone est aussi envoyée ici.",
+  "Still transcribing on this device — try again once it has finished": "Transcription encore en cours sur cet appareil — réessayez une fois terminée"
 }

@@ -187,7 +187,6 @@
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "การถอดเสียงในอุปกรณ์ต้องใช้ Qwen3-ASR ({0}) ซึ่งเป็นโมเดลรู้จำเสียงพูดแบบโอเพนซอร์ส",
   "Open Drive storage": "เปิดพื้นที่เก็บข้อมูล Drive",
   "Open Recly": "เปิด Recly",
-  "Open Recly once to answer the recording reminder": "เปิด Recly หนึ่งครั้งเพื่อตอบการเตือนเรื่องการบันทึกเสียง",
   "Open Settings": "เปิดการตั้งค่า",
   "Open System Settings": "เปิดการตั้งค่าระบบ",
   "Open Windows Settings": "เปิดการตั้งค่า Windows",
@@ -571,5 +570,6 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "เมื่ออุปกรณ์นี้ถอดเสียงบันทึกที่ไม่มีชื่อ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ",
   "Fill in speaker names": "ใส่ชื่อผู้พูดอัตโนมัติ",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "เมื่ออุปกรณ์นี้ถอดเสียงบันทึก จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อตั้งชื่อผู้พูดที่ถูกเรียกชื่อในบทสนทนา ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "เมื่อเปิด ใส่ชื่ออัตโนมัติ หรือ ใส่ชื่อผู้พูดอัตโนมัติ ข้อความถอดเสียงของทุกบันทึกที่ iPhone เครื่องนี้ถอดเสียงจะถูกส่งมาที่นี่ด้วย"
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "เมื่อเปิด ใส่ชื่ออัตโนมัติ หรือ ใส่ชื่อผู้พูดอัตโนมัติ ข้อความถอดเสียงของทุกบันทึกที่ iPhone เครื่องนี้ถอดเสียงจะถูกส่งมาที่นี่ด้วย",
+  "Still transcribing on this device — try again once it has finished": "ยังถอดเสียงอยู่บนอุปกรณ์นี้ — ลองอีกครั้งเมื่อเสร็จแล้ว"
 }

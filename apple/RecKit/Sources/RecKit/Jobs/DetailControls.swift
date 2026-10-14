@@ -78,7 +78,8 @@ struct ReasonedMenuItem: View {
 /// docs/09 "Detail header and More menu": the detail's More menu — Rename · Edit transcript · Transcribe
 /// again ─ Summarize · Summarize as… · Edit summary · Ask about this recording… ─ Add highlight — with the ones
 /// that cannot run now shown off, and why. The three groups are parted by a hairline, and a group with nothing in
-/// it (no ChatGPT, no summary) takes its divider with it (2026-10-10, 2.2).
+/// it (no ChatGPT, no summary) takes its divider with it (2026-10-10, 2.2). On the Mac a fourth group is the
+/// recording's folder — Open in Drive, or Show in Finder — where the shell hands the page one.
 struct DetailMoreMenu: View {
     @ObservedObject var model: RecordingDetailModel
     let positionSec: Double
@@ -91,43 +92,18 @@ struct DetailMoreMenu: View {
     let askAbout: () -> Void
     let addHighlight: () -> Void
     @Environment(\.locale) private var locale
+    #if os(iOS)
+    /// `Summarize as…` turned the menu into the list of formats under a row that goes back, as Android's does.
+    @State private var choosingFormat = false
+    #endif
 
     var body: some View {
         Menu {
-            ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
-            ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
-            ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
-            if model.summaryOffered || model.summaryEditable { Divider() }
-            // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
-            if model.summaryOffered {
-                ReasonedMenuItem(title: model.summarizeTitle, reason: model.summarizeReason) { summarize(nil) }
-                // A submenu on both platforms — the speaker menu's one-of-many — with the current summary's ✓. Off,
-                // it is a plain item with its reason: the phone draws a disabled submenu as if it were on.
-                if let reason = model.summarizeReason {
-                    ReasonedMenuItem(title: RecKitStrings.localized("Summarize as…"), reason: reason) {}
-                } else {
-                    Menu(RecKitStrings.localized("Summarize as…")) {
-                        ForEach(model.summaryFormats, id: \.self) { format in
-                            let label = ChatGptText.formatLabel(format)
-                            Button(model.summaryFormat == format ? "\(BlueprintChip.selectionMark) \(label)" : label) { summarize(format) }
-                        }
-                    }
-                }
-            }
-            // docs/08 "Summaries": the summary in the user's own words, once there is one. No ChatGPT is asked.
-            if model.summaryEditable {
-                ReasonedMenuItem(title: RecKitStrings.localized("Edit summary"), reason: model.editSummaryReason, action: editSummary)
-            }
-            // docs/08 "Ask": one question about the recording, in a panel of its own.
-            if model.summaryOffered {
-                ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
-            }
-            Divider()
-            ReasonedMenuItem(
-                title: RecKitStrings.localized("Add highlight at %@", model.stamp(positionSec)),
-                reason: model.highlightReason,
-                action: addHighlight
-            )
+            #if os(iOS)
+            if choosingFormat { formats } else { items }
+            #else
+            items
+            #endif
         } label: {
             BlueprintIconLabel("ellipsis.circle")
         }
@@ -137,6 +113,79 @@ struct DetailMoreMenu: View {
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("More")))
         .accessibilityIdentifier("detail-more")
+    }
+
+    @ViewBuilder
+    private var items: some View {
+        ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
+        ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
+        ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
+        if model.summaryOffered || model.summaryEditable { Divider() }
+        // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
+        if model.summaryOffered {
+            ReasonedMenuItem(title: model.summarizeTitle, reason: model.summarizeReason) { summarize(nil) }
+            // Off, it is a plain item with its reason: the phone draws a disabled submenu as if it were on.
+            if let reason = model.summarizeReason {
+                ReasonedMenuItem(title: RecKitStrings.localized("Summarize as…"), reason: reason) {}
+            } else {
+                #if os(iOS)
+                // The phone's list with a back row: the menu stays open and becomes the formats.
+                Button(RecKitStrings.localized("Summarize as…")) { choosingFormat = true }
+                    .menuActionDismissBehavior(.disabled)
+                    .accessibilityIdentifier("more-summarize-as")
+                #else
+                // A submenu on the desktop — the speaker menu's one-of-many — with the current summary's ✓.
+                Menu(RecKitStrings.localized("Summarize as…")) { formatButtons }
+                #endif
+            }
+        }
+        // docs/08 "Summaries": the summary in the user's own words, once there is one. No ChatGPT is asked.
+        if model.summaryEditable {
+            ReasonedMenuItem(title: RecKitStrings.localized("Edit summary"), reason: model.editSummaryReason, action: editSummary)
+        }
+        // docs/08 "Ask": one question about the recording, in a panel of its own.
+        if model.summaryOffered {
+            ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
+        }
+        Divider()
+        ReasonedMenuItem(
+            title: RecKitStrings.localized("Add highlight at %@", model.stamp(positionSec)),
+            reason: model.highlightReason,
+            action: addHighlight
+        )
+        // The recording's folder, as the list row offers it — only where the shell handed one over (the Mac).
+        if model.openInDrive != nil || model.showInFinder != nil { Divider() }
+        if let openInDrive = model.openInDrive {
+            Button(RecKitStrings.localized("Open in Drive"), action: openInDrive)
+        }
+        if let showInFinder = model.showInFinder {
+            Button(RecKitStrings.localized("Show in Finder"), action: showInFinder)
+        }
+    }
+
+    #if os(iOS)
+    /// The formats, under the row that takes the menu back to what it was.
+    @ViewBuilder
+    private var formats: some View {
+        Button("‹ \(RecKitStrings.localized("Summarize as…"))") { choosingFormat = false }
+            .menuActionDismissBehavior(.disabled)
+            .accessibilityIdentifier("summarize-as-back")
+        Divider()
+        formatButtons
+    }
+    #endif
+
+    @ViewBuilder
+    private var formatButtons: some View {
+        ForEach(model.summaryFormats, id: \.self) { format in
+            let label = ChatGptText.formatLabel(format)
+            Button(model.summaryFormat == format ? "\(BlueprintChip.selectionMark) \(label)" : label) {
+                #if os(iOS)
+                choosingFormat = false
+                #endif
+                summarize(format)
+            }
+        }
     }
 }
 
@@ -220,19 +269,30 @@ struct SpeakerMenu<Label: View>: View {
 
 /// docs/10 "Search" · docs/09 "Search": the find bar over the transcript — where this match is among them, and
 /// the way to the one before and after it. Moving between matches scrolls the text, not the playhead.
+///
+/// With a [query] it carries its own field, as Windows' does: ⌘F on the Mac opens it on the transcript that is
+/// open and puts the cursor there, every press ([focusRequest]).
 public struct FindBar: View {
     private let index: Int
     private let count: Int
+    private let query: Binding<String>?
+    private let focusRequest: Int
     private let previous: () -> Void
     private let next: () -> Void
     private let close: () -> Void
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
+    @FocusState private var fieldFocused: Bool
 
     /// - Parameter index: the current match, from 0.
-    public init(index: Int, count: Int, previous: @escaping () -> Void, next: @escaping () -> Void, close: @escaping () -> Void) {
+    public init(
+        index: Int, count: Int, query: Binding<String>? = nil, focusRequest: Int = 0,
+        previous: @escaping () -> Void, next: @escaping () -> Void, close: @escaping () -> Void
+    ) {
         self.index = index
         self.count = count
+        self.query = query
+        self.focusRequest = focusRequest
         self.previous = previous
         self.next = next
         self.close = close
@@ -240,13 +300,27 @@ public struct FindBar: View {
 
     public var body: some View {
         HStack(spacing: Space.xs) {
+            if let query {
+                let placeholder = RecKitStrings.localized("Search transcript")
+                TextField("", text: query, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette))
+                    .fieldPlaceholder(placeholder, empty: query.wrappedValue.isEmpty)
+                    .textFieldStyle(.plain)
+                    .font(blueprint.fonts.bodySmall)
+                    .foregroundStyle(blueprint.palette.text)
+                    .focused($fieldFocused)
+                    .onSubmit(next)
+                    .accessibilityLabel(Text(verbatim: placeholder))
+                    .accessibilityIdentifier("find-field")
+                    .frame(maxWidth: .infinity)
+                    .task(id: focusRequest) { fieldFocused = true }
+            }
             arrow("‹", label: "Previous match", action: previous)
             Text(verbatim: "\(count == 0 ? 0 : index + 1) / \(count)")
                 .font(blueprint.fonts.monoBodySmall)
                 .foregroundStyle(blueprint.palette.textMuted)
                 .accessibilityLabel(Text(verbatim: RecKitStrings.localized("%1$@ of %2$@", "\(count == 0 ? 0 : index + 1)", "\(count)")))
             arrow("›", label: "Next match", action: next)
-            Spacer(minLength: 0)
+            if query == nil { Spacer(minLength: 0) }
             Button(action: close) {
                 Text(verbatim: "×")
                     .font(blueprint.fonts.sans(TypeSize.body))
@@ -432,7 +506,7 @@ struct DetailShareSheet: View {
     private func reason(_ format: ShareFormat) -> String? {
         if format == .summary { return model.summaryExportReason }
         if format.needsTranscript, model.transcript == nil { return RecKitStrings.localized("No transcript yet") }
-        if format == .audio, model.audioUnavailable { return RecKitStrings.localized("No audio on this device") }
+        if format == .audio { return model.audioExportReason }
         return nil
     }
 
