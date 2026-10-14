@@ -1230,72 +1230,46 @@ final class MenuModel: ObservableObject {
     }
 
     /// docs/12 M8 · ADR-011: a local capture shows the other participants nothing at all, so the
-    /// responsibility for telling them is the user's and the app's job is to remind them — once,
-    /// before the recording, and never again once they have said not to. There is no covert mode.
+    /// responsibility for telling them is the user's and the app's job is to remind them — before every
+    /// meeting recording, and never again once they have said not to. There is no covert mode.
     ///
-    /// `false` cancels the recording: this is a question, and "Cancel" has to mean something.
+    /// `false` cancels the recording: this is a question, and "Cancel" has to mean something ([ConsentGate]).
+    /// Drawn as a [BlueprintPanel] rather than an `NSAlert` (2026-10-15): the same question, the same two buttons,
+    /// the same link and the same `Do not ask again`, in the app's own shape.
     private func askAboutConsentIfNeeded(mode: RecordingMode) -> Bool {
-        guard mode == .meeting, consentReminder else { return true }
-        let alert = NSAlert()
-        alert.messageText = AppStrings.localized("Did you tell the participants about the recording?")
-        // docs/research/02 §Consent · law. The reminder and nothing else (2026-10-08 §11): the rules
-        // by jurisdiction are behind the link under it, not in the question.
-        alert.informativeText = AppStrings.localized("consent.body")
-        alert.addButton(withTitle: AppStrings.localized("I told them · Start recording"))
-        alert.addButton(withTitle: AppStrings.localized("Cancel"))
-        alert.showsSuppressionButton = true
-        alert.suppressionButton?.title = AppStrings.localized("Do not ask again")
-        alert.accessoryView = Self.consentGuidanceLink()
-        NSApp.activate(ignoringOtherApps: true)
-        let response = alert.runModal()
-        // Switched off from where the user is when they decide they have had enough of it.
-        // The menu's own toggle turns it back on.
-        if alert.suppressionButton?.state == .on { consentReminder = false }
-        return response == .alertFirstButtonReturn
+        ConsentGate.admits(
+            due: mode == .meeting && consentReminder,
+            ask: {
+                BlueprintPanel.run { (finish: @escaping (ConsentGate.Answer?) -> Void) in
+                    ConsentPanel(guidance: Self.consentGuidance) { finish($0) }
+                }
+            },
+            // Switched off from where the user is when they decide they have had enough of it. The menu's own
+            // toggle turns it back on.
+            turnOff: { consentReminder = false }
+        )
     }
 
-    /// A link rather than a third button, because a button would dismiss the alert the user is
-    /// still answering. Wikipedia's summary of recording-consent law until Recly has a page of its
-    /// own to point at; it is the only one of these that is maintained and covers all three.
-    private static func consentGuidanceLink() -> NSView {
-        let url = URL(string: "https://en.wikipedia.org/wiki/Telephone_call_recording_laws")!
-        let field = NSTextField(labelWithAttributedString: NSAttributedString(
-            string: AppStrings.localized("Recording-consent rules by jurisdiction"),
-            attributes: [
-                .link: url,
-                .foregroundColor: NSColor.linkColor,
-                .underlineStyle: NSUnderlineStyle.single.rawValue,
-            ]
-        ))
-        // A label is not selectable, and a link in a text field is only clickable when it is.
-        field.isSelectable = true
-        field.allowsEditingTextAttributes = true
-        field.frame = NSRect(x: 0, y: 0, width: 320, height: 20)
-        return field
-    }
+    /// Wikipedia's summary of recording-consent law until Recly has a page of its own to point at; it is the only
+    /// one of these that is maintained and covers all three. A link rather than a third button, because a button
+    /// would end the panel the user is still answering.
+    static let consentGuidance = URL(string: "https://en.wikipedia.org/wiki/Telephone_call_recording_laws")!
 
     /// docs/12 deliverable 1: there is no API to ask whether the tap is allowed, so a refusal is
     /// only ever discovered by trying. The two things worth offering are the pane that can undo it
     /// and the recording the user can still have right now.
+    ///
+    /// docs/09 screen principle 5: two answers, not three. The third — "record the microphone only" — was a *second*
+    /// thing to decide inside a panel about a permission, and the popover's mode chips are where that choice already
+    /// lives; a cancel that starts a different recording than the one asked for is not a cancel.
     private func presentSystemAudioUnavailable() {
-        let alert = NSAlert()
-        alert.messageText = AppStrings.localized("System audio cannot be captured")
-        alert.informativeText = AppStrings.localized(
-            "Turn Recly on in System Settings > Privacy & Security > Screen & System Audio Recording."
+        presentPermission(
+            title: AppStrings.localized("System audio cannot be captured"),
+            message: AppStrings.localized(
+                "Turn Recly on in System Settings > Privacy & Security > Screen & System Audio Recording."
+            ),
+            pane: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
         )
-        // docs/09 screen principle 5: two answers, not three. The third — "record the microphone only" —
-        // was a *second* thing to decide inside a panel about a permission, and the popover's mode
-        // chips are where that choice already lives; a cancel that starts a different recording
-        // than the one asked for is not a cancel.
-        alert.addButton(withTitle: AppStrings.localized("Open System Settings"))
-        alert.addButton(withTitle: AppStrings.localized("Close"))
-        NSApp.activate(ignoringOtherApps: true)
-        guard alert.runModal() == .alertFirstButtonReturn,
-              let pane = URL(
-                  string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-              )
-        else { return }
-        NSWorkspace.shared.open(pane)
     }
 
     /// A retained, unshown anchor for sign-in started before any app window is visible.
@@ -1317,32 +1291,31 @@ final class MenuModel: ObservableObject {
     /// The one failure worth a panel of its own is the placeholder client id: nothing the user does
     /// in the app can fix it, and the README is where the fix is written down.
     private func presentAuthFailure(_ error: Error) {
-        let alert = NSAlert()
-        alert.messageText = AppStrings.localized("Google sign-in failed")
         // docs/07 rule 4: `localizedDescription` is the *system's* language and belongs in the log
         // line the caller already wrote, not on a panel the app has a sentence of its own for.
-        alert.informativeText = (error as? GoogleAuth.Failure)?.message
-            ?? AppStrings.localized("The sign-in failed")
-        alert.addButton(withTitle: AppStrings.localized("OK"))
-        NSApp.activate(ignoringOtherApps: true)
-        alert.runModal()
+        let message = (error as? GoogleAuth.Failure)?.message ?? AppStrings.localized("The sign-in failed")
+        _ = BlueprintPanel.run { (finish: @escaping (Bool?) -> Void) in
+            NoticePanel(title: AppStrings.localized("Google sign-in failed"), message: message) { finish(true) }
+        }
     }
 
     /// docs/12 "Permissions": a refusal is not something the app can retry its way out of, so the answer
     /// is the deep link to the pane that can undo it.
     private func presentMicrophoneDenied() {
-        let alert = NSAlert()
-        alert.messageText = AppStrings.localized("The microphone permission is required")
-        alert.informativeText = AppStrings.localized(
-            "Turn Recly on in System Settings > Privacy & Security > Microphone."
+        presentPermission(
+            title: AppStrings.localized("The microphone permission is required"),
+            message: AppStrings.localized("Turn Recly on in System Settings > Privacy & Security > Microphone."),
+            pane: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
         )
-        alert.addButton(withTitle: AppStrings.localized("Open System Settings"))
-        alert.addButton(withTitle: AppStrings.localized("Close"))
-        NSApp.activate(ignoringOtherApps: true)
-        guard alert.runModal() == .alertFirstButtonReturn,
-              let pane = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
-        else { return }
-        NSWorkspace.shared.open(pane)
+    }
+
+    /// A permission's panel, and the pane that can undo the refusal when the user asks for it.
+    private func presentPermission(title: String, message: String, pane: String) {
+        let open = BlueprintPanel.run { (finish: @escaping (Bool?) -> Void) in
+            PermissionPanel(title: title, message: message) { finish($0) }
+        }
+        guard open == true, let url = URL(string: pane) else { return }
+        NSWorkspace.shared.open(url)
     }
 }
 

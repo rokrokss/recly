@@ -49,7 +49,10 @@ struct SettingsView: View {
                     TransferPrivacyView(model: privacy)
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
-                                Button(RecKitStrings.localized("Close")) { model.privacyPresented = false }
+                                // docs/09: the design's own square button, quiet, as every other Close.
+                                BlueprintButton(RecKitStrings.localized("Close"), tone: .quiet, minWidth: minTouch) {
+                                    model.privacyPresented = false
+                                }
                             }
                         }
                 }
@@ -191,7 +194,7 @@ struct SettingsView: View {
     private var about: some View {
         Group {
             section(loc("About"))
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 mono("recly \(CoreBridge.appVersion) (build \(CoreBridge.appBuild)) · ios \(CoreBridge.systemVersion)")
                 mono("device \(model.deviceId)")
                 Text(verbatim: loc("Open-source notices"))
@@ -205,7 +208,7 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 12)
+            .padding(.vertical, Space.sm)
         }
     }
 

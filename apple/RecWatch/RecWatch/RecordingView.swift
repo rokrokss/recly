@@ -17,14 +17,21 @@ struct RecordingView: View {
         ScrollView {
         VStack(spacing: Space.s) {
             statusLine
+                // docs/09 "Typography" wants status words in mono on the watch too (2026-10-15), but in SF Mono at 14 the
+                // German `Mikrofonberechtigung` is 173 pt — wider than a 40 or 41 mm face's 154 or 168 — and would
+                // break between two letters; in the sans it is 147 pt. So the line keeps the sans.
                 .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.center)
+                // docs/09 "Disabled, focus and structure": the line is announced when it changes.
+                .announcesChanges(of: model.status)
 
             // 2026-10-08 §4: and while the recording is being saved, at its final length.
             if model.isRecording || (model.state == .stopping && !model.elapsed.isEmpty) {
                 Text(verbatim: model.elapsed)
+                    // docs/09 "Typography": the Apple Watch timer, 20, mono at regular weight with 1 of tracking.
                     .font(blueprint.fonts.monoTitle)
+                    .tracking(timerTracking)
                     .foregroundStyle(blueprint.palette.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)

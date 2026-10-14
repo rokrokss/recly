@@ -71,14 +71,16 @@ struct TranscriptReader: View {
                             Text(verbatim: RecKitStrings.localized("Back to playback"))
                                 .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
                                 .foregroundStyle(blueprint.palette.accent)
-                                .padding(.horizontal, 14)
+                                .padding(.horizontal, Space.sm)
                                 .frame(height: 32)
                                 .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.card))
                                 .overlay { RoundedRectangle(cornerRadius: Radius.card).strokeBorder(blueprint.palette.accent, lineWidth: blueprint.line) }
+                                .blueprintFocusRing(radius: Radius.card)
                                 .frame(minHeight: minTouch)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .focusEffectDisabled()
                         .padding(.bottom, Space.s)
                         .accessibilityIdentifier("back-to-playback")
                     }

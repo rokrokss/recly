@@ -131,7 +131,7 @@ private struct AlertLine<Action: View>: View {
     private func reason(withBadge: Bool) -> some View {
         Button { fix(alert) } label: {
             HStack(spacing: Space.s) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     // 2026-10-11 (N2): a word wider than the line breaks at a hyphen.
                     WrappingText(line)
                         .font(blueprint.fonts.bodySmall)
@@ -147,8 +147,10 @@ private struct AlertLine<Action: View>: View {
             .padding(.vertical, Space.s)
             .frame(minHeight: minTouch)
             .contentShape(Rectangle())
+            .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and
         // a code read out as three separate things (the same rule as `LedgerRow`).
         .accessibilityElement(children: .ignore)

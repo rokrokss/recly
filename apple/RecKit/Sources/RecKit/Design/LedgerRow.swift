@@ -3,8 +3,14 @@ import SwiftUI
 /// docs/09 screen principle 2: the ledger's four columns, in the widths the mockup sets, and the gap between two of
 /// them — Android's `COLUMN_GAP`. The length column is measured instead ([LengthColumn]).
 private enum Column {
-    static let time: CGFloat = 62
+    static let time: CGFloat = LedgerMetrics.timeColumn
     static let gap: CGFloat = Space.s
+}
+
+/// docs/09 "Component measurements" — Ledger row: the time column is as wide as the longest time in the mono font,
+/// 62 on Apple. Named, because what sits under the title column of an open row is inset by it.
+public enum LedgerMetrics {
+    public static let timeColumn: CGFloat = 62
 }
 
 /// The length column: as wide as the placeholder `--:--` in the ledger's mono at the type size in use — what
@@ -151,7 +157,7 @@ public struct LedgerHeader: View {
                 StatusColumn { heading(status) }
             }
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 6)
+            .padding(.vertical, Space.s)
             .accessibilityHidden(true)
         }
     }
@@ -264,11 +270,14 @@ public struct LedgerRow<Trailing: View>: View {
                 if typeSize.isAccessibilitySize { stacked } else { columns }
             }
             .lineLimit(1)
+            // docs/09 "Component measurements" — Ledger row: 12 top and bottom.
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 12)
+            .padding(.vertical, Space.sm)
             .contentShape(Rectangle())
+            .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: announce))
         .accessibilityAddTraits(opened ? [.isButton, .isSelected] : .isButton)
@@ -296,6 +305,7 @@ public struct LedgerRow<Trailing: View>: View {
             LengthColumn { howLong }
             StatusColumn {
                 StatusBadge(status, wraps: true)
+                    .modifier(BadgeFade(status: status))
                     .background {
                         // Centred in its column, so the gap before the badge is the gap after it.
                         GeometryReader { geometry in
@@ -312,9 +322,9 @@ public struct LedgerRow<Trailing: View>: View {
     /// The same four things at an accessibility type size, where four columns across a phone is
     /// four truncations: the row keeps its order and turns ninety degrees.
     private var stacked: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.s) {
             what
-            HStack(spacing: 12) {
+            HStack(spacing: Space.sm) {
                 when
                 howLong
                 Spacer(minLength: 0)
@@ -322,12 +332,13 @@ public struct LedgerRow<Trailing: View>: View {
             // On a line of its own: the code is the state (docs/09 screen principle 2), and at these sizes
             // `NEEDS_AUTH` is as wide as the stamp and the length together.
             StatusBadge(status)
+                .modifier(BadgeFade(status: status))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var when: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             Text(verbatim: date)
             Text(verbatim: time)
         }
@@ -336,7 +347,7 @@ public struct LedgerRow<Trailing: View>: View {
     }
 
     private var what: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             Text(verbatim: title)
                 .font(blueprint.fonts.rowTitle)
                 .foregroundStyle(blueprint.palette.text)
@@ -381,5 +392,18 @@ extension LedgerRow where Trailing == EmptyView {
             opened: opened,
             action: action
         ) { EmptyView() }
+    }
+}
+
+/// docs/09 "Component measurements" — Status badge: it fades 150 ms when its state changes — the words cross-fade and
+/// the edge's colour follows — and with reduce motion it simply changes (docs/09 "Motion").
+private struct BadgeFade: ViewModifier {
+    @Environment(\.blueprint) private var blueprint
+    let status: LedgerStatus
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(.opacity)
+            .animation(Motion.badgeAnimation(reduceMotion: blueprint.reduceMotion), value: status)
     }
 }

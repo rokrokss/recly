@@ -48,17 +48,9 @@ struct RecordingsView: View {
             ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents), trailingAlignment: .trailing) {
                 // docs/09 "Import": a file from elsewhere — audio, or a video's sound — as a recording of
                 // this phone.
-                Button { importing = true } label: {
-                    Image(systemName: "square.and.arrow.down")
-                        .font(blueprint.fonts.sans(TypeSize.body))
-                        .foregroundStyle(blueprint.palette.textMuted)
-                        .frame(width: minTouch, height: minTouch)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!model.isReady)
-                .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Import audio")))
-                .accessibilityIdentifier("import-audio")
+                BlueprintIconButton("square.and.arrow.down", label: RecKitStrings.localized("Import audio")) { importing = true }
+                    .disabled(!model.isReady)
+                    .accessibilityIdentifier("import-audio")
             }
             // docs/09 "Search" · 2026-10-08 §12: under the title and its count line, above the ledger —
             // the order Android draws, and the Mac's Details window's own field.
@@ -68,19 +60,15 @@ struct RecordingsView: View {
             // fixes it.
             AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
             if let message = model.message {
-                Banner(message.text, tone: .warning)
-                    .padding(.horizontal, Space.m)
-                    .padding(.bottom, Space.s)
-                    .onTapGesture { model.dismissMessage() }
+                dismissible(Banner(message.text, tone: .warning)) { model.dismissMessage() }
                     .accessibilityIdentifier("message")
             }
             // docs/09 "Import": a failed import leaves no row, so the list says it here — and why.
             if let failure = model.importFailure {
-                Banner("\(RecKitStrings.localized("Could not import this file")) — \(CoreMessages.text(failure).sentence)", tone: .danger)
-                    .padding(.horizontal, Space.m)
-                    .padding(.bottom, Space.s)
-                    .onTapGesture { model.dismissImportFailure() }
-                    .accessibilityIdentifier("import-failure")
+                dismissible(Banner("\(RecKitStrings.localized("Could not import this file")) — \(CoreMessages.text(failure).sentence)", tone: .danger)) {
+                    model.dismissImportFailure()
+                }
+                .accessibilityIdentifier("import-failure")
             }
             if searching {
                 results
@@ -93,6 +81,16 @@ struct RecordingsView: View {
         .fileImporter(isPresented: $importing, allowedContentTypes: [.audio, .movie], allowsMultipleSelection: true) { result in
             if case .success(let urls) = result { model.importFiles(urls) }
         }
+    }
+
+    /// A banner that goes when it is tapped: a button, so VoiceOver and a keyboard reach it too, with the dismissal
+    /// named as its action (docs/09 "Accessibility").
+    private func dismissible(_ banner: Banner, dismiss: @escaping () -> Void) -> some View {
+        Button(action: dismiss) { banner }
+            .buttonStyle(.plain)
+            .padding(.horizontal, Space.m)
+            .padding(.bottom, Space.s)
+            .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Close")), dismiss)
     }
 
     /// docs/10 "Search" · docs/09 "Search": the rows the search found, in place of the ledger while the field
@@ -264,8 +262,7 @@ struct RecordingsView: View {
         // buttons of a done row no longer fit one line at 393–402 pt, and Delete went to a line of its own.
         .padding(.leading, Space.m)
         .padding(.trailing, Space.m)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
+        .padding(.vertical, Space.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(blueprint.palette.background)
     }

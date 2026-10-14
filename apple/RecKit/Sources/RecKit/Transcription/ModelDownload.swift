@@ -232,7 +232,7 @@ public struct ModelPromptCard: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
-            .padding(12)
+            .padding(Space.sm)
             .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.node)

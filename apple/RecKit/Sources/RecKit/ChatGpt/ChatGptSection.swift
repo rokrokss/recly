@@ -166,7 +166,7 @@ public struct ChatGptSection: View {
     private var failure: some View {
         switch model.failure {
         case .signIn(let reason):
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(verbatim: loc("Could not sign in to ChatGPT"))
                     .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
                     .foregroundStyle(blueprint.palette.danger)
@@ -231,11 +231,7 @@ private struct PreferenceField: View {
                 .textFieldStyle(.plain)
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.text)
-                .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
-                .overlay {
-                    RoundedRectangle(cornerRadius: Radius.node)
-                        .strokeBorder(focused ? blueprint.palette.accent : blueprint.palette.inputBorder, lineWidth: focused ? blueprint.line + 1 : blueprint.line)
-                }
+                .fieldBox(focused: focused, inset: EdgeInsets())
                 .onChange(of: text) { _, typed in
                     if typed.count > limit { text = String(typed.prefix(limit)) }
                     // A paragraph: the phone's Return, which a wrapping field takes as a new line, ends the
@@ -264,25 +260,22 @@ private struct PreferenceField: View {
     private var field: some View {
         #if os(macOS)
         if multiline {
-            // A field's 10 × 9, less the inset the text view keeps of its own.
+            // A field's 12 × 8, less the inset the text view keeps of its own.
             GrowingTextEditor(text: $text, placeholder: placeholder, lines: lines, focused: $focused)
-                .padding(.horizontal, 10 - GrowingTextEditor.inset)
-                .padding(.vertical, 9)
+                .padding(FieldInset.textView)
         } else {
             TextField("", text: $text, axis: .vertical)
                 .lineLimit(lines)
                 .fieldPlaceholder(placeholder, empty: text.isEmpty)
                 .focused($focused)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 9)
+                .padding(FieldInset.field)
         }
         #else
         TextField("", text: $text, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette), axis: .vertical)
             .lineLimit(lines)
             .submitLabel(multiline ? .return : .done)
             .focused($focused)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
+            .padding(FieldInset.field)
         #endif
     }
 

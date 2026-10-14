@@ -157,14 +157,16 @@ struct MenuPopover: View {
                             .accessibilityIdentifier("highlight")
                     }
                 } else {
+                    // ⌘R, the popover's own as ⌘. is Stop's — not a global hot key (2026-10-10 took those out).
                     BlueprintButton(loc("Start recording"), tone: .primary) { model.start() }
+                        .keyboardShortcut("r")
                         .disabled(!model.isReady)
                 }
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, Space.m)
-            .padding(.top, 12)
-            .padding(.bottom, model.highlighted == nil ? 12 : Space.s)
+            .padding(.top, Space.sm)
+            .padding(.bottom, model.highlighted == nil ? Space.sm : Space.s)
             // The news of that moment, for two seconds — then the row is as it was.
             if let at = model.highlighted {
                 Text(RecKitStrings.localized("Highlight · %@", at))
@@ -172,7 +174,7 @@ struct MenuPopover: View {
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
-                    .padding(.bottom, 12)
+                    .padding(.bottom, Space.sm)
             }
         }
         .background(.ultraThinMaterial)
@@ -231,10 +233,10 @@ struct MenuPopover: View {
             .accessibilityIdentifier("menu-quit")
         }
         .padding(.horizontal, Space.m)
-        .padding(.top, 10)
+        .padding(.top, Space.s)
         // The popover rounds its own bottom corners over the content, so the last row of buttons
-        // is given the room that costs.
-        .padding(.bottom, 18)
+        // is given the room that costs — the next step up from the top's.
+        .padding(.bottom, Space.m)
         .background(.ultraThinMaterial)
     }
 
@@ -288,6 +290,8 @@ struct MenuPopover: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Space.m)
                 .padding(.vertical, Space.s)
+                // docs/09 "Disabled, focus and structure": the popover's status line is announced when it changes.
+                .announcesChanges(of: model.status)
         }
     }
 
@@ -342,9 +346,10 @@ struct MenuPopover: View {
                 actions(item)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 78)
+            // Under the title column: the row's inset and its time column.
+            .padding(.leading, Space.m + LedgerMetrics.timeColumn)
             .padding(.trailing, Space.m)
-            .padding(.vertical, 10)
+            .padding(.vertical, Space.sm)
             .background(blueprint.palette.background)
         }
     }
@@ -484,7 +489,7 @@ struct SettingsPane: View {
 
             // docs/09 trend 6: no mascot and no "handmade" line — what this build actually is.
             section(loc("About"))
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 mono("recly \(CoreBridge.appVersion) (build \(CoreBridge.appBuild)) · macos \(CoreBridge.systemVersion)")
                 mono("device \(model.deviceId)")
                 Text(verbatim: loc("Open-source notices"))
@@ -499,7 +504,7 @@ struct SettingsPane: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 12)
+            .padding(.vertical, Space.sm)
         }
         // docs/09 "Summary view": the welcome after a first sign-in started in the Settings window is that
         // window's sheet; one started in the popover is drawn over the popover (above).

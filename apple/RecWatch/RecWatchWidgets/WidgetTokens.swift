@@ -10,8 +10,9 @@ import SwiftUI
 enum WidgetTokens {
     /// `BlueprintIcon`'s own default size.
     static let iconSize: CGFloat = 19
-    /// `BlueprintPalette.light.danger` — the recording mark, as the phone's widgets draw it.
-    static let danger = Color(widgetHex: 0xDA1E28)
+    /// `BlueprintPalette.dark.danger` — the recording mark, as the phone's widgets draw it. A watch face is a
+    /// dark ground, so the copy is the dark palette's (docs/09 "Tokens", 2026-10-15).
+    static let danger = Color(widgetHex: 0xFA4D56)
 
     /// docs/09 "Shape": 4 for a node, 2 for a badge.
     enum Radius {
