@@ -26,6 +26,7 @@ import java.awt.datatransfer.DataFlavor
 import java.io.File
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.mutableIntStateOf
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.foundation.layout.defaultMinSize
 import java.text.NumberFormat
 import java.util.Locale
+import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.Radius
 import kotlinx.coroutines.delay
@@ -107,7 +109,7 @@ import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SidebarRow
 import app.recly.windows.ui.component.SidebarWidth
-import app.recly.windows.ui.component.StatusBadge
+import app.recly.windows.ui.component.FadingStatusBadge
 import app.recly.windows.ui.component.VerticalHairLine
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
@@ -446,7 +448,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
                 style = mono.small.copy(textDirection = TextDirection.Ltr),
                 color = palette.textMuted,
             )
-            StatusBadge(item.state.ledgerStatus(strings))
+            FadingStatusBadge(item.state.ledgerStatus(strings))
         }
         // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line. The popup's
         // expanded row says the same thing about the same recording ([FailureReason]).
@@ -888,8 +890,8 @@ private fun PlayerBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             when {
-                // docs/03 ADR-017: the button's place holds how far the trip is. No words: this shell
-                // is told nothing about reduce motion, so the waveform row above always says it.
+                // docs/03 ADR-017: the button's place holds how far the trip is, the percentage written in it — which
+                // is the whole of it with reduce motion, when the row above stands still.
                 detail.driveFetch == DriveFetch.FETCHING -> FetchProgress(
                     detail.fetchProgress,
                     strings[if (detail.folder) Str.PLAYER_FOLDER_FETCHING else Str.PLAYER_FETCHING],
@@ -978,8 +980,7 @@ private fun PlayerBar(
  * decoded into a shape, with no words — short ghost ticks where the bars will be, and a hard-edged
  * band of ten that steps across them left to right, one bar a frame at 30 fps. It does not rise and
  * fall or flow the way a playing or recording waveform does, and it leaves nothing filled behind it
- * the way a playhead does. It always runs: Windows tells a Compose Desktop app nothing about reduce
- * motion (the shared loader's note).
+ * the way a playhead does. With reduce motion the band does not run: the ghost ticks stand where the bars will be.
  *
  * [label] is what a screen reader hears for the row; the Drive fetch gives none, because the
  * progress under it already says the same thing.
@@ -987,9 +988,10 @@ private fun PlayerBar(
 @Composable
 private fun WaveformLoader(label: String? = null) {
     val palette = blueprint
+    val still = LocalReduceMotion.current
     var frame by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
+    LaunchedEffect(still) {
+        while (!still) {
             delay(LOADER_FRAME_MS)
             frame++
         }
@@ -1000,7 +1002,7 @@ private fun WaveformLoader(label: String? = null) {
         val head = frame % (count + LOADER_BAND)
         val tick = size.height * LOADER_TICK
         for (index in 0 until count) {
-            val lit = index in head - LOADER_BAND + 1..head
+            val lit = !still && index in head - LOADER_BAND + 1..head
             drawRect(
                 color = if (lit) palette.textMuted else palette.grid,
                 topLeft = Offset(index * step, (size.height - tick) / 2),
@@ -1022,7 +1024,11 @@ private fun WaveformLoader(label: String? = null) {
 private fun FetchProgress(fraction: Float, label: String, strings: Strings) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
-    val shown by animateFloatAsState(fraction, tween(Motion.STANDARD_MS, easing = Motion.Standard))
+    // With reduce motion the fill is where the trip is, with no glide to it; the percentage is the same either way.
+    val shown by animateFloatAsState(
+        fraction,
+        if (LocalReduceMotion.current) snap() else tween(Motion.STANDARD_MS, easing = Motion.Standard),
+    )
     val style = MaterialTheme.typography.labelLarge
     val measurer = rememberTextMeasurer()
     val percent = remember(fraction, strings.language) {
@@ -1112,8 +1118,10 @@ private fun Waveform(
     BoxWithConstraints(Modifier.fillMaxWidth().height(MinTouch)) {
         val width = maxWidth
         var focused by remember { mutableStateOf(false) }
-        // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks.
-        val reveal = remember(audio) { Animatable(if (growIn) 0f else 1f) }
+        // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks —
+        // and are simply there with reduce motion.
+        val still = LocalReduceMotion.current
+        val reveal = remember(audio) { Animatable(if (growIn && !still) 0f else 1f) }
         LaunchedEffect(audio, peaks.isNotEmpty()) {
             if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(growMs, easing = LinearEasing))
         }

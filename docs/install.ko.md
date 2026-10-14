@@ -102,6 +102,13 @@ GitHub 릴리스의 `.ipa`는 App Store 업로드용 패키지라서 기기에 �
 x64용 Windows 11이 필요합니다. MSI에 코드 서명이 없어서 SmartScreen이 "Windows의 PC 보호" 창을 띄웁니다.
 **추가 정보** → **실행**을 고르세요.
 
+NVDA와 JAWS는 Java Access Bridge를 통해 Recly를 읽으며, 이 기능은 한 번 켜기 전까지 꺼져 있습니다.
+`jabswitch`는 Windows용 Java Development Kit에 들어 있습니다. 실행한 다음 Recly와 화면 낭독기를 다시 시작하세요.
+
+```
+jabswitch /enable
+```
+
 ## 업데이트하기
 
 폰과 워치 앱은 Google Play나 App Store에서 업데이트됩니다. 직접 설치한 APK는 새 APK를 처음과 같은 방법으로

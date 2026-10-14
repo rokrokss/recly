@@ -37,6 +37,7 @@ import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
+import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -92,12 +93,14 @@ internal fun TranscriptReader(
     LaunchedEffect(list) {
         snapshotFlow { list.isScrollInProgress }.filter { it }.collect { if (!moving && playing) following = false }
     }
+    // docs/09 "Motion": with reduce motion the list jumps where it would have glided.
+    val still by rememberUpdatedState(LocalReduceMotion.current)
     /** The group at [index] in the upper third of the list, 200 ms there, as a move of the reader's own. */
     suspend fun bringUp(index: Int) {
         moving = true
         try {
             val height = snapshotFlow { list.layoutInfo.viewportSize.height }.first { it > 0 }
-            list.animateScrollToItem(index, -height / 3)
+            if (still) list.scrollToItem(index, -height / 3) else list.animateScrollToItem(index, -height / 3)
         } finally {
             moving = false
         }

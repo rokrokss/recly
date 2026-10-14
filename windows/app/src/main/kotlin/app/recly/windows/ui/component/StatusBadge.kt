@@ -1,5 +1,7 @@
 package app.recly.windows.ui.component
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -22,6 +24,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
+import app.recly.windows.ui.theme.LocalReduceMotion
+import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.forWord
@@ -70,6 +74,25 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
             maxLines = 1,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+/**
+ * docs/09 "Motion": a badge whose state changes in place fades, [Motion.BADGE_FADE_MS] on the standard easing — the one
+ * transition a list row has — and with reduce motion the new state is simply there.
+ */
+@Composable
+fun FadingStatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
+    if (LocalReduceMotion.current) {
+        StatusBadge(status, modifier)
+    } else {
+        Crossfade(
+            targetState = status,
+            modifier = modifier,
+            animationSpec = tween(durationMillis = Motion.BADGE_FADE_MS, easing = Motion.Standard),
+        ) { swapped ->
+            StatusBadge(swapped)
+        }
     }
 }
 

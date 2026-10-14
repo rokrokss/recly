@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 
@@ -29,22 +30,25 @@ import app.recly.windows.ui.theme.blueprint
  * recording coming back from Drive.
  *
  * docs/09 "Motion": motion is a state signal. Straight edges, no rounding and no fade — the square is
- * the same shape everything else on the screen is. It always turns: docs/09 says only the shells the
- * system tells follow reduce motion, and Windows tells a Compose Desktop app nothing about it. The
- * words beside it are the whole message either way.
+ * the same shape everything else on the screen is. With reduce motion ([LocalReduceMotion]) it stands
+ * still: the words beside it are the whole message either way.
  */
 @Composable
 fun BlueprintLoader(color: Color) {
-    val turn = rememberInfiniteTransition()
-    val angle by turn.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(LOADER_TURN_MS, easing = LinearEasing)),
-    )
+    // Read in the layer, not here, so a turn redraws the square without recomposing what holds it.
+    val angle: State<Float>? = if (LocalReduceMotion.current) {
+        null
+    } else {
+        rememberInfiniteTransition().animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(tween(LOADER_TURN_MS, easing = LinearEasing)),
+        )
+    }
     Box(
         Modifier
             .size(LOADER)
-            .graphicsLayer { rotationZ = angle }
+            .graphicsLayer { rotationZ = angle?.value ?: 0f }
             .border(width = blueprint.line, color = color)
             .clearAndSetSemantics {},
     )

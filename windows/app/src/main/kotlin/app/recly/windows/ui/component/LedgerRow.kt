@@ -1,7 +1,5 @@
 package app.recly.windows.ui.component
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +26,6 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -202,14 +199,7 @@ fun LedgerRow(
                 maxLines = 1,
             )
             Box(Modifier.width(statusWidth).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-                // docs/09 "Motion": a state badge that swaps in place is the one transition this row
-                // has, and it is the short one — [Motion.BADGE_FADE_MS] on the standard easing.
-                Crossfade(
-                    targetState = status,
-                    animationSpec = tween(durationMillis = Motion.BADGE_FADE_MS, easing = Motion.Standard),
-                ) { swapped ->
-                    StatusBadge(swapped)
-                }
+                FadingStatusBadge(status)
             }
         }
         HairLine()
