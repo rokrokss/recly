@@ -72,7 +72,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -111,6 +110,7 @@ import app.recly.windows.ui.component.SidebarRow
 import app.recly.windows.ui.component.SidebarWidth
 import app.recly.windows.ui.component.FadingStatusBadge
 import app.recly.windows.ui.component.VerticalHairLine
+import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -309,7 +309,7 @@ private fun Sidebar(
             HairLine()
             // The row is gone with the failed import, so the reason is said here, until the next import.
             model.importFailure?.let { reason ->
-                Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                     Text(strings[Str.IMPORT_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                     Text(reason.text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                 }
@@ -1052,7 +1052,7 @@ private fun FetchProgress(fraction: Float, label: String, strings: Strings) {
                 contentDescription = label
                 progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
             }
-            .padding(horizontal = Space.s, vertical = 6.dp),
+            .padding(horizontal = Space.s, vertical = Space.xs),
         contentAlignment = Alignment.Center,
     ) {
         // Unseen: only its size is wanted, which is the Play button's.
@@ -1117,7 +1117,6 @@ private fun Waveform(
     var tickMenu by remember(audio) { mutableStateOf<Double?>(null) }
     BoxWithConstraints(Modifier.fillMaxWidth().height(MinTouch)) {
         val width = maxWidth
-        var focused by remember { mutableStateOf(false) }
         // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks —
         // and are simply there with reduce motion.
         val still = LocalReduceMotion.current
@@ -1130,8 +1129,7 @@ private fun Waveform(
                 .fillMaxWidth()
                 .height(MinTouch)
                 .testTag("waveform")
-                .border(if (focused) 2.dp else 0.dp, if (focused) palette.accent else androidx.compose.ui.graphics.Color.Transparent)
-                .onFocusChanged { focused = it.isFocused }
+                .focusRing()
                 .semantics {
                     contentDescription = label
                     progressBarRangeInfo =

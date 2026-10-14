@@ -3,6 +3,7 @@ package app.recly.windows.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +37,9 @@ import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.fieldBox
+import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.theme.MinTouch
+import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -64,7 +67,7 @@ internal fun SearchField(
         modifier
             .defaultMinSize(minHeight = MinTouch)
             .fieldBox()
-            .padding(start = Space.s),
+            .padding(start = Space.sm),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -92,7 +95,8 @@ internal fun SearchField(
         )
         if (query.isNotEmpty() && clearLabel != null) {
             Box(
-                Modifier.size(MinTouch).clickable(role = Role.Button) { onQuery("") }.semantics { contentDescription = clearLabel },
+                Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).clickable(role = Role.Button) { onQuery("") }
+                    .semantics { contentDescription = clearLabel },
                 contentAlignment = Alignment.Center,
             ) {
                 Text("×", style = MaterialTheme.typography.labelLarge, color = palette.textMuted, modifier = Modifier.clearAndSetSemantics { })
@@ -113,15 +117,16 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, summaryLabel: Str
     val palette = blueprint
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
         Row(
-            Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen).padding(horizontal = Space.m, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            // A list row: 12 top and bottom, as the ledger's (docs/09 "Component measurements").
+            Modifier.fillMaxWidth().focusRing().clickable(role = Role.Button, onClick = onOpen).padding(horizontal = Space.m, vertical = Space.sm),
+            horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalAlignment = Alignment.Top,
         ) {
             Column {
                 Text(LedgerFormat.date(hit.startedAt), style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, maxLines = 1)
                 Text(LedgerFormat.time(hit.startedAt), style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, maxLines = 1)
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(
                     tinted(hit.title?.takeIf { it.isNotBlank() } ?: untitled, hit.titleRanges),
                     style = MaterialTheme.typography.titleSmall,
@@ -186,11 +191,12 @@ internal fun FindBar(
 @Composable
 private fun FindArrow(mark: String, label: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
-        Modifier.size(MinTouch).clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics { contentDescription = label },
+        Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        // Off, the mark is muted rather than the grid's near-nothing (2026-10-10).
-        Text(mark, style = MaterialTheme.typography.titleMedium, color = if (enabled) blueprint.text else blueprint.textMuted, modifier = Modifier.clearAndSetSemantics { })
+        // Off, the mark is in the disabled ink rather than the grid's near-nothing (docs/09 "Disabled, focus and structure").
+        Text(mark, style = MaterialTheme.typography.titleMedium, color = if (enabled) blueprint.text else blueprint.disabled, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 

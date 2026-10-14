@@ -35,7 +35,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
@@ -315,7 +314,7 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
     }
     when (val notice = chatGpt.notice) {
         is ChatGptNotice.SignInFailed -> {
-            SettingsCard(spacing = 2.dp) {
+            SettingsCard(spacing = Space.xxs) {
                 Text(strings[Str.CHATGPT_SIGN_IN_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                 // A diagnostic is data, in monospace as the ledger shows one; a sentence is a sentence.
                 signInFailureLine(notice.reason)?.let {
@@ -466,7 +465,7 @@ internal fun PreferenceField(
 private fun About(model: ShellModel, strings: Strings) {
     val palette = blueprint
     Section(strings[Str.SETTINGS_ABOUT])
-    SettingsCard(spacing = 2.dp) {
+    SettingsCard(spacing = Space.xxs) {
         // The version, and the build — the MSI's own install version — as the phones and the Macs show theirs (2026-10-10).
         Mono(strings[Str.SETTINGS_ABOUT_APP, "${OAuthConfig.APP_VERSION} (build ${OAuthConfig.BUILD})", system()])
         Mono(strings[Str.SETTINGS_ABOUT_DEVICE, model.deviceId])
@@ -498,7 +497,7 @@ private fun SettingsCard(spacing: Dp = Space.s, content: @Composable ColumnScope
         modifier = Modifier
             .fillMaxWidth()
             .background(blueprint.surface)
-            .padding(horizontal = Space.m, vertical = 12.dp),
+            .padding(horizontal = Space.m, vertical = Space.sm),
         verticalArrangement = Arrangement.spacedBy(spacing),
         content = content,
     )
@@ -517,7 +516,7 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
         modifier = Modifier
             .fillMaxWidth()
             .background(blueprint.surface)
-            .padding(horizontal = Space.m, vertical = 12.dp),
+            .padding(horizontal = Space.m, vertical = Space.sm),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         options.forEach { (value, label) ->

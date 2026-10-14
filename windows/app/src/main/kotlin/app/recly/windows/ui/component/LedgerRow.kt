@@ -30,8 +30,14 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 
-/** docs/09 screen principle 2: the ledger's four columns — `Time · Title · Length · Status`, as on the Mac. */
+/**
+ * docs/09 screen principle 2: the ledger's four columns — `Time · Title · Length · Status`, as on the Mac. The time column
+ * is as wide as the longest time in this shell's mono font (docs/09 "Component measurements": 68 on Windows).
+ */
 private val TIME_COLUMN = 68.dp
+
+/** The gap between two columns, the header's and every row's alike — the phone's. */
+private val COLUMN_GAP = Space.s
 
 /**
  * At least this wide, and as wide as `01:02:33` — the longest thing [app.recly.windows.ui.LedgerFormat.length]
@@ -102,9 +108,9 @@ fun LedgerHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Space.m, vertical = 6.dp)
+                .padding(horizontal = Space.m, vertical = Space.s)
                 .clearAndSetSemantics {},
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(COLUMN_GAP),
         ) {
             Heading(time, Modifier.width(TIME_COLUMN))
             Heading(title, Modifier.weight(1f))
@@ -152,13 +158,15 @@ fun LedgerRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .focusRing()
                 .clickable(onClick = onClick)
                 .semantics(mergeDescendants = true) {
                     contentDescription = announce
                     role = Role.Button
                 }
-                .padding(horizontal = Space.m, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                // docs/09 "Component measurements": 12 top and bottom.
+                .padding(horizontal = Space.m, vertical = Space.sm),
+            horizontalArrangement = Arrangement.spacedBy(COLUMN_GAP),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Times are data, left to right in every language (2026-10-10).
@@ -169,7 +177,7 @@ fun LedgerRow(
             }
             Column(
                 modifier = Modifier.weight(1f).clearAndSetSemantics {},
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                verticalArrangement = Arrangement.spacedBy(Space.xxs),
             ) {
                 Text(
                     title,

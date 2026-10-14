@@ -25,6 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -129,7 +132,7 @@ private fun Header(model: ShellModel, strings: Strings) {
         // docs/09 §Fluid typography · i18n: four buttons of Korean labels are wider than a 520dp popup, so
         // the row wraps rather than pushing the last of them off the window.
         FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.sm),
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
@@ -291,7 +294,10 @@ private fun Ledger(
         if (statusLineShown(model.status, model.alerts)) item {
             Text(
                 model.status.text(strings),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+                // docs/09 "Disabled, focus and structure": a status line that changes while the user looks at it is
+                // announced politely.
+                modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }
+                    .padding(horizontal = Space.m, vertical = Space.s),
                 style = MaterialTheme.typography.bodySmall,
                 color = palette.textMuted,
             )
@@ -344,7 +350,7 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
                 )
             } else {
                 StatusBadge(alert.reason.badge().worded(strings))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                     Text(
                         strings[alert.reason.label],
                         style = MaterialTheme.typography.bodyMedium,
@@ -408,7 +414,7 @@ private fun RecentRow(
                 .fillMaxWidth()
                 .background(blueprint.background)
                 .padding(start = EXPANSION_INSET, end = Space.m)
-                .padding(vertical = 10.dp),
+                .padding(vertical = Space.sm),
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
             // docs/08 "Errors": why this row is stuck and what to do about it, in the window the user

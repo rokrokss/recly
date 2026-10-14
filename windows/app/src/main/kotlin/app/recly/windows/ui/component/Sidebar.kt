@@ -82,9 +82,10 @@ fun SidebarRow(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (onOpen != null) Modifier.clickable(role = Role.Button, onClick = onOpen) else Modifier)
+                .then(if (onOpen != null) Modifier.focusRing().clickable(role = Role.Button, onClick = onOpen) else Modifier)
                 .semantics { this.selected = selected }
-                .padding(horizontal = Space.m, vertical = 10.dp),
+                // docs/09 "Component measurements": a list row is 12 top and bottom, as the ledger's is.
+                .padding(horizontal = Space.m, vertical = Space.sm),
             verticalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
             Text(

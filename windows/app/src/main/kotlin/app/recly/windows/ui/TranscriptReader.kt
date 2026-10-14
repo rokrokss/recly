@@ -39,6 +39,7 @@ import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.MinTouch
+import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlinx.coroutines.flow.filter
@@ -257,7 +258,7 @@ private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> U
 @Composable
 private fun BackToPlayback(label: String, modifier: Modifier, onClick: () -> Unit) {
     val palette = blueprint
-    val shape = RoundedCornerShape(8.dp)
+    val shape = RoundedCornerShape(Radius.card)
     Box(
         modifier
             .defaultMinSize(minHeight = MinTouch)

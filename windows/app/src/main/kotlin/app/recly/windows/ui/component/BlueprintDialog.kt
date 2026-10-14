@@ -51,6 +51,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.rememberDialogState
 import app.recly.windows.ui.theme.BlueprintColors
@@ -190,16 +191,18 @@ private fun DialogCard(
     Column(
         modifier = modifier
             .then(if (fill) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
-            .border(palette.line, palette.grid, shape)
+            // docs/09 "Component measurements": the card's edge is the input border — the grid is decoration only.
+            .border(palette.line, palette.inputBorder, shape)
             .background(palette.surface, shape)
             .padding(Space.m),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(Space.sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // docs/09 "Component measurements": title 20.
             Text(
                 title,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f).semantics { heading() },
+                style = MaterialTheme.typography.titleLarge,
                 color = palette.text,
                 maxLines = TITLE_LINES,
                 overflow = TextOverflow.Clip,
@@ -223,7 +226,7 @@ private fun DialogCard(
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
             if (spill.isNotEmpty()) {
-                Text(spill, style = MaterialTheme.typography.titleMedium, color = palette.text)
+                Text(spill, style = MaterialTheme.typography.titleLarge, color = palette.text)
             }
             content()
         }
@@ -237,6 +240,7 @@ private fun CloseMark(label: String, onClick: () -> Unit) {
     Box(
         Modifier
             .size(MinTouch)
+            .focusRing(RoundedCornerShape(Radius.node))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
@@ -344,7 +348,7 @@ fun BlueprintRadioRow(
 ) {
     OptionRow(
         label = label,
-        modifier = modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+        modifier = modifier.focusRing().selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
         mark = { SelectionMark(selected = selected, filled = false) },
     )
 }
@@ -359,7 +363,7 @@ fun BlueprintCheckRow(
 ) {
     OptionRow(
         label = label,
-        modifier = modifier.toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange),
+        modifier = modifier.focusRing().toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange),
         mark = { SelectionMark(selected = checked, filled = true) },
     )
 }
@@ -397,8 +401,8 @@ private fun SelectionMark(selected: Boolean, filled: Boolean) {
             .background(if (selected && filled) ink else Color.Transparent, shape),
         contentAlignment = Alignment.Center,
     ) {
-        if (selected && !filled) Box(Modifier.size(INNER).background(ink, RoundedCornerShape(1.dp)))
-        if (selected && filled) Box(Modifier.size(INNER).background(palette.onAccent, RoundedCornerShape(1.dp)))
+        if (selected && !filled) Box(Modifier.size(INNER).background(ink, shape))
+        if (selected && filled) Box(Modifier.size(INNER).background(palette.onAccent, shape))
     }
 }
 
@@ -416,6 +420,7 @@ fun BlueprintDialogLink(label: String, onClick: () -> Unit, modifier: Modifier =
     Row(
         modifier = modifier
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing()
             .clickable(role = Role.Button, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {

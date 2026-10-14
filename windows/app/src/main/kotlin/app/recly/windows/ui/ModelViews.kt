@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
@@ -90,9 +89,10 @@ fun ModelCard(model: ShellModel, strings: Strings) {
         Modifier
             .fillMaxWidth()
             .padding(horizontal = Space.m, vertical = Space.s)
-            .border(palette.line, palette.grid, shape)
+            // A card's edge is the input border — the grid is decoration only (docs/09 "Tokens").
+            .border(palette.line, palette.inputBorder, shape)
             .background(palette.surface, shape)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(Space.sm),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         Text(strings[Str.PROCESSING_MODEL_CARD_TITLE], style = MaterialTheme.typography.titleSmall, color = palette.text)
@@ -154,7 +154,7 @@ fun ModelBanner(model: ShellModel, strings: Strings, alert: JobAlert) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StatusBadge(alert.reason.badge().worded(strings))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
             if (download.running) {
                 LoadingText(downloadingText(strings, download.info?.progress), MaterialTheme.typography.bodyMedium, palette.text)
                 downloadedBytesText(strings, download.info)?.let {

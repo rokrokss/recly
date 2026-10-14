@@ -51,6 +51,7 @@ import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SwitchTrack
+import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
@@ -356,19 +357,20 @@ internal fun speakerName(speaker: TranscriptSpeaker?, strings: Strings): String?
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
     val palette = blueprint
-    // The time button's box beside it (2026-10-09): the same 44 height, corner and edge, and the same 12 type, so
-    // the two share one height, one centre and one baseline.
+    // The time button's box beside it (2026-10-09): the same 44 height, corner and edge, and the same 14 type every
+    // button label is (docs/09 "Component measurements"), so the two share one height, one centre and one baseline.
     Box(
         Modifier
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
+            .border(palette.line, if (enabled) palette.inputBorder else palette.disabled, RoundedCornerShape(Radius.node))
+            .focusRing(RoundedCornerShape(Radius.node))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.s, vertical = 6.dp),
+            .padding(horizontal = Space.s, vertical = Space.xs),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             name ?: id,
-            style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
+            style = if (name != null) MaterialTheme.typography.labelLarge else mono.bodySmall,
             color = palette.textMuted,
             maxLines = 1,
         )
@@ -522,6 +524,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
                 // A quiet control's edge is the input border, 3:1 against the page in light and dark.
                 .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
+                .focusRing(RoundedCornerShape(Radius.node))
                 .clickable(role = Role.Button) { open = true }
                 .semantics {
                     contentDescription = strings[Str.PLAYER_SPEED]
@@ -533,7 +536,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
             // in every language (2026-10-10).
             Text(label, style = mono.bodySmall.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
             if (skipSilence) {
-                Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(6.dp).background(palette.accent, RoundedCornerShape(1.dp)))
+                Box(Modifier.align(Alignment.TopEnd).padding(Space.xs).size(6.dp).background(palette.accent, RoundedCornerShape(Radius.badge)))
             }
         }
         BlueprintMenu(open, { open = false }) { BlueprintMenuColumn {
@@ -544,8 +547,9 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = MinTouch)
+                    .focusRing()
                     .toggleable(value = skipSilence, role = Role.Switch, onValueChange = onSkipSilence)
-                    .padding(start = Space.s + Space.xs, end = Space.xs),
+                    .padding(start = Space.sm, end = Space.xs),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

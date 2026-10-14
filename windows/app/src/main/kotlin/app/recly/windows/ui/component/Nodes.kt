@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.recly.windows.ui.theme.Radius
@@ -58,15 +59,18 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
                 shape = RoundedCornerShape(Radius.node),
             )
             .background(palette.surface, RoundedCornerShape(Radius.node))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            // docs/09 "Component measurements": 12 × 8, the label and the value centred, each on up to two lines.
+            .padding(horizontal = Space.sm, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.xs),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             spec.label,
             style = MaterialTheme.typography.labelSmall,
             color = palette.textMuted,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(Space.xs),
@@ -81,6 +85,7 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
                 // Compose Desktop has no hyphenation, so a line breaks only between words.
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
             )
         }
     }

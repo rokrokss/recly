@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -62,15 +64,15 @@ fun BlueprintButton(
 ) {
     val palette = blueprint
     val ink = when {
-        !enabled -> palette.textMuted
+        // docs/09 "Disabled, focus and structure": the disabled token, which stays lighter than live ink in high contrast too.
+        !enabled -> palette.disabled
         tone == ButtonTone.PRIMARY -> palette.onAccent
         tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         else -> palette.textMuted
     }
     val edge = when {
-        // The input border, not the grid: a disabled button's dashed edge stays visible on the dark page (2026-10-10).
-        !enabled -> palette.inputBorder
+        !enabled -> palette.disabled
         tone == ButtonTone.PRIMARY || tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         // A quiet button's edge is the input border, 3:1 against the page in light and dark (2026-10-08) —
@@ -78,24 +80,28 @@ fun BlueprintButton(
         else -> palette.inputBorder
     }
     val fill = if (enabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
+    val shape = RoundedCornerShape(Radius.node)
 
     Row(
         modifier = modifier
             // docs/09 "Accessibility": the label is small, the button is not — either way.
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .background(fill, RoundedCornerShape(Radius.node))
+            .background(fill, shape)
             // docs/09 "High-contrast mode" promotes `grid` and `textMuted` to the body colour, which left a
             // disabled button drawn in exactly the ink and the border weight of a live QUIET one.
             // A dash is the cue that survives that, because it is a shape rather than a colour.
             .then(
                 if (enabled) {
-                    Modifier.border(palette.line, edge, RoundedCornerShape(Radius.node))
+                    Modifier.border(palette.line, edge, shape)
                 } else {
                     Modifier.dashedBorder(palette.line, edge, Radius.node)
                 },
             )
+            // On the accent fill an accent ring would vanish, so a filled button's ring is the ink on it.
+            .focusRing(shape, color = if (fill == Color.Transparent) null else palette.onAccent)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.s, vertical = 6.dp),
+            // docs/09 "Component measurements": the minimum touch size decides the height, so the vertical padding is the small one.
+            .padding(horizontal = Space.s, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -109,8 +115,9 @@ fun BlueprintButton(
         }
         Text(
             label,
-            // Data — a time, a name of a key — reads left to right in every language (docs/09 "Typography").
-            style = if (monospace) mono.small.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.labelLarge,
+            // Data — a time, a name of a key — reads left to right in every language (docs/09 "Typography"), and at the
+            // 14 every button label is, sans or mono.
+            style = if (monospace) mono.bodySmall.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.labelLarge,
             color = ink,
             maxLines = 3,
             // A label that will not fit is cut with a mark that says so — a Korean button label is
@@ -121,11 +128,11 @@ fun BlueprintButton(
 }
 
 /**
- * The same square outline as `Modifier.border`, dashed. Compose has no dashed border modifier, so
+ * The same square outline as `Modifier.border`, dashed — the edge of anything disabled (docs/09 "Disabled, focus and structure"). Compose has no dashed border modifier, so
  * it is one stroked round-rect inset by half its own width — a stroke is centred on its path, and
  * without the inset half of it would fall outside the button.
  */
-private fun Modifier.dashedBorder(width: Dp, color: Color, radius: Dp): Modifier = drawBehind {
+internal fun Modifier.dashedBorder(width: Dp, color: Color, radius: Dp): Modifier = drawBehind {
     val stroke = width.toPx()
     drawRoundRect(
         color = color,
@@ -249,7 +256,14 @@ fun BlueprintChip(
     role: Role = Role.RadioButton,
 ) {
     val palette = blueprint
-    val ink = if (enabled && selected) palette.accent else palette.textMuted
+    val ink = when {
+        !enabled -> palette.disabled
+        selected -> palette.accent
+        else -> palette.textMuted
+    }
+    // docs/09 "Component measurements": an unchosen chip's edge is the input border.
+    val edge = if (enabled && !selected) palette.inputBorder else ink
+    val shape = RoundedCornerShape(Radius.node)
     Row(
         modifier = modifier
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
@@ -258,29 +272,46 @@ fun BlueprintChip(
                 if (enabled) {
                     Modifier.border(
                         width = if (selected) palette.selectedLine else palette.line,
-                        color = ink,
-                        shape = RoundedCornerShape(Radius.node),
+                        color = edge,
+                        shape = shape,
                     )
                 } else {
-                    Modifier.dashedBorder(palette.line, palette.inputBorder, Radius.node)
+                    Modifier.dashedBorder(palette.line, edge, Radius.node)
                 },
             )
+            .focusRing(shape)
             // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
             // border is not something a screen reader can read. `selectable` puts the same fact in
             // the semantics — one node, in place of the plain click, so it is announced as a choice
             // rather than as a button whose state nobody mentioned.
             .selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
-            .padding(horizontal = Space.s, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
+            .padding(horizontal = Space.s, vertical = Space.xs),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            if (selected) "$SELECTION_MARK $label" else label,
-            style = if (monospace) mono.small else MaterialTheme.typography.labelLarge,
-            color = ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        // docs/09 "Component measurements": label 14, sans or mono.
+        val style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge
+        // The chip is as wide as it is with its mark either way, so choosing one moves nothing beside it: the marked
+        // label is laid out unseen under the one drawn (the phone's chip, `android/.../component/Buttons.kt`).
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                "$SELECTION_MARK $label",
+                style = style,
+                color = Color.Transparent,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.clearAndSetSemantics {},
+            )
+            // One line of text, so the mark sits on the label's own baseline; a reader hears the label.
+            Text(
+                if (selected) "$SELECTION_MARK $label" else label,
+                style = style,
+                color = ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = label },
+            )
+        }
     }
 }
 

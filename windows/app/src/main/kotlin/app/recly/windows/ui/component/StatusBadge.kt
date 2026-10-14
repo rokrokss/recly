@@ -62,16 +62,19 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .border(palette.line, status.tone.line(), RoundedCornerShape(Radius.badge))
-            .padding(horizontal = BADGE_PAD, vertical = 3.dp),
+            .padding(horizontal = BADGE_PAD, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (status.busy) BlueprintLoader(status.tone.ink())
+        // docs/09 "Component measurements": a word wider than the column ([statusColumnWidth]'s cap) takes a second line
+        // inside its badge, broken between words and centred — never cut short. Korean words carry their joiners
+        // (`joinKoreanWords`), so they break between words as well.
         Text(
             text = status.label,
             style = mono.small.forWord(status.label),
             color = status.tone.ink(),
-            maxLines = 1,
+            maxLines = 2,
             textAlign = TextAlign.Center,
         )
     }
@@ -96,14 +99,21 @@ fun FadingStatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
     }
 }
 
-/** The badge's own inset either side of its code. */
-private val BADGE_PAD: Dp = 6.dp
+/** The badge's own inset either side of its code (docs/09 "Component measurements": 8 × 4). */
+private val BADGE_PAD: Dp = Space.s
+
+/**
+ * The cap on the status column (UX decisions of 2026-10-08, the phones' rule): as wide as the old code `TRANSCRIBING`
+ * in the badge's font, so the title column is never narrower than it was when the badges said codes. A word wider than
+ * that wraps in its badge instead of widening the column.
+ */
+private const val STATUS_CAP_SAMPLE = "TRANSCRIBING"
 
 /**
  * The ledger's status column, measured rather than guessed: the widest of every [labels] the ledger
  * can show, in the badge's own type — so the fluid scale and the language come with it, and no badge
- * is ever cut to fit (`NEEDS_MODEL` was, at a fixed 92dp). Android's `statusColumnWidth` is the same
- * rule.
+ * is ever cut to fit (`NEEDS_MODEL` was, at a fixed 92dp) — up to the cap of [STATUS_CAP_SAMPLE].
+ * Android's `statusColumnWidth` is the same rule.
  */
 @Composable
 fun statusColumnWidth(labels: List<String>): Dp {
@@ -122,13 +132,18 @@ fun statusColumnWidth(labels: List<String>): Dp {
             }
             measurer.measure(text, style.forWord(word), maxLines = 1).size.width
         } ?: 0
-        with(density) { px.toDp() }
+        // A dp of slack: a word measured to the pixel must not wrap on the pixel the layout rounds away.
+        with(density) { px.toDp() } + 1.dp
     }
-    return statusColumn(widest, blueprint.line)
+    val cap = textColumnWidth(listOf(STATUS_CAP_SAMPLE), style) + 1.dp
+    return statusColumn(widest, blueprint.line, cap)
 }
 
-/** The widest code, plus the badge's padding and border on each side. */
-internal fun statusColumn(widest: Dp, line: Dp): Dp = widest + (BADGE_PAD + line) * 2
+/**
+ * The widest code up to [cap], plus the badge's padding and border on each side. Up to the cap no word wraps; past it
+ * the badge takes a second line.
+ */
+internal fun statusColumn(widest: Dp, line: Dp, cap: Dp = Dp.Infinity): Dp = minOf(widest, cap) + (BADGE_PAD + line) * 2
 
 /** The widest of [samples] on one line, in [style]. */
 @Composable

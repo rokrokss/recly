@@ -21,10 +21,14 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
@@ -84,8 +88,8 @@ fun BlueprintTextField(
     minLines: Int = 1,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     enabled: Boolean = true,
-    /** Monospace by default: nearly every field in this app holds data rather than prose. */
-    monospace: Boolean = true,
+    /** Monospace for a field that holds data — a key, a URL, a model id, a number — and sans for what a person writes. */
+    monospace: Boolean = false,
     minHeight: Dp = MinTouch,
     placeholder: String? = null,
     /** A key: drawn as dots, never as what was typed. */
@@ -121,7 +125,7 @@ fun BlueprintTextField(
     minLines: Int = 1,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     enabled: Boolean = true,
-    monospace: Boolean = true,
+    monospace: Boolean = false,
     minHeight: Dp = MinTouch,
     placeholder: String? = null,
     focusRequester: FocusRequester? = null,
@@ -182,9 +186,10 @@ private fun FieldFrame(
                 }
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .defaultMinSize(minHeight = minHeight)
-                .fieldBox()
-                .padding(horizontal = Space.s, vertical = 10.dp),
-            style.copy(color = if (enabled) palette.text else palette.textMuted),
+                .fieldBox(enabled)
+                // docs/09 "Component measurements": inset 12 × 8.
+                .padding(horizontal = Space.sm, vertical = Space.s),
+            style.copy(color = if (enabled) palette.text else palette.disabled),
         ) { innerTextField ->
             Box {
                 placeholder?.let { Text(it, style = style, color = palette.textMuted) }
@@ -219,15 +224,44 @@ internal fun fieldSemantics(label: String, hint: String?): FieldSemantics =
 /**
  * docs/09 "Shape": the box every field is drawn in — the search fields and the editors' as much as
  * [BlueprintTextField]'s (2026-10-10): the input border, and the accent a step heavier while the field has the focus,
- * which is the same cue the chips and the graph nodes use.
+ * which is the same cue the chips and the graph nodes use. Disabled, a dashed edge in the disabled ink (docs/09
+ * "Disabled, focus and structure").
+ *
+ * A field that has the focus also says so to the window's [LocalTypingFocus], so a key the window means something by
+ * (Space plays) stays the field's while the user types.
  */
-fun Modifier.fieldBox(): Modifier = composed {
+fun Modifier.fieldBox(enabled: Boolean = true): Modifier = composed {
     val palette = blueprint
+    val typing = LocalTypingFocus.current
     var focused by remember { mutableStateOf(false) }
-    onFocusChanged { focused = it.hasFocus }
-        .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, RoundedCornerShape(Radius.node))
-        .background(palette.surface, RoundedCornerShape(Radius.node))
+    // A field removed while it had the focus no longer has it.
+    DisposableEffect(typing) { onDispose { if (focused) typing?.let { it.fields-- } } }
+    val shape = RoundedCornerShape(Radius.node)
+    onFocusChanged {
+        if (it.hasFocus != focused) {
+            focused = it.hasFocus
+            typing?.let { t -> t.fields += if (focused) 1 else -1 }
+        }
+    }
+        .then(
+            when {
+                !enabled -> Modifier.dashedBorder(palette.line, palette.disabled, Radius.node)
+                focused -> Modifier.border(palette.selectedLine, palette.accent, shape)
+                else -> Modifier.border(palette.line, palette.inputBorder, shape)
+            },
+        )
+        .background(palette.surface, shape)
 }
+
+/** How many of a window's text fields have the focus — one at most, counted so a hand-over cannot leave it wrong. */
+class TypingFocus {
+    var fields by mutableIntStateOf(0)
+
+    val typing: Boolean get() = fields > 0
+}
+
+/** The window's [TypingFocus], where one asks; null elsewhere, and a field then tells nobody. */
+val LocalTypingFocus: ProvidableCompositionLocal<TypingFocus?> = staticCompositionLocalOf { null }
 
 /**
  * docs/09 "Shape" · "Motion": a menu, as a square bordered card on the grid. Material's `DropdownMenu`
@@ -326,19 +360,20 @@ fun BlueprintMenuRow(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
-    val ink = if (enabled) palette.text else palette.textMuted
+    val ink = if (enabled) palette.text else palette.disabled
     val style = MaterialTheme.typography.labelLarge
     Row(
         Modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing()
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.s + Space.xs, vertical = 6.dp),
+            .padding(horizontal = Space.sm, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         mark?.let { Box(Modifier.width(MARK_COLUMN)) { Text(it, style = style, color = ink) } }
-        Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
             Text(label, style = if (ltr) style.copy(textDirection = TextDirection.Ltr) else style, color = ink)
             secondary?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
         }
