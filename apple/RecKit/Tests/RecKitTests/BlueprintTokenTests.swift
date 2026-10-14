@@ -83,38 +83,75 @@ final class BlueprintContrastTests: XCTestCase {
     /// core would carry the database with it (docs/13) — so the handful of values they draw are
     /// written out in their own `WidgetTokens.swift`. This is what keeps those copies honest: a
     /// hex that moves in the palette has to move there too, or this fails.
+    ///
+    /// 2026-10-15: every ground those extensions draw on is dark — the Live Activity, the Dynamic Island, the
+    /// widget's container, a watch face — so every colour copied there is the **dark** palette's, read here by
+    /// its name. The light red on the activity's page black was 3.8:1.
     func testTheWidgetsCopyOfTheTokensIsThePalettes() throws {
-        let source = try String(
-            contentsOf: LocalizationCatalogTests.appleRoot
-                .appendingPathComponent("RecPhone/RecPhoneWidgets/WidgetTokens.swift"),
-            encoding: .utf8
-        )
-        for (name, token) in [("danger", BlueprintToken.danger), ("background", .background)] {
-            let hex = String(format: "0x%06X", name == "danger"
-                ? BlueprintPalette.light.hex(token)
-                : BlueprintPalette.dark.hex(token))
-            XCTAssertTrue(
-                source.contains(hex),
-                "the phone widget's \(name) is not the palette's \(hex)"
-            )
+        let source = try Self.source("RecPhone/RecPhoneWidgets/WidgetTokens.swift")
+        let phone = try Self.widgetColours(in: source)
+        XCTAssertEqual(Set(phone.keys), ["danger", "text", "background"], "the phone widget's copies changed")
+        for (name, hex) in phone {
+            let token = try XCTUnwrap(Self.token(named: name), "\(name) is not a palette token")
+            XCTAssertEqual(hex, BlueprintPalette.dark.hex(token), "the phone widget's \(name) is not the dark palette's")
         }
         XCTAssertTrue(source.contains("node: CGFloat = \(Int(Radius.node))"))
         XCTAssertTrue(source.contains("badge: CGFloat = \(Int(Radius.badge))"))
         XCTAssertTrue(source.contains("minTouch: CGFloat = \(Int(minTouch))"))
+        // What the activity draws in words on that ground — the red Stop, the white clock — reads as text does.
+        for ink in [BlueprintToken.danger, .text] {
+            assertContrast(.dark, ink, on: .background, atLeast: 4.5, in: "widget")
+        }
 
-        let watch = try String(
-            contentsOf: LocalizationCatalogTests.appleRoot
-                .appendingPathComponent("RecWatch/RecWatchWidgets/WidgetTokens.swift"),
-            encoding: .utf8
-        )
+        let watch = try Self.source("RecWatch/RecWatchWidgets/WidgetTokens.swift")
         XCTAssertTrue(watch.contains("iconSize: CGFloat = 19"), "the complication's glyph size drifted")
-        // 2026-10-11 (N4): the complication's recording mark is the palette's red too.
-        XCTAssertTrue(
-            watch.contains(String(format: "0x%06X", BlueprintPalette.light.hex(.danger))),
-            "the complication's danger is not the palette's"
-        )
+        // 2026-10-11 (N4): the complication's recording mark is the palette's red too — on a watch face, the dark one.
+        XCTAssertEqual(try Self.widgetColours(in: watch), ["danger": BlueprintPalette.dark.hex(.danger)])
         XCTAssertTrue(watch.contains("node: CGFloat = \(Int(Radius.node))"))
         XCTAssertTrue(watch.contains("badge: CGFloat = \(Int(Radius.badge))"))
+    }
+
+    /// docs/09 "Tokens": the share extension's line and page are the palette's too — the light value on the light
+    /// page, the dark on the dark, and the secondary ink promoted to the body colour in high contrast.
+    func testTheShareExtensionsCopyOfTheTokensIsThePalettes() throws {
+        let source = try Self.source("RecPhone/RecPhoneShare/ShareViewController.swift")
+        let regex = try NSRegularExpression(
+            pattern: #"static let (\w+) = color\(light: 0x([0-9A-Fa-f]{6}), dark: 0x([0-9A-Fa-f]{6})(?:, contrastLight: 0x([0-9A-Fa-f]{6}), contrastDark: 0x([0-9A-Fa-f]{6}))?\)"#
+        )
+        let matches = regex.matches(in: source, range: NSRange(source.startIndex..., in: source))
+        XCTAssertEqual(matches.count, 2, "the share extension's copies changed")
+        for match in matches {
+            func group(_ index: Int) -> String? {
+                Range(match.range(at: index), in: source).map { String(source[$0]) }
+            }
+            let name = try XCTUnwrap(group(1))
+            let token = try XCTUnwrap(Self.token(named: name), "\(name) is not a palette token")
+            XCTAssertEqual(group(2), String(format: "%06X", BlueprintPalette.light.hex(token)), "\(name), light")
+            XCTAssertEqual(group(3), String(format: "%06X", BlueprintPalette.dark.hex(token)), "\(name), dark")
+            if token == .textMuted {
+                XCTAssertEqual(group(4), String(format: "%06X", BlueprintPalette.palette(dark: false, highContrast: true).hex(token)))
+                XCTAssertEqual(group(5), String(format: "%06X", BlueprintPalette.palette(dark: true, highContrast: true).hex(token)))
+            }
+        }
+    }
+
+    private static func source(_ path: String) throws -> String {
+        try String(contentsOf: LocalizationCatalogTests.appleRoot.appendingPathComponent(path), encoding: .utf8)
+    }
+
+    /// `static let <name> = Color(widgetHex: 0x……)`, as name → hex.
+    private static func widgetColours(in source: String) throws -> [String: UInt32] {
+        let regex = try NSRegularExpression(pattern: #"static let (\w+) = Color\(widgetHex: 0x([0-9A-Fa-f]{6})\)"#)
+        var colours: [String: UInt32] = [:]
+        for match in regex.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+            guard let name = Range(match.range(at: 1), in: source), let hex = Range(match.range(at: 2), in: source) else { continue }
+            colours[String(source[name])] = UInt32(source[hex], radix: 16)
+        }
+        return colours
+    }
+
+    private static func token(named name: String) -> BlueprintToken? {
+        BlueprintToken.allCases.first { String(describing: $0) == name }
     }
 
     /// The check itself, on a pair whose answer is known: black on white is 21:1.
