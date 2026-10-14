@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Excluir também a pasta do Drive</string>
     <string name="delete_with_folder">Excluir também da pasta local</string>
     <string name="delete_remote_body">Gravado em outro dispositivo. A exclusão remove do Drive e de todos os dispositivos.</string>
-    <string name="delete_busy">Ainda enviando. Tente novamente quando terminar</string>
+    <string name="delete_busy">Ainda transcrevendo neste dispositivo — tente de novo quando terminar</string>
     <string name="delete_drive_failed">Excluído aqui, mas o Drive recusou: %1$s</string>
     <string name="delete_folder_failed">Excluído aqui, mas não da pasta local: %1$s</string>
     <string name="delete_unuploaded">O áudio ainda não enviado ao Drive também será excluído.</string>
     <string name="delete_unuploaded_folder">O áudio que ainda não está na pasta local também será excluído.</string>
     <string name="settings_disconnect">Desconectar</string>
-    <string name="settings_disconnect_hint">Remova o acesso deste app à sua conta Google.</string>
     <string name="disconnect_title">Desconectar o Google Drive?</string>
     <string name="disconnect_other_devices">O Recly perde o acesso ao Drive em todos os dispositivos conectados a esta conta Google. O trabalho pendente pausa até reconectar a mesma conta. Gravações e configurações são mantidas.</string>
-    <string name="disconnect_local">O processamento pendente pausa até reconectar a mesma conta. Gravações, arquivos do Drive, fluxos e chaves são mantidos.</string>
-    <string name="disconnect_also_delete">Excluir também as gravações deste telefone</string>
     <string name="disconnect_permissions">Permissões do Google</string>
     <string name="disconnect_revoke_failed">O Google não revogou o acesso (%1$s). Faça isso nas permissões da sua conta Google</string>
     <string name="disconnect_done">Desconectado. As gravações deste telefone foram mantidas.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">As gravações ainda não enviadas ao Drive ficam neste telefone: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">Desconectado. Gravações excluídas deste telefone: %1$d.</string>
     <string name="disconnect_busy">O acesso Google foi revogado, mas %1$d gravações em andamento foram mantidas. Desconecte novamente quando terminarem.</string>
     <string name="disconnect_stop_recording">Pare a gravação primeiro</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">O provedor recusou a chave</string>
     <string name="alert_quota">A cota do provedor acabou. Verifique limites e faturamento</string>
     <string name="alert_uploads_waiting">Aguardando o Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">Gravações em espera: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">Gravações em espera: %1$d.</string>
     <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação inteira para %1$s.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar.</string>
     <string name="settings_consent_reminder">Lembrete de consentimento</string>
+    <string name="settings_consent_reminder_note">Perguntado uma vez, antes da primeira gravação.</string>
     <string name="consent_question">Você avisou os participantes sobre a gravação?</string>
     <string name="consent_body">Esta gravação não mostra nenhum aviso aos outros participantes. Informá-los é responsabilidade de quem grava.</string>
     <string name="consent_confirm">Já avisei · Iniciar gravação</string>

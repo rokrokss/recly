@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Drive klasörünü de sil</string>
     <string name="delete_with_folder">Yerel klasörden de sil</string>
     <string name="delete_remote_body">Başka bir cihazda kaydedildi. Silerseniz Drive\'dan ve tüm cihazlardan kaldırılır.</string>
-    <string name="delete_busy">Hâlâ yükleniyor — bittiğinde yeniden deneyin</string>
+    <string name="delete_busy">Bu cihazda metne dönüştürme sürüyor — bittiğinde yeniden deneyin</string>
     <string name="delete_drive_failed">Burada silindi ancak Drive reddetti: %1$s</string>
     <string name="delete_folder_failed">Burada silindi ancak yerel klasörden silinemedi: %1$s</string>
     <string name="delete_unuploaded">Henüz Drive\'a yüklenmemiş ses de onunla birlikte silinir.</string>
     <string name="delete_unuploaded_folder">Henüz yerel klasöre kopyalanmamış ses de onunla birlikte silinir.</string>
     <string name="settings_disconnect">Bağlantıyı kes</string>
-    <string name="settings_disconnect_hint">Bu uygulamanın Google hesabınıza erişimini kaldırın.</string>
     <string name="disconnect_title">Google Drive bağlantısı kesilsin mi?</string>
     <string name="disconnect_other_devices">Recly, bu Google hesabına bağlı tüm cihazlarda Drive erişimini kaybeder. Bekleyen işler, aynı hesabı yeniden bağlayana kadar duraklatılır. Kayıtlar ve ayarlar korunur.</string>
-    <string name="disconnect_local">Bekleyen işlemler, aynı hesabı yeniden bağlayana kadar duraklatılır. Kayıtlar, Drive dosyaları, iş akışları ve anahtarlar korunur.</string>
-    <string name="disconnect_also_delete">Bu telefondaki kayıtları da sil</string>
     <string name="disconnect_permissions">Google izinleri</string>
     <string name="disconnect_revoke_failed">Google erişimi kaldırmadı (%1$s) — bunu Google hesabı izinlerinizden yapın</string>
     <string name="disconnect_done">Bağlantı kesildi. Bu telefondaki kayıtlara dokunulmadı.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Henüz Drive\'a yüklenmeyen, bu telefonda tutulan kayıtlar: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">Bağlantı kesildi. Bu telefondan silinen kayıtlar: %1$d</string>
     <string name="disconnect_busy">Google erişimi iptal edildi. Hâlâ devam eden ve korunan kayıtlar: %1$d — bunlar bittiğinde bağlantıyı yeniden kesin.</string>
     <string name="disconnect_stop_recording">Önce kaydı durdurun</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">Sağlayıcı anahtarı reddetti</string>
     <string name="alert_quota">Sağlayıcının kotası doldu — limitlerini ve faturalandırmayı kontrol edin</string>
     <string name="alert_uploads_waiting">Drive bekleniyor: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">Bekleyen kayıtlar: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">Bekleyen kayıtlar: %1$d</string>
     <string name="provider_disclosure_transcribe">Harici transkripsiyon, kaydın tamamını %1$s sağlayıcısına gönderir.\nKaydın ne kadar süre saklanacağı ve model eğitiminde kullanılıp kullanılmayacağı o sağlayıcının kendi politikasına bağlıdır — Recly bunu denetlemez.\nKullanmadan önce sağlayıcının politikasını okuyun.</string>
     <string name="settings_consent_reminder">Onay hatırlatıcısı</string>
+    <string name="settings_consent_reminder_note">İlk kayıttan önce bir kez sorulur.</string>
     <string name="consent_question">Katılımcıları kayıt hakkında bilgilendirdiniz mi?</string>
     <string name="consent_body">Bu kayıt, toplantıdaki diğer kişilere kendini belli etmez. Onları bilgilendirmek, kaydı yapan kişinin sorumluluğundadır.</string>
     <string name="consent_confirm">Bilgilendirdim · Kaydı başlat</string>

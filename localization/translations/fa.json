@@ -399,10 +399,6 @@
   "recly {0} (build {1}) · android {2}": "recly {0} (ساخت {1}) · android {2}",
   "soon": "به‌زودی",
   "{0} of {1}": "{0} از {1}",
-  "{0} recording has not reached Drive yet and stays on this phone.": "{0} ضبط هنوز به Drive نرسیده است و روی این تلفن می‌ماند.",
-  "{0} recording is waiting.": "{0} ضبط در انتظار است.",
-  "{0} recordings are waiting.": "{0} ضبط در انتظار است.",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "{0} ضبط هنوز به Drive نرسیده است و روی این تلفن می‌ماند.",
   "{0}, recorded {1}, length {2}, {3}": "{0}، زمان ضبط {1}، مدت {2}، {3}",
   "Add": "افزودن",
   "Add a name or term": "افزودن نام یا اصطلاح",
@@ -571,5 +567,7 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "وقتی این دستگاه ضبطی بی‌عنوان را رونویسی می‌کند، رونوشت برای گرفتن عنوان به ChatGPT فرستاده می‌شود. این جزو مصرف ChatGPT شما حساب می‌شود.",
   "Fill in speaker names": "تکمیل خودکار نام گوینده‌ها",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "وقتی این دستگاه ضبطی را رونویسی می‌کند، رونوشت به ChatGPT فرستاده می‌شود تا گوینده‌هایی که در آن با نام صدا زده می‌شوند نام بگیرند. این جزو مصرف ChatGPT شما حساب می‌شود.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "وقتی «تکمیل خودکار عنوان‌ها» یا «تکمیل خودکار نام گوینده‌ها» روشن است، رونوشت هر ضبطی که این iPhone رونویسی می‌کند نیز به اینجا فرستاده می‌شود."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "وقتی «تکمیل خودکار عنوان‌ها» یا «تکمیل خودکار نام گوینده‌ها» روشن است، رونوشت هر ضبطی که این iPhone رونویسی می‌کند نیز به اینجا فرستاده می‌شود.",
+  "Asked once, before the first recording.": "یک بار، پیش از نخستین ضبط، پرسیده می‌شود.",
+  "Still transcribing on this device — try again once it has finished": "هنوز روی این دستگاه رونویسی می‌شود — پس از پایان دوباره امتحان کنید"
 }

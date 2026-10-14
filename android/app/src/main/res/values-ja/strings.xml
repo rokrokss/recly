@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Driveのフォルダも削除</string>
     <string name="delete_with_folder">ローカルフォルダからも削除</string>
     <string name="delete_remote_body">別のデバイスで録音されました。削除すると、Driveとすべてのデバイスから削除されます。</string>
-    <string name="delete_busy">アップロード中です。完了後に再試行してください</string>
+    <string name="delete_busy">この端末でまだ文字起こし中です。終わってからもう一度お試しください</string>
     <string name="delete_drive_failed">このデバイスからは削除しましたが、Driveで拒否されました：%1$s</string>
     <string name="delete_folder_failed">このデバイスからは削除しましたが、ローカルフォルダからは削除できませんでした：%1$s</string>
     <string name="delete_unuploaded">Driveに未送信の音声も削除されます。</string>
     <string name="delete_unuploaded_folder">ローカルフォルダに未保存の音声も削除されます。</string>
     <string name="settings_disconnect">接続を解除</string>
-    <string name="settings_disconnect_hint">このアプリのGoogleアカウントへのアクセス権を取り消します。</string>
     <string name="disconnect_title">Google Driveの接続を解除しますか？</string>
     <string name="disconnect_other_devices">このGoogleアカウントに接続したすべてのデバイスで、ReclyはDriveにアクセスできなくなります。同じアカウントに再接続するまで処理は一時停止します。録音と設定は残ります。</string>
-    <string name="disconnect_local">同じアカウントに再接続するまで処理を一時停止します。録音、Driveのファイル、ワークフロー、キーは残ります。</string>
-    <string name="disconnect_also_delete">このスマートフォンの録音も削除</string>
     <string name="disconnect_permissions">Googleの権限</string>
     <string name="disconnect_revoke_failed">Googleのアクセス権を取り消せませんでした（%1$s）。Googleアカウントの権限から取り消してください</string>
     <string name="disconnect_done">接続を解除しました。このスマートフォンの録音は残っています。</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Driveに未送信の録音%1$d件は、このスマートフォンに残ります。</item>
-    </plurals>
     <string name="disconnect_deleted">接続を解除しました。このスマートフォンから録音%1$d件を削除しました。</string>
     <string name="disconnect_busy">Googleのアクセス権は取り消しましたが、処理中の録音%1$d件は残しています。完了後にもう一度接続を解除してください。</string>
     <string name="disconnect_stop_recording">先に録音を停止してください</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">提供者がキーを拒否しました</string>
     <string name="alert_quota">提供者の利用枠に達しました。上限と請求を確認してください</string>
     <string name="alert_uploads_waiting">Drive待ち：%1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">録音%1$d件が待機中です。</item>
-    </plurals>
+    <string name="alert_waiting">録音%1$d件が待機中です。</string>
     <string name="provider_disclosure_transcribe">外部の文字起こしでは、録音全体を%1$sに送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
     <string name="settings_consent_reminder">同意のリマインダー</string>
+    <string name="settings_consent_reminder_note">最初の録音の前に一度だけ確認します。</string>
     <string name="consent_question">参加者に録音することを伝えましたか？</string>
     <string name="consent_body">この録音は会議の他の参加者に通知されません。録音する人が責任を持って伝えてください。</string>
     <string name="consent_confirm">伝えました・録音開始</string>

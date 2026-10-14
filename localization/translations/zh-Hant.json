@@ -322,14 +322,10 @@
   "recly {0} (build {1}) · android {2}": "recly {0}（組建{1}）·android {2}",
   "soon": "即將",
   "Audio not yet in Drive is deleted with it.": "尚未上傳至Drive的音訊也將刪除。",
-  "{0} recording has not reached Drive yet and stays on this phone.": "尚未上傳至Drive的{0}筆錄音將保留在此手機上。",
-  "{0} recording is waiting.": "{0}筆錄音正在等待。",
   "Recordings waiting: {0}": "{0}筆錄音正在等待。",
   "Recordings not yet in Drive, kept on this Mac: {0}": "尚未上傳至Drive的{0}筆錄音將保留在此Mac上。",
   "Recordings not yet in Drive, kept on this PC: {0}": "尚未上傳至Drive的{0}筆錄音將保留在此電腦上。",
   "Recordings not yet in Drive, kept on this phone: {0}": "尚未上傳至Drive的{0}筆錄音將保留在此手機上。",
-  "{0} recordings are waiting.": "{0}筆錄音正在等待。",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "尚未上傳至Drive的{0}筆錄音將保留在此手機上。",
   "{0}, recorded {1}, length {2}, {3}": "{0}，錄製於{1}，時長{2}，{3}",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "重新連接同一帳戶前，待處理工作將暫停。錄音、Drive檔案和金鑰都會保留。",
   "Saved on this device": "已儲存在此裝置上",
@@ -571,5 +567,7 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "本裝置轉錄沒有標題的錄音時，會將轉寫文字傳送給ChatGPT來產生標題。這會計入你的ChatGPT用量。",
   "Fill in speaker names": "自動填寫說話者名稱",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "本裝置轉錄錄音時，會將轉寫文字傳送給ChatGPT，為對話中被叫到名字的說話者命名。這會計入你的ChatGPT用量。",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "開啟「自動填寫標題」或「自動填寫說話者名稱」時，這支iPhone轉錄的每段錄音的轉寫文字也會傳送到這裡。"
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "開啟「自動填寫標題」或「自動填寫說話者名稱」時，這支iPhone轉錄的每段錄音的轉寫文字也會傳送到這裡。",
+  "Asked once, before the first recording.": "僅在第一次錄音前詢問一次。",
+  "Still transcribing on this device — try again once it has finished": "此裝置仍在轉錄——完成後再試一次"
 }

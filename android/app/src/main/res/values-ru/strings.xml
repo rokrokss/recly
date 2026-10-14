@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Также удалить папку в Drive</string>
     <string name="delete_with_folder">Также удалить из локальной папки</string>
     <string name="delete_remote_body">Записано на другом устройстве. Удаление уберёт запись из Drive и со всех устройств.</string>
-    <string name="delete_busy">Загрузка ещё идёт. Повторите после завершения</string>
+    <string name="delete_busy">На этом устройстве ещё идёт расшифровка — попробуйте снова, когда она завершится</string>
     <string name="delete_drive_failed">Удалено здесь, но Drive отказал: %1$s</string>
     <string name="delete_folder_failed">Удалено здесь, но не из локальной папки: %1$s</string>
     <string name="delete_unuploaded">Также удалится аудио, ещё не загруженное в Drive.</string>
     <string name="delete_unuploaded_folder">Также удалится аудио, ещё не скопированное в локальную папку.</string>
     <string name="settings_disconnect">Отключить</string>
-    <string name="settings_disconnect_hint">Отозвать у приложения доступ к вашему аккаунту Google.</string>
     <string name="disconnect_title">Отключить Google Drive?</string>
     <string name="disconnect_other_devices">Recly потеряет доступ к Drive на всех устройствах с этим аккаунтом Google. Задачи приостановятся до повторного подключения того же аккаунта. Записи и настройки сохранятся.</string>
-    <string name="disconnect_local">Обработка приостановится до повторного подключения того же аккаунта. Записи, файлы Drive, процессы и ключи сохранятся.</string>
-    <string name="disconnect_also_delete">Также удалить записи с этого телефона</string>
     <string name="disconnect_permissions">Разрешения Google</string>
     <string name="disconnect_revoke_failed">Google не отозвал доступ (%1$s). Отзовите его в разрешениях аккаунта Google</string>
     <string name="disconnect_done">Отключено. Записи на этом телефоне сохранены.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Ещё не загруженные в Drive записи останутся на этом телефоне: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">Отключено. Удалено записей с этого телефона: %1$d.</string>
     <string name="disconnect_busy">Доступ Google отозван, но сохранено незавершённых записей: %1$d. Отключитесь снова после их завершения.</string>
     <string name="disconnect_stop_recording">Сначала остановите запись</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">Провайдер отклонил ключ</string>
     <string name="alert_quota">Квота провайдера исчерпана. Проверьте лимиты и оплату</string>
     <string name="alert_uploads_waiting">Ожидание Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">Ожидающих записей: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">Ожидающих записей: %1$d.</string>
     <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись в %1$s.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
     <string name="settings_consent_reminder">Напоминание о согласии</string>
+    <string name="settings_consent_reminder_note">Спрашивается один раз, перед первой записью.</string>
     <string name="consent_question">Вы сообщили участникам о записи?</string>
     <string name="consent_body">Другие участники встречи не увидят признаков записи. Сообщить им обязан тот, кто записывает.</string>
     <string name="consent_confirm">Сообщил · Начать запись</string>

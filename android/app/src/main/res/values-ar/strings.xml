@@ -161,23 +161,17 @@
     <string name="delete_with_drive">حذف مجلد Drive أيضًا</string>
     <string name="delete_with_folder">الحذف من المجلد المحلي أيضًا</string>
     <string name="delete_remote_body">سُجّل على جهاز آخر. يؤدي الحذف إلى إزالته من Drive وجميع الأجهزة.</string>
-    <string name="delete_busy">الرفع مستمر. أعد المحاولة بعد انتهائه</string>
+    <string name="delete_busy">لا يزال النسخ جاريًا على هذا الجهاز — حاول مجددًا بعد انتهائه</string>
     <string name="delete_drive_failed">تم الحذف هنا، لكن Drive رفض: %1$s</string>
     <string name="delete_folder_failed">تم الحذف هنا، لكن ليس من المجلد المحلي: %1$s</string>
     <string name="delete_unuploaded">سيُحذف أيضًا الصوت الذي لم يصل إلى Drive بعد.</string>
     <string name="delete_unuploaded_folder">سيُحذف أيضًا الصوت الذي لم يصل إلى المجلد المحلي بعد.</string>
     <string name="settings_disconnect">فصل الاتصال</string>
-    <string name="settings_disconnect_hint">ألغِ وصول هذا التطبيق إلى حساب Google الخاص بك.</string>
     <string name="disconnect_title">فصل Google Drive؟</string>
     <string name="disconnect_other_devices">يفقد Recly الوصول إلى Drive على جميع الأجهزة المرتبطة بحساب Google هذا. تتوقف المهام المعلّقة حتى إعادة ربط الحساب نفسه. تبقى التسجيلات والإعدادات.</string>
-    <string name="disconnect_local">تتوقف المعالجة المعلّقة حتى إعادة ربط الحساب نفسه. تبقى التسجيلات وملفات Drive وسير العمل والمفاتيح.</string>
-    <string name="disconnect_also_delete">حذف التسجيلات على هذا الهاتف أيضًا</string>
     <string name="disconnect_permissions">أذونات Google</string>
     <string name="disconnect_revoke_failed">لم يُلغِ Google الوصول (%1$s). ألغِه من أذونات حساب Google</string>
     <string name="disconnect_done">تم الفصل. بقيت التسجيلات على هذا الهاتف كما هي.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">التسجيلات التي لم تصل إلى Drive وتبقى على هذا الهاتف: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">تم الفصل. التسجيلات المحذوفة من هذا الهاتف: %1$d.</string>
     <string name="disconnect_busy">أُلغي وصول Google، لكن التسجيلات التي كانت قيد المعالجة حُفظت وعددها %1$d. افصل مجددًا بعد انتهائها.</string>
     <string name="disconnect_stop_recording">أوقف التسجيل أولًا</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">رفض المزوّد المفتاح</string>
     <string name="alert_quota">نفدت حصة المزوّد. تحقق من الحدود والفوترة</string>
     <string name="alert_uploads_waiting">في انتظار Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">التسجيلات المنتظرة: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">التسجيلات المنتظرة: %1$d.</string>
     <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى %1$s.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
     <string name="settings_consent_reminder">تذكير بالموافقة</string>
+    <string name="settings_consent_reminder_note">يُطرح السؤال مرة واحدة قبل أول تسجيل.</string>
     <string name="consent_question">هل أخبرت المشاركين بالتسجيل؟</string>
     <string name="consent_body">لا يظهر هذا التسجيل أي إشارة للمشاركين الآخرين. إبلاغهم مسؤولية من يسجّل.</string>
     <string name="consent_confirm">أخبرتهم · بدء التسجيل</string>

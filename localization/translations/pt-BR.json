@@ -322,14 +322,10 @@
   "recly {0} (build {1}) · android {2}": "recly {0} (compilação {1}) · android {2}",
   "soon": "em breve",
   "Audio not yet in Drive is deleted with it.": "O áudio ainda não enviado ao Drive também será excluído.",
-  "{0} recording has not reached Drive yet and stays on this phone.": "As gravações ainda não enviadas ao Drive ficam neste telefone: {0}.",
-  "{0} recording is waiting.": "Gravações em espera: {0}.",
   "Recordings waiting: {0}": "Gravações em espera: {0}.",
   "Recordings not yet in Drive, kept on this Mac: {0}": "As gravações ainda não enviadas ao Drive ficam neste Mac: {0}.",
   "Recordings not yet in Drive, kept on this PC: {0}": "As gravações ainda não enviadas ao Drive ficam neste PC: {0}.",
   "Recordings not yet in Drive, kept on this phone: {0}": "As gravações ainda não enviadas ao Drive ficam neste telefone: {0}.",
-  "{0} recordings are waiting.": "Gravações em espera: {0}.",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "As gravações ainda não enviadas ao Drive ficam neste telefone: {0}.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, gravado em {1}, duração {2}, {3}",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "O processamento pendente pausa até reconectar a mesma conta. Gravações, arquivos do Drive e chaves são mantidos.",
   "Saved on this device": "Salva neste dispositivo",
@@ -571,5 +567,7 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Quando este dispositivo transcreve uma gravação sem título, a transcrição vai para o ChatGPT para receber um. Isso conta no seu uso do ChatGPT.",
   "Fill in speaker names": "Preencher nomes dos falantes",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Quando este dispositivo transcreve uma gravação, a transcrição vai para o ChatGPT para dar nome aos falantes chamados pelo nome nela. Isso conta no seu uso do ChatGPT.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Com Preencher títulos ou Preencher nomes dos falantes ativado, a transcrição de cada gravação que este iPhone transcreve também é enviada para cá."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Com Preencher títulos ou Preencher nomes dos falantes ativado, a transcrição de cada gravação que este iPhone transcreve também é enviada para cá.",
+  "Asked once, before the first recording.": "Perguntado uma vez, antes da primeira gravação.",
+  "Still transcribing on this device — try again once it has finished": "Ainda transcrevendo neste dispositivo — tente de novo quando terminar"
 }

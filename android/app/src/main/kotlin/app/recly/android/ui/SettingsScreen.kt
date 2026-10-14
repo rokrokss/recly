@@ -265,12 +265,13 @@ fun SettingsScreen(
             )
             // docs/12 M8: the Mac asks before every meeting recording. A phone has no meeting
             // detection, so it asks once before the first one — and the subtitle says so, because
-            // a reminder that behaves differently on two devices has to explain itself.
+            // a reminder that behaves differently on two devices has to explain itself (D4).
             SwitchRow(
                 title = stringResource(R.string.settings_consent_reminder),
                 checked = settings.consentReminder,
                 onCheckedChange = onConsentReminder,
                 modifier = Modifier.testTag("consent-reminder"),
+                subtitle = stringResource(R.string.settings_consent_reminder_note),
             )
 
             Section(stringResource(R.string.settings_uploads))

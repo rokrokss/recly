@@ -736,7 +736,6 @@ class CrossShellDictionaryTest {
                 what = "the disconnect hint",
                 en = "Take this app’s access to your Google account away.",
                 ko = "이 앱의 Google 계정 접근 권한을 회수합니다.",
-                android = "settings_disconnect_hint",
                 windows = "settings.disconnect.hint",
                 mac = "Take this app’s access to your Google account away.",
                 phone = "Take this app’s access to your Google account away.",

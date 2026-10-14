@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Drive فولڈر بھی حذف کریں</string>
     <string name="delete_with_folder">مقامی فولڈر سے بھی حذف کریں</string>
     <string name="delete_remote_body">دوسرے آلے پر ریکارڈ کی گئی۔ حذف کرنے سے یہ Drive اور ہر آلے سے ہٹ جائے گی۔</string>
-    <string name="delete_busy">ابھی اپ لوڈ ہو رہا ہے — مکمل ہونے پر دوبارہ کوشش کریں</string>
+    <string name="delete_busy">اس ڈیوائس پر ابھی ٹرانسکرائب ہو رہا ہے — ختم ہونے پر دوبارہ کوشش کریں</string>
     <string name="delete_drive_failed">یہاں حذف ہو گیا، لیکن Drive نے انکار کیا: %1$s</string>
     <string name="delete_folder_failed">یہاں حذف ہو گیا، لیکن مقامی فولڈر سے نہیں: %1$s</string>
     <string name="delete_unuploaded">جو آڈیو ابھی Drive میں نہیں، وہ بھی اس کے ساتھ حذف ہو جائے گا۔</string>
     <string name="delete_unuploaded_folder">جو آڈیو ابھی مقامی فولڈر میں نہیں، وہ بھی اس کے ساتھ حذف ہو جائے گا۔</string>
     <string name="settings_disconnect">منقطع کریں</string>
-    <string name="settings_disconnect_hint">آپ کے Google اکاؤنٹ تک اس ایپ کی رسائی ختم کریں۔</string>
     <string name="disconnect_title">Google Drive منقطع کریں؟</string>
     <string name="disconnect_other_devices">اس Google اکاؤنٹ سے منسلک تمام آلات پر Recly کی Drive تک رسائی ختم ہو جائے گی۔ جب تک آپ وہی اکاؤنٹ دوبارہ منسلک نہ کریں، زیر التواء کام رکا رہے گا۔ ریکارڈنگز اور ترتیبات برقرار رہیں گی۔</string>
-    <string name="disconnect_local">جب تک آپ وہی اکاؤنٹ دوبارہ منسلک نہ کریں، زیر التواء پروسیسنگ رکی رہے گی۔ ریکارڈنگز، Drive فائلیں، ورک فلوز اور کلیدیں برقرار رہیں گی۔</string>
-    <string name="disconnect_also_delete">اس فون پر موجود ریکارڈنگز بھی حذف کریں</string>
     <string name="disconnect_permissions">Google اجازتیں</string>
     <string name="disconnect_revoke_failed">Google نے رسائی نہیں ہٹائی (%1$s) — اپنے Google اکاؤنٹ کی اجازتوں میں ہٹائیں</string>
     <string name="disconnect_done">منقطع ہو گیا۔ اس فون پر موجود ریکارڈنگز جوں کی توں رہیں۔</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">جو ریکارڈنگز ابھی Drive تک نہیں پہنچیں، اس فون پر رہیں گی: %1$d۔</item>
-    </plurals>
     <string name="disconnect_deleted">منقطع ہو گیا۔ اس فون سے حذف شدہ ریکارڈنگز: %1$d</string>
     <string name="disconnect_busy">Google رسائی منسوخ کر دی گئی۔ ابھی جاری اور محفوظ رکھی گئی ریکارڈنگز: %1$d — ان کے مکمل ہونے پر دوبارہ منقطع کریں۔</string>
     <string name="disconnect_stop_recording">پہلے ریکارڈنگ روکیں</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">فراہم کنندہ نے کلید مسترد کر دی</string>
     <string name="alert_quota">فراہم کنندہ کا کوٹا ختم ہو گیا ہے — اس کی حدود اور بلنگ چیک کریں</string>
     <string name="alert_uploads_waiting">Drive کا انتظار: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">منتظر ریکارڈنگز: %1$d۔</item>
-    </plurals>
+    <string name="alert_waiting">منتظر ریکارڈنگز: %1$d</string>
     <string name="provider_disclosure_transcribe">بیرونی ٹرانسکرپشن پوری ریکارڈنگ %1$s کو بھیجتا ہے۔\nوہ اسے کتنی دیر رکھتے ہیں اور کیا اسے تربیت کے لیے استعمال کرتے ہیں، یہ اس فراہم کنندہ کی اپنی پالیسی ہے — Recly اسے کنٹرول نہیں کرتا۔\nاستعمال سے پہلے فراہم کنندہ کی پالیسی پڑھیں۔</string>
     <string name="settings_consent_reminder">رضامندی کی یاد دہانی</string>
+    <string name="settings_consent_reminder_note">پہلی ریکارڈنگ سے پہلے ایک بار پوچھا جاتا ہے۔</string>
     <string name="consent_question">کیا آپ نے شرکاء کو ریکارڈنگ کے بارے میں بتایا؟</string>
     <string name="consent_body">یہ ریکارڈنگ میٹنگ کے دوسرے لوگوں پر اپنا کوئی نشان ظاہر نہیں کرتی۔ انہیں بتانا ریکارڈ کرنے والے کی ذمہ داری ہے۔</string>
     <string name="consent_confirm">میں نے بتا دیا · ریکارڈنگ شروع کریں</string>
