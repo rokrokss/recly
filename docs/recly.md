@@ -2193,8 +2193,8 @@ The principle in one line: **intent, not decoration**.
   | Component | Measure |
   |---|---|
   | Button | padding 8 × 4, height at least the touch minimum, label 14 |
-  | Status badge | padding 8 × 4, radius 2, up to two lines broken between words, centered; fades 150 ms when its state changes |
-  | State node | padding 12 × 8, label up to two lines, centered |
+  | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
+  | State node | padding 12 × 8, label up to two lines from the start edge |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum |
   | Section header | 8 below |
   | Ledger row | 12 top and bottom; the time column as wide as the longest time in that shell's mono font (62 Android and Apple, 68 Windows) |
@@ -2631,7 +2631,9 @@ has the string table insert U+2060 between Hangul syllables inside a word when t
 screen reader labels are resources (§7), and an element that opens a screen when pressed, like a row, states that role in its label (e.g. list row =
 `row, button`).
 **Disabled, focus and structure** (2026-10-15). A disabled control draws in `disabled` and, when it has an edge, a dashed one — buttons, chips,
-switches, icon buttons, the find bar's arrows alike — so it never looks enabled in high contrast. Every focusable control shows the focus ring of
+switches, icon buttons, the find bar's arrows alike — so it never looks enabled in high contrast. A button showing its own work — `…` while
+it runs, `✓` when done (principle 4's processing state) — is not disabled in this sense: it cannot be pressed meanwhile, but it keeps its
+normal ink, because that state is what the user is meant to read. Every focusable control shows the focus ring of
 "Component measurements" under keyboard, Switch Access or full keyboard access, links included. Screen and section headers are headings
 (`heading()`, `.isHeader`); a status line that changes while the user looks at it — the record screens', both watches', the popover's and the
 tray's — is announced politely (a polite live region; on Apple an announcement when its text changes). Windows ships `jdk.accessibility` in its
