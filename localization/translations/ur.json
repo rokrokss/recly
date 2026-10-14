@@ -570,5 +570,6 @@
   "Fill in titles": "عنوانات خود بخود بھریں",
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "جب یہ ڈیوائس بغیر عنوان والی ریکارڈنگ ٹرانسکرائب کرتی ہے تو عنوان کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔",
   "Fill in speaker names": "بولنے والوں کے نام خود بخود بھریں",
-  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "جب یہ ڈیوائس کوئی ریکارڈنگ ٹرانسکرائب کرتی ہے تو اس میں نام لے کر پکارے گئے بولنے والوں کے نام رکھنے کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔"
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "جب یہ ڈیوائس کوئی ریکارڈنگ ٹرانسکرائب کرتی ہے تو اس میں نام لے کر پکارے گئے بولنے والوں کے نام رکھنے کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "عنوانات خود بخود بھریں یا بولنے والوں کے نام خود بخود بھریں آن ہو تو یہ iPhone جو بھی ریکارڈنگ ٹرانسکرائب کرے اس کا ٹرانسکرپٹ بھی یہاں بھیجا جاتا ہے۔"
 }

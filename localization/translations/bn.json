@@ -570,5 +570,6 @@
   "Fill in titles": "শিরোনাম স্বয়ংক্রিয়ভাবে পূরণ",
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "এই ডিভাইস শিরোনামহীন কোনো রেকর্ডিং ট্রান্সক্রাইব করলে, শিরোনামের জন্য ট্রান্সক্রিপ্ট ChatGPT-তে যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।",
   "Fill in speaker names": "বক্তার নাম স্বয়ংক্রিয়ভাবে পূরণ",
-  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "এই ডিভাইস কোনো রেকর্ডিং ট্রান্সক্রাইব করলে, যাদের নাম ধরে ডাকা হয়েছে সেই বক্তাদের নাম দিতে ট্রান্সক্রিপ্ট ChatGPT-তে যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।"
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "এই ডিভাইস কোনো রেকর্ডিং ট্রান্সক্রাইব করলে, যাদের নাম ধরে ডাকা হয়েছে সেই বক্তাদের নাম দিতে ট্রান্সক্রিপ্ট ChatGPT-তে যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "শিরোনাম স্বয়ংক্রিয়ভাবে পূরণ বা বক্তার নাম স্বয়ংক্রিয়ভাবে পূরণ চালু থাকলে, এই iPhone যে রেকর্ডিং ট্রান্সক্রাইব করে তার ট্রান্সক্রিপ্টও এখানে পাঠানো হয়।"
 }

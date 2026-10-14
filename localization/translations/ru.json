@@ -570,5 +570,6 @@
   "Fill in titles": "Заполнять названия",
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Когда это устройство расшифровывает запись без названия, расшифровка отправляется в ChatGPT, чтобы получить название. Это входит в ваше использование ChatGPT.",
   "Fill in speaker names": "Заполнять имена говорящих",
-  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Когда это устройство расшифровывает запись, расшифровка отправляется в ChatGPT, чтобы назвать говорящих, к которым в ней обращаются по имени. Это входит в ваше использование ChatGPT."
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Когда это устройство расшифровывает запись, расшифровка отправляется в ChatGPT, чтобы назвать говорящих, к которым в ней обращаются по имени. Это входит в ваше использование ChatGPT.",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Если включено «Заполнять названия» или «Заполнять имена говорящих», сюда также отправляется расшифровка каждой записи, которую расшифровывает этот iPhone."
 }

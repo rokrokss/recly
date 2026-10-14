@@ -570,5 +570,6 @@
   "Fill in titles": "Jaza vichwa kiotomatiki",
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Kifaa hiki kinaponukuu rekodi isiyo na kichwa, nakala hutumwa kwa ChatGPT ili kupata kichwa. Hii huhesabiwa katika matumizi yako ya ChatGPT.",
   "Fill in speaker names": "Jaza majina ya wazungumzaji kiotomatiki",
-  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Kifaa hiki kinaponukuu rekodi, nakala hutumwa kwa ChatGPT ili kuwapa majina wazungumzaji wanaoitwa kwa majina ndani yake. Hii huhesabiwa katika matumizi yako ya ChatGPT."
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Kifaa hiki kinaponukuu rekodi, nakala hutumwa kwa ChatGPT ili kuwapa majina wazungumzaji wanaoitwa kwa majina ndani yake. Hii huhesabiwa katika matumizi yako ya ChatGPT.",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Jaza vichwa kiotomatiki au Jaza majina ya wazungumzaji kiotomatiki ikiwa imewashwa, nakala ya kila rekodi inayonukuliwa na iPhone hii pia hutumwa hapa."
 }

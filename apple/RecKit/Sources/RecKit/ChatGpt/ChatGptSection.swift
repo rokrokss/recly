@@ -11,6 +11,8 @@ public struct ChatGptSection: View {
     private let onSignIn: (() -> Void)?
     /// My format was just chosen with nothing in it: its field takes the focus as it appears (2026-10-10, 3.1).
     @State private var focusMyFormat = false
+    /// The ChatGPT training question in the permission a fill-in switch asks for ([SummaryConsentDialog]).
+    @State private var trainingOff = false
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
@@ -23,6 +25,11 @@ public struct ChatGptSection: View {
     public var body: some View {
         if model.available {
             SectionHeader(loc("ChatGPT")).padding(.horizontal, Space.m)
+                // docs/15 "iPhone providers": a fill-in switch goes on only once the transcript may go to OpenAI —
+                // the permission a summary asks for, asked the same way. Never presented where none is needed.
+                .blueprintDialog(isPresented: Binding(get: { !model.fillConsent.isEmpty }, set: { if !$0 { answerFillConsent(false) } })) {
+                    SummaryConsentDialog(targets: model.fillConsent, trainingOff: $trainingOff, answer: answerFillConsent)
+                }
             rows
             if model.waitingForBrowser {
                 SectionBlock {
@@ -73,6 +80,19 @@ public struct ChatGptSection: View {
                     done: model.savePreferences
                 )
             }
+            // docs/08 "Titles and speaker names": off until the user turns them on, signed in or out.
+            SwitchRow(
+                title: loc("Fill in titles"),
+                subtitle: loc("When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage."),
+                isOn: Binding(get: { model.preferences.autoTitle }, set: model.setAutoTitle)
+            )
+            .accessibilityIdentifier("auto-title")
+            SwitchRow(
+                title: loc("Fill in speaker names"),
+                subtitle: loc("When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage."),
+                isOn: Binding(get: { model.preferences.autoSpeakers }, set: model.setAutoSpeakers)
+            )
+            .accessibilityIdentifier("auto-speakers")
             SectionFootnote(loc("Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
         }
     }
@@ -91,6 +111,11 @@ public struct ChatGptSection: View {
             ChatGptText.formatLabel($0.format)
         }
         .accessibilityIdentifier("chatgpt-summary-format")
+    }
+
+    private func answerFillConsent(_ allow: Bool) {
+        trainingOff = false
+        Task { await model.answerFillConsent(allow: allow) }
     }
 
     private struct FormatOption: Hashable, Identifiable {

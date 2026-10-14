@@ -570,5 +570,6 @@
   "Fill in titles": "Titel automatisch ergänzen",
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Transkribiert dieses Gerät eine Aufnahme ohne Titel, geht das Transkript für einen Titel an ChatGPT. Das zählt zu deiner ChatGPT-Nutzung.",
   "Fill in speaker names": "Sprechernamen automatisch ergänzen",
-  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Transkribiert dieses Gerät eine Aufnahme, geht das Transkript an ChatGPT, um die Sprecher zu benennen, die darin mit Namen angesprochen werden. Das zählt zu deiner ChatGPT-Nutzung."
+  "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Transkribiert dieses Gerät eine Aufnahme, geht das Transkript an ChatGPT, um die Sprecher zu benennen, die darin mit Namen angesprochen werden. Das zählt zu deiner ChatGPT-Nutzung.",
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Ist „Titel automatisch ergänzen“ oder „Sprechernamen automatisch ergänzen“ an, wird auch das Transkript jeder Aufnahme, die dieses iPhone transkribiert, hierhin gesendet."
 }
