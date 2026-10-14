@@ -57,6 +57,13 @@ public struct BlueprintPalette: Equatable, Sendable {
     public var warning: Color { color(.warning) }
     public var warningInk: Color { color(.warningInk) }
 
+    /// docs/09 "Derived tokens" (2026-10-15): the ink and the dashed edge of anything disabled — the secondary
+    /// colour at half opacity. An opacity rather than a colour of its own, so it stays lighter than enabled ink
+    /// in high contrast, where the secondary colour becomes the body colour. Never [grid], which is decoration.
+    public var disabled: Color { textMuted.opacity(Self.disabledOpacity) }
+
+    static let disabledOpacity: Double = 0.5
+
     /// docs/09 "Lines": 1pt, and 2pt in high contrast. Connectors, dividers, node borders.
     public var line: CGFloat { highContrast ? 2 : 1 }
 

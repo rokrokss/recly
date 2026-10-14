@@ -154,6 +154,38 @@ final class BlueprintContrastTests: XCTestCase {
         BlueprintToken.allCases.first { String(describing: $0) == name }
     }
 
+    /// docs/09 "Derived tokens" (2026-10-15): `disabled` is the secondary colour at half opacity, so it is lighter than
+    /// enabled ink in every palette — in high contrast too, where the secondary colour is the body colour and a disabled
+    /// control drawn in it would look live.
+    func testDisabledInkIsLighterThanEnabledInkInEveryPalette() {
+        for (name, palette) in Self.palettes {
+            for ground in [BlueprintToken.surface, .background] {
+                let page = palette.hex(ground)
+                let disabled = Self.composite(palette.hex(.textMuted), opacity: BlueprintPalette.disabledOpacity, over: page)
+                XCTAssertLessThan(
+                    WCAG.contrast(disabled, page), WCAG.contrast(palette.hex(.textMuted), page),
+                    "\(name)/disabled on \(ground) is no lighter than the secondary ink"
+                )
+                XCTAssertLessThan(WCAG.contrast(disabled, page), WCAG.contrast(palette.hex(.text), page), "\(name)/\(ground)")
+            }
+        }
+    }
+
+    /// docs/09 "Spacing": the named steps, 2 to 32, every one a multiple of two and the ones past `xxs` of four.
+    func testTheSpacingStepsAreTheNamedOnes() {
+        XCTAssertEqual([Space.xxs, Space.xs, Space.s, Space.sm, Space.m, Space.l, Space.xl], [2, 4, 8, 12, 16, 24, 32])
+    }
+
+    /// [ink] at [opacity] over [ground], channel by channel in sRGB — what drawing it does.
+    private static func composite(_ ink: UInt32, opacity: Double, over ground: UInt32) -> UInt32 {
+        func channel(_ shift: UInt32) -> UInt32 {
+            let top = Double((ink >> shift) & 0xFF)
+            let bottom = Double((ground >> shift) & 0xFF)
+            return UInt32((top * opacity + bottom * (1 - opacity)).rounded()) << shift
+        }
+        return channel(16) | channel(8) | channel(0)
+    }
+
     /// The check itself, on a pair whose answer is known: black on white is 21:1.
     func testTheRatioIsTheWCAGOne() {
         XCTAssertEqual(WCAG.contrast(0x000000, 0xFFFFFF), 21, accuracy: 0.05)

@@ -38,7 +38,7 @@ private struct ReasonText: View {
     let showsDetail: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             Text(verbatim: reason.sentence)
                 .font(blueprint.fonts.sans(TypeSize.small))
                 .foregroundStyle(tone.ink(blueprint.palette))

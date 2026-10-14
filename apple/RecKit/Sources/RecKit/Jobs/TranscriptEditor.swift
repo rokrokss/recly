@@ -115,6 +115,8 @@ struct TranscriptEditor: View {
     @Environment(\.locale) private var locale
     @State private var renaming: String?
     @State private var typedName = ""
+    /// The segment whose field has the focus, for its box (docs/09 "Component measurements" — Text field).
+    @FocusState private var focusedRow: Int?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -187,13 +189,9 @@ struct TranscriptEditor: View {
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.text)
                 .contentDirection(draft.texts[index])
-                .padding(.horizontal, 10)
-                .padding(.vertical, 9)
+                .focused($focusedRow, equals: index)
                 // 2026-10-10 (A-A18): a field's surface, as every other field has, rather than the dot grid through it.
-                .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
-                .overlay {
-                    RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
-                }
+                .fieldBox(focused: focusedRow == index)
                 .accessibilityLabel(Text(verbatim: stamp))
                 .accessibilityIdentifier("edit-text-\(index)")
         }
@@ -280,13 +278,8 @@ struct SpeakerNameDialog: View {
                     .textFieldStyle(.plain)
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.text)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Radius.node)
-                            .strokeBorder(focused ? blueprint.palette.accent : blueprint.palette.inputBorder, lineWidth: blueprint.line)
-                    }
                     .focused($focused)
+                    .fieldBox(focused: focused)
                     .onSubmit(save)
                     .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Name")))
                     .accessibilityIdentifier("speaker-name-field")

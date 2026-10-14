@@ -1,9 +1,13 @@
 import SwiftUI
 
-/// docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm.
+/// docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm, and the named steps between them — a
+/// literal is for artwork only.
 public enum Space {
+    /// A label and its value.
+    public static let xxs: CGFloat = 2
     public static let xs: CGFloat = 4
     public static let s: CGFloat = 8
+    public static let sm: CGFloat = 12
     public static let m: CGFloat = 16
     public static let l: CGFloat = 24
     public static let xl: CGFloat = 32
@@ -17,8 +21,11 @@ public enum Radius {
 }
 
 /// docs/09 "Accessibility": whatever it draws, nothing you can tap is smaller than this. A small glyph —
-/// the connector's `+`, a square switch — keeps its size and grows a target around itself.
+/// a square switch, a `×` — keeps its size and grows a target around itself.
 public let minTouch: CGFloat = 44
+
+/// docs/09 "Typography" (2026-10-15): the timer's tracking, on every shell.
+public let timerTracking: CGFloat = 1
 
 /// docs/09 "Typography": the scale is 12 / 14 / 16 / 20 / 28 / 44. Dynamic Type carries the user's own
 /// size on top of it (see [BlueprintFonts.scale]).
@@ -63,7 +70,8 @@ public struct BlueprintFonts: Equatable, Sendable {
     public var monoBodySmall: Font { mono(TypeSize.bodySmall) }
     public var monoBody: Font { mono(TypeSize.body) }
     public var monoTitle: Font { mono(TypeSize.title) }
-    public var monoTimer: Font { mono(TypeSize.timer, weight: .medium) }
+    /// docs/09 "Typography" (2026-10-15): regular weight on every shell; [MonoTimer] adds the 1 of tracking.
+    public var monoTimer: Font { mono(TypeSize.timer) }
 
     /// The section headers and node kickers of the mockup: small, tracked out, never shouted.
     public var label: Font { sans(TypeSize.small, weight: .medium) }

@@ -13,6 +13,7 @@ struct VocabularyEditor: View {
     @Environment(\.locale) private var locale
     @State private var entry = ""
     @State private var overLimit = false
+    @FocusState private var entryFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.s) {
@@ -30,11 +31,8 @@ struct VocabularyEditor: View {
                     .textFieldStyle(.plain)
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.text)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
-                    }
+                    .focused($entryFocused)
+                    .fieldBox(focused: entryFocused)
                     .onSubmit(add)
                     .onChange(of: entry) { _, typed in
                         // A paste of several lines is several terms.
@@ -75,13 +73,16 @@ struct VocabularyEditor: View {
                     // 2026-10-08 §12: a 44pt target in both directions, as every chip's is.
                     .frame(minWidth: minTouch, minHeight: minTouch)
                     .contentShape(Rectangle())
+                    .blueprintFocusRing()
             }
             .buttonStyle(.plain)
+            .focusEffectDisabled()
             .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Remove %@", term)))
         }
-        .padding(.leading, 10)
+        // docs/09 "Component measurements" — Chip: the edge is `inputBorder`; the grid's colour is decoration.
+        .padding(.leading, Space.s)
         .overlay {
-            RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.grid, lineWidth: blueprint.line)
+            RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
         }
     }
 

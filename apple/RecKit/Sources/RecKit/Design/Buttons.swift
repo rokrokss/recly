@@ -65,12 +65,14 @@ public struct BlueprintButton: View {
                 }
                 Text(verbatim: label)
             }
+            // docs/09 "Component measurements" — Button: a label of 14 whether it is sans or mono.
             .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
             .foregroundStyle(ink)
             .lineLimit(3)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            // …padding 8 × 4: the height is the touch minimum's, so the vertical padding is the small one.
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
             // docs/09 "Accessibility": the label is small, the button is not.
             .frame(minWidth: minWidth, maxWidth: fillsWidth ? .infinity : nil, minHeight: minTouch)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.node))
@@ -85,15 +87,19 @@ public struct BlueprintButton: View {
                     )
             }
             .contentShape(Rectangle())
+            .blueprintFocusRing(onFill: isEnabled && tone == .primary)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
     }
 
     /// The disabled border's dash and gap, Windows' 3 and 3.
     static let dash: [CGFloat] = [3, 3]
 
+    /// docs/09 "Disabled, focus and structure" (2026-10-15): a disabled button draws in `disabled`, ink and dashed edge
+    /// alike, so in high contrast — where the secondary ink becomes the body colour — it still never looks live.
     private var ink: Color {
-        guard isEnabled else { return blueprint.palette.textMuted }
+        guard isEnabled else { return blueprint.palette.disabled }
         switch tone {
         case .primary: return blueprint.palette.onAccent
         case .accent: return blueprint.palette.accent
@@ -103,9 +109,9 @@ public struct BlueprintButton: View {
     }
 
     private var edge: Color {
-        // 2026-10-10 (A-A2): a disabled button's dashed edge in the input border's colour, which clears 3:1
-        // against the page — on the grid's it all but disappeared.
-        guard isEnabled else { return blueprint.palette.inputBorder }
+        // 2026-10-15: the dash in `disabled` too — the grid's colour all but disappeared (2026-10-10, A-A2), and the
+        // input border's is enabled ink in high contrast.
+        guard isEnabled else { return blueprint.palette.disabled }
         switch tone {
         case .primary, .accent: return blueprint.palette.accent
         case .danger: return blueprint.palette.danger
@@ -146,6 +152,7 @@ extension EnvironmentValues {
 #if !os(watchOS)
 public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
     @Environment(\.blueprint) private var blueprint
+    @Environment(\.isEnabled) private var isEnabled
     private let label: String
     private let options: [Value]
     private let title: (Value) -> String
@@ -196,6 +203,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
+        .focusEffectDisabled()
         // One element, deliberately (the AlertBanner/LedgerRow idiom): a `Menu` publishes its own
         // menu-button element AND its plain-styled label subtree publishes a second one, so the
         // setting reads twice — Language/한국어, then Language/한국어 again over nothing. Ignoring
@@ -220,19 +228,25 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
             Text(verbatim: Self.indicator)
         }
         .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
-        .foregroundStyle(blueprint.palette.textMuted)
+        .foregroundStyle(isEnabled ? blueprint.palette.textMuted : blueprint.palette.disabled)
         // A value is read whole: at a narrow width it wraps, as [BlueprintButton]'s label does,
         // rather than losing its end ("Deutsch (Deutsc…").
         .lineLimit(3)
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        // docs/09 "Component measurements": a button's 8 × 4.
+        .padding(.horizontal, Space.s)
+        .padding(.vertical, Space.xs)
         .frame(minHeight: minTouch)
         .overlay {
+            // docs/09 "Disabled, focus and structure": off, a dashed edge in `disabled`, as a button's.
             RoundedRectangle(cornerRadius: Radius.node)
-                .strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
+                .strokeBorder(
+                    isEnabled ? blueprint.palette.inputBorder : blueprint.palette.disabled,
+                    style: StrokeStyle(lineWidth: blueprint.line, dash: isEnabled ? [] : BlueprintButton.dash)
+                )
         }
         .contentShape(Rectangle())
+        .blueprintFocusRing()
     }
 }
 #endif

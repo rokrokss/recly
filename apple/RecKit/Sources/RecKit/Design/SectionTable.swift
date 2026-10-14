@@ -39,7 +39,7 @@ public struct ScreenHeader<Trailing: View>: View {
             }
             .padding(.horizontal, Space.m)
             .padding(.top, Space.m)
-            .padding(.bottom, 12)
+            .padding(.bottom, Space.sm)
         } else {
             wrapping
         }
@@ -47,7 +47,7 @@ public struct ScreenHeader<Trailing: View>: View {
 
     private var wrapping: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.sm) {
                 heading(lines: 3).fixedSize(horizontal: true, vertical: false)
                 Spacer(minLength: 0)
                 trailing.fixedSize(horizontal: true, vertical: false)
@@ -60,7 +60,7 @@ public struct ScreenHeader<Trailing: View>: View {
         }
         .padding(.horizontal, Space.m)
         .padding(.top, Space.m)
-        .padding(.bottom, 12)
+        .padding(.bottom, Space.sm)
     }
     private func heading(lines: Int) -> some View {
             VStack(alignment: .leading, spacing: Space.xs) {
@@ -68,6 +68,8 @@ public struct ScreenHeader<Trailing: View>: View {
                     .font(blueprint.fonts.sans(TypeSize.body, weight: .semibold))
                     .foregroundStyle(blueprint.palette.text)
                     .lineLimit(lines)
+                    // docs/09 "Disabled, focus and structure": a screen's title is a heading.
+                    .accessibilityAddTraits(.isHeader)
                 if let meta {
                     Text(verbatim: meta)
                         // 2026-10-11 (N3): a count line with words in it (`3 · 대기 1`) takes the sans
@@ -107,16 +109,19 @@ public struct SectionHeader<Trailing: View>: View {
     }
 
     public var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.sm) {
             Text(verbatim: text)
                 .font(blueprint.fonts.label)
                 .tracking(0.6)
                 .foregroundStyle(blueprint.palette.textMuted)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                // docs/09 "Disabled, focus and structure": a section's header is a heading.
+                .accessibilityAddTraits(.isHeader)
             trailing
         }
         .padding(.top, Space.m)
-        .padding(.bottom, 6)
+        // docs/09 "Component measurements" — Section header: 8 below.
+        .padding(.bottom, Space.s)
     }
 }
 
@@ -161,8 +166,8 @@ public struct SectionRow<Trailing: View>: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: Space.sm) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     titleText
                     if let subtitle {
                         Text(verbatim: subtitle)
@@ -174,8 +179,9 @@ public struct SectionRow<Trailing: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 trailing
             }
+            // docs/09 "Component measurements" — Table row: 12 top and bottom, 16 at the sides.
             .padding(.horizontal, insideBlock ? 0 : Space.m)
-            .padding(.vertical, 12)
+            .padding(.vertical, Space.sm)
             .frame(minHeight: minTouch)
             HairLine()
         }
@@ -248,7 +254,7 @@ public struct SectionBlock<Content: View>: View {
             .environment(\.insideSectionBlock, true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 12)
+            .padding(.vertical, Space.sm)
             HairLine()
         }
         .background(blueprint.palette.surface)
@@ -285,7 +291,7 @@ public struct SwitchRow: View {
     public var body: some View {
         VStack(spacing: 0) {
             Toggle(isOn: $isOn) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(verbatim: title)
                         .font(blueprint.fonts.bodySmall)
                         .foregroundStyle(blueprint.palette.text)
@@ -297,8 +303,9 @@ public struct SwitchRow: View {
                 }
             }
             .toggleStyle(BlueprintSwitchStyle())
+            // docs/09 "Component measurements" — Switch row: a table row's 12 top and bottom, 16 at the sides.
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 6)
+            .padding(.vertical, Space.sm)
             .frame(minHeight: minTouch)
             HairLine()
         }
@@ -316,13 +323,16 @@ public struct BlueprintSwitchStyle: ToggleStyle {
         Button {
             configuration.isOn.toggle()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.sm) {
                 configuration.label.frame(maxWidth: .infinity, alignment: .leading)
                 SwitchTrack(isOn: configuration.isOn)
             }
             .contentShape(Rectangle())
+            // The whole row is the control, so the ring goes round the row — square, as a table row is.
+            .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .accessibilityRepresentation {
             Toggle(isOn: configuration.$isOn) { configuration.label }
         }
@@ -340,21 +350,24 @@ public struct SwitchTrack: View {
     }
 
     public var body: some View {
+        // docs/09 "Component measurements" — Switch: disabled, a dashed track in `disabled` (2026-10-15) — never the
+        // grid's colour, which is decoration.
         let ink = isEnabled
             ? (isOn ? blueprint.palette.accent : blueprint.palette.textMuted)
-            : blueprint.palette.grid
+            : blueprint.palette.disabled
         HStack(spacing: 0) {
             if isOn { Spacer(minLength: 0) }
-            RoundedRectangle(cornerRadius: 1).fill(ink).frame(width: 14, height: 14)
+            // …and a thumb on the badge radius, as every square smaller than a node.
+            RoundedRectangle(cornerRadius: Radius.badge).fill(ink).frame(width: 14, height: 14)
             if !isOn { Spacer(minLength: 0) }
         }
-        .padding(2)
+        .padding(Space.xxs)
         .frame(width: 40, height: 22)
         .overlay {
             // docs/09 "Lines"/"High-contrast mode": the track's edge is a line like every other, so it
             // thickens with them rather than staying at a number of its own.
             RoundedRectangle(cornerRadius: Radius.badge)
-                .strokeBorder(ink, lineWidth: blueprint.line)
+                .strokeBorder(ink, style: StrokeStyle(lineWidth: blueprint.line, dash: isEnabled ? [] : BlueprintButton.dash))
         }
         .frame(width: minTouch, height: minTouch, alignment: .trailing)
     }
@@ -378,8 +391,8 @@ public struct Banner: View {
             .font(blueprint.fonts.sans(TypeSize.bodySmall))
             .foregroundStyle(tone.ink(blueprint.palette))
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, Space.sm)
+            .padding(.vertical, Space.s)
             // Filled on the same shape as the edge: a square fill under a 4pt border showed the
             // page through the corners.
             .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
@@ -433,13 +446,7 @@ public struct BlueprintField: View {
             .textFieldStyle(.plain)
             .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.bodySmall)
             .foregroundStyle(blueprint.palette.text)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
-            .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
-            .overlay {
-                RoundedRectangle(cornerRadius: Radius.node)
-                    .strokeBorder(focused ? blueprint.palette.accent : blueprint.palette.inputBorder, lineWidth: focused ? blueprint.line + 1 : blueprint.line)
-            }
+            .fieldBox(focused: focused)
             .accessibilityLabel(Text(verbatim: label))
         }
     }
@@ -519,12 +526,18 @@ public struct BlueprintChip: View {
 
     public var body: some View {
         Button(action: action) {
-            Text(verbatim: selected ? "\(Self.selectionMark) \(label)" : label)
-                .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
-                .foregroundStyle(selected && isEnabled ? blueprint.palette.accent : blueprint.palette.textMuted)
+            // docs/09 "Component measurements" — Chip: the room for its `✓` is kept while it is unselected, so choosing
+            // one moves nothing — the marked label, unseen, under the one that is drawn (Android's transparent copy).
+            ZStack {
+                Text(verbatim: "\(Self.selectionMark) \(label)").hidden()
+                Text(verbatim: selected ? "\(Self.selectionMark) \(label)" : label)
+            }
+                // …a label of 14.
+                .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
+                .foregroundStyle(ink)
                 .lineLimit(1)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.xs)
                 // docs/09 "Accessibility": in *both* directions. A height alone left a two-letter chip —
                 // "ko", "2" — a target barely half as wide as it is tall.
                 .frame(
@@ -541,18 +554,27 @@ public struct BlueprintChip: View {
                         ))
                 }
                 .contentShape(Rectangle())
+                .blueprintFocusRing()
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         // The mark is decoration to a screen reader, which is told the same fact as a trait.
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
-    /// 2026-10-10 (A-A3): an unselected chip's edge in the secondary colour, as the speaker badge's, so it reads as
-    /// a control against the page; off, it is dashed in the input border's colour, as a disabled button's is.
-    private var edge: Color {
-        guard isEnabled else { return blueprint.palette.inputBorder }
+    /// docs/09 "Disabled, focus and structure" (2026-10-15): off, a chip draws in `disabled`, words and dashed edge, as a
+    /// disabled button does.
+    private var ink: Color {
+        guard isEnabled else { return blueprint.palette.disabled }
         return selected ? blueprint.palette.accent : blueprint.palette.textMuted
+    }
+
+    /// docs/09 "Component measurements" — Chip: an unselected chip's edge is `inputBorder` (the secondary colour, 3:1
+    /// against the page), the chosen one's the accent; off, `disabled`.
+    private var edge: Color {
+        guard isEnabled else { return blueprint.palette.disabled }
+        return selected ? blueprint.palette.accent : blueprint.palette.inputBorder
     }
 }
 

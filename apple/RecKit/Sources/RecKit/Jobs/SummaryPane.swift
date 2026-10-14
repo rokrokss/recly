@@ -385,6 +385,7 @@ struct SummaryEditor: View {
     let save: () -> Void
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
+    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -396,13 +397,9 @@ struct SummaryEditor: View {
                     .font(blueprint.fonts.bodySmall)
                     .contentDirection(text)
                     .foregroundStyle(blueprint.palette.text)
-                    // A field's 10 × 9, less the inset the text view keeps of its own on each platform.
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, Self.verticalInset)
-                    .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
-                    }
+                    .focused($focused)
+                    // A field's 12 × 8, less the inset the text view keeps of its own on each platform.
+                    .fieldBox(focused: focused, inset: FieldInset.textView)
                     .accessibilityLabel(Text(verbatim: loc("Summary")))
                     .accessibilityIdentifier("summary-edit-text")
                 Text(verbatim: loc(staysHere
@@ -429,12 +426,6 @@ struct SummaryEditor: View {
         .interactiveDismissDisabled(changed)
         #endif
     }
-
-    #if os(iOS)
-    private static let verticalInset: CGFloat = 1
-    #else
-    private static let verticalInset: CGFloat = 9
-    #endif
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }

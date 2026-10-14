@@ -31,12 +31,15 @@ public struct TextLink: View {
                 // line is what a colour-blind reader finds the link by (docs/09 "Every state is color + text").
                 .modifier(DottedUnderline(color: blueprint.palette.accent.opacity(0.7), dot: blueprint.line))
                 .fixedSize(horizontal: false, vertical: true)
+                // docs/09 "Disabled, focus and structure": a link shows the ring too — round its words, not its target.
+                .blueprintFocusRing(radius: 0)
                 .padding(.vertical, reach)
                 .frame(minWidth: minTouch, alignment: .leading)
                 .contentShape(Rectangle())
                 .padding(.vertical, -reach)
         }
         .buttonStyle(Pressed())
+        .focusEffectDisabled()
         .accessibilityRemoveTraits(.isButton)
         .accessibilityAddTraits(.isLink)
     }

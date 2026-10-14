@@ -185,8 +185,9 @@ public struct StatusBadge: View {
                 words.lineLimit(1).fixedSize()
             }
         }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
+            // docs/09 "Component measurements" — Status badge: padding 8 × 4, radius 2.
+            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.badge)
                     .strokeBorder(status.tone.edge(blueprint.palette), lineWidth: blueprint.line)
