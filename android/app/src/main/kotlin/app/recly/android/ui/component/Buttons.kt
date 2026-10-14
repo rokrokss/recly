@@ -1,6 +1,13 @@
 package app.recly.android.ui.component
 
 import android.os.SystemClock
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,7 +44,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import app.recly.android.R
 import app.recly.android.ui.theme.ButtonMinWidth
+import app.recly.android.ui.theme.LocalReduceMotion
 import app.recly.android.ui.theme.MinTouch
+import app.recly.android.ui.theme.Motion
 import app.recly.android.ui.theme.ProcessingPhase
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
@@ -63,12 +72,15 @@ fun BlueprintButton(
     monospace: Boolean = false,
     /** [ButtonMinWidth] for a worded button; [MinTouch] for data and for Close, Delete and Cancel. */
     minWidth: Dp = if (monospace) MinTouch else ButtonMinWidth,
-) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false)
+) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false, fade = false)
 
 /**
  * [BlueprintButton]'s box. [working] is [ProcessingButton]'s "…" and "✓" (docs/09 "Disabled, focus and structure"):
  * it cannot be pressed meanwhile, but it is not disabled — it keeps its tone's ink, edge and fill, because that state
  * is what the user is meant to read. Only a button that is genuinely unavailable draws in `disabled`.
+ *
+ * [fade] cross-fades the words when they change — [ProcessingButton]'s label → "…" → "✓", in 150 ms as RecKit's does,
+ * and at once with reduce motion (docs/09 "Motion").
  */
 @Composable
 private fun ButtonBox(
@@ -81,6 +93,7 @@ private fun ButtonBox(
     monospace: Boolean,
     minWidth: Dp,
     working: Boolean,
+    fade: Boolean,
 ) {
     val palette = blueprint
     val drawnEnabled = enabled || working
@@ -120,24 +133,43 @@ private fun ButtonBox(
             )
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Space.s, vertical = Space.xs),
-        horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        leading?.let {
-            Text(
-                it,
-                style = if (it == "+") MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelLarge,
-                color = ink,
-                modifier = if (it == "+") Modifier.clearAndSetSemantics { } else Modifier,
-            )
+        val words: @Composable (Pair<String?, String>) -> Unit = { (lead, text) ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
+                lead?.let {
+                    Text(
+                        it,
+                        style = if (it == "+") MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelLarge,
+                        color = ink,
+                        modifier = if (it == "+") Modifier.clearAndSetSemantics { } else Modifier,
+                    )
+                }
+                // docs/09 "Typography": a button's label is 14, sans or mono.
+                Text(
+                    text,
+                    style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge,
+                    color = ink,
+                    maxLines = 3,
+                )
+            }
         }
-        // docs/09 "Typography": a button's label is 14, sans or mono.
-        Text(
-            label,
-            style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge,
-            color = ink,
-            maxLines = 3,
-        )
+        if (fade) {
+            val reduce = LocalReduceMotion.current
+            AnimatedContent(
+                targetState = leading to label,
+                transitionSpec = {
+                    val spec: FiniteAnimationSpec<Float> = if (reduce) snap() else tween(Motion.BADGE_FADE_MS, easing = Motion.Standard)
+                    // Words only: the box takes the new width at once, as it did before the fade.
+                    (fadeIn(spec) togetherWith fadeOut(spec)).using(null)
+                },
+                contentAlignment = Alignment.Center,
+                label = "processing",
+            ) { words(it) }
+        } else {
+            words(leading to label)
+        }
     }
 }
 
@@ -290,41 +322,22 @@ fun ProcessingButton(
         }
     }
 
-    when (phase) {
-        ProcessingPhase.IDLE -> BlueprintButton(
-            label = label,
-            onClick = {
-                startedAt = SystemClock.elapsedRealtime()
-                phase = ProcessingPhase.PROCESSING
-                onClick()
-            },
-            modifier = modifier,
-            tone = tone,
-            enabled = enabled,
-        )
-
-        ProcessingPhase.PROCESSING -> ButtonBox(
-            label = stringResource(R.string.action_processing),
-            onClick = {},
-            modifier = modifier,
-            tone = tone,
-            enabled = false,
-            leading = null,
-            monospace = false,
-            minWidth = ButtonMinWidth,
-            working = true,
-        )
-
-        ProcessingPhase.DONE -> ButtonBox(
-            label = label,
-            onClick = {},
-            modifier = modifier,
-            tone = tone,
-            enabled = false,
-            leading = stringResource(R.string.action_done),
-            monospace = false,
-            minWidth = ButtonMinWidth,
-            working = true,
-        )
-    }
+    // One button whatever the phase, so its words cross-fade between them rather than the button being swapped.
+    ButtonBox(
+        label = if (phase == ProcessingPhase.PROCESSING) stringResource(R.string.action_processing) else label,
+        onClick = {
+            if (phase != ProcessingPhase.IDLE) return@ButtonBox
+            startedAt = SystemClock.elapsedRealtime()
+            phase = ProcessingPhase.PROCESSING
+            onClick()
+        },
+        modifier = modifier,
+        tone = tone,
+        enabled = enabled && phase == ProcessingPhase.IDLE,
+        leading = if (phase == ProcessingPhase.DONE) stringResource(R.string.action_done) else null,
+        monospace = false,
+        minWidth = ButtonMinWidth,
+        working = phase != ProcessingPhase.IDLE,
+        fade = true,
+    )
 }
