@@ -2164,11 +2164,12 @@ The principle in one line: **intent, not decoration**.
 - **Typography**: UI body = the platform system sans-serif (Roboto / SF Pro / Segoe UI — no bundled local fonts; Korean glyphs
   are guaranteed). **Data = monospace** (Android `FontFamily.Monospace`/Roboto Mono, Apple SF Mono, Windows
   Cascadia/Consolas): timer `12:34`, part `p001`, file names, bytes, status words (`Waiting for Drive`), device ID. Scale:
-  12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation. Nothing is smaller than 12, watches included. The timer is mono at regular
+  12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation. Nothing is smaller than 12, watches included — on Wear at its 227dp
+  layout basis, which a smaller face scales as a whole (touch targets excepted: they stay 48 on every face). The timer is mono at regular
   weight with 1 of tracking on every shell; a button's label is 14 whether it is sans or mono (2026-10-15). Line height is 1.4 for sans and 1.35
   for mono on the Kotlin shells; Apple keeps the platform's own.
   - **Watches** have their own sizes, fitted to the round and square faces they were laid out on (2026-09-29 Play review): Wear timer 34, label 13,
-    small 12; Apple Watch timer 20, status 14. Status words are mono there too.
+    small 12; Apple Watch timer 20, status 14. Status words are mono there too, and an idle record node is filled with `surface`, as on the phones.
 - **Time format** (2026-10-08, user decision): under an hour `MM:SS` (`02:03`), from an hour `HH:MM:SS` (`01:02:03`). Every time inside one
   recording's screen — the detail clock, transcript time buttons, highlight ticks and their menus, find and search hit times — takes its format
   from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches, the `Highlight · …`
