@@ -7,17 +7,20 @@ import Foundation
 /// the stop), so this is a call into the same model the screen is drawn from, never a second one.
 @MainActor
 protocol RecordingCommands: AnyObject {
-    /// Starts a recording with the fixed recording processing settings (docs/05).
+    /// Starts a recording with the fixed recording processing settings (docs/05) — or, while the consent
+    /// reminder is still owed, raises it on the Record tab and starts once it is confirmed (docs/12 M8).
     ///
-    /// - Returns: nil when the recording started, or the sentence to report when the app refused
-    ///   to start one from the background (docs/12 M8: the consent reminder is still owed).
+    /// - Returns: nil when the recording started or the reminder is up, or the sentence to report when
+    ///   the app refused to start one (a disconnect is running).
     func startFromIntent() async -> String?
 
     func stopFromIntent() async
+
+    /// docs/09 "Highlights": a mark on the recording that is running, at the recorder's clock.
+    func highlightFromIntent() async
 }
 
-/// docs/12 M8: what the intent tells the user when the app would not start a recording nobody is
-/// there to consent to. `AppIntents` reads a thrown `CustomLocalizedStringResourceConvertible` out
+/// What the intent tells the user when the app would not start a recording — a disconnect is running. `AppIntents` reads a thrown `CustomLocalizedStringResourceConvertible` out
 /// to whoever asked — Siri says it, Shortcuts shows it — which is the only channel a background
 /// intent has; the reason is made in the app's language by the model (docs/07 rule 3).
 struct RecordingRefused: Error, CustomLocalizedStringResourceConvertible {
@@ -68,6 +71,21 @@ struct StopRecordingIntent: LiveActivityIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         await RecordingIntentTarget.commands?.stopFromIntent()
+        return .result()
+    }
+}
+
+/// docs/09 "Highlights": "Add a highlight with Recly" — a mark on the running recording, the iPhone's counterpart
+/// of the Mac's intent. A `LiveActivityIntent` for the stop's reason: it runs in the app's process, where the
+/// recording is, without bringing the app to the front.
+struct AddHighlightIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Add Highlight"
+
+    init() {}
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        await RecordingIntentTarget.commands?.highlightFromIntent()
         return .result()
     }
 }

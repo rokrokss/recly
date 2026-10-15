@@ -65,9 +65,7 @@ struct ShareMenu: View {
     /// Why a format cannot be had right now, nil when it can.
     private func reason(_ format: ShareFormat) -> String? {
         if format == .summary { return detail.summaryExportReason }
-        if !format.needsTranscript {
-            return detail.audioUnavailable ? RecKitStrings.localized("No audio on this device") : nil
-        }
+        if !format.needsTranscript { return detail.audioExportReason }
         return detail.document == nil || detail.availability == .empty ? RecKitStrings.localized("No transcript yet") : nil
     }
 

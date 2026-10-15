@@ -15,6 +15,8 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
     private var queue: WatchTransferQueue?
     /// docs/07 rule 2: the phone's language setting, which the watch follows.
     var onLanguage: ((AppLanguage.Choice) -> Void)?
+    /// Every ack the queue has acted on — true when it finished a recording (`ack-meta ok:true`).
+    var onAck: ((Bool) -> Void)?
 
     private let session: WCSession = .default
     private let logger = Logger(subsystem: CoreBridge.appName, category: "transfer")
@@ -70,7 +72,10 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
             return
         }
         guard let queue else { return }
-        Task { await queue.receive(ack) }
+        Task { [weak self] in
+            let completed = await queue.receive(ack)
+            self?.onAck?(completed)
+        }
     }
 
     /// A hint, and logged as one: the bytes left this device, which is not the phone having hashed

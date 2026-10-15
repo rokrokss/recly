@@ -200,6 +200,8 @@ public struct BlueprintDialogSheet<Content: View>: View {
 public enum DialogTone: Sendable {
     case body
     case muted
+    /// Something to wait out or put right first — not a failure (2026-10-10, 2.10).
+    case warning
     case danger
 }
 
@@ -226,6 +228,7 @@ public struct BlueprintDialogText: View {
         switch tone {
         case .body: return blueprint.palette.text
         case .muted: return blueprint.palette.textMuted
+        case .warning: return BadgeTone.warning.ink(blueprint.palette)
         case .danger: return blueprint.palette.danger
         }
     }

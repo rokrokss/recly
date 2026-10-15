@@ -158,9 +158,10 @@ struct MenuPopover: View {
                     }
                 } else {
                     // ⌘R, the popover's own as ⌘. is Stop's — not a global hot key (2026-10-10 took those out).
+                    // Off while the recorder is Starting or Saving: there is nothing to start until it is idle.
                     BlueprintButton(loc("Start recording"), tone: .primary) { model.start() }
                         .keyboardShortcut("r")
-                        .disabled(!model.isReady)
+                        .disabled(!model.isReady || !model.isIdle)
                 }
                 Spacer(minLength: 0)
             }
@@ -280,7 +281,8 @@ struct MenuPopover: View {
                     .onAppear { Task { await model.loadMoreRecents() } }
             }
             if model.recents.isEmpty {
-                Text("No recordings yet")
+                // Loading… until the first read has answered, as the phone's list and the Details window say.
+                Text(verbatim: model.recentsLoading ? RecKitStrings.localized("Loading…") : loc("No recordings yet"))
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                     .padding(Space.l)
@@ -369,6 +371,12 @@ struct MenuPopover: View {
                 if item.link != nil {
                     BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }
+                // docs/10 "Drive out of space": nothing here retries on its own, and the only thing that changes the
+                // answer is on Google's storage page — offered on the row as on the phone's.
+                if item.alert == .needsSpace {
+                    BlueprintButton(FixSurface.driveStorage.label) { model.openDriveStorage() }
+                        .accessibilityIdentifier("open-storage")
+                }
                 // docs/03 "Storage location": an iCloud or local folder recording has no web page; its folder
                 // is in Finder.
                 if item.cloudFolder != nil {
@@ -451,6 +459,14 @@ struct SettingsPane: View {
             } else {
                 drive(true)
             }
+            // docs/07 rule 3: what the last Connect or Disconnect came to, under the Drive row it was pressed on —
+            // red for a connection that failed, the warning tone for what stands in the way (2026-10-10, 2.10).
+            if let note = model.authNote {
+                hint(note, tone: .danger)
+            }
+            if let message = model.driveMessage {
+                hint(message.text, tone: DisconnectGuard.isBlocker(message) ? .warning : .neutral)
+            }
 
             // docs/07 rule 2·3: the same block the phone's settings tab draws, so it is drawn
             // once (RecKit).
@@ -461,14 +477,23 @@ struct SettingsPane: View {
             ThemeSection(theme: theme)
 
             section(loc("Capture"))
+            // docs/12 "Permissions": always here, quiet — the microphone is the system's to give back, and this is
+            // the way to the pane that does, before a start has ever been refused.
+            SectionRow(title: loc("Microphone")) {
+                BlueprintButton(loc("Open System Settings"), tone: .quiet) { model.openMicrophoneSettings() }
+            }
             // docs/12 "Runner": `SMAppService`, written from the system's own answer.
             SwitchRow(
                 title: loc("Launch at login"),
                 isOn: Binding(get: { model.launchAtLogin }, set: model.setLaunchAtLogin)
             )
-            // docs/12 M8: the reminder is on by default and this is where it goes off — and back
-            // on, which the alert's own "Do not ask again" cannot do.
-            SwitchRow(title: loc("Consent check before recording"), isOn: $model.consentReminder)
+            // docs/12 M8: the reminder is on by default and this is where it goes off — and back on, which the
+            // panel's own "Do not ask again" cannot do. The phone asks once; the subtitle says the Mac does not.
+            SwitchRow(
+                title: loc("Consent reminder"),
+                subtitle: loc("Asked before every recording."),
+                isOn: $model.consentReminder
+            )
 
             // docs/05: the recording processing settings. The same block the phone's settings tab
             // draws (RecKit).
@@ -493,6 +518,15 @@ struct SettingsPane: View {
             VStack(alignment: .leading, spacing: Space.xs) {
                 mono("recly \(CoreBridge.appVersion) (build \(CoreBridge.appBuild)) · macos \(CoreBridge.systemVersion)")
                 mono("device \(model.deviceId)")
+                // docs/09 trend 6: where this Mac keeps its data, and the policy the phones link to.
+                HStack(spacing: Space.s) {
+                    BlueprintButton(loc("Open data folder"), tone: .quiet) { model.openDataFolder() }
+                        .accessibilityIdentifier("open-data-folder")
+                    TextLink(RecKitStrings.localized("Privacy Policy")) {
+                        NSWorkspace.shared.open(PrivacyLinks.recly(locale: locale))
+                    }
+                    .accessibilityIdentifier("privacy-policy")
+                }
                 Text(verbatim: loc("Open-source notices"))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
@@ -530,6 +564,15 @@ struct SettingsPane: View {
 
     private func section(_ title: String) -> some View {
         SectionHeader(title).padding(.horizontal, Space.m)
+    }
+
+    private func hint(_ text: String, tone: BadgeTone) -> some View {
+        Text(verbatim: text)
+            .font(blueprint.fonts.sans(TypeSize.small))
+            .foregroundStyle(tone.ink(blueprint.palette))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
     }
 
     private func mono(_ text: String) -> some View {

@@ -11,7 +11,9 @@ import Foundation
 /// docs/07 rule 3: [note] is a *key* the model kept rather than a sentence it resolved, so the line
 /// follows a language change where it stands. It is resolved through [AppStrings] and not through
 /// RecKit's own catalog because it is the shell's key — "Waiting" is written in three catalogs
-/// because three apps say it — and a key no catalog knows comes back unchanged.
+/// because three apps say it — and a key no catalog knows comes back unchanged. The recorder's own
+/// state words are RecKit's — `Starting` · `Recording` · `Saving`, the phones' words on every Apple
+/// shell — so they are one set of words rather than three.
 public enum RecorderStatusLine {
 
     /// - Parameter message: the shell's [UiMessage] slot, which outranks the note while the recorder is idle.
@@ -24,9 +26,9 @@ public enum RecorderStatusLine {
         case .idle:
             if let message { return message.text }
             return AppStrings.localized(note)
-        case .starting: return AppStrings.localized("Opening")
-        case .recording: return AppStrings.localized("Recording")
-        case .stopping: return AppStrings.localized("Saving")
+        case .starting: return RecKitStrings.localized("Starting")
+        case .recording: return RecKitStrings.localized("Recording")
+        case .stopping: return RecKitStrings.localized("Saving")
         }
     }
 }

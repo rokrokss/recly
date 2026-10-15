@@ -156,11 +156,13 @@ public struct RecentItem: Identifiable, Sendable {
     public var waitingForModel: Bool { state == "Waiting for speech model" }
 
     /// The tone [reason] is drawn in: red for a failure, and the warning tone of the badge for a job
-    /// that is only waiting (consent, sign-in, Drive space, the speech model, iCloud, the local folder).
+    /// that is only waiting (consent, sign-in, Drive space, the speech model, iCloud, the local folder, and a
+    /// retry the queue will make on its own).
     public var reasonTone: BadgeTone {
-        alert?.isWait == true || state == "Waiting for iCloud" || state == "Waiting for the local folder"
-            ? .warning : .danger
+        alert?.isWait == true || Self.waitingStates.contains(state) ? .warning : .danger
     }
+
+    private static let waitingStates: Set<String> = ["Waiting for iCloud", "Waiting for the local folder", "Retry pending"]
 
     public init(
         id: String,
@@ -353,10 +355,12 @@ public enum Recents {
     /// The Android ledger's counting rule (`JobsScreen.waiting` · `JobsScreen.failing`): a
     /// recording without a job is finished, while one that was too short counts with the failures
     /// because it is a recording that produced nothing.
-    public static func summary(_ items: [RecentItem]) -> String {
+    /// - Parameter count: how many recordings there are, where [items] is only a page of them (the Mac's
+    ///   Details window); the waiting and failed counts are read off the rows that are loaded.
+    public static func summary(_ items: [RecentItem], count: Int? = nil) -> String {
         let waitingCount = items.filter { waiting.contains($0.state) }.count
         let failedCount = items.filter { failing.contains($0.state) }.count
-        var parts = [String(items.count)]
+        var parts = [String(count ?? items.count)]
         if waitingCount > 0 { parts.append(RecKitStrings.localized("%@ waiting", String(waitingCount))) }
         if failedCount > 0 { parts.append(RecKitStrings.localized("%@ failed", String(failedCount))) }
         return parts.joined(separator: " · ")

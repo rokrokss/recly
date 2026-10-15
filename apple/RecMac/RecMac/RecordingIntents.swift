@@ -25,7 +25,8 @@ struct StopRecordingIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         await MenuModel.shared.whenReady()
-        if MenuModel.shared.canStop { MenuModel.shared.stop() }
+        // A recording still starting is stopped too: the session parks the stop and serves it once there is one.
+        if !MenuModel.shared.isIdle { MenuModel.shared.stop() }
         return .result()
     }
 }

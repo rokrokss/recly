@@ -25,13 +25,20 @@ struct SummaryPane: View {
                     if model.summarizing { running }
                 case .running(let run):
                     running
-                    if let previous = run.previous { text(previous) }
+                    // The last one stays as it was, with its model and Copy all, while the new one is written.
+                    if let previous = run.previous {
+                        text(previous)
+                        footer(previous)
+                    }
                 case .ready(let ready):
                     text(ready.summary)
                     footer(ready.summary)
                 case .failed(let failed):
                     notice(failed.reason)
-                    if let previous = failed.previous { text(previous) }
+                    if let previous = failed.previous {
+                        text(previous)
+                        footer(previous)
+                    }
                 }
             }
             .padding(Space.m)
@@ -383,9 +390,11 @@ struct SummaryEditor: View {
     let saving: Bool
     let cancel: () -> Void
     let save: () -> Void
+    /// The text view has the cursor — the page's, so the iPhone can put the Transcript | Summary chips away while
+    /// the keyboard is up.
+    var focused: FocusState<Bool>.Binding
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
-    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -397,9 +406,9 @@ struct SummaryEditor: View {
                     .font(blueprint.fonts.bodySmall)
                     .contentDirection(text)
                     .foregroundStyle(blueprint.palette.text)
-                    .focused($focused)
+                    .focused(focused)
                     // A field's 12 × 8, less the inset the text view keeps of its own on each platform.
-                    .fieldBox(focused: focused, inset: FieldInset.textView)
+                    .fieldBox(focused: focused.wrappedValue, inset: FieldInset.textView)
                     .accessibilityLabel(Text(verbatim: loc("Summary")))
                     .accessibilityIdentifier("summary-edit-text")
                 Text(verbatim: loc(staysHere

@@ -248,7 +248,8 @@ public struct ProcessingSettingsView: View {
                             .disabled(model.busy || download.capturing)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    if let message = download.message { SectionFootnote(message.text) }
+                    // A download that failed or stopped short is a failure, in red (2026-10-10, 2.10).
+                    if let message = download.message { SectionFootnote(message.text, tone: .danger) }
                     // docs/09 "On-device speaker separation": the diarization models ship with the app, so
                     // the row is a name and nothing to do.
                     if model.local?.supportsDiarization == true {
@@ -323,7 +324,7 @@ public struct ProcessingSettingsView: View {
                     SettingsFileButtons(model: model)
                 }
             } else if let message = model.message {
-                SectionFootnote(message.text)
+                SectionFootnote(message.text, tone: model.messageTone)
             }
         }
         .task { await model.refreshProviders(); await model.refreshLocal() }

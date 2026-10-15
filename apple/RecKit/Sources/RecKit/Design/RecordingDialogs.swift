@@ -167,9 +167,10 @@ public struct DisconnectDialog: View {
                 .accessibilityIdentifier("disconnect-confirm")
         } content: {
             BlueprintDialogText(loc("Recly loses Drive access on all devices connected to this Google account. Pending work pauses until you reconnect the same account. Recordings and settings stay."), tone: .muted)
-            // docs/03: cleanup must not race a capture or a job that still writes account state.
+            // docs/03: cleanup must not race a capture or a job that still writes account state. Something to wait
+            // out, not a failure — the warning tone (2026-10-10, 2.10).
             if let blocker = prompt.blocker {
-                BlueprintDialogText(blocker, tone: .danger)
+                BlueprintDialogText(blocker, tone: .warning)
                     .accessibilityIdentifier("disconnect-blocked")
             }
 

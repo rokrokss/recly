@@ -100,6 +100,12 @@ final class MenuModel: ObservableObject {
     /// docs/09 screen principle 5: where the settings' Connect is, which its button shows in place — "…"
     /// while the sign-in runs, ✓ when Drive is connected, and back to itself when it was not.
     @Published private(set) var signInState: ProcessingState = .idle
+    /// docs/07 rule 3: what became of the last sign-in attempt, kept as the failure rather than as words — said
+    /// under the Drive row in Settings ([authNote]), as the phone says it.
+    @Published private(set) var authError: Error?
+    /// What the last disconnect — or a Connect it stood in the way of — had to say, under the Drive row in
+    /// Settings; the popover's line says it too, through [message], until the next note.
+    @Published private(set) var driveMessage: UiMessage?
     /// docs/08 Result files: the recording the transcript window is showing, once one is picked.
     @Published private(set) var detail: RecordingDetailModel?
     /// docs/12 "Runner": `SMAppService`. Written from the system's own answer, never from the
@@ -162,9 +168,15 @@ final class MenuModel: ObservableObject {
         debt: { [weak self] in self?.revokeDebt ?? false },
         publishPhase: { [weak self] in self?.disconnectPhase = $0 },
         publishDebt: { [weak self] in self?.revokeDebt = $0 },
-        publishMessage: { [weak self] in self?.message = $0 },
+        publishMessage: { [weak self] in
+            self?.message = $0
+            self?.driveMessage = $0
+        },
         accountChanged: { [weak self] in self?.account = $0 },
-        accountRevoked: { [weak self] in self?.account = nil },
+        accountRevoked: { [weak self] in
+            self?.account = nil
+            self?.authError = nil
+        },
         refresh: { [weak self] in await self?.refreshRecents() }
     )
     /// docs/12 "Meeting detection". Built lazily because it closes over `self`.
@@ -343,15 +355,10 @@ final class MenuModel: ObservableObject {
     /// Nothing in flight — no recording to lose if the app goes away now.
     var isIdle: Bool { state == .idle }
 
-    /// The stop is offered while the microphone is still opening, too — the session parks it and
-    /// serves it the moment there is a recording, which is the whole point of parking it. While a
-    /// stop is already running there is nothing left to offer.
-    var canStop: Bool {
-        switch state {
-        case .starting, .recording: return true
-        case .idle, .stopping: return false
-        }
-    }
+    /// Only a recording that is running can be stopped. While the microphone is still opening the
+    /// control is off rather than a Stop — the user waits for the start to answer, as on every shell —
+    /// and a stop that arrives then anyway (an intent, `⌘Q`) is still parked by the session and served.
+    var canStop: Bool { isRecording }
 
     /// The menu's first line. The state has the say whenever a recording is in flight; [note] is
     /// what is left to show when there is none.
@@ -452,7 +459,7 @@ final class MenuModel: ObservableObject {
                 // microphone-only memo's own idle microphone is not a meeting that has ended.
                 detector.recordingChanged(mode == .meeting)
             } catch let error as RecorderError where error.kind == .microphoneDenied {
-                note = "The microphone permission is needed"
+                note = "The microphone permission is required"
                 presentMicrophoneDenied()
             } catch let error as RecorderError where error.kind == .systemAudioUnavailable {
                 note = "System audio permission is needed"
@@ -482,7 +489,9 @@ final class MenuModel: ObservableObject {
         }
     }
 
-    private func finish(askingForTitle: Bool) async {
+    /// - Parameter failed: the capture ended on an error rather than at a stop — no title is asked, and "The
+    ///   recording failed" is what the line says, over whatever the queue answered.
+    private func finish(askingForTitle: Bool, failed: Bool = false) async {
         guard let session else { return }
         // A stop while the microphone is still opening is parked inside the session and served
         // the moment there is a recording to stop; one while a stop is already running is
@@ -499,15 +508,17 @@ final class MenuModel: ObservableObject {
             logger.error("shell.recording.deferred id=\(recordingId, privacy: .public) pending=\(pending, privacy: .public)")
 
         case .finalized(let outcome):
+            var titleRefused = false
             if askingForTitle {
                 switch askForTitle() {
                 case .save(let title, let participants):
                     if title != nil || participants != nil {
-                        _ = try? await bridge?.core.recordings.updateTitle(
+                        let saved = try? await bridge?.core.recordings.updateTitle(
                             recordingId: outcome.recordingId,
                             title: title,
                             participants: participants.map { KotlinInt(int: Int32($0)) }
                         )
+                        titleRefused = saved?.boolValue != true
                     }
                 case .discard, nil:
                     if detail?.recordingId == outcome.recordingId { detail = nil }
@@ -533,12 +544,17 @@ final class MenuModel: ObservableObject {
             // already did: a recording whose job could not be made is one nothing will ever upload,
             // and the menu said "Waiting" over it.
             do {
-                _ = try await bridge?.core.enqueue(recordingId: outcome.recordingId)
+                let result = try await bridge?.core.enqueue(recordingId: outcome.recordingId)
                 // docs/12 "Runner" (a): the job exists now, so a pass runs immediately rather than
                 // waiting for the five-minute timer.
                 runner?.jobsDue()
                 waveforms?.enqueue(recordingId: outcome.recordingId)
                 note = "Waiting"
+                // After the note, which clears it: what the queue made of the recording (`StopLine`) — a
+                // title that came too late, or a capture that failed, said over it.
+                message = failed ? StopLine.recordingFailed
+                    : titleRefused ? StopLine.titleTooLate
+                    : result.flatMap(StopLine.message)
                 logger.info(
                     """
                     shell.recording.stop id=\(outcome.recordingId, privacy: .public) \
@@ -547,7 +563,8 @@ final class MenuModel: ObservableObject {
                     """
                 )
             } catch {
-                note = "Could not create the job"
+                note = "Waiting"
+                message = failed ? StopLine.recordingFailed : StopLine.enqueueFailed
                 logger.error(
                     "shell.recording.enqueue.failed error=\(String(describing: error), privacy: .public)"
                 )
@@ -581,15 +598,17 @@ final class MenuModel: ObservableObject {
         }
     }
 
-    /// A fatal capture error ends the recording the way the menu's own stop does: there is nobody
-    /// to ask for a title, so what was captured is filed as it stands. A boundary that could not be
-    /// registered is not fatal — the encoder is still running and the part is on disk.
+    /// A fatal capture error ends the recording without the title panel: nobody stopped it, so nobody
+    /// is asked for a name — what was captured is filed as it stands, queued untitled, and the line says
+    /// the recording failed. A boundary that could not be registered is not fatal — the encoder is still
+    /// running and the part is on disk.
     ///
-    /// A start that is still in flight is not abandoned: the session parks the stop and serves it
-    /// the moment the recording exists.
+    /// Through the quit gate, as a stop is; a start that is still in flight is not abandoned: the session
+    /// parks the stop and serves it the moment the recording exists.
     private func captureFailed(_ error: RecorderError) {
         logger.error("shell.recording.error fatal=\(error.fatal, privacy: .public) \(error.description, privacy: .public)")
-        if error.fatal { stop() }
+        guard error.fatal else { return }
+        quit.finish { [weak self] in await self?.finish(askingForTitle: false, failed: true) }
     }
 
     // MARK: - Meeting detection (docs/12 "Meeting detection", ADR-011)
@@ -691,6 +710,14 @@ final class MenuModel: ObservableObject {
     /// False when the build has no usable Google client configuration.
     var canSignIn: Bool { GoogleAuth.isConfigured }
 
+    /// The last sign-in failure in words, made where Settings draws it (docs/07 rule 3): `GoogleAuth.Failure.message`
+    /// for the ones that say what to do (a build with no client configured), "Could not connect Drive" for the rest —
+    /// the phone's key and words.
+    var authNote: String? {
+        guard let authError else { return nil }
+        return (authError as? GoogleAuth.Failure)?.message ?? AppStrings.localized("The sign-in failed")
+    }
+
     /// docs/03: why the popover's sign-in is refused, or nil when it is not. A second account signed
     /// in over a disconnect that still owes its local clean-up is one the retry could revoke by
     /// mistake, so the sign-in is what waits.
@@ -699,6 +726,7 @@ final class MenuModel: ObservableObject {
     func signIn() {
         if let blocker = signInBlocker {
             message = blocker
+            driveMessage = blocker
             return
         }
         guard let auth else { return }
@@ -711,21 +739,26 @@ final class MenuModel: ObservableObject {
             defer { if existing == nil { anchor.close() } }
             do {
                 account = try await auth.signIn(presenting: anchor)
+                authError = nil
                 // What the last disconnect said is over once Drive is connected again.
                 message = nil
+                driveMessage = nil
                 signInState = .done
                 logger.info("auth.signIn.ok")
                 // docs/06: a job parked in NEEDS_AUTH resumes when the user signs in.
                 await unpark()
             } catch GoogleAuth.Failure.canceled {
                 // The user closed the consent sheet. Nothing failed, so nothing is said.
+                authError = nil
                 signInState = .failed
                 logger.info("auth.signIn.canceled")
             } catch {
+                // Said under the Drive row in Settings, where the Connect was pressed — no panel of its own; the
+                // popover's line keeps the short copy.
+                authError = error
                 signInState = .failed
                 note = "Sign-in failed"
                 logger.error("auth.signIn.failed error=\(String(describing: error), privacy: .public)")
-                presentAuthFailure(error)
             }
         }
     }
@@ -736,11 +769,13 @@ final class MenuModel: ObservableObject {
     func signOut() {
         if let blocker = signInBlocker {
             message = blocker
+            driveMessage = blocker
             return
         }
         Task {
             await auth?.signOut()
             account = nil
+            authError = nil
             logger.info("auth.signOut")
         }
     }
@@ -918,18 +953,20 @@ final class MenuModel: ObservableObject {
             guard outcome != .unavailable else { return false }
             defer { Task { await self.refreshRecents() } }
             switch outcome {
+            // The core stops an upload before it deletes, so what can still hold a recording here is a
+            // transcription on this Mac that did not stop in time.
             case .busy:
-                self.note = "Still uploading — try again once it has finished"
+                self.say(.key("Still transcribing on this device — try again once it has finished"))
                 return false
 
             case .deleted(let driveError):
                 if let driveError {
-                    self.message = request.folder
+                    self.say(request.folder
                         ? .key("Deleted here, but not from the local folder: %@", args: [.verbatim(driveError)])
                         : .key(
                             request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
                             args: [.verbatim(driveError)]
-                        )
+                        ))
                 }
                 return driveError == nil
 
@@ -1009,13 +1046,19 @@ final class MenuModel: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
-    /// docs/10: `FAILED`·`SKIPPED_SHORT`·`NEEDS_AUTH` go back to `PENDING` with a fresh budget.
+    /// docs/10: `FAILED`·`SKIPPED_SHORT`·`NEEDS_AUTH` go back to `PENDING` with a fresh budget — and a job
+    /// waiting for Drive (docs/06) is not one a retry can move: the sign-in is what it waits for, and a sign-in
+    /// that lands unparks it.
     func retry(_ item: RecentItem) {
+        if item.alert == .needsAuth {
+            signIn()
+            return
+        }
         guard let jobId = item.jobId else { return }
         perform {
             guard let core = self.bridge?.core else { return false }
             guard (try? await core.jobs.retry(jobId: jobId).boolValue) == true else {
-                self.note = "This cannot be retried right now"
+                self.say(.key("This cannot be retried right now"))
                 return false
             }
             self.runner?.jobsDue()
@@ -1026,6 +1069,35 @@ final class MenuModel: ObservableObject {
     func openInDrive(_ item: RecentItem) {
         guard let link = item.link else { return }
         NSWorkspace.shared.open(link)
+    }
+
+    /// docs/07 rule 3: what the last delete or retry from a list had to say — on the popover's line, and above
+    /// the list in the Details window, where the row it was asked from is ([listMessage]).
+    private func say(_ outcome: UiMessage) {
+        message = outcome
+        listMessage = outcome
+    }
+
+    /// The Details window's own copy of [message], for a delete or a retry: it outlives the popover's line, which
+    /// the next note replaces, and goes when it is dismissed or the next one is said.
+    @Published private(set) var listMessage: UiMessage?
+
+    func dismissListMessage() {
+        listMessage = nil
+    }
+
+    /// docs/12 "Permissions": the Microphone pane, from Settings — always offered, not only after a refusal.
+    func openMicrophoneSettings() {
+        guard let url = URL(string: Self.microphonePane) else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private static let microphonePane = "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+
+    /// docs/09 "About": this Mac's data — the database, the recordings not yet in storage, the logs' neighbours.
+    func openDataFolder() {
+        guard let directory = bridge?.dataDirectory else { return }
+        NSWorkspace.shared.open(directory)
     }
 
     /// docs/03 "Storage location": an iCloud recording's folder, in the iCloud Drive folder Finder shows — or a
@@ -1046,19 +1118,45 @@ final class MenuModel: ObservableObject {
     /// summary, when only the summary did.
     func showDetail(_ hit: SearchHit) {
         let title = hit.title ?? ""
-        showDetail(recordingId: hit.recordingId, title: title.isEmpty ? RecKitStrings.localized("Untitled") : title)
+        guard showDetail(recordingId: hit.recordingId, title: title.isEmpty ? RecKitStrings.localized("Untitled") : title)
+        else { return }
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: searchQuery, atSec: first.atSec) }
         detail?.opensOnSummary = hit.onlyInSummary
     }
 
-    private func showDetail(recordingId: String, title: String) {
-        guard let core = bridge?.core else { return }
+    /// Every way a recording is put in the Details window — a row, a search hit, the popover's Details, the same
+    /// row again — comes through here, so every one of them asks before an editor's changes are dropped.
+    ///
+    /// - Returns: false when the user kept editing, and the page stays as it is.
+    @discardableResult
+    private func showDetail(recordingId: String, title: String) -> Bool {
+        guard let core = bridge?.core, mayLeaveDetail() else { return false }
+        // docs/09 "Ask": the answer belongs to the page going away, not to the next one.
+        detail?.closeAsk()
         let model = RecordingDetailModel(core: core, recordingId: recordingId, title: title, playbackGate: playbackGate)
         // `Transcribe again` queues a job; the executor runs it now rather than at its next look.
         model.jobsDue = { [weak self] in self?.runner?.jobsDue() }
         // 2026-10-08 §7: a recording waiting for Drive offers the connection on its own page.
         model.connectDrive = { [weak self] in self?.signIn() }
+        // The recording's folder, from the More menu as from its row: Drive's page, or Finder for iCloud and the
+        // local folder. Read off the row when the page opens — a search hit older than the loaded page has none.
+        if let item = recents.first(where: { $0.id == recordingId }) {
+            if item.link != nil { model.openInDrive = { [weak self] in self?.openInDrive(item) } }
+            if item.cloudFolder != nil { model.showInFinder = { [weak self] in self?.showInFinder(item) } }
+        }
         detail = model
+        return true
+    }
+
+    /// docs/09 "Editing and speakers": the page holds changes nobody has saved — the same question its own Cancel
+    /// asks, before another recording (or none) takes its place or its window closes.
+    ///
+    /// - Returns: true when there is nothing to lose, or the user chose Discard.
+    func mayLeaveDetail() -> Bool {
+        guard let edits = detail?.unsavedEdits else { return true }
+        return BlueprintPanel.run { (finish: @escaping (Bool?) -> Void) in
+            DiscardEditsDialog(edits: edits, keep: { finish(false) }, discard: { finish(true) })
+        } == true
     }
 
     // MARK: - Search (docs/10 "Search", ux §6)
@@ -1108,8 +1206,10 @@ final class MenuModel: ObservableObject {
         importFailure = nil
         Task {
             for file in files {
-                // The file's own date when it has one; the core uses now otherwise.
-                let created = (try? file.resourceValues(forKeys: [.creationDateKey]))?.creationDate
+                // The file's own date when it has one — its creation, else when it was last written; the core
+                // uses now otherwise.
+                let values = try? file.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+                let created = values?.creationDate ?? values?.contentModificationDate
                 let startedAt = created.map {
                     KotlinInstant.companion.fromEpochMilliseconds(epochMilliseconds: Int64($0.timeIntervalSince1970 * 1000))
                 }
@@ -1288,24 +1388,13 @@ final class MenuModel: ObservableObject {
         return window
     }
 
-    /// The one failure worth a panel of its own is the placeholder client id: nothing the user does
-    /// in the app can fix it, and the README is where the fix is written down.
-    private func presentAuthFailure(_ error: Error) {
-        // docs/07 rule 4: `localizedDescription` is the *system's* language and belongs in the log
-        // line the caller already wrote, not on a panel the app has a sentence of its own for.
-        let message = (error as? GoogleAuth.Failure)?.message ?? AppStrings.localized("The sign-in failed")
-        _ = BlueprintPanel.run { (finish: @escaping (Bool?) -> Void) in
-            NoticePanel(title: AppStrings.localized("Google sign-in failed"), message: message) { finish(true) }
-        }
-    }
-
     /// docs/12 "Permissions": a refusal is not something the app can retry its way out of, so the answer
     /// is the deep link to the pane that can undo it.
     private func presentMicrophoneDenied() {
         presentPermission(
             title: AppStrings.localized("The microphone permission is required"),
             message: AppStrings.localized("Turn Recly on in System Settings > Privacy & Security > Microphone."),
-            pane: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+            pane: Self.microphonePane
         )
     }
 

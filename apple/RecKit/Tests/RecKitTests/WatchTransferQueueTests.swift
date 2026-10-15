@@ -84,13 +84,16 @@ final class WatchTransferQueueTests: XCTestCase {
     func testTheMetaAckIsWhatDeletesTheRecording() async throws {
         let queue = try await makeQueue(parts: 1)
         await queue.pump()
-        await queue.receive(partAck(1))
 
-        await queue.receive(.meta(recordingId: recordingId, ok: true, reason: nil, missing: []))
+        let finishedByPart = await queue.receive(partAck(1))
+        let finished = await queue.receive(.meta(recordingId: recordingId, ok: true, reason: nil, missing: []))
 
         let entries = await queue.entries
         XCTAssertEqual(recordings.deleted, [recordingId])
         XCTAssertEqual(entries, [])
+        // docs/13 WA5: the meta ack — and only it — is what the watch's "it is out of your hands" haptic waits for.
+        XCTAssertFalse(finishedByPart)
+        XCTAssertTrue(finished)
     }
 
     // MARK: - `ok:false` is never a completion
@@ -128,6 +131,11 @@ final class WatchTransferQueueTests: XCTestCase {
         XCTAssertEqual(entries.first?.failure, "SOMETHING_ELSE")
         XCTAssertEqual(recordings.deleted, [])
         XCTAssertTrue(FileManager.default.fileExists(atPath: partURL(1).path))
+        // Kept, and counted apart: "Transfer failed" rather than waiting for a send that will never come.
+        let waiting = await queue.waiting
+        let failed = await queue.failed
+        XCTAssertEqual(waiting, 0)
+        XCTAssertEqual(failed, 1)
     }
 
     /// `ack-meta ok:false` with a `missing` list is the phone saying it lost exactly those parts.

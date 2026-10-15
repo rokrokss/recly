@@ -704,36 +704,20 @@ final class DisconnectGateTests: XCTestCase {
     }
 }
 
-/// docs/12 M8 · ADR-011: the consent reminder is a question, and an entry point with nobody to ask
-/// cannot answer it on the user's behalf.
+/// docs/12 M8 · ADR-011: the consent reminder is a question, and a start from Siri, a Shortcut, the action
+/// button, the Control or a widget brings the app forward to have it asked rather than skipping it.
 final class BackgroundStartTests: XCTestCase {
 
-    override func tearDown() {
-        AppLanguage.current = .system
-        super.tearDown()
+    /// The regression the rule was written for: `startFromIntent` went straight to the recorder, so a first
+    /// meeting was recorded without the reminder the screen's own start cannot get past. It is asked instead —
+    /// and no longer refused in words, which left the user to find the Record button themselves.
+    func testAStartFromAnIntentAsksTheReminderWhileItIsStillOwed() {
+        XCTAssertEqual(BackgroundStart.next(askConsent: true), .askConsent)
     }
 
-    /// The regression: `startFromIntent` went straight to the recorder, so Siri, a Shortcut, the
-    /// action button and the Control all recorded a first meeting without the reminder the screen's
-    /// own start cannot get past.
-    func testABackgroundStartIsRefusedWhileTheReminderIsStillOwed() {
-        XCTAssertNotNil(BackgroundStart.refusal(askConsent: true))
-    }
-
-    /// Answered once, or switched off: every entry point starts as before.
-    func testABackgroundStartGoesAheadOnceTheReminderIsAnswered() {
-        XCTAssertNil(BackgroundStart.refusal(askConsent: false))
-    }
-
-    /// The refusal is read out by Siri and shown in Shortcuts, so it is a sentence and not a code.
-    func testTheRefusalSaysWhatToDoInBothLanguages() {
-        AppLanguage.current = .en
-        let english = BackgroundStart.refusal(askConsent: true)
-        AppLanguage.current = .ko
-        let korean = BackgroundStart.refusal(askConsent: true)
-
-        XCTAssertEqual(english, "Open Recly once to answer the recording reminder")
-        XCTAssertNotEqual(korean, english, "the catalog gave the key back")
+    /// Answered once, or switched off: every entry point starts at once.
+    func testAStartFromAnIntentGoesAheadOnceTheReminderIsAnswered() {
+        XCTAssertEqual(BackgroundStart.next(askConsent: false), .start)
     }
 }
 

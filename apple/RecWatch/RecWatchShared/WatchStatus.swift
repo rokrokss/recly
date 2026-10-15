@@ -20,16 +20,20 @@ struct WatchStatus: Codable, Equatable {
     /// Recordings the phone has not acked yet (docs/03: a part is deleted only after `ack-meta
     /// ok`). Worth showing: it is the answer to "can I take the watch off yet".
     var waiting = 0
+    /// Recordings the phone refused for good, kept on the watch with their audio — "Transfer failed", which
+    /// nothing will send again (Wear's badge).
+    var failed = 0
     /// docs/07 rule 2·3: the language the app is following — the phone's, which the watch has no
     /// setting of its own to disagree with. The extension links no RecKit and cannot read the
     /// setting itself, so it rides in the file with everything else the face is drawn from and the
     /// app rewrites it (and reloads the timelines) when it changes. Empty means the device's own.
     var language = ""
 
-    init(state: State = .idle, startedAt: Date? = nil, waiting: Int = 0, language: String = "") {
+    init(state: State = .idle, startedAt: Date? = nil, waiting: Int = 0, failed: Int = 0, language: String = "") {
         self.state = state
         self.startedAt = startedAt
         self.waiting = waiting
+        self.failed = failed
         self.language = language
     }
 
@@ -43,6 +47,7 @@ struct WatchStatus: Codable, Equatable {
         // Optional, and the synthesized encoder leaves it out entirely while nothing is recording.
         startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt)
         waiting = try container.decode(Int.self, forKey: .waiting)
+        failed = try container.decodeIfPresent(Int.self, forKey: .failed) ?? 0
         language = try container.decodeIfPresent(String.self, forKey: .language) ?? ""
     }
 }
@@ -61,11 +66,15 @@ extension WatchStatus {
         case recording
         /// Recordings the phone has not acked yet (the system's `arrow.up.square`).
         case waiting
+        /// Recordings the phone refused for good (the system's `exclamationmark.square`).
+        case failed
     }
 
-    /// A recording being made outranks recordings waiting to go: it is the one the tap acts on.
+    /// A recording being made outranks the queue: it is the one the tap is about. A transfer that failed
+    /// outranks one still waiting, as on Wear's screen — nothing will retry it.
     var mark: Mark {
         if isRecording { return .recording }
+        if failed > 0 { return .failed }
         return waiting > 0 ? .waiting : .record
     }
 
@@ -75,6 +84,7 @@ extension WatchStatus {
     /// VoiceOver says before it.
     var label: String {
         if isRecording { return "Recording" }
+        if failed > 0 { return "Transfer failed" }
         return waiting > 0 ? "Waiting" : "Record"
     }
 
@@ -90,8 +100,9 @@ extension WatchStatus {
         ["ko", "ja", "zh"].contains(appLocale.language.languageCode?.identifier ?? "")
     }
 
-    /// The complication's tap: start when there is nothing running, stop when there is. Both run in
-    /// the app — a long audio session started inside a widget extension is unreliable (docs/13).
+    /// The complication's tap: start when there is nothing running — in the app, because a long audio
+    /// session started inside a widget extension is unreliable (docs/13). While one is running the tap
+    /// only opens the app: a glance at the wrist must never end a recording.
     var startsOnTap: Bool { !isRecording }
 
     /// What the face is drawn in, as `\.locale`.

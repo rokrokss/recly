@@ -106,6 +106,10 @@ public actor WatchTransferQueue {
     /// Recordings still waiting to be handed over — what the complication counts.
     public var waiting: Int { items.filter { $0.failure == nil }.count }
 
+    /// Recordings the phone refused for good, kept here with their audio — "Transfer failed" on the screen and the
+    /// complication, ahead of the waiting ones (Wear's order): nothing will send them again.
+    public var failed: Int { items.filter { $0.failure != nil }.count }
+
     /// Idempotent: a recording already queued keeps the acks it has. Called when a recording is
     /// finalized, and again at launch for everything the core still holds — a recording finalized by
     /// `RecordingRecovery` after a crash was never queued by the stop that never ran.
@@ -171,24 +175,29 @@ public actor WatchTransferQueue {
     }
 
     /// The phone's answer, and the only thing that finishes anything here.
-    public func receive(_ ack: TransferAck) async {
+    ///
+    /// - Returns: true when this ack finished a recording — `ack-meta ok:true`, the phone has it — which is the
+    ///   moment the wrist is told it is out of its hands (docs/13 WA5).
+    @discardableResult
+    public func receive(_ ack: TransferAck) async -> Bool {
         guard let index = items.firstIndex(where: { $0.recordingId == ack.recordingId }) else {
             // An ack for a recording that is off this watch already: a duplicate of one acted on.
-            return
+            return false
         }
         switch ack {
         case .part(_, let ref, let ok, let reason):
-            guard apply(ref: ref, ok: ok, reason: reason, to: &items[index]) else { return }
+            guard apply(ref: ref, ok: ok, reason: reason, to: &items[index]) else { return false }
 
         case .meta(_, let ok, let reason, let missing):
             if ok {
                 await complete(items[index])
-                return
+                return true
             }
             apply(reason: reason, missing: missing, to: &items[index])
         }
         save()
         pump()
+        return false
     }
 
     // MARK: - The rules

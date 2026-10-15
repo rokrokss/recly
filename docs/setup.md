@@ -162,7 +162,7 @@ remove it. Highlights are kept in the recording's `….meta.json`, where agents 
 | ⌘I | Mac Details window | import audio |
 
 Recly asks whether you told the people in the room: before the first recording on the phones, and
-before every recording on the desktops (**Consent check before recording** in Settings turns it off).
+before every recording on the desktops (**Consent reminder** in Settings turns it off).
 After you stop, the phones and
 desktops ask for a **Recording title** and the **People in the room** (which helps the provider
 separate speakers). Choose **Save**, even with the title left empty. **Cancel discards the

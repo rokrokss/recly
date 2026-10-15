@@ -24,6 +24,9 @@ struct TranscriptReader: View {
     let onSeek: (Double) -> Void
     let onRemoveHighlight: (Double) -> Void
     let onCloseFind: () -> Void
+    /// The find bar's own field, where the page offers one (the Mac's ⌘F), and the press that puts the cursor in it.
+    var findQuery: Binding<String>? = nil
+    var findFocus = 0
 
     struct SpeakerActions {
         let rename: (String) -> Void
@@ -43,7 +46,7 @@ struct TranscriptReader: View {
         VStack(spacing: 0) {
             if find != nil {
                 FindBar(
-                    index: matchIndex, count: matches.count,
+                    index: matchIndex, count: matches.count, query: findQuery, focusRequest: findFocus,
                     previous: { if !matches.isEmpty { matchIndex = (matchIndex + matches.count - 1) % matches.count } },
                     next: { if !matches.isEmpty { matchIndex = (matchIndex + 1) % matches.count } },
                     close: onCloseFind
