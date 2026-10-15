@@ -243,9 +243,11 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertFalse(model.preferences.fillAfterStop)
         XCTAssertFalse(model.fillOffered, "signed out, the sheet offers no box")
 
+        XCTAssertTrue(model.fillAllowed, "the Mac needs no permission")
         model.setFillAfterStop(true)
         try await until { model.preferences.fillAfterStop }
         XCTAssertTrue(model.fillConsent.isEmpty, "the Mac never asks")
+        XCTAssertTrue(model.fillTicked)
         var saved = try await bridge.core.summaries.preferences()
         for _ in 0..<200 where !saved.fillAfterStop {
             try await Task.sleep(for: .milliseconds(25))
@@ -650,6 +652,41 @@ final class SummaryTransferTests: XCTestCase {
         model.setFillAfterStop(true)
         try await until { model.preferences.fillAfterStop }
         XCTAssertTrue(model.fillConsent.isEmpty, "allowed once is allowed")
+    }
+
+    /// docs/08 "Titles and speaker names": on the iPhone the box shows ticked only while the permission stands —
+    /// withdrawn in Settings → Privacy, it shows unticked though it was left ticked, so Save asks for nothing, and
+    /// ticking it asks again.
+    func testTheIPhoneBoxIsUntickedOnceThePermissionIsWithdrawn() async throws {
+        let bridge = try await CoreBridge.make(
+            platform: .ios, deviceName: "Test iPhone",
+            dataDirectory: directory, databaseName: "fill-withdrawn.db", secureStore: InMemorySecureStore(),
+            transcriptionPolicy: TranscriptionPolicy(region: nil)
+        )
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        let chatGpt = TransferTargets.shared.chatGptSummary()
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertFalse(model.fillAllowed)
+        XCTAssertFalse(model.fillTicked)
+
+        model.setFillAfterStop(true)
+        try await until { !model.fillConsent.isEmpty }
+        await model.answerFillConsent(allow: true)
+        try await until { model.fillTicked }
+        XCTAssertTrue(model.fillAllowed)
+
+        try await bridge.core.transferConsents.revoke(id: chatGpt.id)
+        try await until { !model.fillTicked }
+        XCTAssertFalse(model.fillAllowed)
+        XCTAssertTrue(model.preferences.fillAfterStop, "how the box was left is kept")
+
+        model.setFillAfterStop(true)
+        try await until { !model.fillConsent.isEmpty }
+        XCTAssertFalse(model.fillTicked, "nothing is ticked before the answer")
+        await model.answerFillConsent(allow: false)
+        XCTAssertFalse(model.fillTicked)
+        let missing = try await bridge.core.transferConsents.missing(targets: [chatGpt])
+        XCTAssertEqual(missing.count, 1)
     }
 
     /// docs/08 "Titles and speaker names" · docs/15 "iPhone providers": More → Fill in title and names asks for the

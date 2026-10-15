@@ -26,10 +26,10 @@ public struct FillAfterStopRow: View {
     }
 }
 
-/// The box as the ChatGPT model keeps it (`SummaryPreferences.fillAfterStop`), for a sheet that stays up while the
-/// app runs — the iPhone's. Ticking it where the destination needs the user's permission asks for it first, in the
-/// dialog Summarize asks with (docs/15 "iPhone providers"); declined, the box stays off. Nothing at all while
-/// ChatGPT is not signed in.
+/// The box as the ChatGPT model shows it ([ChatGptSettingsModel.fillTicked]: left ticked, and allowed now), for a
+/// sheet that stays up while the app runs — the iPhone's. Ticking it where the destination needs the user's
+/// permission asks for it first, in the dialog Summarize asks with (docs/15 "iPhone providers"); declined, the box
+/// stays off. Nothing at all while ChatGPT is not signed in.
 public struct FillAfterStopChoice: View {
     @ObservedObject private var model: ChatGptSettingsModel
     /// The permission dialog's "I turned off …" answer.
@@ -41,7 +41,7 @@ public struct FillAfterStopChoice: View {
 
     public var body: some View {
         if model.fillOffered {
-            FillAfterStopRow(isOn: Binding(get: { model.preferences.fillAfterStop }, set: model.setFillAfterStop))
+            FillAfterStopRow(isOn: Binding(get: { model.fillTicked }, set: model.setFillAfterStop))
                 // A sheet of its own over the title sheet, sized to the disclosure: a swipe down is a Cancel.
                 .blueprintDialog(isPresented: Binding(get: { !model.fillConsent.isEmpty }, set: { if !$0 { answer(false) } })) {
                     SummaryConsentDialog(targets: model.fillConsent, trainingOff: $trainingOff, answer: answer)

@@ -53,6 +53,9 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// docs/15 "iPhone providers": the ChatGPT destination the title sheet's box waits on before it is ticked — asked
     /// about only where the core requires the permission, so never on the Mac.
     @Published public private(set) var fillConsent: [TransferTarget] = []
+    /// docs/15 "iPhone providers": the transcript may go to ChatGPT now — at once where no permission is asked (the
+    /// Mac); on the iPhone once allowed, and no longer once withdrawn in Settings → Privacy.
+    @Published public private(set) var fillAllowed: Bool
 
     /// ChatGPT's own usage page — where the plan's limits are, and where Recly can be disconnected.
     public static let usage = URL(string: "https://chatgpt.com/settings/usage")!
@@ -63,6 +66,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     private var loopback: ChatGptLoopback?
     private var observer: Task<Void, Never>?
     private var preferencesObserver: Task<Void, Never>?
+    private var consentObserver: Task<Void, Never>?
     private let logger = Logger(subsystem: CoreBridge.appName, category: "chatgpt")
 
     public convenience init(core: ReclyCore_) {
@@ -77,10 +81,18 @@ public final class ChatGptSettingsModel: ObservableObject {
         self.core = core
         self.browser = browser
         self.timeout = timeout
+        fillAllowed = !core.transferConsents.enabled
         connection = core.chatGpt.observe().value
         observer = Task { [weak self] in
             for await connection in core.chatGpt.observe() {
                 self?.connection = connection
+            }
+        }
+        consentObserver = Task { [weak self] in
+            guard core.transferConsents.enabled else { return }
+            for await _ in core.transferConsents.observe() {
+                guard let self else { return }
+                await self.readFillConsent()
             }
         }
         preferencesObserver = Task { [weak self] in
@@ -93,6 +105,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     deinit {
         observer?.cancel()
         preferencesObserver?.cancel()
+        consentObserver?.cancel()
     }
 
     /// docs/15 "China mainland App Store": the whole section goes where ChatGPT is not offered.
@@ -163,6 +176,17 @@ public final class ChatGptSettingsModel: ObservableObject {
         save(shownPreferences)
     }
 
+    /// docs/08 "Titles and speaker names": the title sheet's box as it shows — ticked only when it was left ticked and
+    /// the transcript may go to ChatGPT now, so a permission withdrawn since never spends a request. Unticked so,
+    /// ticking it asks again.
+    public var fillTicked: Bool { preferences.fillAfterStop && fillAllowed }
+
+    /// A keychain that will not be read proves no grant, as the core's own guard reads it.
+    private func readFillConsent() async {
+        let missing = try? await core.transferConsents.missing(targets: [TransferTargets.shared.chatGptSummary()])
+        fillAllowed = missing?.isEmpty ?? false
+    }
+
     /// docs/08 "Titles and speaker names": the title sheet's `Fill in the title and speaker names with ChatGPT`, as
     /// the next sheet starts it. Saved at once, like the format; see [switchFill].
     public func setFillAfterStop(_ on: Bool) {
@@ -178,6 +202,7 @@ public final class ChatGptSettingsModel: ObservableObject {
             do {
                 let missing = try await core.transferConsents.missing(targets: [TransferTargets.shared.chatGptSummary()])
                 if missing.isEmpty {
+                    fillAllowed = true
                     apply()
                 } else {
                     afterFillConsent = apply
@@ -215,6 +240,8 @@ public final class ChatGptSettingsModel: ObservableObject {
             logger.error("shell.chatgpt.preferences.failed error=\(String(describing: error), privacy: .private)")
             return
         }
+        // Ticked as it is allowed, not a moment later when the grant comes back through [consentObserver].
+        fillAllowed = true
         next?()
     }
 

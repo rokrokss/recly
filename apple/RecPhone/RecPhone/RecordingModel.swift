@@ -580,10 +580,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     }
 
     /// docs/08 "Titles and speaker names": the title sheet shows its ChatGPT box ticked — transcription is on,
-    /// ChatGPT is signed in, and the box was left ticked.
+    /// ChatGPT is signed in, and the box was left ticked with the permission still given.
     var fillsAfterStop: Bool {
         guard let chatGpt, !(processing?.transcriptionOff ?? false) else { return false }
-        return chatGpt.fillOffered && chatGpt.preferences.fillAfterStop
+        return chatGpt.fillOffered && chatGpt.fillTicked
     }
 
     /// Saves the title prompt's answer and queues the recording, including an empty title.
