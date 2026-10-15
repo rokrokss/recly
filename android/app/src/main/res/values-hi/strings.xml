@@ -423,10 +423,6 @@
     <string name="summary_about">आपके बारे में</string>
     <string name="summary_about_placeholder">जैसे प्रोडक्ट मैनेजर; मेरे लिए डेडलाइन और फ़ैसले अहम हैं।</string>
     <string name="summary_about_note">सारांश और जवाब इससे तय करते हैं कि आपके लिए क्या अहम है।</string>
-    <string name="summary_auto_title">शीर्षक अपने आप भरें</string>
-    <string name="summary_auto_title_note">जब यह डिवाइस बिना शीर्षक वाली रिकॉर्डिंग ट्रांसक्राइब करता है, तो शीर्षक के लिए ट्रांसक्रिप्ट ChatGPT को भेजा जाता है। यह आपके ChatGPT उपयोग में गिना जाता है।</string>
-    <string name="summary_auto_speakers">वक्ताओं के नाम अपने आप भरें</string>
-    <string name="summary_auto_speakers_note">जब यह डिवाइस कोई रिकॉर्डिंग ट्रांसक्राइब करता है, तो उसमें नाम से पुकारे गए वक्ताओं के नाम रखने के लिए ट्रांसक्रिप्ट ChatGPT को भेजा जाता है। यह आपके ChatGPT उपयोग में गिना जाता है।</string>
     <string name="summary_as">इस रूप में सारांश…</string>
     <string name="summary_play_from">%1$s से चलाएँ</string>
     <string name="ask_menu">इस रिकॉर्डिंग के बारे में पूछें…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">पूछें</string>
     <string name="ask_running">पूछा जा रहा है…</string>
     <string name="ask_failed">जवाब नहीं मिल सका</string>
+    <string name="fill_menu">शीर्षक और नाम भरें</string>
+    <string name="fill_after_stop">ChatGPT से शीर्षक और वक्ताओं के नाम भरें</string>
+    <string name="fill_after_stop_note">ट्रांसक्रिप्ट तैयार होने पर उसे ChatGPT को भेजा जाता है, ताकि खाली शीर्षक और नाम से पुकारे गए वक्ताओं के नाम मिल सकें। यह आपके ChatGPT उपयोग में गिना जाता है।</string>
+    <string name="fill_nothing">शीर्षक और नाम पहले से भरे हैं</string>
+    <string name="fill_running">भरा जा रहा है…</string>
+    <string name="fill_failed">शीर्षक और नाम नहीं भरे जा सके</string>
     <string name="share_no_summary">अभी कोई सारांश नहीं</string>
     <string name="speaker_me">मैं</string>
 </resources>

@@ -423,10 +423,6 @@
     <string name="summary_about">Über dich</string>
     <string name="summary_about_placeholder">z. B. Produktmanagerin; mir sind Fristen und Entscheidungen wichtig.</string>
     <string name="summary_about_note">Zusammenfassungen und Antworten nutzen das, um einzuschätzen, was dir wichtig ist.</string>
-    <string name="summary_auto_title">Titel automatisch ergänzen</string>
-    <string name="summary_auto_title_note">Transkribiert dieses Gerät eine Aufnahme ohne Titel, geht das Transkript für einen Titel an ChatGPT. Das zählt zu deiner ChatGPT-Nutzung.</string>
-    <string name="summary_auto_speakers">Sprechernamen automatisch ergänzen</string>
-    <string name="summary_auto_speakers_note">Transkribiert dieses Gerät eine Aufnahme, geht das Transkript an ChatGPT, um die Sprecher zu benennen, die darin mit Namen angesprochen werden. Das zählt zu deiner ChatGPT-Nutzung.</string>
     <string name="summary_as">Zusammenfassen als…</string>
     <string name="summary_play_from">Ab %1$s abspielen</string>
     <string name="ask_menu">Zu dieser Aufnahme fragen…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Fragen</string>
     <string name="ask_running">Wird gefragt…</string>
     <string name="ask_failed">Keine Antwort möglich</string>
+    <string name="fill_menu">Titel und Namen ergänzen</string>
+    <string name="fill_after_stop">Titel und Sprechernamen mit ChatGPT ergänzen</string>
+    <string name="fill_after_stop_note">Sobald das Transkript fertig ist, geht es an ChatGPT, um einen fehlenden Titel und die Namen angesprochener Sprecher zu ergänzen. Das zählt zu deiner ChatGPT-Nutzung.</string>
+    <string name="fill_nothing">Titel und Namen sind schon ergänzt</string>
+    <string name="fill_running">Wird ergänzt…</string>
+    <string name="fill_failed">Titel und Namen konnten nicht ergänzt werden</string>
     <string name="share_no_summary">Noch keine Zusammenfassung</string>
     <string name="speaker_me">Ich</string>
 </resources>

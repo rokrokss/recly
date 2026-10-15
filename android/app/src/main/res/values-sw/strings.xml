@@ -423,10 +423,6 @@
     <string name="summary_about">Kuhusu wewe</string>
     <string name="summary_about_placeholder">k.m. Meneja wa bidhaa; ninajali tarehe za mwisho na maamuzi.</string>
     <string name="summary_about_note">Muhtasari na majibu hutumia hili kupima kilicho muhimu kwako.</string>
-    <string name="summary_auto_title">Jaza vichwa kiotomatiki</string>
-    <string name="summary_auto_title_note">Kifaa hiki kinaponukuu rekodi isiyo na kichwa, nakala hutumwa kwa ChatGPT ili kupata kichwa. Hii huhesabiwa katika matumizi yako ya ChatGPT.</string>
-    <string name="summary_auto_speakers">Jaza majina ya wazungumzaji kiotomatiki</string>
-    <string name="summary_auto_speakers_note">Kifaa hiki kinaponukuu rekodi, nakala hutumwa kwa ChatGPT ili kuwapa majina wazungumzaji wanaoitwa kwa majina ndani yake. Hii huhesabiwa katika matumizi yako ya ChatGPT.</string>
     <string name="summary_as">Fupisha kama…</string>
     <string name="summary_play_from">Cheza kuanzia %1$s</string>
     <string name="ask_menu">Uliza kuhusu rekodi hii…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Uliza</string>
     <string name="ask_running">Inauliza…</string>
     <string name="ask_failed">Imeshindwa kujibu</string>
+    <string name="fill_menu">Jaza kichwa na majina</string>
+    <string name="fill_after_stop">Jaza kichwa na majina ya wazungumzaji kwa ChatGPT</string>
+    <string name="fill_after_stop_note">Nakala ikishakamilika, hutumwa kwa ChatGPT ili kupata kichwa kinachokosekana na majina ya wazungumzaji walioitwa kwa majina. Hii huhesabiwa katika matumizi yako ya ChatGPT.</string>
+    <string name="fill_nothing">Kichwa na majina tayari vimejazwa</string>
+    <string name="fill_running">Inajaza…</string>
+    <string name="fill_failed">Imeshindwa kujaza kichwa na majina</string>
     <string name="share_no_summary">Bado hakuna muhtasari</string>
     <string name="speaker_me">Mimi</string>
 </resources>

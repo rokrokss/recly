@@ -423,10 +423,6 @@
     <string name="summary_about">เกี่ยวกับคุณ</string>
     <string name="summary_about_placeholder">เช่น ผู้จัดการผลิตภัณฑ์ ให้ความสำคัญกับกำหนดส่งและการตัดสินใจ</string>
     <string name="summary_about_note">สรุปและคำตอบใช้ข้อมูลนี้เพื่อตัดสินว่าอะไรสำคัญกับคุณ</string>
-    <string name="summary_auto_title">ใส่ชื่ออัตโนมัติ</string>
-    <string name="summary_auto_title_note">เมื่ออุปกรณ์นี้ถอดเสียงบันทึกที่ไม่มีชื่อ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ</string>
-    <string name="summary_auto_speakers">ใส่ชื่อผู้พูดอัตโนมัติ</string>
-    <string name="summary_auto_speakers_note">เมื่ออุปกรณ์นี้ถอดเสียงบันทึก จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อตั้งชื่อผู้พูดที่ถูกเรียกชื่อในบทสนทนา ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ</string>
     <string name="summary_as">สรุปเป็นรูปแบบ…</string>
     <string name="summary_play_from">เล่นจาก %1$s</string>
     <string name="ask_menu">ถามเกี่ยวกับบันทึกนี้…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">ถาม</string>
     <string name="ask_running">กำลังถาม…</string>
     <string name="ask_failed">ตอบไม่ได้</string>
+    <string name="fill_menu">เติมชื่อและชื่อผู้พูด</string>
+    <string name="fill_after_stop">เติมชื่อและชื่อผู้พูดด้วย ChatGPT</string>
+    <string name="fill_after_stop_note">เมื่อถอดเสียงเสร็จ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อที่ยังว่างและชื่อของผู้พูดที่ถูกเรียกชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ</string>
+    <string name="fill_nothing">มีชื่อและชื่อผู้พูดครบแล้ว</string>
+    <string name="fill_running">กำลังเติม…</string>
+    <string name="fill_failed">เติมชื่อและชื่อผู้พูดไม่ได้</string>
     <string name="share_no_summary">ยังไม่มีสรุป</string>
     <string name="speaker_me">ฉัน</string>
 </resources>
