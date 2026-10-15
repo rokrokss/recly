@@ -579,11 +579,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// docs/08 "Titles and speaker names": the title sheet shows its ChatGPT box ticked — transcription is on,
-    /// ChatGPT is signed in, and the box was left ticked with the permission still given.
-    var fillsAfterStop: Bool {
-        guard let chatGpt, !(processing?.transcriptionOff ?? false) else { return false }
-        return chatGpt.fillOffered && chatGpt.fillTicked
+    /// docs/08 "Titles and speaker names": what the title sheet's ChatGPT boxes ask for as they show — offered while
+    /// transcription is on and ChatGPT is signed in, each ticked as it was left with the permission still given, the
+    /// title's only while [typedTitle] is empty.
+    func fillAfterStop(typedTitle: String?) -> TitleSheetFill {
+        guard let chatGpt, chatGpt.fillOffered, !(processing?.transcriptionOff ?? false) else { return .none }
+        return TitleSheetFill(titleTicked: chatGpt.fillTitleTicked, namesTicked: chatGpt.fillNamesTicked, typedTitle: typedTitle)
     }
 
     /// Saves the title prompt's answer and queues the recording, including an empty title.
@@ -591,9 +592,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// - Parameters:
     ///   - participants: how many people were in the room, or nil for "unknown" — docs/03's
     ///     `context.participants`, which docs/08 lets override the settings' speaker hint.
-    ///   - fill: the ChatGPT box was ticked: the recording's publication first asks for its title and speaker names
-    ///     (docs/08 "Titles and speaker names") — asked after the title is written and before the job is queued.
-    func finishNaming(with title: String?, participants: Int? = nil, fill: Bool = false) async {
+    ///   - fill: what the ChatGPT boxes ask for: the recording's publication first asks for that — its title, its speaker
+    ///     names or both (docs/08 "Titles and speaker names") — asked after the title is written and before the job is
+    ///     queued.
+    func finishNaming(with title: String?, participants: Int? = nil, fill: TitleSheetFill = .none) async {
         guard let naming else { return }
         self.naming = nil
         let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -607,9 +609,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             )
             titleRefused = saved?.boolValue != true
         }
-        if fill {
+        if fill.any {
             do {
-                try await bridge?.core.requestFill(recordingId: naming.id)
+                try await bridge?.core.requestFill(recordingId: naming.id, title: fill.title, names: fill.names)
             } catch {
                 logger.error("shell.chatgpt.fill.request.failed error=\(String(describing: error), privacy: .private)")
             }

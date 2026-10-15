@@ -234,46 +234,54 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertEqual(last.aboutMe, "PM, deadlines")
     }
 
-    /// docs/08 "Titles and speaker names": the title sheet's box is off until ticked and is kept as it was left — saved at
-    /// once, signed in or out, on the Mac with nothing to ask — and stays as it is when the format or About you changes.
-    func testTheTitleSheetBoxIsKeptAndSurvivesTheOtherPreferences() async throws {
+    /// docs/08 "Titles and speaker names": the title sheet's two boxes are off until ticked and each is kept as it was
+    /// left — saved at once, signed in or out, on the Mac with nothing to ask — apart from the other, and stays as it is
+    /// when the format or About you changes.
+    func testTheTitleSheetBoxesAreKeptApartAndSurviveTheOtherPreferences() async throws {
         let bridge = try await bridge()
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
         try await Task.sleep(for: .milliseconds(300))
-        XCTAssertFalse(model.preferences.fillAfterStop)
+        XCTAssertFalse(model.preferences.fillTitleAfterStop)
+        XCTAssertFalse(model.preferences.fillNamesAfterStop)
         XCTAssertFalse(model.fillOffered, "signed out, the sheet offers no box")
 
         XCTAssertTrue(model.fillAllowed, "the Mac needs no permission")
-        model.setFillAfterStop(true)
-        try await until { model.preferences.fillAfterStop }
+        model.setFillNamesAfterStop(true)
+        try await until { model.preferences.fillNamesAfterStop }
         XCTAssertTrue(model.fillConsent.isEmpty, "the Mac never asks")
-        XCTAssertTrue(model.fillTicked)
-        var saved = try await bridge.core.summaries.preferences()
-        for _ in 0..<200 where !saved.fillAfterStop {
-            try await Task.sleep(for: .milliseconds(25))
-            saved = try await bridge.core.summaries.preferences()
-        }
-        XCTAssertTrue(saved.fillAfterStop)
+        XCTAssertTrue(model.fillNamesTicked)
+        XCTAssertFalse(model.fillTitleTicked, "ticking the names leaves the title's box as it was")
+        var saved = try await savedPreferences(bridge) { $0.fillNamesAfterStop }
+        XCTAssertTrue(saved.fillNamesAfterStop)
+        XCTAssertFalse(saved.fillTitleAfterStop)
+
+        model.setFillTitleAfterStop(true)
+        try await until { model.preferences.fillTitleAfterStop }
+        XCTAssertTrue(model.fillTitleTicked)
+        XCTAssertTrue(model.fillNamesTicked)
+        saved = try await savedPreferences(bridge) { $0.fillTitleAfterStop }
+        XCTAssertTrue(saved.fillTitleAfterStop)
+        XCTAssertTrue(saved.fillNamesAfterStop)
 
         model.selectFormat(.lecture)
         model.aboutMe = "PM"
         model.savePreferences()
         try await until { model.preferences.aboutMe == "PM" && model.preferences.format == .lecture }
-        XCTAssertTrue(model.preferences.fillAfterStop)
+        XCTAssertTrue(model.preferences.fillTitleAfterStop)
+        XCTAssertTrue(model.preferences.fillNamesAfterStop)
         saved = try await bridge.core.summaries.preferences()
         XCTAssertEqual(saved.format, .lecture)
         XCTAssertEqual(saved.aboutMe, "PM")
-        XCTAssertTrue(saved.fillAfterStop)
+        XCTAssertTrue(saved.fillTitleAfterStop)
+        XCTAssertTrue(saved.fillNamesAfterStop)
 
-        // Off at once, the others left as they were.
-        model.setFillAfterStop(false)
-        XCTAssertFalse(model.preferences.fillAfterStop, "off is shown at once")
-        var last = try await bridge.core.summaries.preferences()
-        for _ in 0..<200 where last.fillAfterStop {
-            try await Task.sleep(for: .milliseconds(25))
-            last = try await bridge.core.summaries.preferences()
-        }
-        XCTAssertFalse(last.fillAfterStop)
+        // Off at once, the other box and the fields left as they were.
+        model.setFillTitleAfterStop(false)
+        XCTAssertFalse(model.preferences.fillTitleAfterStop, "off is shown at once")
+        XCTAssertTrue(model.preferences.fillNamesAfterStop)
+        let last = try await savedPreferences(bridge) { !$0.fillTitleAfterStop }
+        XCTAssertFalse(last.fillTitleAfterStop)
+        XCTAssertTrue(last.fillNamesAfterStop)
         XCTAssertEqual(last.format, .lecture)
         XCTAssertEqual(last.aboutMe, "PM")
     }
@@ -408,14 +416,15 @@ final class SummaryMenuTests: XCTestCase {
         )
     }
 
-    /// docs/09 "Summary view": Fill in title and names says the one reason that stands first — Still recording, then
-    /// No transcript yet or the unsettled job's, then the sign-in, then the run already going, then nothing left to fill.
-    func testFillSaysTheFirstReasonInItsOrder() {
-        func fill(writing: Bool = false, transcript: Bool = true, busy: String? = nil, connection: ChatGptConnection? = nil,
-                  filling: Bool = false, needs: Bool = true) -> String? {
+    /// docs/09 "Summary view": Fill in title and Fill in speaker names each say the one reason that stands first — Still
+    /// recording, then No transcript yet or the unsettled job's, then the sign-in, then a run asking for that half, then
+    /// nothing of that half left to fill.
+    func testEachFillItemSaysTheFirstReasonInItsOrder() {
+        func fill(_ half: RecordingDetailModel.FillHalf, writing: Bool = false, transcript: Bool = true, busy: String? = nil,
+                  connection: ChatGptConnection? = nil, running: Bool = false, needed: Bool = true) -> String? {
             RecordingDetailModel.fillReason(
-                writing: writing, hasTranscript: transcript, busy: busy, connection: connection ?? signedIn,
-                filling: filling, needsFill: needs
+                half, writing: writing, hasTranscript: transcript, busy: busy, connection: connection ?? signedIn,
+                running: running, needed: needed
             )
         }
         let still = RecKitStrings.localized("Still recording")
@@ -423,37 +432,92 @@ final class SummaryMenuTests: XCTestCase {
         let transcribing = RecKitStrings.localized("Transcribing…")
         let signIn = CoreMessages.sentence(.chatgptSignInRequired)
         let running = RecKitStrings.localized("Filling in…")
-        let done = RecKitStrings.localized("Title and names are already filled in")
-        XCTAssertNil(fill())
-        // Each reason with every later one also true: the earlier one is what is said.
-        XCTAssertEqual(fill(writing: true, transcript: false, busy: transcribing, connection: ChatGptConnection.SignedOut.shared,
-                            filling: true, needs: false), still)
-        XCTAssertEqual(fill(transcript: false, busy: transcribing, connection: ChatGptConnection.SignedOut.shared,
-                            filling: true, needs: false), noTranscript)
-        XCTAssertEqual(fill(busy: transcribing, connection: ChatGptConnection.SignedOut.shared, filling: true, needs: false), transcribing)
-        XCTAssertEqual(fill(connection: ChatGptConnection.SignedOut.shared, filling: true, needs: false), signIn)
-        XCTAssertEqual(fill(connection: ChatGptConnection.Expired(account: "a@example.com"), filling: true, needs: false), signIn)
-        XCTAssertEqual(fill(filling: true, needs: false), running)
-        XCTAssertEqual(fill(needs: false), done)
+        let done: [RecordingDetailModel.FillHalf: String] = [
+            .title: RecKitStrings.localized("Already has a title"),
+            .names: RecKitStrings.localized("No unnamed speakers"),
+        ]
+        for half in [RecordingDetailModel.FillHalf.title, .names] {
+            XCTAssertNil(fill(half))
+            // Each reason with every later one also true: the earlier one is what is said.
+            XCTAssertEqual(fill(half, writing: true, transcript: false, busy: transcribing,
+                                connection: ChatGptConnection.SignedOut.shared, running: true, needed: false), still)
+            XCTAssertEqual(fill(half, transcript: false, busy: transcribing, connection: ChatGptConnection.SignedOut.shared,
+                                running: true, needed: false), noTranscript)
+            XCTAssertEqual(fill(half, busy: transcribing, connection: ChatGptConnection.SignedOut.shared, running: true,
+                                needed: false), transcribing)
+            XCTAssertEqual(fill(half, connection: ChatGptConnection.SignedOut.shared, running: true, needed: false), signIn)
+            XCTAssertEqual(fill(half, connection: ChatGptConnection.Expired(account: "a@example.com"), running: true,
+                                needed: false), signIn)
+            XCTAssertEqual(fill(half, running: true, needed: false), running)
+            XCTAssertEqual(fill(half, needed: false), done[half])
+        }
     }
 
-    /// docs/08 "Titles and speaker names": what each answer of `fillTitleAndNames` comes to on the page.
-    func testAFillAnswerIsSaidOnlyWhenItChangedNothing() {
-        func outcome(_ result: FillResult) -> RecordingDetailModel.FillOutcome {
-            RecordingDetailModel.fillOutcome(result, busyKey: "Transcribing…")
+    /// docs/09 "Summary view": an item is `Filling in…` only while a run asks for its own half — the title sheet's or
+    /// More's — and the lines under the header name what the run asks for, the title's first.
+    func testARunHoldsOnlyTheHalvesItAsksFor() {
+        let title = FillRun(recordingId: "r", title: true, names: false)
+        let names = FillRun(recordingId: "r", title: false, names: true)
+        let both = FillRun(recordingId: "r", title: true, names: true)
+        XCTAssertTrue(RecordingDetailModel.runs(title, .title))
+        XCTAssertFalse(RecordingDetailModel.runs(title, .names), "the names wait for the title's run, and may be asked for")
+        XCTAssertFalse(RecordingDetailModel.runs(names, .title))
+        XCTAssertTrue(RecordingDetailModel.runs(names, .names))
+        XCTAssertFalse(RecordingDetailModel.runs(nil, .title))
+
+        XCTAssertEqual(RecordingDetailModel.fillLines(nil), [])
+        XCTAssertEqual(RecordingDetailModel.fillLines(title), ["Filling in the title…"])
+        XCTAssertEqual(RecordingDetailModel.fillLines(names), ["Filling in speaker names…"])
+        XCTAssertEqual(RecordingDetailModel.fillLines(both), ["Filling in the title…", "Filling in speaker names…"])
+    }
+
+    /// docs/08 "Titles and speaker names": what each answer of `fillTitle` and `fillNames` comes to on the page — by
+    /// the half asked for.
+    func testAFillAnswerIsSaidOnlyWhenTheHalfAskedForWasNotGiven() {
+        func outcome(_ result: FillResult, _ half: RecordingDetailModel.FillHalf) -> RecordingDetailModel.FillOutcome {
+            RecordingDetailModel.fillOutcome(result, half: half, busyKey: "Transcribing…")
         }
-        XCTAssertEqual(outcome(FillResultFilled(title: true, names: 0)), .quiet)
-        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 2)), .quiet)
-        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 0)), .notice(.failed(reason: nil)), "ChatGPT told neither")
-        XCTAssertEqual(outcome(FillResultNothingToFill.shared), .quiet)
-        XCTAssertEqual(outcome(FillResultBusy.shared), .notice(.refused("Transcribing…")))
-        XCTAssertEqual(outcome(FillResultNoTranscript.shared), .notice(.refused("No transcript yet")))
-        let consent = CoreMessage.transferConsentRequired.code(arg: nil, detail: nil)
-        XCTAssertEqual(outcome(FillResultFailed(reason: consent)), .askConsent)
-        let limit = CoreMessage.chatgptUsageLimit.code(arg: nil, detail: nil)
-        XCTAssertEqual(outcome(FillResultFailed(reason: limit)), .notice(.failed(reason: limit)))
-        let provider = CoreMessage.providerError.code(arg: nil, detail: "500 server_error")
-        XCTAssertEqual(outcome(FillResultFailed(reason: provider)), .notice(.failed(reason: provider)))
+        XCTAssertEqual(outcome(FillResultFilled(title: true, names: 0), .title), .quiet)
+        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 2), .names), .quiet)
+        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 0), .title), .notice(.failed(.title, reason: nil)))
+        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 0), .names), .notice(.failed(.names, reason: nil)))
+        // A run that asked for both answers both items: each says only of its own half.
+        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 2), .title), .notice(.failed(.title, reason: nil)))
+        XCTAssertEqual(outcome(FillResultFilled(title: true, names: 0), .names), .notice(.failed(.names, reason: nil)))
+        XCTAssertEqual(outcome(FillResultNothingToFill.shared, .title), .notice(.refused("Already has a title")))
+        XCTAssertEqual(outcome(FillResultNothingToFill.shared, .names), .notice(.refused("No unnamed speakers")))
+        for half in [RecordingDetailModel.FillHalf.title, .names] {
+            XCTAssertEqual(outcome(FillResultBusy.shared, half), .notice(.refused("Transcribing…")))
+            XCTAssertEqual(outcome(FillResultNoTranscript.shared, half), .notice(.refused("No transcript yet")))
+            let consent = CoreMessage.transferConsentRequired.code(arg: nil, detail: nil)
+            XCTAssertEqual(outcome(FillResultFailed(reason: consent), half), .askConsent)
+            let limit = CoreMessage.chatgptUsageLimit.code(arg: nil, detail: nil)
+            XCTAssertEqual(outcome(FillResultFailed(reason: limit), half), .notice(.failed(half, reason: limit)))
+            let provider = CoreMessage.providerError.code(arg: nil, detail: "500 server_error")
+            XCTAssertEqual(outcome(FillResultFailed(reason: provider), half), .notice(.failed(half, reason: provider)))
+        }
+    }
+
+    /// docs/09 screen principle 5: the title's box does nothing while the title field has a title — it is off then —
+    /// and `Save` asks for each half as its box shows, the title's only with the field empty.
+    func testTheTitleSheetAsksForWhatItsBoxesShow() {
+        XCTAssertTrue(TitleSheetFill.titleBoxEnabled(typedTitle: nil))
+        XCTAssertTrue(TitleSheetFill.titleBoxEnabled(typedTitle: ""))
+        XCTAssertTrue(TitleSheetFill.titleBoxEnabled(typedTitle: "  "), "spaces are no title")
+        XCTAssertFalse(TitleSheetFill.titleBoxEnabled(typedTitle: "Weekly sync"))
+
+        func ask(_ title: Bool, _ names: Bool, _ typed: String?) -> [Bool] {
+            let fill = TitleSheetFill(titleTicked: title, namesTicked: names, typedTitle: typed)
+            return [fill.title, fill.names, fill.any]
+        }
+        XCTAssertEqual(ask(true, true, nil), [true, true, true])
+        XCTAssertEqual(ask(true, false, nil), [true, false, true])
+        XCTAssertEqual(ask(false, true, nil), [false, true, true])
+        XCTAssertEqual(ask(false, false, nil), [false, false, false], "neither ticked: requestFill is not called")
+        XCTAssertEqual(ask(true, true, "Weekly sync"), [false, true, true], "a typed title is never replaced")
+        XCTAssertEqual(ask(true, false, "Weekly sync"), [false, false, false])
+        XCTAssertEqual(ask(true, false, " "), [true, false, true])
+        XCTAssertFalse(TitleSheetFill.none.any)
     }
 
     /// The footer names the model as the plan named it when the summary was written, even once the plan's list no
@@ -605,9 +669,10 @@ final class SummaryTransferTests: XCTestCase {
         XCTAssertTrue(state is SummaryState.Failed, "\(state)")
     }
 
-    /// docs/08 "Titles and speaker names": on the iPhone ticking the title sheet's box asks for the ChatGPT permission
-    /// first, as Summarize does — declined, it stays off; allowed, it is ticked, and ticked again later without asking.
-    func testTheIPhoneAsksBeforeTheTitleSheetBoxIsTicked() async throws {
+    /// docs/08 "Titles and speaker names": on the iPhone ticking either of the title sheet's boxes asks for the ChatGPT
+    /// permission first, as Summarize does — declined, it stays off; allowed, it is ticked, and either box is ticked
+    /// again later without asking.
+    func testTheIPhoneAsksBeforeATitleSheetBoxIsTicked() async throws {
         let bridge = try await CoreBridge.make(
             platform: .ios, deviceName: "Test iPhone",
             dataDirectory: directory, databaseName: "fill-consent.db", secureStore: InMemorySecureStore(),
@@ -618,46 +683,45 @@ final class SummaryTransferTests: XCTestCase {
         // The saved preferences arrive first, as they do long before anyone stops a recording.
         try await Task.sleep(for: .milliseconds(300))
 
-        model.setFillAfterStop(true)
+        model.setFillNamesAfterStop(true)
         try await until { !model.fillConsent.isEmpty }
         XCTAssertEqual(model.fillConsent.map(\.id), [chatGpt.id])
-        XCTAssertFalse(model.preferences.fillAfterStop, "nothing is ticked before the answer")
+        XCTAssertFalse(model.preferences.fillNamesAfterStop, "nothing is ticked before the answer")
 
         await model.answerFillConsent(allow: false)
         XCTAssertTrue(model.fillConsent.isEmpty)
-        XCTAssertFalse(model.preferences.fillAfterStop)
+        XCTAssertFalse(model.preferences.fillNamesAfterStop)
         let still = try await bridge.core.transferConsents.missing(targets: [chatGpt])
         XCTAssertEqual(still.count, 1)
         let declined = try await bridge.core.summaries.preferences()
-        XCTAssertFalse(declined.fillAfterStop)
+        XCTAssertFalse(declined.fillNamesAfterStop)
 
-        model.setFillAfterStop(true)
+        model.setFillTitleAfterStop(true)
         try await until { !model.fillConsent.isEmpty }
         await model.answerFillConsent(allow: true)
-        try await until { model.preferences.fillAfterStop }
+        try await until { model.preferences.fillTitleAfterStop }
         XCTAssertTrue(model.fillConsent.isEmpty)
+        XCTAssertFalse(model.preferences.fillNamesAfterStop, "the permission ticks the box it was asked for")
         let missing = try await bridge.core.transferConsents.missing(targets: [chatGpt])
         XCTAssertTrue(missing.isEmpty)
-        var saved = try await bridge.core.summaries.preferences()
-        for _ in 0..<200 where !saved.fillAfterStop {
-            try await Task.sleep(for: .milliseconds(25))
-            saved = try await bridge.core.summaries.preferences()
-        }
-        XCTAssertTrue(saved.fillAfterStop)
+        let saved = try await savedPreferences(bridge) { $0.fillTitleAfterStop }
+        XCTAssertTrue(saved.fillTitleAfterStop)
+        XCTAssertFalse(saved.fillNamesAfterStop)
 
-        // Off never asks; on again, once allowed, does not either.
-        model.setFillAfterStop(false)
-        XCTAssertFalse(model.preferences.fillAfterStop)
+        // Off never asks; on again — either box — once allowed, does not either.
+        model.setFillTitleAfterStop(false)
+        XCTAssertFalse(model.preferences.fillTitleAfterStop)
         XCTAssertTrue(model.fillConsent.isEmpty)
-        model.setFillAfterStop(true)
-        try await until { model.preferences.fillAfterStop }
+        model.setFillNamesAfterStop(true)
+        try await until { model.preferences.fillNamesAfterStop }
         XCTAssertTrue(model.fillConsent.isEmpty, "allowed once is allowed")
+        XCTAssertTrue(model.fillNamesTicked)
     }
 
-    /// docs/08 "Titles and speaker names": on the iPhone the box shows ticked only while the permission stands —
-    /// withdrawn in Settings → Privacy, it shows unticked though it was left ticked, so Save asks for nothing, and
-    /// ticking it asks again.
-    func testTheIPhoneBoxIsUntickedOnceThePermissionIsWithdrawn() async throws {
+    /// docs/08 "Titles and speaker names": on the iPhone both boxes show ticked only while the permission stands —
+    /// withdrawn in Settings → Privacy, they show unticked though they were left ticked, so Save asks for nothing, and
+    /// ticking one asks again.
+    func testTheIPhoneBoxesAreUntickedOnceThePermissionIsWithdrawn() async throws {
         let bridge = try await CoreBridge.make(
             platform: .ios, deviceName: "Test iPhone",
             dataDirectory: directory, databaseName: "fill-withdrawn.db", secureStore: InMemorySecureStore(),
@@ -667,30 +731,38 @@ final class SummaryTransferTests: XCTestCase {
         let chatGpt = TransferTargets.shared.chatGptSummary()
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertFalse(model.fillAllowed)
-        XCTAssertFalse(model.fillTicked)
+        XCTAssertFalse(model.fillTitleTicked)
+        XCTAssertFalse(model.fillNamesTicked)
 
-        model.setFillAfterStop(true)
+        model.setFillTitleAfterStop(true)
         try await until { !model.fillConsent.isEmpty }
         await model.answerFillConsent(allow: true)
-        try await until { model.fillTicked }
+        try await until { model.fillTitleTicked }
+        model.setFillNamesAfterStop(true)
+        try await until { model.fillNamesTicked }
         XCTAssertTrue(model.fillAllowed)
 
         try await bridge.core.transferConsents.revoke(id: chatGpt.id)
-        try await until { !model.fillTicked }
+        try await until { !model.fillTitleTicked && !model.fillNamesTicked }
         XCTAssertFalse(model.fillAllowed)
-        XCTAssertTrue(model.preferences.fillAfterStop, "how the box was left is kept")
+        XCTAssertTrue(model.preferences.fillTitleAfterStop, "how the boxes were left is kept")
+        XCTAssertTrue(model.preferences.fillNamesAfterStop)
+        let unticked = TitleSheetFill(titleTicked: model.fillTitleTicked, namesTicked: model.fillNamesTicked, typedTitle: nil)
+        XCTAssertFalse(unticked.any, "Save asks for nothing")
 
-        model.setFillAfterStop(true)
+        model.setFillNamesAfterStop(true)
         try await until { !model.fillConsent.isEmpty }
-        XCTAssertFalse(model.fillTicked, "nothing is ticked before the answer")
+        XCTAssertFalse(model.fillNamesTicked, "nothing is ticked before the answer")
         await model.answerFillConsent(allow: false)
-        XCTAssertFalse(model.fillTicked)
+        XCTAssertFalse(model.fillNamesTicked)
+        XCTAssertFalse(model.fillTitleTicked)
         let missing = try await bridge.core.transferConsents.missing(targets: [chatGpt])
         XCTAssertEqual(missing.count, 1)
     }
 
-    /// docs/08 "Titles and speaker names" · docs/15 "iPhone providers": More → Fill in title and names asks for the
-    /// ChatGPT permission first on the iPhone, and once allowed goes on — here to the recording that has no transcript.
+    /// docs/08 "Titles and speaker names" · docs/15 "iPhone providers": More → Fill in title asks for the ChatGPT
+    /// permission first on the iPhone, and once allowed goes on — here to the recording that has no transcript. Fill in
+    /// speaker names does the same.
     func testTheIPhoneAsksBeforeTheFirstFillAndGoesOnOnceAllowed() async throws {
         let bridge = try await CoreBridge.make(
             platform: .ios, deviceName: "Test iPhone",
@@ -699,9 +771,8 @@ final class SummaryTransferTests: XCTestCase {
         )
         let chatGpt = TransferTargets.shared.chatGptSummary()
         let model = RecordingDetailModel(core: bridge.core, recordingId: "01JTESTRECORDING0000000000", title: "Meeting")
-        await model.fillTitleAndNames()
+        await model.fill(.title)
         XCTAssertEqual(model.summaryConsent.map(\.id), [chatGpt.id])
-        XCTAssertFalse(model.filling)
         XCTAssertNil(model.fillNotice, "a question, not a failure")
 
         await model.answerSummaryConsent(allow: false)
@@ -710,13 +781,17 @@ final class SummaryTransferTests: XCTestCase {
         let still = try await bridge.core.transferConsents.missing(targets: [chatGpt])
         XCTAssertEqual(still.count, 1)
 
-        await model.fillTitleAndNames()
+        await model.fill(.names)
+        XCTAssertEqual(model.summaryConsent.map(\.id), [chatGpt.id])
         await model.answerSummaryConsent(allow: true)
         let missing = try await bridge.core.transferConsents.missing(targets: [chatGpt])
         XCTAssertTrue(missing.isEmpty)
         XCTAssertTrue(model.summaryConsent.isEmpty)
         XCTAssertEqual(model.fillNotice, .refused("No transcript yet"))
-        XCTAssertFalse(model.filling)
+
+        await model.fill(.title)
+        XCTAssertTrue(model.summaryConsent.isEmpty, "allowed once is allowed")
+        XCTAssertEqual(model.fillNotice, .refused("No transcript yet"))
     }
 
     private func until(_ condition: () -> Bool) async throws {
@@ -726,6 +801,17 @@ final class SummaryTransferTests: XCTestCase {
         }
         XCTFail("timed out")
     }
+}
+
+/// The preferences as the core keeps them, once [condition] holds — a save runs after the screen shows it.
+@MainActor
+private func savedPreferences(_ bridge: CoreBridge, until condition: (SummaryPreferences) -> Bool) async throws -> SummaryPreferences {
+    var saved = try await bridge.core.summaries.preferences()
+    for _ in 0..<200 where !condition(saved) {
+        try await Task.sleep(for: .milliseconds(25))
+        saved = try await bridge.core.summaries.preferences()
+    }
+    return saved
 }
 
 /// A browser that does what the test says when the sign-in opens it.

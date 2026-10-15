@@ -520,11 +520,11 @@ final class MenuModel: ObservableObject {
                         )
                         titleRefused = saved?.boolValue != true
                     }
-                    // docs/08 "Titles and speaker names": the box was ticked — asked after the title is written and
+                    // docs/08 "Titles and speaker names": a box was ticked — asked after the title is written and
                     // before the job is queued, so the publication finds the request.
-                    if fill {
+                    if fill.any {
                         do {
-                            try await bridge?.core.requestFill(recordingId: outcome.recordingId)
+                            try await bridge?.core.requestFill(recordingId: outcome.recordingId, title: fill.title, names: fill.names)
                         } catch {
                             logger.error("shell.chatgpt.fill.request.failed error=\(String(describing: error), privacy: .private)")
                         }
@@ -1336,10 +1336,10 @@ final class MenuModel: ObservableObject {
 
     // MARK: - Prompts
 
-    /// What the stop asked for and got: the name, how many people were in the room, and whether ChatGPT is to fill
-    /// in the title and the speakers' names.
+    /// What the stop asked for and got: the name, how many people were in the room, and what ChatGPT is to fill in —
+    /// the title, the speakers' names, both or neither.
     enum NamingAnswer {
-        case save(title: String?, participants: Int?, fill: Bool)
+        case save(title: String?, participants: Int?, fill: TitleSheetFill)
         case discard
     }
 
@@ -1349,14 +1349,16 @@ final class MenuModel: ObservableObject {
     /// text field bolted to its side.
     private func askForTitle() -> NamingAnswer? {
         let asksPeople = !(processing?.transcriptionOff ?? false)
-        // docs/08 "Titles and speaker names": the ChatGPT box, while transcription is on and ChatGPT is signed in.
+        // docs/08 "Titles and speaker names": the ChatGPT boxes, while transcription is on and ChatGPT is signed in.
         let chatGpt = chatGpt
         return BlueprintPanel.run { finish in
             NamingSheet(
                 asksPeople: asksPeople,
                 asksFill: asksPeople && chatGpt?.fillOffered == true,
-                fill: chatGpt?.preferences.fillAfterStop ?? false,
-                onFillChanged: { chatGpt?.setFillAfterStop($0) },
+                fillTitle: chatGpt?.preferences.fillTitleAfterStop ?? false,
+                fillNames: chatGpt?.preferences.fillNamesAfterStop ?? false,
+                onFillTitleChanged: { chatGpt?.setFillTitleAfterStop($0) },
+                onFillNamesChanged: { chatGpt?.setFillNamesAfterStop($0) },
                 onSave: { finish(.save(title: $0, participants: $1, fill: $2)) },
                 onCancel: { finish(.discard) }
             )
