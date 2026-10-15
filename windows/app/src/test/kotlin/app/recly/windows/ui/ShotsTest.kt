@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.geometry.Offset
@@ -126,7 +129,28 @@ class ShotsTest {
             model.openDetail(model.recents.first())
             until { model.detail?.transcript != null && model.detail?.find == null }
             shot("settings-$lang", 640, SETTINGS_HEIGHT, ko) { SettingsWindow(model, strings) }
+            shot("popup-$lang", 520, 560, ko) { TrayPopup(model, strings) {} }
         }
+
+        // Right to left (Arabic), as `Main.Themed` lays it out: the Details window, Settings and the tray.
+        model.selectLanguage(AppLanguage.ARABIC)
+        model.localization.current.let { ar ->
+            shot("recordings-ar", 1000, 680, false, rtl = true) { RecordingsWindow(model, ar) { it() } }
+            shot("recordings-more-ar", 1000, 680, false, rtl = true, clicks = listOf(Offset(1000f - MORE.x, MORE.y))) { RecordingsWindow(model, ar) { it() } }
+            shot("settings-ar", 640, SETTINGS_HEIGHT, false, rtl = true) { SettingsWindow(model, ar) }
+            shot("popup-ar", 520, 560, false, rtl = true) { TrayPopup(model, ar) {} }
+        }
+        // D9: a list action's outcome over the Details list — a retry the queue refuses.
+        model.selectLanguage(AppLanguage.ENGLISH)
+        model.retry(model.recents.first().copy(jobId = "job-gone", jobStatus = recly.core.job.JobStatus.FAILED))
+        until { model.listMessage != null }
+        for (ko in listOf(false, true)) {
+            model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
+            val strings = model.localization.current
+            shot("recordings-list-message-${if (ko) "ko" else "en"}", 1000, 680, ko) { RecordingsWindow(model, strings) { it() } }
+        }
+        model.dismissListMessage()
+        model.selectLanguage(AppLanguage.ENGLISH)
 
         // docs/08 "Summaries": an edited summary in a format of its own, with its times and its footer, the More menu
         // over it, and its editor.
@@ -304,11 +328,15 @@ class ShotsTest {
         dark: Boolean = false,
         /** A wheel turn at this point (dp), after the clicks. */
         scroll: Offset? = null,
+        /** Laid out right to left, as `Main.Themed` lays out Arabic, Persian and Urdu. */
+        rtl: Boolean = false,
 
         content: @Composable () -> Unit,
     ) {
         val scene = ImageComposeScene(width * SCALE, height * SCALE, Density(SCALE.toFloat())) {
-            ReclyDesktopTheme(dark = dark, highContrast = false, tracked = !ko) { content() }
+            ReclyDesktopTheme(dark = dark, highContrast = false, tracked = !ko) {
+                CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
+            }
         }
         try {
             settle(scene)

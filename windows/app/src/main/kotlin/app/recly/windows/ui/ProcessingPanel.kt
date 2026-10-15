@@ -45,11 +45,12 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
     val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
     val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
     var deletingKey by remember { mutableStateOf<String?>(null) }
+    // The question is the title alone: the key's id under it is a technical value (F6).
     deletingKey?.let { name -> BlueprintDialog(title = strings[Str.DELETE_KEY_TITLE, SttProviders.displayName(name)], onDismissRequest = { deletingKey = null }, actions = {
         BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET, minWidth = MinTouch)
         // Irreversible, so the danger tone, as every Delete that cannot be undone wears it.
         BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER, minWidth = MinTouch)
-    }) { Text(name, color = blueprint.text) } }
+    }, fitContent = true) {} }
     // The same section heading as the rest of Settings (SettingsWindow `Section`).
     SectionHeader(strings[Str.PROCESSING_TITLE], Modifier.padding(horizontal = Space.m))
     HairLine()
@@ -82,8 +83,9 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
             }
             when {
                 // A language the model lacks has its own line below; this one is for the device.
+                // A limitation of this PC, said quietly (D22): nothing is waiting on the user.
                 !model.localInstalled || (model.local?.status == LocalEngineStatus.UNSUPPORTED && languageSupported) ->
-                    Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
+                    Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                 model.local?.status == LocalEngineStatus.MODEL_REQUIRED -> {
                     (model.local?.modelBytes ?: model.download.info?.modelBytes)?.let { bytes ->
                         val size = ByteFormat.format(bytes, Locale.forLanguageTag(strings.language))
@@ -114,7 +116,8 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
             LabelledRow(strings[Str.FIELD_LANGUAGE]) {
                 BlueprintDropdown(strings[Str.FIELD_LANGUAGE], languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
             }
-            if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
+            // A limitation of the method, said quietly as the phones say it (D22); Save stays off while it holds.
+            if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
             Vocabulary(model, draft, strings)
         }
         // What did not save, and why — 12, in the failure's colour (2026-10-10). That it saved is Save's own check.
@@ -241,24 +244,28 @@ private fun Vocabulary(model: ProcessingViewModel, draft: ProcessingDraft, strin
         if (terms != draft.vocabulary) model.edit { it.vocabulary = terms }
         entry = ""
     }
+    // The label, then the terms there are, then the field that adds one (D25) — the phones' order.
+    Text(strings[Str.VOCABULARY], style = MaterialTheme.typography.labelSmall, color = blueprint.textMuted)
+    // Left-aligned: a list of words reads from the start, unlike the form's buttons.
+    if (draft.vocabulary.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+        draft.vocabulary.forEach { term ->
+            TermChip(term, strings[Str.VOCABULARY_REMOVE, term]) { model.edit { it.vocabulary = it.vocabulary - term } }
+        }
+    }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Bottom) {
         BlueprintTextField(
             value = entry,
             onValueChange = { if ('\n' in it || '\r' in it) add(it) else entry = it },
+            // Named for a reader, and not drawn again: the label is over the terms.
             label = strings[Str.VOCABULARY],
             modifier = Modifier.weight(1f).onPreviewKeyEvent { event ->
                 (event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) add(entry) }
             },
             placeholder = strings[Str.VOCABULARY_PLACEHOLDER],
             monospace = false,
+            labelShown = false,
         )
         BlueprintButton(strings[Str.VOCABULARY_ADD], { add(entry) }, tone = ButtonTone.QUIET, enabled = entry.isNotBlank())
-    }
-    // Left-aligned: a list of words reads from the start, unlike the form's buttons.
-    if (draft.vocabulary.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
-        draft.vocabulary.forEach { term ->
-            TermChip(term, strings[Str.VOCABULARY_REMOVE, term]) { model.edit { it.vocabulary = it.vocabulary - term } }
-        }
     }
     if (refused) Text(strings[Str.VOCABULARY_LIMIT], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
     val provider = SttProviders.displayName(draft.provider)

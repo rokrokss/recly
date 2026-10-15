@@ -45,16 +45,19 @@ class ChatGptReasonsTest {
         fun blocked(
             writing: Boolean = false,
             hasTranscript: Boolean = true,
-            transcriptionRunning: Boolean = false,
+            busy: Str? = null,
             connection: ChatGptConnection = signedIn,
             summary: SummaryState = SummaryState.None,
-        ) = summarizeBlocked(writing, hasTranscript, transcriptionRunning, connection, summary)
+        ) = summarizeBlocked(writing, hasTranscript, busy, connection, summary)
 
         assertNull(blocked())
         // A take still being written has no transcript either; it says what it is first, as Rename does.
         assertEquals(Str.DETAIL_STILL_RECORDING, blocked(writing = true, hasTranscript = false, connection = ChatGptConnection.SignedOut))
         assertEquals(Str.DETAIL_NO_TRANSCRIPT, blocked(hasTranscript = false, connection = ChatGptConnection.SignedOut))
-        assertEquals(Str.DETAIL_TRANSCRIBING, blocked(transcriptionRunning = true, connection = ChatGptConnection.SignedOut))
+        assertEquals(Str.DETAIL_TRANSCRIBING, blocked(busy = Str.DETAIL_TRANSCRIBING, connection = ChatGptConnection.SignedOut))
+        // Any unsettled job, with its own reason (D16): an upload still to happen, a wait for Drive.
+        assertEquals(Str.DETAIL_NOT_UPLOADED, blocked(busy = Str.DETAIL_NOT_UPLOADED))
+        assertEquals(Str.DRIVE_PENDING, blocked(busy = Str.DRIVE_PENDING))
         assertEquals(Str.CORE_CHATGPT_SIGN_IN_REQUIRED, blocked(connection = ChatGptConnection.SignedOut))
         assertEquals(Str.CORE_CHATGPT_SIGN_IN_REQUIRED, blocked(connection = ChatGptConnection.Expired("me@example.com")))
         assertEquals(Str.SUMMARY_RUNNING, blocked(summary = SummaryState.Running(previous = null)))
@@ -174,17 +177,17 @@ class ChatGptReasonsTest {
 
     @Test
     fun `Ask waits for what Summarize waits for, but not for a summary being made`() {
-        assertNull(askBlocked(writing = false, hasTranscript = true, transcriptionRunning = false, connection = signedIn))
-        assertEquals(Str.DETAIL_STILL_RECORDING, askBlocked(writing = true, hasTranscript = false, transcriptionRunning = false, connection = signedIn))
-        assertEquals(Str.DETAIL_NO_TRANSCRIPT, askBlocked(writing = false, hasTranscript = false, transcriptionRunning = false, connection = signedIn))
-        assertEquals(Str.DETAIL_TRANSCRIBING, askBlocked(writing = false, hasTranscript = true, transcriptionRunning = true, connection = signedIn))
+        assertNull(askBlocked(writing = false, hasTranscript = true, busy = null, connection = signedIn))
+        assertEquals(Str.DETAIL_STILL_RECORDING, askBlocked(writing = true, hasTranscript = false, busy = null, connection = signedIn))
+        assertEquals(Str.DETAIL_NO_TRANSCRIPT, askBlocked(writing = false, hasTranscript = false, busy = null, connection = signedIn))
+        assertEquals(Str.DETAIL_TRANSCRIBING, askBlocked(writing = false, hasTranscript = true, busy = Str.DETAIL_TRANSCRIBING, connection = signedIn))
         assertEquals(
             Str.CORE_CHATGPT_SIGN_IN_REQUIRED,
-            askBlocked(writing = false, hasTranscript = true, transcriptionRunning = false, connection = ChatGptConnection.SignedOut),
+            askBlocked(writing = false, hasTranscript = true, busy = null, connection = ChatGptConnection.SignedOut),
         )
         // Summarize as… is Summarize's own item, with its reasons, the running summary among them.
-        assertEquals(Str.SUMMARY_RUNNING, summarizeBlocked(false, true, false, signedIn, SummaryState.Running(summary)))
-        assertNull(askBlocked(writing = false, hasTranscript = true, transcriptionRunning = false, connection = signedIn))
+        assertEquals(Str.SUMMARY_RUNNING, summarizeBlocked(false, true, null, signedIn, SummaryState.Running(summary)))
+        assertNull(askBlocked(writing = false, hasTranscript = true, busy = null, connection = signedIn))
     }
 
     @Test

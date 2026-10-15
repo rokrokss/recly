@@ -157,17 +157,13 @@ private fun Header(model: ShellModel, strings: Strings) {
                     strings = strings,
                     onClick = model::start,
                     tone = ButtonTone.PRIMARY,
-                    enabled = model.ready && !model.helperMissing && model.titlePrompt == null,
+                    // Off while a capture is coming up or being saved (STARTING, STOPPING) as well.
+                    enabled = model.ready && !model.helperMissing && model.titlePrompt == null && model.transition == null,
                 )
                 // docs/14 "Detection": an AWT balloon has no buttons (`TrayNotifier`), so the offer it
                 // made stands here for as long as it stands at all.
                 if (model.meetingOffer == MeetingDetectionRule.Prompt.START) {
                     BlueprintButton(strings[Str.TRAY_START_DETECTED], model::startDetected)
-                }
-                // The helper died under a recording; that one was finalized and this offers another.
-                if (model.helperCrashed) {
-                    BlueprintButton(strings[Str.TRAY_START_AGAIN], onClick = model::start,
-                        enabled = model.ready && !model.helperMissing && model.titlePrompt == null)
                 }
             }
         }
@@ -285,7 +281,8 @@ private fun Ledger(
             RecentRow(item, model, strings, expanded == item.id, statusWidth) { onExpand(item.id) }
         }
         if (model.recents.isEmpty()) {
-            item { EmptyList(strings[Str.LEDGER_EMPTY], Modifier.fillMaxWidth()) }
+            // Before the first read the list is not empty, it is not read yet (D15).
+            item { EmptyList(strings[if (model.recentsLoading) Str.LIST_LOADING else Str.LEDGER_EMPTY], Modifier.fillMaxWidth()) }
         }
         if (statusLineShown(model.status, model.alerts)) item {
             Text(
@@ -424,6 +421,10 @@ private fun RecentRow(
                     if (item.link != null) {
                         BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
                     }
+                    // docs/10 "Drive out of space": freeing space is the only way past it, and the page is Google's.
+                    if (item.jobStatus == JobStatus.NEEDS_SPACE) {
+                        BlueprintButton(strings[Str.JOBS_OPEN_STORAGE], model::openDriveStorage)
+                    }
                     // docs/03 "Storage location": a recording in the local folder has its folder there instead.
                     if (item.localFolderPath != null) {
                         BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], { model.openInFolder(item) })
@@ -441,12 +442,10 @@ private fun RecentRow(
                     // above it (docs/09 screen principle 2, the Mac's `MenuPopover.actions`).
                     CheckKeyButton(item, strings) { model.settingsOpen = true }
                     // docs/08 "Result files": the transcript, wherever it was written.
+                    // Through the window's own leave when it is up, so an edit in it asks first (D7).
                     BlueprintButton(
                         label = strings[Str.RECENT_DETAILS],
-                        onClick = {
-                            model.openDetail(item)
-                            model.recordingsOpen = true
-                        },
+                        onClick = { model.showDetail(item) },
                     )
                 }
                 // docs/03 "Deleting in the app": the dialog asks about Drive; this only opens it. Never

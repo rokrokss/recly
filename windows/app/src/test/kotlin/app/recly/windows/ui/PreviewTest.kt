@@ -54,15 +54,18 @@ class PreviewTest {
         assertEquals(Str.STATUS_OPENING.message(), model.status)
     }
 
-    /** Cancelling is what it always was, and a photographed question is still a question. */
+    /** Cancelling is what it always was, and a photographed question is still a question — its box writes nothing. */
     @Test
     fun `cancelling the photographed consent closes it too`() {
-        val model = shell(RecordingSettings())
+        val settings = RecordingSettings()
+        val model = shell(settings)
         model.previewConsent()
 
-        model.consentCancelled()
+        model.consentCancelled(dontAskAgain = true)
 
         assertNull(model.consentRequest)
+        assertTrue(model.consentReminder)
+        assertEquals(emptyList(), settings.writes, "a screenshot run wrote to the settings store")
     }
 
     /**

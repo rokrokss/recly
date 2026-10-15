@@ -36,11 +36,15 @@ fun DeleteDialog(
     // A recording another device uploaded is only in Drive, so the answer is already given: there is
     // no local copy the "leave it in Drive" branch would keep.
     var deleteDrive by remember(request.recordingId) { mutableStateOf(request.remote) }
+    // Nothing of it reached Drive or the local folder: there is no second answer to choose between (P5).
+    val asks = !request.remote && request.hasDriveFolder
     BlueprintDialog(
         title = strings[Str.DELETE_TITLE, request.title.text(strings)],
         onDismissRequest = onCancel,
         theme = theme,
-        height = if (request.remote) REMOTE_DELETE_HEIGHT else DELETE_HEIGHT,
+        height = if (asks) DELETE_HEIGHT else REMOTE_DELETE_HEIGHT,
+        // Without the two answers, only as tall as the line or two it says.
+        fitContent = !asks,
         actions = {
             BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(
@@ -62,6 +66,7 @@ fun DeleteDialog(
                     tone = DialogTone.DANGER,
                 )
             }
+            if (!asks) return@BlueprintDialog
             BlueprintRadioRow(
                 label = strings[Str.DELETE_LOCAL_ONLY],
                 selected = !deleteDrive,
@@ -91,8 +96,9 @@ fun RenameDialog(
     onSave: (RenameRequest, String) -> Unit,
 ) {
     var title by remember(request.recordingId) { mutableStateOf(request.title) }
+    // The stop's prompt in the same words: `Recording title` over a field called `Title` (P7).
     BlueprintDialog(
-        title = strings[Str.DETAIL_RENAME],
+        title = strings[Str.RECORDING_TITLE],
         onDismissRequest = onCancel,
         theme = theme,
         height = RENAME_HEIGHT,
@@ -108,10 +114,36 @@ fun RenameDialog(
         BlueprintTextField(
             value = title,
             onValueChange = { title = it },
-            label = strings[Str.RECORDING_TITLE],
+            label = strings[Str.LEDGER_TITLE],
             // A title is something a person types, not a field of data.
             monospace = false,
         )
+    }
+}
+
+/**
+ * docs/14 "Permissions": a start refused because "Let desktop apps access your microphone" is off — the Mac's
+ * permission panel in this shell's words: what is needed, where it is switched on, and the page itself.
+ */
+@Composable
+fun MicrophoneDialog(
+    strings: Strings,
+    theme: @Composable (@Composable () -> Unit) -> Unit,
+    onClose: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    BlueprintDialog(
+        title = strings[Str.STATUS_MIC_DENIED],
+        onDismissRequest = onClose,
+        theme = theme,
+        height = METERED_HEIGHT,
+        fitContent = true,
+        actions = {
+            BlueprintButton(strings[Str.CLOSE], onClose, tone = ButtonTone.QUIET, minWidth = MinTouch)
+            BlueprintButton(strings[Str.SETTINGS_OPEN_MICROPHONE], onOpenSettings, tone = ButtonTone.PRIMARY)
+        },
+    ) {
+        BlueprintDialogText(strings[Str.MIC_GUIDANCE])
     }
 }
 

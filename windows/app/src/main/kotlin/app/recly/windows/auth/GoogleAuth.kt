@@ -38,7 +38,8 @@ sealed interface SignInResult {
     /**
      * [reason] is what went wrong, as a name rather than a sentence (docs/07 rule 3): what this app
      * decided is a key, and what Google said is its own words carried in a [UiMessage.Text]. The
-     * tray shows it under [app.recly.windows.i18n.Str.STATUS_SIGN_IN_FAILED].
+     * shell does not show it: Settings says only that Drive could not be connected
+     * ([app.recly.windows.i18n.Str.DRIVE_CONNECT_FAILED]).
      */
     data class Failed(val reason: UiMessage) : SignInResult
 }

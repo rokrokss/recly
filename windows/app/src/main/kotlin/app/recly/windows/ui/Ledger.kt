@@ -99,6 +99,28 @@ fun LedgerStatus.worded(strings: Strings?): LedgerStatus {
     return if (strings == null) this else copy(label = strings[word])
 }
 
+/**
+ * D11: what the list's header says about the rows under it — "14 · 2 waiting · 1 failed", a part that is zero left
+ * out — by the phones' counting rule (Android's `JobsScreen.waiting` · `failing`, the iPhone's `Recents.summary`). A
+ * wait for Drive, a permission, the model, the folder, a provider or this PC's own transcription is waiting; a
+ * failure, a full Drive and a take too short to keep are failed. It counts the rows read so far, as theirs do.
+ */
+fun ledgerCounts(items: List<RecentItem>, waitingWord: (Int) -> String, failedWord: (Int) -> String): String {
+    val keys = items.map { (it.state as? UiMessage.Res)?.key }
+    val waiting = keys.count { it in WAITING_STATES }
+    val failed = keys.count { it in FAILING_STATES }
+    return listOfNotNull(items.size.toString(), waiting.takeIf { it > 0 }?.let(waitingWord), failed.takeIf { it > 0 }?.let(failedWord))
+        .joinToString(" · ")
+}
+
+private val WAITING_STATES = setOf(
+    Str.STATUS_WAITING, Str.STATE_RETRY_WAIT, Str.STATE_WAITING_TRANSCRIPTION, Str.PROCESSING_LOCAL_RUNNING,
+    Str.PROCESSING_LOCAL_PENDING, Str.STATUS_SIGN_IN_NEEDED, Str.STATE_CONSENT_REQUIRED, Str.STATE_NEEDS_MODEL,
+    Str.STATE_WAITING_FOLDER, Str.STATE_RECEIVING, Str.STATE_REMOTE_UPLOADING, Str.STATE_IMPORTING,
+)
+
+private val FAILING_STATES = setOf(Str.STATE_FAILED, Str.STATE_NO_SPACE, Str.STATE_TOO_SHORT)
+
 /** The code of a state this ledger does not know. */
 private const val UNKNOWN_STATE = "UNKNOWN"
 
@@ -107,6 +129,8 @@ private const val UNKNOWN_STATE = "UNKNOWN"
  * diagnostic that came with it never, on its own line in monospace under it. What to do about it is in the
  * row's actions line ([CheckKeyButton]).
  *
+ * And above it, while a provider is transcribing, how many minutes it has been.
+ *
  * Written once and drawn twice: the tray popup's expanded row and the recordings window's sidebar
  * are two views of the same recording, and a row that named a failure in one place and stayed
  * silent in the other was two answers to one question (the Mac's popover draws both from `row`).
@@ -114,6 +138,14 @@ private const val UNKNOWN_STATE = "UNKNOWN"
  */
 @Composable
 fun FailureReason(item: RecentItem, strings: Strings) {
+    // A provider transcribing: how long it has been, drawn and not only spoken, so the wait does not read as stuck (D12).
+    item.waitingMinutes?.let { minutes ->
+        Text(
+            strings[Str.STATE_WAITING_TRANSCRIPTION, minutes],
+            style = MaterialTheme.typography.bodySmall,
+            color = blueprint.textMuted,
+        )
+    }
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) return
     // Waiting for the speech model is not a failure: the state and the row's Download say it.
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) return

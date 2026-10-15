@@ -328,12 +328,15 @@ class CrossShellDictionaryTest {
             ),
             // docs/12 M8: a desktop can tell a meeting from anything else and asks before each one,
             // so the two desktops share a row the two phones word differently (settings_consent_*).
+            // D4 (2026-10-15): "Consent reminder" on the desktops, as the phones title it. The Mac's key is its old
+            // English until the Mac's own change rewords it.
             Line(
                 what = "the desktop consent setting",
-                en = "Consent check before recording",
-                ko = "녹음 전 동의 확인",
+                en = "Consent reminder",
+                ko = "동의 리마인더",
                 windows = "settings.consent.reminder",
                 mac = "Consent check before recording",
+                pending = setOf("RecMac"),
             ),
             // docs/09 screen principle 3: the inspector's own field labels.
             Line(
@@ -736,10 +739,8 @@ class CrossShellDictionaryTest {
                 what = "the disconnect hint",
                 en = "Take this app’s access to your Google account away.",
                 ko = "이 앱의 Google 계정 접근 권한을 회수합니다.",
-                windows = "settings.disconnect.hint",
                 mac = "Take this app’s access to your Google account away.",
                 phone = "Take this app’s access to your Google account away.",
-                pending = setOf("windows"),
             ),
             // docs/08 "Titles and speaker names": the two switches, and the sentence under each that is the consent to them.
             Line(

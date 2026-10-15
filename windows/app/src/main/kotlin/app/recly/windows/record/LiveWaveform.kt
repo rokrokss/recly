@@ -17,8 +17,12 @@ class LiveWaveform(private val capacity: Int = CAPACITY) {
     private var next = 0
     private var filled = 0
 
+    /** Every window ever added, the ones that fell off the ring included. */
+    private var total = 0L
+
     /** One helper line's worth of finished windows, oldest first. */
     fun add(peaks: List<Float>) = synchronized(this) {
+        total += peaks.size
         for (peak in peaks) {
             ring[next] = peak
             next = (next + 1) % capacity
@@ -33,7 +37,17 @@ class LiveWaveform(private val capacity: Int = CAPACITY) {
             List(filled) { ring[(start + it) % capacity] }
         }
 
+    /**
+     * How much audio has been written so far, in seconds: the helper sends a level for each tenth of a second only
+     * once it is in the file (`Recorder::push`), so the windows counted are the written audio's own clock.
+     */
+    val writtenSec: Double
+        get() = synchronized(this) { total / WINDOWS_PER_SEC.toDouble() }
+
     companion object {
+        /** The helper's window is a tenth of a second (`pipeline::level::WINDOW_FRAMES`). */
+        const val WINDOWS_PER_SEC: Int = 10
+
         /** Thirty seconds at the helper's tenth-of-a-second window. */
         const val CAPACITY: Int = 300
     }

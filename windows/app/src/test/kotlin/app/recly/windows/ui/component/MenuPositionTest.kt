@@ -45,4 +45,21 @@ class MenuPositionTest {
         val tall = IntSize(220, 560)
         assertEquals(IntOffset(100, 600 - 560), MenuPosition(end = false).calculatePosition(IntRect(100, 200, 160, 244), window, LayoutDirection.Ltr, tall))
     }
+
+    /** D19: a submenu opens beside its row — after it in the reading direction, before it when there is no room. */
+    @Test
+    fun `a submenu opens beside the row that opened it`() {
+        val row = IntRect(left = 300, top = 200, right = 520, bottom = 248)
+        val sub = IntSize(200, 240)
+        assertEquals(IntOffset(520, 200), SubmenuPosition.calculatePosition(row, window, LayoutDirection.Ltr, sub))
+        assertEquals(IntOffset(100, 200), SubmenuPosition.calculatePosition(row, window, LayoutDirection.Rtl, sub))
+        // No room after it at the window's end: before it, and the other way round in a right-to-left language.
+        val atEnd = IntRect(left = 600, top = 200, right = 820, bottom = 248)
+        assertEquals(IntOffset(400, 200), SubmenuPosition.calculatePosition(atEnd, window, LayoutDirection.Ltr, sub))
+        val atStart = IntRect(left = 40, top = 200, right = 260, bottom = 248)
+        assertEquals(IntOffset(260, 200), SubmenuPosition.calculatePosition(atStart, window, LayoutDirection.Rtl, sub))
+        // Never past the window's foot.
+        val low = IntRect(left = 300, top = 500, right = 520, bottom = 548)
+        assertEquals(IntOffset(520, 600 - 240), SubmenuPosition.calculatePosition(low, window, LayoutDirection.Ltr, sub))
+    }
 }

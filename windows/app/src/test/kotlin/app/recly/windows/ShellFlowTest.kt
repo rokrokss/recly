@@ -69,7 +69,7 @@ class ShellFlowTest {
 
         // A skipped title: no name, and the job is queued all the same, on the settings the
         // recording froze when it started.
-        assertIs<EnqueueResult.Enqueued>(completeRecording(core, outcome.recordingId, title = null))
+        assertIs<EnqueueResult.Enqueued>(completeRecording(core, outcome.recordingId, title = null).enqueued)
         assertNull(assertNotNull(core.recordings.get(outcome.recordingId)).meta.title)
 
         core.runDueJobs()
@@ -107,7 +107,7 @@ class ShellFlowTest {
         // The stop leaves no job behind: nothing is queued until the title dialog is answered.
         assertTrue(core.jobs.list().isEmpty())
 
-        assertIs<EnqueueResult.Enqueued>(completeRecording(core, outcome.recordingId, "주간 회의"))
+        assertIs<EnqueueResult.Enqueued>(completeRecording(core, outcome.recordingId, "주간 회의").enqueued)
 
         assertEquals("주간 회의", assertNotNull(core.recordings.get(outcome.recordingId)).meta.title)
         assertEquals(1, core.jobs.list().size)

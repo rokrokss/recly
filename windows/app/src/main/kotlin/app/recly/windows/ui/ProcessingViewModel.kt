@@ -117,12 +117,18 @@ class ProcessingViewModel(
     fun importSettings() = scope.launch {
         runCatching {
             val json = openFile() ?: return@runCatching
-            require(json.length <= 1_048_576)
-            val parsed = ProcessingSettingsParser.parse(json)
+            // A file too big to be settings is settings this version cannot read, not a failure with a diagnostic.
+            val parsed = if (json.length <= SETTINGS_FILE_MAX_BYTES) ProcessingSettingsParser.parse(json) else null
             if (parsed is ProcessingParseResult.Valid) {
                 draft = ProcessingDraft.from(parsed.document.settings); dirty = true; importing = true; message = null
             } else message = Str.PROCESSING_UNREADABLE.message()
-        }.onFailure(::failed)
+        }.onFailure { if (it is SettingsFileTooLarge) message = Str.PROCESSING_UNREADABLE.message() else failed(it) }
     }
     private fun failed(error: Throwable) { message = coreMessage(CoreMessage.STEP_FAILED, error.message.orEmpty()) }
 }
+
+/** docs/05: the largest file an import of the processing settings reads. */
+internal const val SETTINGS_FILE_MAX_BYTES: Int = 1_048_576
+
+/** The file picked to import is bigger than any settings file — said as settings that cannot be read. */
+internal class SettingsFileTooLarge : IllegalArgumentException("Settings file is too large")
