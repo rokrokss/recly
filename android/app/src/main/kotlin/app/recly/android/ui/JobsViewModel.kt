@@ -265,6 +265,8 @@ data class DetailState(
     val ask: AskState = AskState.None,
     /** docs/09 "Search": opened from a hit found only in the summary, so the page starts on it. */
     val openSummary: Boolean = false,
+    /** docs/08 "Titles and speaker names": More → Fill in title and names, asked from this page, is still running. */
+    val filling: Boolean = false,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -520,6 +522,32 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun summarize(recordingId: String, format: SummaryFormat?, onFailure: () -> Unit) = launch {
         runCatching { core().summaries.summarize(recordingId, format) }.onFailure { onFailure() }
     }
+
+    /**
+     * docs/08 "Titles and speaker names": More → Fill in title and names. The run is the core's and goes on if the page
+     * closes; the names arrive through the transcript the page follows, and a title is set on the page's header here,
+     * as a rename's is — the header does not follow the recording. What came of it is the page's to say; null when
+     * the call threw.
+     */
+    suspend fun fill(recordingId: String): recly.core.chatgpt.FillResult? = viewModelScope.async {
+        updateDetail(recordingId) { it.copy(filling = true) }
+        val core = core()
+        val result = try {
+            withContext(core.deps.io) { core.fillTitleAndNames(recordingId) }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.fill.failed", mapOf("recordingId" to recordingId), e)
+            null
+        } finally {
+            updateDetail(recordingId) { it.copy(filling = false) }
+        }
+        if ((result as? recly.core.chatgpt.FillResult.Filled)?.title == true) {
+            val title = runCatching { withContext(core.deps.io) { core.recordings.get(recordingId)?.meta?.title } }.getOrNull()
+            title?.takeIf { it.isNotBlank() }?.let { named -> updateDetail(recordingId) { it.copy(title = named) } }
+        }
+        result
+    }.await()
 
     /** docs/08 "Ask": the presets that make sense for the recording; none when it cannot be read. */
     suspend fun askPresets(recordingId: String): List<AskPreset> {

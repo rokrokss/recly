@@ -115,8 +115,11 @@ fun RecordingSection(
     /** The permission is there again — the refusal in [RecordingUiState.micRefused] is over. */
     onMicGranted: () -> Unit,
     onConsumeAutoStart: () -> Boolean,
-    onSaveTitle: (String, Int?) -> Unit,
+    /** The title, the head count, and whether the sheet's ChatGPT box was there and ticked. */
+    onSaveTitle: (String, Int?, Boolean) -> Unit,
     onCancelTitle: () -> Unit,
+    /** The sheet's ChatGPT box changed: the next sheet starts as it was left. */
+    onFillChanged: (Boolean) -> Unit,
     onConsentAnswered: (Boolean, Boolean) -> Unit,
     modifier: Modifier = Modifier,
     /** The first-run card that offers the speech model, at the top of the tab ([ModelPromptCard]). */
@@ -284,8 +287,10 @@ fun RecordingSection(
     // The recording is already finalized on disk by the time this appears; the answer only decides
     // what title the queued job carries.
     if (state.untitled != null) {
-        TitleDialog(onSave = onSaveTitle, onCancel = onCancelTitle,
-            askParticipants = state.processing.mode != recly.core.processing.TranscriptionMode.OFF)
+        val transcribes = state.processing.mode != recly.core.processing.TranscriptionMode.OFF
+        TitleDialog(onSave = onSaveTitle, onCancel = onCancelTitle, askParticipants = transcribes,
+            askFill = transcribes && state.chatGpt is recly.core.chatgpt.ChatGptConnection.SignedIn,
+            fillInitially = state.fillAfterStop, onFillChanged = onFillChanged)
     }
 
     if (state.consentPrompt) {
@@ -613,11 +618,23 @@ private fun granted(context: Context, permission: String): Boolean =
  *
  * docs/03 "Titles": it closes through its two buttons only — Back and a tap outside do nothing, because the
  * second button deletes the recording and no gesture should come near that.
+ *
+ * docs/08 "Titles and speaker names": under the head count, [askFill] — ChatGPT signed in and transcription on —
+ * offers the box that asks ChatGPT for this recording's title and speaker names once it is transcribed, with what
+ * that sends. It starts as it was left last ([fillInitially]); Save says whether it was there and ticked.
  */
 @Composable
-internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit, askParticipants: Boolean = true) {
+internal fun TitleDialog(
+    onSave: (String, Int?, Boolean) -> Unit,
+    onCancel: () -> Unit,
+    askParticipants: Boolean = true,
+    askFill: Boolean = false,
+    fillInitially: Boolean = false,
+    onFillChanged: (Boolean) -> Unit = {},
+) {
     var title by remember { mutableStateOf("") }
     var participants by remember { mutableStateOf<Int?>(null) }
+    var fill by remember { mutableStateOf(fillInitially) }
     BlueprintDialog(
         title = stringResource(R.string.recording_title_prompt),
         onDismissRequest = {},
@@ -633,7 +650,7 @@ internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit, a
             )
             BlueprintButton(
                 label = stringResource(R.string.recording_title_save),
-                onClick = { onSave(title, participants) },
+                onClick = { onSave(title, participants, askFill && fill) },
                 modifier = Modifier.widthIn(min = 120.dp),
                 tone = ButtonTone.PRIMARY,
             )
@@ -659,6 +676,18 @@ internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit, a
                 )
             }
         }
+        if (!askFill) return@BlueprintDialog
+        BlueprintCheckRow(
+            label = stringResource(R.string.fill_after_stop),
+            checked = fill,
+            onCheckedChange = {
+                fill = it
+                onFillChanged(it)
+            },
+            modifier = Modifier.testTag("title-fill"),
+        )
+        // What the box sends, when, and that it counts toward the plan: the consent it is (docs/15 §10).
+        BlueprintDialogText(stringResource(R.string.fill_after_stop_note), tone = DialogTone.MUTED)
     }
 }
 

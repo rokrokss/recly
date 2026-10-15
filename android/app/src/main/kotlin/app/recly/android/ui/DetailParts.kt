@@ -72,6 +72,7 @@ import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.SummaryFormat
 import recly.core.processing.ProcessingTranscription
 import recly.core.processing.TranscriptionMode
@@ -91,16 +92,17 @@ internal class MoreActions(
     val onSummarizeAs: (SummaryFormat) -> Unit,
     val onEditSummary: () -> Unit,
     val onAsk: () -> Unit,
+    val onFill: () -> Unit,
 )
 
 /**
  * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again ─ Summarize · Summarize as… · Edit
- * summary · Ask about this recording… ─ Add highlight at the playhead, in that order and in those three groups, a hairline
+ * summary · Ask about this recording… · Fill in title and names ─ Add highlight at the playhead, in that order and in those three groups, a hairline
  * between them. An item that cannot run is shown disabled with its reason under it — every one of them `Still recording`
  * while the recorder is writing into this take; the ChatGPT items are not there at all where ChatGPT is not offered, and
  * Edit summary not before there is a summary, and a group left empty has no line of its own. The menu is as tall as the
  * window lets it be, so no item is out of sight. Summarize as… turns the menu into the list of [formats] under a heading
- * that goes back, as Change speaker does.
+ * that goes back, as Change speaker does. [filling] is this page's Fill in title and names still running.
  */
 @Composable
 internal fun MoreButton(
@@ -110,6 +112,7 @@ internal fun MoreButton(
     chatGpt: ChatGptConnection,
     formats: List<SummaryFormat>,
     actions: MoreActions,
+    filling: Boolean = false,
 ) {
     var open by remember { mutableStateOf(false) }
     var choosingFormat by remember { mutableStateOf(false) }
@@ -172,6 +175,12 @@ internal fun MoreButton(
                 val askReason = writing ?: askReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt)?.let { stringResource(it) }
                 MenuAction(stringResource(R.string.ask_menu), pick(actions.onAsk), enabled = askReason == null,
                     reason = askReason, modifier = Modifier.testTag("more-ask"))
+                // docs/08 "Titles and speaker names": what the recording still lacks, by the rule the core asks by.
+                val needed = transcript?.let { FillNeeds.of(detail.title, it).any } ?: false
+                val fillReason = writing ?: fillReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, filling, needed)
+                    ?.let { stringResource(it) }
+                MenuAction(stringResource(R.string.fill_menu), pick(actions.onFill), enabled = fillReason == null,
+                    reason = fillReason, modifier = Modifier.testTag("more-fill"))
             }
             HairLine()
             val highlightReason = writing ?: if (detail.audio.isEmpty) stringResource(R.string.player_no_audio) else null

@@ -438,6 +438,7 @@ private fun RecordTab(
         onConsumeAutoStart = model::consumeAutoStart,
         onSaveTitle = model::saveTitle,
         onCancelTitle = model::cancelTitle,
+        onFillChanged = model::rememberFill,
         onConsentAnswered = model::consentAnswered,
         modifier = modifier,
         prompt = {
@@ -495,6 +496,8 @@ private fun JobsTab(
                 askPresets = { model.askPresets(detail.recordingId) },
                 onAsk = { preset, question -> model.ask(detail.recordingId, preset, question) },
                 onClearAsk = { model.clearAsk(detail.recordingId) },
+                onFill = { model.fill(detail.recordingId) },
+                filling = detail.filling,
             ),
         )
     } else {

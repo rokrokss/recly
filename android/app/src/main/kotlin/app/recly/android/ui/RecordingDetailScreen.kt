@@ -88,6 +88,7 @@ import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
 import recly.core.processing.ProcessingTranscription
@@ -104,6 +105,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.recly.android.R
+import app.recly.android.core.coreMessage
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
@@ -157,6 +159,10 @@ class DetailActions(
     val askPresets: suspend () -> List<AskPreset> = { emptyList() },
     val onAsk: (AskPreset?, String?) -> Unit = { _, _ -> },
     val onClearAsk: () -> Unit = {},
+    /** docs/08 "Titles and speaker names": More → Fill in title and names, and what came of it — null when the call threw. */
+    val onFill: suspend () -> FillResult? = { null },
+    /** That fill, asked from this page, is still running: the item says `Filling in…`. */
+    val filling: Boolean = false,
 )
 
 /**
@@ -227,6 +233,9 @@ fun RecordingDetailScreen(
     // Why a "Transcribe again" the core refused did not start, for a moment under the header.
     var refusal by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
     LaunchedEffect(refusal) { if (refusal != null) { delay(REFUSAL_MS); refusal = null } }
+    // docs/08 "Titles and speaker names": a fill that came to nothing, for as long as a refusal stays.
+    var fillFailure by remember(detail.recordingId) { mutableStateOf<FillNotice.Failed?>(null) }
+    LaunchedEffect(fillFailure) { if (fillFailure != null) { delay(REFUSAL_MS); fillFailure = null } }
     val scope = rememberCoroutineScope()
     val transcription = actions.transcription
     if (askAgain && transcription != null) {
@@ -434,7 +443,16 @@ fun RecordingDetailScreen(
                                     savedSummary(detail.summary)?.let { summaryDraft = SummaryDraft.of(it); view = DetailView.SUMMARY }
                                 },
                                 onAsk = { asking = true },
-                            ))
+                                onFill = {
+                                    scope.launch {
+                                        when (val notice = fillNotice(actions.onFill(), detail.busyReason)) {
+                                            is FillNotice.Refused -> refusal = notice.reason
+                                            is FillNotice.Failed -> fillFailure = notice
+                                            null -> Unit
+                                        }
+                                    }
+                                },
+                            ), filling = actions.filling)
                         }
                     }
                 },
@@ -444,6 +462,15 @@ fun RecordingDetailScreen(
         refusal?.let {
             Text(stringResource(it), Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s).testTag("detail-refusal"),
                 style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+            HairLine()
+        }
+        fillFailure?.let { failed ->
+            // A failure in the failure colour (docs/09 "Accessibility"), the core's sentence under it.
+            Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s).testTag("detail-fill-failed"),
+                verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
+                Text(stringResource(R.string.fill_failed), style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
+                failed.reason?.let { Text(coreMessage(it).text(), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
+            }
             HairLine()
         }
         if (chips && !detail.loading) {
