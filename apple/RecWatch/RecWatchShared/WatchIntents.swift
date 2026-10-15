@@ -34,7 +34,7 @@ struct StartWatchRecordingIntent: AppIntent {
     }
 }
 
-/// The complication's tap while a recording is running, and the App Shortcut's second phrase.
+/// The App Shortcut's second phrase. (The complication's tap while a recording runs only opens the app.)
 /// Double Tap reaches the same model through the button's `handGestureShortcut(.primaryAction)`.
 struct StopWatchRecordingIntent: AppIntent {
     static var title: LocalizedStringResource = "Stop recording"

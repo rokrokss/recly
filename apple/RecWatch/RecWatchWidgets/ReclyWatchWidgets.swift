@@ -3,7 +3,7 @@ import SwiftUI
 import WidgetKit
 
 /// docs/13 "Apple Watch" Entry points: the complication — the state, and a tap that starts a
-/// recording.
+/// recording (or, while one runs, opens the app).
 ///
 /// The extension links no `RecKit` and no core, for the reason `RecPhoneWidgets` gives: it would
 /// carry the whole database with it for the sake of one status line, and the watch has a 75 MB
@@ -58,15 +58,15 @@ struct ComplicationFace: View {
     let status: WatchStatus
 
     var body: some View {
-        // The tap is the recording's own switch: start when there is nothing running, stop when
-        // there is (`WatchStatus.startsOnTap`).
+        // The tap starts a recording when there is nothing running; while one runs it is the face alone,
+        // and a tap on a complication with no button of its own opens the app — it never stops anything
+        // (`WatchStatus.startsOnTap`).
         Group {
             if status.startsOnTap {
                 Button(intent: StartWatchRecordingIntent()) { face }
                     .buttonStyle(.plain)
             } else {
-                Button(intent: StopWatchRecordingIntent()) { face }
-                    .buttonStyle(.plain)
+                face
             }
         }
         .accessibilityLabel(spoken)
@@ -127,7 +127,7 @@ struct ComplicationFace: View {
         if let since = status.elapsedSince {
             return title + Text(verbatim: ", ") + Text(timerInterval: since ... Date.distantFuture, countsDown: false)
         }
-        if status.mark == .waiting {
+        if status.mark == .waiting || status.mark == .failed {
             return Text("Start recording") + Text(verbatim: ", ") + title
         }
         return Text("Start recording")
@@ -136,7 +136,8 @@ struct ComplicationFace: View {
 
 /// docs/09 "Shape" · 2026-10-11 (N4): the watch app's own Record button at glyph size — a square node with
 /// a small filled square in it — and while recording the filled square in the recording's red, which a
-/// tinted face draws in its accent. Waiting keeps the system's square arrow.
+/// tinted face draws in its accent. Waiting keeps the system's square arrow, a failed transfer its square
+/// exclamation mark.
 struct ComplicationMark: View {
     let mark: WatchStatus.Mark
 
@@ -158,6 +159,9 @@ struct ComplicationMark: View {
                     .widgetAccentable()
             case .waiting:
                 Image(systemName: "arrow.up.square")
+                    .font(.system(size: WidgetTokens.iconSize, weight: .light))
+            case .failed:
+                Image(systemName: "exclamationmark.square")
                     .font(.system(size: WidgetTokens.iconSize, weight: .light))
             }
         }

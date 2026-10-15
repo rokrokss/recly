@@ -21,12 +21,17 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
 
     @Published private(set) var state: RecorderState = .idle
     /// docs/07 rule 3: a *key*, resolved by [status] where the screen draws it. Empty is "nothing to
-    /// say": the screen shows the waiting count there instead, or nothing (docs/09 screen principle 7).
-    @Published private(set) var note = "Opening"
+    /// say": the screen shows the queue's state there instead, or nothing (docs/09 screen principle 7) —
+    /// and empty from the launch on, as Wear's is: the core opening, or failing to, is not the wrist's news
+    /// (the button simply waits for it, and the log has the failure).
+    @Published private(set) var note = ""
     @Published private(set) var elapsed = ""
     @Published private(set) var isReady = false
     /// Recordings the phone has not acked yet — the audio is still on this watch until it does.
     @Published private(set) var waiting = 0
+    /// Recordings the phone refused for good, kept here with their audio — "Transfer failed", ahead of the
+    /// waiting ones (Wear's order): nothing will send them again.
+    @Published private(set) var failed = 0
     /// A refusal is not something the app can retry its way out of; the screen says so.
     @Published private(set) var microphoneDenied = false
     /// docs/09 "Highlights": the moment the last Highlight marked — the status line says it for 2 s.
@@ -110,6 +115,11 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             // recovery pass above was never queued by the stop that never ran, and one queued by an
             // earlier run is already in the file (`add` is idempotent).
             await enqueueEverythingFinalized(core: bridge.core, into: queue)
+            // docs/13 WA5: the phone's ack of a recording's meta is the "out of your hands" haptic; every ack
+            // may move the counts the line and the complication show.
+            link.onAck = { [weak self] completed in
+                Task { @MainActor in self?.acked(completed: completed) }
+            }
             link.adopt(queue)
             await refreshWaiting()
 
@@ -124,7 +134,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
                 """
             )
         } catch {
-            note = "Core error"
             logger.error("shell.failed error=\(String(describing: error), privacy: .private)")
         }
     }
@@ -138,12 +147,12 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         return false
     }
 
-    var canStop: Bool {
-        switch state {
-        case .starting, .recording: return true
-        case .idle, .stopping: return false
-        }
-    }
+    /// Only a recording that is running can be stopped; while the microphone is still opening, or the
+    /// recording is being saved, the button is off (as on every shell).
+    var canStop: Bool { isRecording }
+
+    /// The square answers a press only while it is Record or Stop — never in between.
+    var buttonEnabled: Bool { isReady && (state == .idle || isRecording) }
 
     var status: String {
         RecorderStatusLine.text(state: state, note: note)
@@ -205,7 +214,10 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
 
     /// docs/03: a stop finalizes at once. There is no title prompt on a watch and no job to queue —
     /// the recording's next step is the phone, so the queue takes it and `pump` hands it over.
-    private func finish() async {
+    ///
+    /// - Parameter failed: the capture ended on an error rather than at a stop — said as "The recording
+    ///   failed", with the failure haptic in place of the stop's.
+    private func finish(failed: Bool = false) async {
         guard let session else { return }
         switch await session.stop(title: nil) {
         case .notRecording:
@@ -224,8 +236,8 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             )
 
         case .finalized(let outcome):
-            note = ""
-            WKInterfaceDevice.current().play(.stop)
+            note = failed ? "The recording failed" : ""
+            WKInterfaceDevice.current().play(failed ? .failure : .stop)
             logger.info(
                 """
                 shell.recording.stop id=\(outcome.recordingId, privacy: .public) \
@@ -245,9 +257,14 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         await queue.add(record)
         await queue.pump()
         await refreshWaiting()
-        // docs/13 WA5: the third haptic is for "it is out of your hands", which is what queuing it
-        // for the phone means — the ack itself may be minutes away.
-        WKInterfaceDevice.current().play(.success)
+    }
+
+    /// docs/13 WA5: the third haptic is for "it is out of your hands" — which is the phone's ack of the
+    /// meta, the moment the audio may leave this watch, and not the queuing of it (Wear does the same). It
+    /// may be minutes after the stop.
+    private func acked(completed: Bool) {
+        if completed { WKInterfaceDevice.current().play(.success) }
+        Task { await refreshWaiting() }
     }
 
     private func captureFailed(_ error: RecorderError) {
@@ -258,7 +275,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             """
         )
         guard error.fatal else { return }
-        Task { await finish() }
+        Task { await finish(failed: true) }
     }
 
     // MARK: - The queue
@@ -277,6 +294,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     private func refreshWaiting() async {
         guard let queue else { return }
         waiting = await queue.waiting
+        failed = await queue.failed
         publishStatus()
     }
 
@@ -325,6 +343,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
                 state: isRecording ? .recording : .idle,
                 startedAt: isRecording ? startedAt : nil,
                 waiting: waiting,
+                failed: failed,
                 // docs/07 rule 2: the phone's choice, which the extension has no other way to read.
                 language: AppLanguage.current.code ?? ""
             )

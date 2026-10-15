@@ -22,9 +22,9 @@ final class WatchComplicationTests: XCTestCase {
         XCTAssertTrue(status.startsOnTap)
     }
 
-    /// While a recording runs the tap is the stop — the same switch the app's own button is, so a
-    /// glance and a tap do what the wrist expects.
-    func testARunningRecordingTurnsTheTapIntoTheStop() {
+    /// While a recording runs the tap only opens the app — it never stops anything: a glance at the
+    /// wrist must not end a three-hour recording.
+    func testARunningRecordingIsNotStoppedByTheTap() {
         let startedAt = Date()
         let status = WatchStatus(state: .recording, startedAt: startedAt, waiting: 0)
 
@@ -46,6 +46,17 @@ final class WatchComplicationTests: XCTestCase {
         // docs/09 screen principle 7: said without a count — whether any are left is the question.
         XCTAssertEqual(status.label, "Waiting")
         XCTAssertTrue(status.startsOnTap, "a queue is no reason not to start another recording")
+    }
+
+    /// A transfer the phone refused for good is said, and outranks the waiting ones — as on Wear's screen:
+    /// nothing will send it again, and the audio is still on the watch.
+    func testAFailedTransferIsSaidAheadOfTheWaitingOnes() {
+        let status = WatchStatus(state: .idle, startedAt: nil, waiting: 2, failed: 1)
+
+        XCTAssertEqual(status.mark, .failed)
+        XCTAssertEqual(status.label, "Transfer failed")
+        XCTAssertTrue(status.startsOnTap)
+        XCTAssertEqual(WatchStatus(state: .recording, startedAt: Date(), waiting: 0, failed: 1).mark, .recording)
     }
 
     /// A recording outranks the queue: it is the one the tap acts on.
