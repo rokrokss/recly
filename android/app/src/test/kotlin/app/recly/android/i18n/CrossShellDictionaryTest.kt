@@ -326,14 +326,17 @@ class CrossShellDictionaryTest {
                 mac = "No recordings yet",
                 phone = "No recordings yet",
             ),
-            // docs/12 M8: a desktop can tell a meeting from anything else and asks before each one,
-            // so the two desktops share a row the two phones word differently (settings_consent_*).
+            // docs/12 M8: one title on every shell; when it is asked — once on a phone, before every recording on a
+            // desktop — is the line under it, which each shell words for itself.
             Line(
-                what = "the desktop consent setting",
-                en = "Consent check before recording",
-                ko = "녹음 전 동의 확인",
+                what = "the consent setting",
+                en = "Consent reminder",
+                ko = "동의 리마인더",
+                android = "settings_consent_reminder",
                 windows = "settings.consent.reminder",
-                mac = "Consent check before recording",
+                mac = "Consent reminder",
+                phone = "Consent reminder",
+                pending = setOf("windows"),
             ),
             // docs/09 screen principle 3: the inspector's own field labels.
             Line(
