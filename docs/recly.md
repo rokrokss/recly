@@ -2649,9 +2649,10 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   Android's More menu turns into it with a back row, the iPhone asks in the system's dialog, because an open SwiftUI menu
   cannot be told it closed and would reopen on the formats (2026-10-15); `✓` on the summary's format) and, after `Edit summary`, `Ask about this recording…` — disabled with their reason like the other items: `No transcript yet`,
   `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. After `Ask about this recording…`, `Fill in title
-  and names` (2026-10-15, §8 "Titles and speaker names") — disabled with `No transcript yet`, `Transcribing…`, `Still recording`, `Sign in
-  to ChatGPT in Settings`, `Title and names are already filled in` (`FillNeeds.any` is false) and `Filling in…` while it runs. It opens no
-  view: the title shows in the header and the names in the transcript. A failure says `Could not fill in the title and names` with the
+  and names` (2026-10-15, §8 "Titles and speaker names") — disabled with the first reason that applies, in this order: `Still recording`;
+  `No transcript yet` (a transcript with nothing said included) or the reason of an unsettled job (`Transcribing…`); `Sign in to ChatGPT in
+  Settings`; `Filling in…` while it runs; `Title and names are already filled in` (`FillNeeds.any` is false). It opens no view: the title
+  shows in the header and the names in the transcript. A failure says `Could not fill in the title and names` with the
   core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on iPhone the
   ChatGPT permission is asked first, as for `Summarize`. Once a summary exists or one was asked for, two
   chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects

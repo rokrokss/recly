@@ -750,6 +750,7 @@ class CrossShellDictionaryTest {
                 ko = "ChatGPT로 제목·화자 이름 채우기",
                 android = "fill_after_stop",
                 windows = "fill.after.stop",
+                reckit = "Fill in the title and speaker names with ChatGPT",
             ),
             Line(
                 what = "what the title sheet's fill box sends",
@@ -757,6 +758,7 @@ class CrossShellDictionaryTest {
                 ko = "전사가 끝나면 전사본을 ChatGPT에 보내, 비어 있는 제목과 대화에서 이름이 불린 화자의 이름을 받습니다. ChatGPT 사용량에 포함됩니다.",
                 android = "fill_after_stop_note",
                 windows = "fill.after.stop.note",
+                reckit = "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.",
             ),
             Line(
                 what = "the More menu's fill item",
@@ -764,6 +766,7 @@ class CrossShellDictionaryTest {
                 ko = "제목·이름 채우기",
                 android = "fill_menu",
                 windows = "fill.menu",
+                reckit = "Fill in title and names",
             ),
             Line(
                 what = "the fill item with nothing left to fill",
@@ -771,6 +774,7 @@ class CrossShellDictionaryTest {
                 ko = "제목과 이름이 이미 있습니다",
                 android = "fill_nothing",
                 windows = "fill.nothing",
+                reckit = "Title and names are already filled in",
             ),
             Line(
                 what = "the fill item while it runs",
@@ -778,6 +782,7 @@ class CrossShellDictionaryTest {
                 ko = "채우는 중…",
                 android = "fill_running",
                 windows = "fill.running",
+                reckit = "Filling in…",
             ),
             Line(
                 what = "a fill that failed",
@@ -785,6 +790,7 @@ class CrossShellDictionaryTest {
                 ko = "제목과 이름을 채우지 못했습니다",
                 android = "fill_failed",
                 windows = "fill.failed",
+                reckit = "Could not fill in the title and names",
             ),
         )
     }
