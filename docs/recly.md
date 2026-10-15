@@ -3889,12 +3889,14 @@ happens independently of both Drive and providers.
 | Apple Watch → iPhone | Same | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId · part · track · sha256 · file name ride in the `metadata` dictionary. The phone receives with `WCSessionDelegate.session(_:didReceive:)` and acks with `transferUserInfo` |
 | Android phone → Galaxy Watch | **Retired (2026-09-24)** — ~~workflow summary: only two fields per workflow, `id` · `name`~~. The watch has no workflow list | ~~`DataClient.putDataItem` path `/rec/workflows`~~ |
 | iPhone → Apple Watch | Only the app language (the workflow summary `id` · `name` was retired 2026-09-24), no step contents | `WCSession.updateApplicationContext` |
+| Android phone → Galaxy Watch | Only the app language tag (`ko`, `zh-Hans`, `pt-BR`, …; 2026-10-15), nothing else | `DataClient.putDataItem` path `/rec/language` (urgent), written when the phone app starts or its language changes; the watch ignores anything not shaped like a language tag |
 
 - **Both devices are the user's own.** The transfer rides the OS's pairing channel, and **Recly's server is not involved** —
   there is no server to receive it. The watch module does not even have an HTTP client.
 - Recording file transfer goes **only to a nearby node** — Android filters out nodes that are not `isNearby`, which excludes relay through the Google cloud,
   and Apple uses only `WCSession`. (The `/rec/workflows` DataClient item, which had no filter, was retired 2026-09-24 and
-  is no longer published.)
+  is no longer published.) The `/rec/language` item is a data item, so it waits for a watch out of reach and the Data Layer may carry it through
+  Google's cloud when Bluetooth is unavailable — it holds the language tag only, which is why it is not limited to nearby nodes.
 - For recordings the direction is **one-way**. There is only watch → phone; there is no path by which transcript text or workflow steps · secrets · Job results
   go phone → watch.
 - The watch deletes its own copy once it receives the ack — no recording history stays on the watch.
