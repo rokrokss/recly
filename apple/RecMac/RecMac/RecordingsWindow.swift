@@ -217,7 +217,7 @@ struct RecordingsWindow: View {
                 preview: item.preview,
                 at: LedgerFormat.startedAt(item.startedAt),
                 length: length,
-                state: item.stateLabel
+                state: item.spokenState
             ),
             // 2026-10-10 (A-A9): the row whose recording is open beside the list says so.
             opened: opened,

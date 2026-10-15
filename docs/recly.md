@@ -2364,7 +2364,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    publication or the detail asked — shows `Filling in` (accent, with the 8 pt square loader to its left, as the status node shows
    `Uploading`) on every list: the phones, the popover and tray ledgers, and the desktop Details lists. It is read after `REC` and
    `RECEIVING` and ahead of everything else — the other things happening elsewhere and the job state mapping — and the row goes back to
-   what its job says when the run ends. The header count and the row's actions still go by the job state.
+   what its job says when the run ends. The header count and the row's actions still go by the job state. The row's spoken sentence says
+   `Filling in` too, so a screen reader hears what the badge shows.
    Row expansion has **actions — in one horizontal line, wrapping to the next line when they overflow (no vertical listing)**: `Open in Drive` (when there is a link) ·
    `Retry` (**in the failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04; excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`) ·
    `Details` (opens the detail screen — on desktop, the window of the same name) · Delete (except while recording, importing or receiving from the watch;
@@ -2602,7 +2603,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    on — like the participant-count row's rule — with one note under both: `Once transcribed, the transcript goes to ChatGPT for a missing
    title and the names of speakers called by name. It counts toward your ChatGPT usage.` Each starts as it was left last
    (`SummaryPreferences.fillTitleAfterStop`, `fillNamesAfterStop`) and is remembered on its own; `Save` with either ticked asks for what is
-   ticked, for this recording. On iPhone, ticking either asks for the ChatGPT permission first (§15 "iPhone providers"), as `Summarize`
+   ticked, for this recording. While the title field has text, the title box is disabled — a typed title is never replaced, so it would do
+   nothing — and keeps the state it remembers. On iPhone, ticking either asks for the ChatGPT permission first (§15 "iPhone providers"), as `Summarize`
    does.
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
@@ -2683,7 +2685,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   false) or `No unnamed speakers` (`Fill in speaker names`, `FillNeeds.names` is false). They open no view: the title shows in the header
   and the names in the transcript. While a fill of the recording runs, from either item or from the title sheet's boxes, the line under
   the header says so with the square loader: `Filling in the title…`, `Filling in speaker names…`, or both lines, the title's first, when
-  one request asks for both; it goes when the run ends. A failure says `Could not fill in the title` or `Could not fill in speaker names`
+  one request asks for both; it goes when the run ends, and steps aside while the transcript or the summary is edited, as the
+  other lines there do. An item asked when there turned out to be nothing to fill says its own reason (`Already has a title` or `No
+  unnamed speakers`) there for a few seconds; one ChatGPT answered without the half asked says the failure sentence alone. A failure says `Could not fill in the title` or `Could not fill in speaker names`
   with the core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on
   iPhone the ChatGPT permission is asked first, as for `Summarize`. Once a summary exists or one was asked for, two
   chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects

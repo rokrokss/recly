@@ -210,7 +210,7 @@ struct RecordingsView: View {
                 preview: item.preview,
                 at: LedgerFormat.startedAt(item.startedAt),
                 length: length,
-                state: item.stateLabel
+                state: item.spokenState
             ),
             // docs/09 "Accessibility": the row opens what is behind it, which a screen reader would
             // otherwise only find out by tapping.

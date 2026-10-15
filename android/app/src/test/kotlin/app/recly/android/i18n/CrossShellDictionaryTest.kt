@@ -767,6 +767,7 @@ class CrossShellDictionaryTest {
                 ko = "ChatGPT로 제목 채우기",
                 android = "fill_title_after_stop",
                 windows = "fill.title.after.stop",
+                reckit = "Fill in the title with ChatGPT",
             ),
             Line(
                 what = "the title sheet's names box",
@@ -774,6 +775,7 @@ class CrossShellDictionaryTest {
                 ko = "ChatGPT로 화자 이름 채우기",
                 android = "fill_names_after_stop",
                 windows = "fill.names.after.stop",
+                reckit = "Fill in speaker names with ChatGPT",
             ),
             Line(
                 what = "the More menu's title item",
@@ -781,6 +783,7 @@ class CrossShellDictionaryTest {
                 ko = "제목 채우기",
                 android = "fill_title_menu",
                 windows = "fill.title.menu",
+                reckit = "Fill in title",
             ),
             Line(
                 what = "the More menu's names item",
@@ -788,6 +791,7 @@ class CrossShellDictionaryTest {
                 ko = "화자 이름 채우기",
                 android = "fill_names_menu",
                 windows = "fill.names.menu",
+                reckit = "Fill in speaker names",
             ),
             Line(
                 what = "the title item with a title there",
@@ -795,6 +799,7 @@ class CrossShellDictionaryTest {
                 ko = "이미 제목이 있습니다",
                 android = "fill_has_title",
                 windows = "fill.has.title",
+                reckit = "Already has a title",
             ),
             Line(
                 what = "the names item with every speaker named",
@@ -802,6 +807,7 @@ class CrossShellDictionaryTest {
                 ko = "이름 없는 화자가 없습니다",
                 android = "fill_no_unnamed",
                 windows = "fill.no.unnamed",
+                reckit = "No unnamed speakers",
             ),
             Line(
                 what = "the detail while the title is filled in",
@@ -809,6 +815,7 @@ class CrossShellDictionaryTest {
                 ko = "제목을 채우는 중…",
                 android = "fill_title_running",
                 windows = "fill.title.running",
+                reckit = "Filling in the title…",
             ),
             Line(
                 what = "the detail while the names are filled in",
@@ -816,6 +823,7 @@ class CrossShellDictionaryTest {
                 ko = "화자 이름을 채우는 중…",
                 android = "fill_names_running",
                 windows = "fill.names.running",
+                reckit = "Filling in speaker names…",
             ),
             Line(
                 what = "the lists' badge while a fill runs",
@@ -823,6 +831,7 @@ class CrossShellDictionaryTest {
                 ko = "채우는 중",
                 android = "badge_filling",
                 windows = "badge.filling",
+                reckit = "Filling in",
             ),
             Line(
                 what = "a title fill that failed",
@@ -830,6 +839,7 @@ class CrossShellDictionaryTest {
                 ko = "제목을 채우지 못했습니다",
                 android = "fill_title_failed",
                 windows = "fill.title.failed",
+                reckit = "Could not fill in the title",
             ),
             Line(
                 what = "a names fill that failed",
@@ -837,6 +847,7 @@ class CrossShellDictionaryTest {
                 ko = "화자 이름을 채우지 못했습니다",
                 android = "fill_names_failed",
                 windows = "fill.names.failed",
+                reckit = "Could not fill in speaker names",
             ),
         )
     }

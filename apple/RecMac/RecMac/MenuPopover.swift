@@ -312,7 +312,7 @@ struct MenuPopover: View {
                 title: item.titleLabel,
                 at: LedgerFormat.startedAt(item.startedAt),
                 length: length,
-                state: item.stateLabel
+                state: item.spokenState
             ),
             // docs/09 "Accessibility": the row opens what is behind it, which a screen reader would
             // otherwise only find out by tapping — the same value and the same named action the

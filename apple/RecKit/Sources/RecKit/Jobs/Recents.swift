@@ -97,6 +97,13 @@ public struct RecentItem: Identifiable, Sendable {
     /// The two states a fill does not cover: the take still being written here, and one still arriving from the watch.
     private static let aheadOfFill: Set<String> = ["Recording", "Receiving from the watch"]
 
+    /// docs/09 "Accessibility": what the row's spoken sentence says of its state — the badge's `Filling in` while
+    /// one runs, so a screen reader hears what the eye sees; [stateLabel] otherwise.
+    public var spokenState: String {
+        if filling, !Self.aheadOfFill.contains(state) { return RecKitStrings.localized("Filling in") }
+        return stateLabel
+    }
+
     /// The same thing as words, read where it is drawn — so a list already on screen follows a
     /// language change (docs/07 rule 3). The system uploading to iCloud is progress, as a running
     /// Drive upload is: the badge says it, and there is nothing to explain under it (docs/03 "Storage location").
