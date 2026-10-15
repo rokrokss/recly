@@ -193,8 +193,12 @@ data class RecordingDetail(
      * connection, `Not uploaded yet` for any other upload still to happen.
      */
     val busyReason: Str = Str.DETAIL_TRANSCRIBING,
-    /** Why Transcribe again did not start, said under the header for a moment. */
+    /** Why Transcribe again or Fill in title and names did not start, said under the header for a moment. */
     val notice: Str? = null,
+    /** docs/08 "Titles and speaker names": More → Fill in title and names, asked from this window, is still running. */
+    val filling: Boolean = false,
+    /** …and it came to nothing: `Could not fill in the title and names`, said under the header for a moment. */
+    val fillFailure: FillNotice.Failed? = null,
     /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
     val find: String? = null,
     val findAtSec: Double? = null,
@@ -1111,8 +1115,11 @@ class ShellModel(
         recorder?.stop()
     }
 
-    /** Saving a title is the only answer that queues this recording. */
-    fun saveTitle(title: String, participants: Int? = null) = answerTitle(title, participants)
+    /**
+     * Saving a title is the only answer that queues this recording. [fill]: the dialog's ChatGPT box was there and
+     * ticked (docs/08 "Titles and speaker names").
+     */
+    fun saveTitle(title: String, participants: Int? = null, fill: Boolean = false) = answerTitle(title, participants, fill)
 
     fun cancelTitle() {
         val graph = graph ?: return
@@ -1143,10 +1150,10 @@ class ShellModel(
         }
     }
 
-    private fun answerTitle(title: String?, participants: Int?) {
+    private fun answerTitle(title: String?, participants: Int?, fill: Boolean) {
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             val outcome = titles.take() ?: return@launch
-            complete(outcome, title, participants)
+            complete(outcome, title, participants, fill)
         }
     }
 
@@ -1154,9 +1161,9 @@ class ShellModel(
      * docs/03: name it, then queue it — never the other way round (see [completeRecording]). The line then says what
      * the queue made of it ([completionLine]).
      */
-    private suspend fun complete(outcome: RecordingOutcome, title: String?, participants: Int? = null) {
+    private suspend fun complete(outcome: RecordingOutcome, title: String?, participants: Int? = null, fill: Boolean = false) {
         val graph = graph ?: return
-        val completion = runCatching { completeRecording(graph.core, outcome.recordingId, title, participants) }
+        val completion = runCatching { completeRecording(graph.core, outcome.recordingId, title, participants, fill) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.enqueue.failed", error = it) }
             .getOrNull()
         // Kept, so its shape is worked out now, and the first open draws it at once.
@@ -1515,6 +1522,51 @@ class ShellModel(
             updateDetail(request.recordingId) { it.copy(notice = notice) }
             delay(NOTICE_MS)
             updateDetail(request.recordingId) { if (it.notice == notice) it.copy(notice = null) else it }
+        }
+    }
+
+    /**
+     * docs/08 "Titles and speaker names": More → Fill in title and names. The run is the core's and goes on if the
+     * window closes; the names arrive through the transcript the detail follows, and a title is set on the header
+     * here, as a rename's is — the header does not follow the recording. A refusal or a failure is said under the
+     * header for a moment, as a refused Transcribe again is.
+     */
+    fun fillTitleAndNames() {
+        val graph = graph ?: return
+        val current = detail ?: return
+        if (current.filling) return
+        val recordingId = current.recordingId
+        updateDetail(recordingId) { it.copy(filling = true) }
+        scope.launch {
+            val result = try {
+                graph.core.fillTitleAndNames(recordingId)
+            } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.fill.failed", mapOf("recordingId" to recordingId), e)
+                null
+            } finally {
+                updateDetail(recordingId) { it.copy(filling = false) }
+            }
+            if ((result as? recly.core.chatgpt.FillResult.Filled)?.title == true) {
+                runCatching { graph.core.recordings.get(recordingId)?.meta?.title }.getOrNull()?.takeIf { it.isNotBlank() }?.let { named ->
+                    updateDetail(recordingId) { it.copy(title = UiMessage.Text(named)) }
+                }
+            }
+            val busy = detail?.takeIf { it.recordingId == recordingId }?.busyReason ?: Str.DETAIL_TRANSCRIBING
+            when (val notice = fillNotice(result, busy)) {
+                is FillNotice.Refused -> {
+                    updateDetail(recordingId) { it.copy(notice = notice.reason) }
+                    delay(NOTICE_MS)
+                    updateDetail(recordingId) { if (it.notice == notice.reason) it.copy(notice = null) else it }
+                }
+                is FillNotice.Failed -> {
+                    updateDetail(recordingId) { it.copy(fillFailure = notice) }
+                    delay(NOTICE_MS)
+                    updateDetail(recordingId) { if (it.fillFailure === notice) it.copy(fillFailure = null) else it }
+                }
+                null -> Unit
+            }
         }
     }
 

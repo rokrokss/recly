@@ -150,8 +150,9 @@ fun BlueprintDialog(
     ) { card() }
 }
 
+/** The card [BlueprintDialog] puts in its window; internal for the off-screen shots, which cannot draw a window. */
 @Composable
-private fun DialogCard(
+internal fun DialogCard(
     title: String,
     modifier: Modifier,
     actions: (@Composable () -> Unit)?,

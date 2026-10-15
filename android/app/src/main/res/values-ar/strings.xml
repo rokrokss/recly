@@ -423,10 +423,6 @@
     <string name="summary_about">عنك</string>
     <string name="summary_about_placeholder">مثلاً: مدير منتج؛ تهمّني المواعيد النهائية والقرارات.</string>
     <string name="summary_about_note">تستخدم الملخصات والإجابات هذا لتقدير ما يهمّك.</string>
-    <string name="summary_auto_title">ملء العناوين تلقائيًا</string>
-    <string name="summary_auto_title_note">عندما ينسخ هذا الجهاز تسجيلًا بلا عنوان، يُرسَل نص النسخة إلى ChatGPT للحصول على عنوان. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.</string>
-    <string name="summary_auto_speakers">ملء أسماء المتحدثين تلقائيًا</string>
-    <string name="summary_auto_speakers_note">عندما ينسخ هذا الجهاز تسجيلًا، يُرسَل نص النسخة إلى ChatGPT لتسمية المتحدثين الذين يُنادَون بأسمائهم فيه. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.</string>
     <string name="summary_as">تلخيص بتنسيق…</string>
     <string name="summary_play_from">تشغيل من %1$s</string>
     <string name="ask_menu">اسأل عن هذا التسجيل…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">اسأل</string>
     <string name="ask_running">جارٍ السؤال…</string>
     <string name="ask_failed">تعذّرت الإجابة</string>
+    <string name="fill_menu">ملء العنوان والأسماء</string>
+    <string name="fill_after_stop">ملء العنوان وأسماء المتحدثين باستخدام ChatGPT</string>
+    <string name="fill_after_stop_note">بعد اكتمال النسخ، يُرسَل نص النسخة إلى ChatGPT للحصول على العنوان الناقص وأسماء المتحدثين الذين نودوا بأسمائهم. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.</string>
+    <string name="fill_nothing">العنوان والأسماء مكتملة بالفعل</string>
+    <string name="fill_running">جارٍ الملء…</string>
+    <string name="fill_failed">تعذّر ملء العنوان والأسماء</string>
     <string name="share_no_summary">لا يوجد ملخص بعد</string>
     <string name="speaker_me">أنا</string>
 </resources>

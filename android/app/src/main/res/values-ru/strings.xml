@@ -423,10 +423,6 @@
     <string name="summary_about">О вас</string>
     <string name="summary_about_placeholder">например: продакт-менеджер; мне важны сроки и решения.</string>
     <string name="summary_about_note">Сводки и ответы учитывают это, чтобы понять, что для вас важно.</string>
-    <string name="summary_auto_title">Заполнять названия</string>
-    <string name="summary_auto_title_note">Когда это устройство расшифровывает запись без названия, расшифровка отправляется в ChatGPT, чтобы получить название. Это входит в ваше использование ChatGPT.</string>
-    <string name="summary_auto_speakers">Заполнять имена говорящих</string>
-    <string name="summary_auto_speakers_note">Когда это устройство расшифровывает запись, расшифровка отправляется в ChatGPT, чтобы назвать говорящих, к которым в ней обращаются по имени. Это входит в ваше использование ChatGPT.</string>
     <string name="summary_as">Сводка в формате…</string>
     <string name="summary_play_from">Воспроизвести с %1$s</string>
     <string name="ask_menu">Спросить об этой записи…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Спросить</string>
     <string name="ask_running">Задаём вопрос…</string>
     <string name="ask_failed">Не удалось ответить</string>
+    <string name="fill_menu">Заполнить название и имена</string>
+    <string name="fill_after_stop">Заполнить название и имена говорящих с помощью ChatGPT</string>
+    <string name="fill_after_stop_note">Когда расшифровка будет готова, она отправится в ChatGPT, чтобы получить недостающее название и имена говорящих, к которым обращались по имени. Это входит в ваше использование ChatGPT.</string>
+    <string name="fill_nothing">Название и имена уже заполнены</string>
+    <string name="fill_running">Заполняем…</string>
+    <string name="fill_failed">Не удалось заполнить название и имена</string>
     <string name="share_no_summary">Сводки пока нет</string>
     <string name="speaker_me">Я</string>
 </resources>

@@ -423,10 +423,6 @@
     <string name="summary_about">আপনার সম্পর্কে</string>
     <string name="summary_about_placeholder">যেমন: প্রোডাক্ট ম্যানেজার; সময়সীমা আর সিদ্ধান্ত আমার কাছে গুরুত্বপূর্ণ।</string>
     <string name="summary_about_note">কী আপনার কাছে গুরুত্বপূর্ণ, তা বুঝতে সারাংশ ও উত্তর এটি ব্যবহার করে।</string>
-    <string name="summary_auto_title">শিরোনাম স্বয়ংক্রিয়ভাবে পূরণ</string>
-    <string name="summary_auto_title_note">এই ডিভাইস শিরোনামহীন কোনো রেকর্ডিং ট্রান্সক্রাইব করলে, শিরোনামের জন্য ট্রান্সক্রিপ্ট ChatGPT-তে যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।</string>
-    <string name="summary_auto_speakers">বক্তার নাম স্বয়ংক্রিয়ভাবে পূরণ</string>
-    <string name="summary_auto_speakers_note">এই ডিভাইস কোনো রেকর্ডিং ট্রান্সক্রাইব করলে, যাদের নাম ধরে ডাকা হয়েছে সেই বক্তাদের নাম দিতে ট্রান্সক্রিপ্ট ChatGPT-তে যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।</string>
     <string name="summary_as">অন্য ফরম্যাটে সারাংশ…</string>
     <string name="summary_play_from">%1$s থেকে চালান</string>
     <string name="ask_menu">এই রেকর্ডিং নিয়ে জিজ্ঞাসা…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">জিজ্ঞাসা</string>
     <string name="ask_running">জিজ্ঞাসা করা হচ্ছে…</string>
     <string name="ask_failed">উত্তর দেওয়া যায়নি</string>
+    <string name="fill_menu">শিরোনাম ও নাম পূরণ করুন</string>
+    <string name="fill_after_stop">ChatGPT দিয়ে শিরোনাম ও বক্তার নাম পূরণ করুন</string>
+    <string name="fill_after_stop_note">ট্রান্সক্রিপ্ট তৈরি হলে তা ChatGPT-তে যায়, যাতে অনুপস্থিত শিরোনাম এবং নাম ধরে ডাকা বক্তাদের নাম পাওয়া যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।</string>
+    <string name="fill_nothing">শিরোনাম ও নাম আগেই পূরণ করা আছে</string>
+    <string name="fill_running">পূরণ করা হচ্ছে…</string>
+    <string name="fill_failed">শিরোনাম ও নাম পূরণ করা যায়নি</string>
     <string name="share_no_summary">এখনও সারাংশ নেই</string>
     <string name="speaker_me">আমি</string>
 </resources>

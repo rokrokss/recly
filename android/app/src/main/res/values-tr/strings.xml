@@ -423,10 +423,6 @@
     <string name="summary_about">Hakkınızda</string>
     <string name="summary_about_placeholder">ör. Ürün yöneticisi; teslim tarihleri ve kararlar benim için önemli.</string>
     <string name="summary_about_note">Özetler ve yanıtlar, sizin için neyin önemli olduğunu anlamak için bunu kullanır.</string>
-    <string name="summary_auto_title">Başlıkları doldur</string>
-    <string name="summary_auto_title_note">Bu cihaz başlıksız bir kaydı metne dönüştürdüğünde, başlık için döküm ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır.</string>
-    <string name="summary_auto_speakers">Konuşmacı adlarını doldur</string>
-    <string name="summary_auto_speakers_note">Bu cihaz bir kaydı metne dönüştürdüğünde, dökümde adıyla seslenilen konuşmacılara ad vermek için döküm ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır.</string>
     <string name="summary_as">Farklı biçimde özetle…</string>
     <string name="summary_play_from">%1$s konumundan oynat</string>
     <string name="ask_menu">Bu kayıt hakkında sor…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Sor</string>
     <string name="ask_running">Soruluyor…</string>
     <string name="ask_failed">Yanıtlanamadı</string>
+    <string name="fill_menu">Başlığı ve adları doldur</string>
+    <string name="fill_after_stop">Başlığı ve konuşmacı adlarını ChatGPT ile doldur</string>
+    <string name="fill_after_stop_note">Döküm hazır olduğunda eksik başlık ve adıyla seslenilen konuşmacıların adları için ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır.</string>
+    <string name="fill_nothing">Başlık ve adlar zaten dolu</string>
+    <string name="fill_running">Dolduruluyor…</string>
+    <string name="fill_failed">Başlık ve adlar doldurulamadı</string>
     <string name="share_no_summary">Henüz özet yok</string>
     <string name="speaker_me">Ben</string>
 </resources>

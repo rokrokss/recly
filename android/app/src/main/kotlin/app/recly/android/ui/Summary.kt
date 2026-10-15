@@ -68,6 +68,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
+import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryCitation
 import recly.core.chatgpt.SummaryCitations
@@ -103,6 +104,48 @@ internal fun askReason(hasTranscript: Boolean, transcribing: Boolean, @StringRes
     transcribing -> busyReason
     connection !is ChatGptConnection.SignedIn -> CoreMessages.resourceOf(CoreMessage.CHATGPT_SIGN_IN_REQUIRED)
     else -> null
+}
+
+/**
+ * Why More → Fill in title and names cannot run now (docs/09 "Summary view"): Ask's reasons, then this page's own fill
+ * still running, then nothing left to fill — [needed] is `FillNeeds.any` for the recording as it is now, which a fill
+ * that is running may be about to change. A take still being written says `Still recording` before any of these.
+ */
+@StringRes
+internal fun fillReason(
+    hasTranscript: Boolean,
+    transcribing: Boolean,
+    @StringRes busyReason: Int,
+    connection: ChatGptConnection,
+    filling: Boolean,
+    needed: Boolean,
+): Int? = askReason(hasTranscript, transcribing, busyReason, connection) ?: when {
+    filling -> R.string.fill_running
+    !needed -> R.string.fill_nothing
+    else -> null
+}
+
+/** What the detail says under its header once More → Fill in title and names has answered (docs/08 "Titles and speaker names"). */
+internal sealed interface FillNotice {
+    /** Nothing was sent: the More menu's own reason, as a refused Transcribe again says it. */
+    data class Refused(@param:StringRes val reason: Int) : FillNotice
+
+    /** `Could not fill in the title and names`, with the core's sentence for [reason] when it gave one. */
+    data class Failed(val reason: String?) : FillNotice
+}
+
+/**
+ * [result] as a line under the header, or null for nothing to say — a title or a name that arrived is seen where it
+ * goes, and nothing to fill sent nothing. ChatGPT answering with neither is a failure of its own. A null [result] is
+ * a call that threw. [busyReason] is what the More menu says about the job in the way.
+ */
+internal fun fillNotice(result: FillResult?, @StringRes busyReason: Int): FillNotice? = when (result) {
+    is FillResult.Filled -> if (result.title || result.names > 0) null else FillNotice.Failed(null)
+    FillResult.NothingToFill -> null
+    FillResult.Busy -> FillNotice.Refused(busyReason)
+    FillResult.NoTranscript -> FillNotice.Refused(R.string.detail_no_transcript)
+    is FillResult.Failed -> FillNotice.Failed(result.reason)
+    null -> FillNotice.Failed(null)
 }
 
 /** docs/08 "Summaries": each format under its name in Settings, in Summarize as and in the summary's footer. */

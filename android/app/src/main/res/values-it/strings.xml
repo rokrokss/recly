@@ -423,10 +423,6 @@
     <string name="summary_about">Su di te</string>
     <string name="summary_about_placeholder">ad es. Product manager; mi interessano scadenze e decisioni.</string>
     <string name="summary_about_note">Riepiloghi e risposte lo usano per capire cosa conta per te.</string>
-    <string name="summary_auto_title">Completa i titoli</string>
-    <string name="summary_auto_title_note">Quando questo dispositivo trascrive una registrazione senza titolo, la trascrizione viene inviata a ChatGPT per ottenerne uno. Conta nel tuo utilizzo di ChatGPT.</string>
-    <string name="summary_auto_speakers">Completa i nomi degli interlocutori</string>
-    <string name="summary_auto_speakers_note">Quando questo dispositivo trascrive una registrazione, la trascrizione viene inviata a ChatGPT per dare un nome agli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT.</string>
     <string name="summary_as">Riepiloga come…</string>
     <string name="summary_play_from">Riproduci da %1$s</string>
     <string name="ask_menu">Chiedi su questa registrazione…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Chiedi</string>
     <string name="ask_running">Domanda in corso…</string>
     <string name="ask_failed">Impossibile rispondere</string>
+    <string name="fill_menu">Completa titolo e nomi</string>
+    <string name="fill_after_stop">Completa il titolo e i nomi degli interlocutori con ChatGPT</string>
+    <string name="fill_after_stop_note">Quando la trascrizione è pronta, viene inviata a ChatGPT per il titolo mancante e i nomi degli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT.</string>
+    <string name="fill_nothing">Titolo e nomi sono già completi</string>
+    <string name="fill_running">Completamento in corso…</string>
+    <string name="fill_failed">Impossibile completare titolo e nomi</string>
     <string name="share_no_summary">Ancora nessun riepilogo</string>
     <string name="speaker_me">Io</string>
 </resources>

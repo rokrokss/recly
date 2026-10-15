@@ -423,10 +423,6 @@
     <string name="summary_about">あなたについて</string>
     <string name="summary_about_placeholder">例: プロダクトマネージャー。締め切りと決定事項を重視します。</string>
     <string name="summary_about_note">要約と回答は、あなたにとって何が重要かを判断するのにこれを使います。</string>
-    <string name="summary_auto_title">タイトルを自動で入力</string>
-    <string name="summary_auto_title_note">この端末でタイトルのない録音を文字起こしすると、タイトルを付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。</string>
-    <string name="summary_auto_speakers">話者の名前を自動で入力</string>
-    <string name="summary_auto_speakers_note">この端末で録音を文字起こしすると、会話の中で名前を呼ばれた話者に名前を付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。</string>
     <string name="summary_as">形式を選んで要約…</string>
     <string name="summary_play_from">%1$sから再生</string>
     <string name="ask_menu">この録音について質問…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">質問</string>
     <string name="ask_running">質問中…</string>
     <string name="ask_failed">回答できませんでした</string>
+    <string name="fill_menu">タイトルと名前を入力</string>
+    <string name="fill_after_stop">ChatGPTでタイトルと話者の名前を入力</string>
+    <string name="fill_after_stop_note">文字起こしが終わると、空のタイトルと、名前で呼ばれた話者の名前を受け取るために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。</string>
+    <string name="fill_nothing">タイトルと名前はすでに入力されています</string>
+    <string name="fill_running">入力しています…</string>
+    <string name="fill_failed">タイトルと名前を入力できませんでした</string>
     <string name="share_no_summary">まだ要約がありません</string>
     <string name="speaker_me">自分</string>
 </resources>

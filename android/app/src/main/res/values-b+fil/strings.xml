@@ -423,10 +423,6 @@
     <string name="summary_about">Tungkol sa iyo</string>
     <string name="summary_about_placeholder">hal. Product manager; mahalaga sa akin ang mga deadline at desisyon.</string>
     <string name="summary_about_note">Ginagamit ito ng mga buod at sagot para matantya kung ano ang mahalaga sa iyo.</string>
-    <string name="summary_auto_title">Kusang lagyan ng pamagat</string>
-    <string name="summary_auto_title_note">Kapag nag-transcribe ang device na ito ng recording na walang pamagat, ipinapadala ang transcript sa ChatGPT para sa pamagat. Kasama ito sa paggamit mo ng ChatGPT.</string>
-    <string name="summary_auto_speakers">Kusang lagyan ng pangalan ang mga nagsasalita</string>
-    <string name="summary_auto_speakers_note">Kapag nag-transcribe ang device na ito ng recording, ipinapadala ang transcript sa ChatGPT para pangalanan ang mga nagsasalitang tinatawag sa pangalan dito. Kasama ito sa paggamit mo ng ChatGPT.</string>
     <string name="summary_as">Ibuod bilang…</string>
     <string name="summary_play_from">I-play mula %1$s</string>
     <string name="ask_menu">Magtanong tungkol sa recording na ito…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Itanong</string>
     <string name="ask_running">Nagtatanong…</string>
     <string name="ask_failed">Hindi nakasagot</string>
+    <string name="fill_menu">Punan ang pamagat at mga pangalan</string>
+    <string name="fill_after_stop">Punan ang pamagat at mga pangalan ng nagsasalita gamit ang ChatGPT</string>
+    <string name="fill_after_stop_note">Kapag handa na ang transcript, ipapadala ito sa ChatGPT para sa kulang na pamagat at sa mga pangalan ng mga nagsasalitang tinawag sa pangalan. Kasama ito sa paggamit mo ng ChatGPT.</string>
+    <string name="fill_nothing">Kumpleto na ang pamagat at mga pangalan</string>
+    <string name="fill_running">Pinupunan…</string>
+    <string name="fill_failed">Hindi mapunan ang pamagat at mga pangalan</string>
     <string name="share_no_summary">Wala pang buod</string>
     <string name="speaker_me">Ako</string>
 </resources>

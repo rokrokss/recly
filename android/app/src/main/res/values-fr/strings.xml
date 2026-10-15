@@ -423,10 +423,6 @@
     <string name="summary_about">À propos de vous</string>
     <string name="summary_about_placeholder">p. ex. Chef de produit ; les échéances et les décisions comptent pour moi.</string>
     <string name="summary_about_note">Les résumés et les réponses s’en servent pour juger ce qui compte pour vous.</string>
-    <string name="summary_auto_title">Compléter les titres</string>
-    <string name="summary_auto_title_note">Quand cet appareil transcrit un enregistrement sans titre, la transcription est envoyée à ChatGPT pour en obtenir un. Cela compte dans votre utilisation de ChatGPT.</string>
-    <string name="summary_auto_speakers">Compléter les noms des locuteurs</string>
-    <string name="summary_auto_speakers_note">Quand cet appareil transcrit un enregistrement, la transcription est envoyée à ChatGPT pour nommer les locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT.</string>
     <string name="summary_as">Résumer comme…</string>
     <string name="summary_play_from">Lire à partir de %1$s</string>
     <string name="ask_menu">Poser une question sur cet enregistrement…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Demander</string>
     <string name="ask_running">Question en cours…</string>
     <string name="ask_failed">Impossible de répondre</string>
+    <string name="fill_menu">Compléter le titre et les noms</string>
+    <string name="fill_after_stop">Compléter le titre et les noms des locuteurs avec ChatGPT</string>
+    <string name="fill_after_stop_note">Une fois la transcription prête, elle est envoyée à ChatGPT pour obtenir le titre manquant et le nom des locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT.</string>
+    <string name="fill_nothing">Le titre et les noms sont déjà renseignés</string>
+    <string name="fill_running">Complétion en cours…</string>
+    <string name="fill_failed">Impossible de compléter le titre et les noms</string>
     <string name="share_no_summary">Pas encore de résumé</string>
     <string name="speaker_me">Moi</string>
 </resources>

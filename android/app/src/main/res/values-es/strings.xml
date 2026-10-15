@@ -423,10 +423,6 @@
     <string name="summary_about">Sobre ti</string>
     <string name="summary_about_placeholder">p. ej. Product manager; me importan los plazos y las decisiones.</string>
     <string name="summary_about_note">Los resúmenes y las respuestas lo usan para valorar lo que te importa.</string>
-    <string name="summary_auto_title">Completar títulos</string>
-    <string name="summary_auto_title_note">Cuando este dispositivo transcribe una grabación sin título, la transcripción se envía a ChatGPT para obtener uno. Cuenta para tu uso de ChatGPT.</string>
-    <string name="summary_auto_speakers">Completar nombres de hablantes</string>
-    <string name="summary_auto_speakers_note">Cuando este dispositivo transcribe una grabación, la transcripción se envía a ChatGPT para poner nombre a los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT.</string>
     <string name="summary_as">Resumir como…</string>
     <string name="summary_play_from">Reproducir desde %1$s</string>
     <string name="ask_menu">Preguntar sobre esta grabación…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">Preguntar</string>
     <string name="ask_running">Preguntando…</string>
     <string name="ask_failed">No se pudo responder</string>
+    <string name="fill_menu">Completar título y nombres</string>
+    <string name="fill_after_stop">Completar el título y los nombres de hablantes con ChatGPT</string>
+    <string name="fill_after_stop_note">Cuando la transcripción esté lista, se envía a ChatGPT para obtener el título que falta y los nombres de los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT.</string>
+    <string name="fill_nothing">El título y los nombres ya están completos</string>
+    <string name="fill_running">Completando…</string>
+    <string name="fill_failed">No se pudieron completar el título y los nombres</string>
     <string name="share_no_summary">Aún no hay resumen</string>
     <string name="speaker_me">Yo</string>
 </resources>

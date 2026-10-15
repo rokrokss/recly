@@ -30,6 +30,7 @@ import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptAccount
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptResult
+import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.Summaries
 import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryCitations
@@ -224,6 +225,12 @@ class ChatGptViewModel(
 
     fun saveAboutMe(text: String) = savePreferences { it.copy(aboutMe = text) }
 
+    /**
+     * docs/08 "Titles and speaker names": the title dialog's ChatGPT box, ticked or not, is how the next dialog
+     * starts — kept the moment it is changed, as Settings keeps its own.
+     */
+    fun rememberFillAfterStop(ticked: Boolean) = savePreferences { it.copy(fillAfterStop = ticked) }
+
     /** Shown at once; the core keeps it trimmed and capped, and [preferences] follows what it kept. */
     private fun savePreferences(change: (SummaryPreferences) -> SummaryPreferences) {
         val wanted = change(preferences)
@@ -400,6 +407,47 @@ internal fun askBlocked(
     busy != null -> busy
     connection is ChatGptConnection.SignedOut || connection is ChatGptConnection.Expired -> Str.CORE_CHATGPT_SIGN_IN_REQUIRED
     else -> null
+}
+
+/**
+ * Why More → Fill in title and names cannot run now (docs/09 "Summary view"): Ask's reasons, then this window's own
+ * fill still running, then nothing left to fill — [needed] is `FillNeeds.any` for the recording as it is now, which a
+ * fill that is running may be about to change.
+ */
+internal fun fillBlocked(
+    writing: Boolean,
+    hasTranscript: Boolean,
+    busy: Str?,
+    connection: ChatGptConnection,
+    filling: Boolean,
+    needed: Boolean,
+): Str? = askBlocked(writing, hasTranscript, busy, connection) ?: when {
+    filling -> Str.FILL_RUNNING
+    !needed -> Str.FILL_NOTHING
+    else -> null
+}
+
+/** What the detail says under its header once More → Fill in title and names has answered (docs/08 "Titles and speaker names"). */
+sealed interface FillNotice {
+    /** Nothing was sent: the More menu's own reason, as a refused Transcribe again says it. */
+    data class Refused(val reason: Str) : FillNotice
+
+    /** `Could not fill in the title and names`, with the core's sentence for [reason] when it gave one. */
+    data class Failed(val reason: String?) : FillNotice
+}
+
+/**
+ * [result] as a line under the header, or null for nothing to say — a title or a name that arrived is seen where it
+ * goes, and nothing to fill sent nothing. ChatGPT answering with neither is a failure of its own. A null [result] is
+ * a call that threw. [busy] is what the More menu says about the job in the way.
+ */
+internal fun fillNotice(result: FillResult?, busy: Str): FillNotice? = when (result) {
+    is FillResult.Filled -> if (result.title || result.names > 0) null else FillNotice.Failed(null)
+    FillResult.NothingToFill -> null
+    FillResult.Busy -> FillNotice.Refused(busy)
+    FillResult.NoTranscript -> FillNotice.Refused(Str.DETAIL_NO_TRANSCRIPT)
+    is FillResult.Failed -> FillNotice.Failed(result.reason)
+    null -> FillNotice.Failed(null)
 }
 
 /**

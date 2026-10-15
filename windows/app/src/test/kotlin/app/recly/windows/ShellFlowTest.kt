@@ -15,6 +15,7 @@ import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -25,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
@@ -111,6 +113,40 @@ class ShellFlowTest {
 
         assertEquals("주간 회의", assertNotNull(core.recordings.get(outcome.recordingId)).meta.title)
         assertEquals(1, core.jobs.list().size)
+        scope.cancel()
+    }
+
+    @Test
+    fun `a ticked ChatGPT box leaves its request for the job, and an unticked one none`() = runBlocking {
+        // docs/08 "Titles and speaker names": the publication reads the request, so it is there once the job is.
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val core = AppModule.build(
+            dataDir = Files.createTempDirectory("recly-fill").toString().toPath(),
+        ).core
+        core.initializeProcessing()
+        val finalized = Channel<RecordingOutcome>(Channel.UNLIMITED)
+        val recorder = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = {
+                HelperClient(FakeHelperCommand.command("parts=1", "sec=2.0"), Dispatchers.IO, SilentLogger)
+            },
+            onFinalized = { finalized.trySend(it) },
+        )
+        suspend fun record(): RecordingOutcome {
+            assertNotNull(recorder.start())
+            recorder.stop()
+            return withTimeout(TIMEOUT_MS) { finalized.receive() }
+        }
+
+        val ticked = record()
+        assertIs<EnqueueResult.Enqueued>(completeRecording(core, ticked.recordingId, "주간 회의", fill = true).enqueued)
+        assertTrue(core.recordings.fillRequested(ticked.recordingId))
+
+        val unticked = record()
+        assertIs<EnqueueResult.Enqueued>(completeRecording(core, unticked.recordingId, null).enqueued)
+        assertFalse(core.recordings.fillRequested(unticked.recordingId))
+        assertEquals(2, core.jobs.list().size)
         scope.cancel()
     }
 

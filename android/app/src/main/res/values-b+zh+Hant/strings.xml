@@ -423,10 +423,6 @@
     <string name="summary_about">關於你</string>
     <string name="summary_about_placeholder">例如：產品經理，重視截止日期和決定。</string>
     <string name="summary_about_note">摘要和回答會據此判斷哪些內容對你重要。</string>
-    <string name="summary_auto_title">自動填寫標題</string>
-    <string name="summary_auto_title_note">本裝置轉錄沒有標題的錄音時，會將轉寫文字傳送給ChatGPT來產生標題。這會計入你的ChatGPT用量。</string>
-    <string name="summary_auto_speakers">自動填寫說話者名稱</string>
-    <string name="summary_auto_speakers_note">本裝置轉錄錄音時，會將轉寫文字傳送給ChatGPT，為對話中被叫到名字的說話者命名。這會計入你的ChatGPT用量。</string>
     <string name="summary_as">按格式摘要…</string>
     <string name="summary_play_from">從 %1$s 開始播放</string>
     <string name="ask_menu">詢問這段錄音…</string>
@@ -440,6 +436,12 @@
     <string name="ask_ask">提問</string>
     <string name="ask_running">正在提問…</string>
     <string name="ask_failed">無法回答</string>
+    <string name="fill_menu">填寫標題與名稱</string>
+    <string name="fill_after_stop">用ChatGPT填寫標題與說話者名稱</string>
+    <string name="fill_after_stop_note">轉錄完成後，會將轉寫文字傳送給ChatGPT，以取得缺少的標題和被叫到名字的說話者名稱。這會計入你的ChatGPT用量。</string>
+    <string name="fill_nothing">標題與名稱已填寫</string>
+    <string name="fill_running">正在填寫…</string>
+    <string name="fill_failed">無法填寫標題與名稱</string>
     <string name="share_no_summary">還沒有摘要</string>
     <string name="speaker_me">我</string>
 </resources>
