@@ -103,6 +103,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.ui.component.BlueprintButton
@@ -650,6 +651,13 @@ private fun Detail(
         )
         // Transcribe again that did not start says why, the way a refused edit does.
         detail.notice?.let { notice -> RefusedLine(strings[notice]) }
+        // docs/08 "Titles and speaker names": a fill that came to nothing, red, with the core's sentence under it.
+        detail.fillFailure?.let { failed ->
+            Column(Modifier.padding(horizontal = Space.m).padding(bottom = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
+                Text(strings[Str.FILL_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
+                failed.reason?.let { Text(coreMessage(it).text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
+            }
+        }
     }
     // docs/08 "Summaries": Transcript | Summary, once there is a summary to choose — never over the transcript's
     // editor. Over the summary's they stay, and going to the transcript leaves it the way leaving any editor does.

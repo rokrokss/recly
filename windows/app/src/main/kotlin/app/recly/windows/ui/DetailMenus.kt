@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.i18n.UiMessage
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintDialog
 import app.recly.windows.ui.component.BlueprintDialogText
@@ -62,6 +63,7 @@ import app.recly.windows.ui.theme.mono
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.Summary
 import recly.core.job.Job
 import recly.core.job.JobStatus
@@ -194,7 +196,7 @@ private val EXPORTS = listOf(
 /**
  * docs/09 "Screen principles": the detail's ⋯, in three groups with a hairline between them (2026-10-10) — Rename ·
  * Edit transcript · Transcribe again, then the summary's Summarize · Summarize as… · Edit summary · Ask about this
- * recording… where ChatGPT is offered, then Add highlight, then Open in Drive or Open the folder once the recording has
+ * recording… · Fill in title and names where ChatGPT is offered, then Add highlight, then Open in Drive or Open the folder once the recording has
  * a folder there (D24). What cannot run now stays in its place, disabled, with the reason under it — `Still recording`
  * for every one of them while the take is being written. Summarize as… opens the formats in a submenu beside it, as
  * the Mac's does (D19).
@@ -301,6 +303,15 @@ internal fun MoreButton(
                     { open = false; model.openAsk() },
                     enabled = askBlocked == null,
                     secondary = askBlocked?.let { strings[it] },
+                )
+                // docs/08 "Titles and speaker names": what the recording still lacks, by the rule the core asks by.
+                val needed = detail.transcript?.let { FillNeeds.of((detail.title as? UiMessage.Text)?.value, it).any } ?: false
+                val fillBlocked = fillBlocked(detail.writing, detail.hasTranscript, busy, connection, detail.filling, needed)
+                BlueprintMenuRow(
+                    strings[Str.FILL_MENU],
+                    { open = false; model.fillTitleAndNames() },
+                    enabled = fillBlocked == null,
+                    secondary = fillBlocked?.let { strings[it] },
                 )
             }
             BlueprintMenuDivider()

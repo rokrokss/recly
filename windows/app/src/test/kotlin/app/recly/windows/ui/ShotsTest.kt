@@ -25,10 +25,12 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import app.recly.windows.FakeSettings
+import app.recly.windows.TitleSheet
 import app.recly.windows.helper.FakeHelperCommand
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
+import app.recly.windows.ui.component.DialogCard
 import app.recly.windows.ui.theme.ReclyDesktopTheme
 import app.recly.windows.ui.theme.blueprint
 import java.io.File
@@ -202,6 +204,30 @@ class ShotsTest {
             val window: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
             shot("recordings-summary-more-signed-in-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
             shot("recordings-summary-as-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_SUMMARIZE_AS)) { window() }
+            // docs/08 "Titles and speaker names": the title dialog's card with its ChatGPT box as it was left — unticked,
+            // then ticked.
+            val sheet: @Composable () -> Unit = {
+                TitleSheet(model, strings) { actions, content ->
+                    DialogCard(strings[Str.RECORDING_TITLE], androidx.compose.ui.Modifier, actions, content, fill = false)
+                }
+            }
+            shot("title-sheet-$lang", 460, 520, ko) { sheet() }
+            chatGpt.rememberFillAfterStop(true)
+            until { chatGpt.preferences.fillAfterStop }
+            shot("title-sheet-ticked-$lang", 460, 520, ko) { sheet() }
+            chatGpt.rememberFillAfterStop(false)
+            until { !chatGpt.preferences.fillAfterStop }
+            // More → Fill in title and names with a title to fill, and what a failure says: the plan is drawn signed in,
+            // but nothing here is, so the core answers that a sign-in is needed.
+            val named = (model.detail!!.title as app.recly.windows.i18n.UiMessage.Text).value
+            model.rename(RenameRequest(model.detail!!.recordingId, named), "")
+            until { model.detail?.title !is app.recly.windows.i18n.UiMessage.Text }
+            shot("recordings-fill-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
+            model.fillTitleAndNames()
+            until { model.detail?.fillFailure != null }
+            shot("recordings-fill-failed-$lang", 1000, 680, ko) { window() }
+            model.rename(RenameRequest(model.detail!!.recordingId, ""), named)
+            until { (model.detail?.title as? app.recly.windows.i18n.UiMessage.Text)?.value == named }
             shot("settings-signed-in-$lang", 640, SETTINGS_HEIGHT, ko) { SettingsWindow(model, strings) }
             // docs/08 "Ask": the panel's body as the dialog holds it, running and answered — states drawn, not asked.
             val presets = AskPreset.entries

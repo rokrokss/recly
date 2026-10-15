@@ -4,6 +4,7 @@ package app.recly.windows
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -87,6 +88,7 @@ import app.recly.windows.ui.theme.systemAnimationsOn
 import app.recly.windows.ui.theme.systemTextScale
 import app.recly.windows.ui.theme.textScaleOf
 import app.recly.windows.ui.trayMenu
+import recly.core.chatgpt.ChatGptConnection
 import recly.core.processing.TranscriptionMode
 import java.util.Locale
 import java.awt.KeyboardFocusManager
@@ -442,65 +444,104 @@ private fun TitlePrompt(
     strings: Strings,
     themed: @Composable (@Composable () -> Unit) -> Unit,
 ) {
+    TitleSheet(model, strings) { actions, content ->
+        BlueprintDialog(
+            title = strings[Str.RECORDING_TITLE],
+            // Only its two buttons close it (2026-10-10): Escape, or the window's own close, would discard the take
+            // without the red button that says so.
+            onDismissRequest = {},
+            theme = themed,
+            height = TITLE_HEIGHT.dp,
+            // As tall as what it asks, which is less while transcription is off.
+            fitContent = true,
+            actions = actions,
+            content = content,
+        )
+    }
+}
+
+/**
+ * The title dialog's answers and fields, which [frame] puts in a card — its own window here, a card on its own in the
+ * off-screen shots.
+ *
+ * docs/08 "Titles and speaker names": under the head count, while ChatGPT is signed in and transcription is on, the
+ * box that asks ChatGPT for this recording's title and speaker names once it is transcribed, with what that sends.
+ * It starts as it was left last; Save says whether it was there and ticked.
+ */
+@Composable
+internal fun TitleSheet(
+    model: ShellModel,
+    strings: Strings,
+    frame: @Composable (actions: @Composable () -> Unit, content: @Composable ColumnScope.() -> Unit) -> Unit,
+) {
     var title by remember { mutableStateOf("") }
     // docs/03: nil is "unknown", which writes nothing at all rather than guessing.
     var participants by remember { mutableStateOf<Int?>(null) }
-    BlueprintDialog(
-        title = strings[Str.RECORDING_TITLE],
-        // Only its two buttons close it (2026-10-10): Escape, or the window's own close, would discard the take
-        // without the red button that says so.
-        onDismissRequest = {},
-        theme = themed,
-        height = TITLE_HEIGHT.dp,
-        // As tall as what it asks, which is less while transcription is off.
-        fitContent = true,
-        actions = {
+    val transcribes = model.processing?.summary?.mode != TranscriptionMode.OFF
+    val chatGpt = model.chatGpt
+    val askFill = transcribes && chatGpt?.connection is ChatGptConnection.SignedIn
+    var fill by remember { mutableStateOf(chatGpt?.preferences?.fillAfterStop ?: false) }
+    frame(
+        {
             // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete
             // that cannot be undone (2026-10-08).
             BlueprintButton(strings[Str.RECORDING_DISCARD], model::cancelTitle, tone = ButtonTone.DANGER, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Str.SAVE],
-                onClick = { model.saveTitle(title, participants) },
+                onClick = { model.saveTitle(title, participants, askFill && fill) },
                 modifier = Modifier.widthIn(min = 120.dp),
                 tone = ButtonTone.PRIMARY,
             )
         },
-    ) {
-        BlueprintTextField(
-            value = title,
-            onValueChange = { title = it },
-            // `Title`, not the dialog's own title again (2026-10-10).
-            label = strings[Str.LEDGER_TITLE],
-            placeholder = strings[Str.UNTITLED],
-            // A title is something a person types, not a field of data.
-            monospace = false,
-        )
-        // docs/03: and how many people were in the room — the hint the `transcribe` step trusts over
-        // the workflow's own `speakers` (docs/08). The same question, in the same order, as the
-        // phones and the Mac ask it — and not at all while transcription is off, when it is a hint for nothing
-        // (2026-10-10).
-        if (model.processing?.summary?.mode != TranscriptionMode.OFF) {
-            BlueprintDialogText(strings[Str.RECORDING_PARTICIPANTS], tone = DialogTone.MUTED)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-                verticalArrangement = Arrangement.spacedBy(Space.s),
-            ) {
-                PARTICIPANT_CHOICES.forEach { choice ->
-                    BlueprintChip(
-                        label = when (choice) {
-                            null -> strings[Str.PARTICIPANTS_UNKNOWN]
-                            // docs/08 caps the hint at 10 speakers; "6+" asks for six and lets the
-                            // provider find more.
-                            PARTICIPANTS_MANY -> strings[Str.PARTICIPANTS_MANY]
-                            else -> choice.toString()
-                        },
-                        selected = participants == choice,
-                        onClick = { participants = choice },
-                    )
+        {
+            BlueprintTextField(
+                value = title,
+                onValueChange = { title = it },
+                // `Title`, not the dialog's own title again (2026-10-10).
+                label = strings[Str.LEDGER_TITLE],
+                placeholder = strings[Str.UNTITLED],
+                // A title is something a person types, not a field of data.
+                monospace = false,
+            )
+            // docs/03: and how many people were in the room — the hint the `transcribe` step trusts over
+            // the workflow's own `speakers` (docs/08). The same question, in the same order, as the
+            // phones and the Mac ask it — and not at all while transcription is off, when it is a hint for nothing
+            // (2026-10-10).
+            if (transcribes) {
+                BlueprintDialogText(strings[Str.RECORDING_PARTICIPANTS], tone = DialogTone.MUTED)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Space.s),
+                    verticalArrangement = Arrangement.spacedBy(Space.s),
+                ) {
+                    PARTICIPANT_CHOICES.forEach { choice ->
+                        BlueprintChip(
+                            label = when (choice) {
+                                null -> strings[Str.PARTICIPANTS_UNKNOWN]
+                                // docs/08 caps the hint at 10 speakers; "6+" asks for six and lets the
+                                // provider find more.
+                                PARTICIPANTS_MANY -> strings[Str.PARTICIPANTS_MANY]
+                                else -> choice.toString()
+                            },
+                            selected = participants == choice,
+                            onClick = { participants = choice },
+                        )
+                    }
                 }
             }
-        }
-    }
+            if (askFill) {
+                BlueprintCheckRow(
+                    label = strings[Str.FILL_AFTER_STOP],
+                    checked = fill,
+                    onCheckedChange = {
+                        fill = it
+                        chatGpt?.rememberFillAfterStop(it)
+                    },
+                )
+                // What the box sends, when, and that it counts toward the plan: the consent it is (docs/15 §10).
+                BlueprintDialogText(strings[Str.FILL_AFTER_STOP_NOTE], tone = DialogTone.MUTED)
+            }
+        },
+    )
 }
 
 /** docs/03: 2 · 3 · 4 · 5 · 6+ · unknown, and unknown — `null` — is where the dialog starts. */
