@@ -205,7 +205,7 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
     LaunchedEffect(model.detailAsked) {
         val item = model.detailAsked ?: return@LaunchedEffect
         model.detailAnswered()
-        leave { model.openDetail(item) }
+        pickRecording(model.detail?.recordingId, item.id, leave) { model.openDetail(item) }
     }
     // docs/10 "Search": the list's query, its results 200 ms after the last key, and the detail's find bar.
     var query by remember { mutableStateOf("") }
@@ -242,9 +242,9 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
     ) {
         Sidebar(
             model, strings, query, { query = it }, hits, searchFocus,
-            onOpen = { item -> leave { model.openDetail(item) } },
+            onOpen = { item -> pickRecording(model.detail?.recordingId, item.id, leave) { model.openDetail(item) } },
             onOpenHit = { hit ->
-                leave {
+                pickRecording(model.detail?.recordingId, hit.recordingId, leave) {
                     // A hit in the title alone has nothing to find: no bar left open from before either.
                     if (hit.snippets.isEmpty()) findOpen = false
                     model.openSearchHit(hit, query.trim())
@@ -301,6 +301,14 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
             body = if (summaryDraft != null) Str.SUMMARY_DISCARD_BODY else Str.EDIT_DISCARD_BODY,
         )
     }
+}
+
+/**
+ * 2026-10-15: picking the recording the detail already shows — its row again, a search hit on it, the tray's Details for
+ * it — does nothing: no reload, and no question about an editor's changes. Any other is opened through [leave].
+ */
+internal fun pickRecording(open: String?, recordingId: String, leave: (() -> Unit) -> Unit, then: () -> Unit) {
+    if (open != recordingId) leave(then)
 }
 
 /**
@@ -398,14 +406,12 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
         selected = selected,
         onOpen = onOpen,
         // 2026-10-11 (N1, W26): the actions are the open row's alone, as the tray's expanded row has them — every
-        // other row is its title, its first words and its state. docs/03 "Deleting in the app": deleting a recording
-        // is not one of the things opening it should be able to do by accident, which is why the button is out
-        // here. And never over one that is still being written ([RecentItem.deletable]).
+        // other row is its title, its first words and its state. 2026-10-15: and only while there is something to say
+        // or fix — docs/03 "Deleting in the app" is the detail's More, so a finished row has no line under it.
         controls = if (actions == RowActions.NONE) null else {
             {
-                // A line that wraps, Delete beside it, as the tray's expanded row has them: Retry, Check the key
-                // and Delete can all be here at once, and at the narrowest a worded button is (docs/09 "Shape")
-                // they no longer fit the sidebar's one line in English.
+                // A line that wraps: Retry and Check the key can be here at once, and at the narrowest a worded
+                // button is (docs/09 "Shape") they need not fit the sidebar's one line.
                 FlowRow(
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -423,15 +429,6 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
                     }
                     // docs/08 AUTH_REJECTED: in the actions line, as the tray's expanded row has it.
                     if (actions.checkKey) CheckKeyButton(item, strings) { model.settingsOpen = true }
-                }
-                if (actions.delete) {
-                    BlueprintButton(
-                        label = strings[Str.DELETE],
-                        onClick = { model.askToDelete(item) },
-                        modifier = Modifier.align(Alignment.Top),
-                        tone = ButtonTone.DANGER,
-                        minWidth = MinTouch,
-                    )
                 }
             }
         },
@@ -491,10 +488,13 @@ private fun ListMessage(notice: ShellNotice, strings: Strings, onDismiss: () -> 
     }
 }
 
-/** What the open row of the list offers (2026-10-11, N1): the tray's expanded row's Download, Retry, Check the key and Delete. */
-internal data class RowActions(val download: Boolean, val retry: Boolean, val checkKey: Boolean, val delete: Boolean) {
+/**
+ * What the open row of the list offers (2026-10-11, N1): the tray's expanded row's Download, Retry and Check the key.
+ * Its Delete is the detail's More (2026-10-15).
+ */
+internal data class RowActions(val download: Boolean, val retry: Boolean, val checkKey: Boolean) {
     companion object {
-        val NONE = RowActions(download = false, retry = false, checkKey = false, delete = false)
+        val NONE = RowActions(download = false, retry = false, checkKey = false)
     }
 }
 
@@ -503,7 +503,6 @@ internal fun rowActions(item: RecentItem): RowActions = RowActions(
     download = item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL,
     retry = retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending),
     checkKey = recly.core.job.StepReport.needsKey(item.lastError),
-    delete = item.deletable,
 )
 
 @Composable

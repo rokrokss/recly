@@ -37,6 +37,27 @@ class DetailReasonsTest {
         assertEquals("Drive 연결 대기", StringTable.of(StringTable.KOREAN)[Str.DRIVE_PENDING].plain())
     }
 
+    /**
+     * 2026-10-15: More → Delete waits by the list row's rule, and says why as the other items do — `Still recording`, or
+     * the row's own word for the import or the transfer still filling it.
+     */
+    @Test
+    fun `More's Delete says why it waits`() {
+        fun row(state: Str) = app.recly.windows.jobs.RecentItem(
+            "r", "j", JobStatus.DONE, app.recly.windows.i18n.UiMessage.Text("Weekly sync"), "2026-10-15T09:00:00Z", 60.0,
+            app.recly.windows.i18n.UiMessage.Res(state), link = null,
+        )
+        assertEquals(Str.DETAIL_STILL_RECORDING, deleteBlocked(row(Str.STATUS_RECORDING)))
+        assertEquals(Str.STATE_IMPORTING, deleteBlocked(row(Str.STATE_IMPORTING)))
+        assertEquals(Str.STATE_RECEIVING, deleteBlocked(row(Str.STATE_RECEIVING)))
+        // Anything else can go — an upload or a transcription in flight too: the core stops it first.
+        listOf(Str.STATE_DONE, Str.STATE_FAILED, Str.STATE_UPLOADING, Str.STATE_REMOTE_UPLOADING).forEach { state ->
+            assertEquals(null, deleteBlocked(row(state)), "$state")
+        }
+        assertEquals("Importing", StringTable.of(StringTable.BASE)[Str.STATE_IMPORTING])
+        assertEquals("가져오는 중", StringTable.of(StringTable.KOREAN)[Str.STATE_IMPORTING].plain())
+    }
+
     @Test
     fun `a transcription is in flight only once the job has reached it`() {
         val pending = plan(JobStatus.PENDING)
