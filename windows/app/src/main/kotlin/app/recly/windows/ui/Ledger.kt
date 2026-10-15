@@ -72,13 +72,19 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
 )
 
 /**
- * docs/09 screen principle 2: every label a ledger badge can wear in [strings]' language — each state's word
- * and `Unknown` — which is what the status column is measured against, so none of them is ever cut to
+ * docs/09 screen principle 2 (2026-10-15): a recording ChatGPT is filling in the title or the names of — the core's
+ * `observeFills()` — wears `Filling in`, accent, with the loader turning. Not a state of its job, so not in
+ * [LedgerStates]: the header's counts and the row's actions still go by the job ([ledgerStatus] with `filling`).
+ */
+val FillingStatus: LedgerStatus = LedgerStatus("FILLING", BadgeTone.ACCENT, busy = true, word = Str.BADGE_FILLING)
+
+/**
+ * docs/09 screen principle 2: every label a ledger badge can wear in [strings]' language — each state's word,
+ * `Filling in` and `Unknown` — which is what the status column is measured against, so none of them is ever cut to
  * fit.
  */
 fun ledgerBadgeLabels(strings: Strings): List<String> =
-    LedgerStates.keys.flatMap { key ->
-        val status = key.message().ledgerStatus(strings)
+    (LedgerStates.keys.map { it.message().ledgerStatus(strings) } + FillingStatus.worded(strings)).flatMap { status ->
         // Two spaces stand in for the loader a busy badge turns in front of its code — about its 12dp.
         listOfNotNull(status.label, "  ${status.label}".takeIf { status.busy })
     } + strings[Str.BADGE_UNKNOWN]
@@ -91,6 +97,15 @@ fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
     val status = LedgerStates[(this as? UiMessage.Res)?.key]
         ?: LedgerStatus(UNKNOWN_STATE, BadgeTone.NEUTRAL, word = Str.BADGE_UNKNOWN)
     return status.worded(strings)
+}
+
+/**
+ * The row's badge: [FillingStatus] while ChatGPT is [filling] it in — read after `REC` and `RECEIVING`, ahead of
+ * every other state — and its state's otherwise.
+ */
+fun RecentItem.ledgerStatus(strings: Strings?, filling: Boolean): LedgerStatus {
+    val key = (state as? UiMessage.Res)?.key
+    return if (filling && key != Str.STATUS_RECORDING && key != Str.STATE_RECEIVING) FillingStatus.worded(strings) else state.ledgerStatus(strings)
 }
 
 /** The badge with its word put in, when there is a language to put it in. */

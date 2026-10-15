@@ -741,17 +741,10 @@ class CrossShellDictionaryTest {
                 mac = "Take this app’s access to your Google account away.",
                 phone = "Take this app’s access to your Google account away.",
             ),
-            // docs/08 "Titles and speaker names": the title sheet's box and the sentence under it that is the consent to it,
-            // and More's item with what it says while it cannot run, while it runs and when it failed. RecKit holds them
-            // under the English text; its lane adds them in parallel, so `reckit` joins these lines at integration.
-            Line(
-                what = "the title sheet's fill box",
-                en = "Fill in the title and speaker names with ChatGPT",
-                ko = "ChatGPT로 제목·화자 이름 채우기",
-                android = "fill_after_stop",
-                windows = "fill.after.stop",
-                reckit = "Fill in the title and speaker names with ChatGPT",
-            ),
+            // docs/08 "Titles and speaker names": the title sheet's two boxes and the sentence under both that is the consent
+            // to them, More's two items with what each says while it cannot run, while it runs and when it failed, the
+            // detail's lines while a fill runs, and the lists' badge. RecKit holds them under the English text; its lane adds
+            // the split ones in parallel, so `reckit` joins those lines at integration.
             Line(
                 what = "what the title sheet's fill box sends",
                 en = "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.",
@@ -759,22 +752,6 @@ class CrossShellDictionaryTest {
                 android = "fill_after_stop_note",
                 windows = "fill.after.stop.note",
                 reckit = "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.",
-            ),
-            Line(
-                what = "the More menu's fill item",
-                en = "Fill in title and names",
-                ko = "제목·이름 채우기",
-                android = "fill_menu",
-                windows = "fill.menu",
-                reckit = "Fill in title and names",
-            ),
-            Line(
-                what = "the fill item with nothing left to fill",
-                en = "Title and names are already filled in",
-                ko = "제목과 이름이 이미 있습니다",
-                android = "fill_nothing",
-                windows = "fill.nothing",
-                reckit = "Title and names are already filled in",
             ),
             Line(
                 what = "the fill item while it runs",
@@ -785,12 +762,81 @@ class CrossShellDictionaryTest {
                 reckit = "Filling in…",
             ),
             Line(
-                what = "a fill that failed",
-                en = "Could not fill in the title and names",
-                ko = "제목과 이름을 채우지 못했습니다",
-                android = "fill_failed",
-                windows = "fill.failed",
-                reckit = "Could not fill in the title and names",
+                what = "the title sheet's title box",
+                en = "Fill in the title with ChatGPT",
+                ko = "ChatGPT로 제목 채우기",
+                android = "fill_title_after_stop",
+                windows = "fill.title.after.stop",
+            ),
+            Line(
+                what = "the title sheet's names box",
+                en = "Fill in speaker names with ChatGPT",
+                ko = "ChatGPT로 화자 이름 채우기",
+                android = "fill_names_after_stop",
+                windows = "fill.names.after.stop",
+            ),
+            Line(
+                what = "the More menu's title item",
+                en = "Fill in title",
+                ko = "제목 채우기",
+                android = "fill_title_menu",
+                windows = "fill.title.menu",
+            ),
+            Line(
+                what = "the More menu's names item",
+                en = "Fill in speaker names",
+                ko = "화자 이름 채우기",
+                android = "fill_names_menu",
+                windows = "fill.names.menu",
+            ),
+            Line(
+                what = "the title item with a title there",
+                en = "Already has a title",
+                ko = "이미 제목이 있습니다",
+                android = "fill_has_title",
+                windows = "fill.has.title",
+            ),
+            Line(
+                what = "the names item with every speaker named",
+                en = "No unnamed speakers",
+                ko = "이름 없는 화자가 없습니다",
+                android = "fill_no_unnamed",
+                windows = "fill.no.unnamed",
+            ),
+            Line(
+                what = "the detail while the title is filled in",
+                en = "Filling in the title…",
+                ko = "제목을 채우는 중…",
+                android = "fill_title_running",
+                windows = "fill.title.running",
+            ),
+            Line(
+                what = "the detail while the names are filled in",
+                en = "Filling in speaker names…",
+                ko = "화자 이름을 채우는 중…",
+                android = "fill_names_running",
+                windows = "fill.names.running",
+            ),
+            Line(
+                what = "the lists' badge while a fill runs",
+                en = "Filling in",
+                ko = "채우는 중",
+                android = "badge_filling",
+                windows = "badge.filling",
+            ),
+            Line(
+                what = "a title fill that failed",
+                en = "Could not fill in the title",
+                ko = "제목을 채우지 못했습니다",
+                android = "fill_title_failed",
+                windows = "fill.title.failed",
+            ),
+            Line(
+                what = "a names fill that failed",
+                en = "Could not fill in speaker names",
+                ko = "화자 이름을 채우지 못했습니다",
+                android = "fill_names_failed",
+                windows = "fill.names.failed",
             ),
         )
     }

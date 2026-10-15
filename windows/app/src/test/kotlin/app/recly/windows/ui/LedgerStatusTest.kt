@@ -12,6 +12,7 @@ import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.jobs.Recents
 import app.recly.windows.ui.component.BadgeTone
+import app.recly.windows.ui.component.LedgerStatus
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Locale
@@ -89,6 +90,36 @@ class LedgerStatusTest {
         // Nothing is wrong and nothing is happening.
         assertEquals(BadgeTone.NEUTRAL, Str.STATUS_WAITING.message().ledgerStatus().tone)
         assertEquals(BadgeTone.NEUTRAL, Str.STATE_TOO_SHORT.message().ledgerStatus().tone)
+    }
+
+    /**
+     * docs/09 screen principle 2 (2026-10-15): a recording ChatGPT is filling in says `Filling in`, with the loader,
+     * ahead of every state but `REC` and `RECEIVING`, and goes back to what its job says when the run ends; the column
+     * is measured for it, the loader's room included.
+     */
+    @Test
+    fun `a recording being filled in says so, after REC and RECEIVING only`() {
+        val en = StringTable.of(StringTable.BASE)
+        val ko = StringTable.of(StringTable.KOREAN)
+        val row = app.recly.windows.jobs.RecentItem(
+            id = "r", jobId = "j", title = Str.UNTITLED.message(), startedAt = "2026-10-15T00:00:00Z", state = Str.STATE_DONE.message(), link = null,
+        )
+        val filling = row.ledgerStatus(en, filling = true)
+        assertEquals(LedgerStatus("FILLING", BadgeTone.ACCENT, label = "Filling in", busy = true, word = Str.BADGE_FILLING), filling)
+        assertEquals("채우는 중", row.ledgerStatus(ko, filling = true).label.plain())
+        assertEquals(Str.STATE_DONE.message().ledgerStatus(en), row.ledgerStatus(en, filling = false))
+        LedgerStates.keys.filter { it != Str.STATUS_RECORDING && it != Str.STATE_RECEIVING }.forEach { key ->
+            assertEquals("FILLING", row.copy(state = key.message()).ledgerStatus(en, filling = true).code, key.name)
+        }
+        assertEquals("REC", row.copy(state = Str.STATUS_RECORDING.message()).ledgerStatus(en, filling = true).code)
+        assertEquals("RECEIVING", row.copy(state = Str.STATE_RECEIVING.message()).ledgerStatus(en, filling = true).code)
+        // Its counts are the job's: a filling row that is done is not one more waiting.
+        assertEquals("1", ledgerCounts(listOf(row), { "$it waiting" }, { "$it failed" }))
+        for (strings in listOf(en, ko)) {
+            val labels = ledgerBadgeLabels(strings)
+            assertTrue(strings[Str.BADGE_FILLING] in labels)
+            assertTrue("  ${strings[Str.BADGE_FILLING]}" in labels, "the loader's room is not measured")
+        }
     }
 
     /**

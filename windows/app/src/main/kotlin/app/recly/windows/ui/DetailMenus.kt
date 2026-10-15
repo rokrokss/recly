@@ -197,7 +197,7 @@ private val EXPORTS = listOf(
 /**
  * docs/09 "Screen principles": the detail's ⋯, in groups with a hairline between them (2026-10-10) — Rename ·
  * Edit transcript · Transcribe again, then the summary's Summarize · Summarize as… · Edit summary · Ask about this
- * recording… · Fill in title and names where ChatGPT is offered, then Add highlight, then Open in Drive or Open the folder once the recording has
+ * recording… · Fill in title · Fill in speaker names where ChatGPT is offered, then Add highlight, then Open in Drive or Open the folder once the recording has
  * a folder there (D24), and last Delete, in red (2026-10-15). What cannot run now stays in its place, disabled, with the
  * reason under it — `Still recording` for every one of them while the take is being written. Summarize as… opens the
  * formats in a submenu beside it, as the Mac's does (D19).
@@ -305,15 +305,20 @@ internal fun MoreButton(
                     enabled = askBlocked == null,
                     secondary = askBlocked?.let { strings[it] },
                 )
-                // docs/08 "Titles and speaker names": what the recording still lacks, by the rule the core asks by.
-                val needed = detail.transcript?.let { FillNeeds.of((detail.title as? UiMessage.Text)?.value, it).any } ?: false
-                val fillBlocked = fillBlocked(detail.writing, detail.hasTranscript, busy, connection, detail.filling, needed)
-                BlueprintMenuRow(
-                    strings[Str.FILL_MENU],
-                    { open = false; model.fillTitleAndNames() },
-                    enabled = fillBlocked == null,
-                    secondary = fillBlocked?.let { strings[it] },
-                )
+                // docs/08 "Titles and speaker names": two items, the title and the names apart, each offered by what the
+                // recording still lacks, by the rule the core asks by.
+                val needs = detail.transcript?.let { FillNeeds.of((detail.title as? UiMessage.Text)?.value, it) }
+                val run = model.fills.firstOrNull { it.recordingId == detail.recordingId }
+                FillHalf.entries.forEach { half ->
+                    val fillBlocked = fillBlocked(half, detail.writing, detail.hasTranscript, busy, connection, half.runs(run),
+                        needs?.let(half::needed) ?: false)
+                    BlueprintMenuRow(
+                        strings[half.item],
+                        { open = false; model.fill(half) },
+                        enabled = fillBlocked == null,
+                        secondary = fillBlocked?.let { strings[it] },
+                    )
+                }
             }
             BlueprintMenuDivider()
             // The playhead is the player's, and a take still being written has no player yet.

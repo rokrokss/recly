@@ -50,10 +50,13 @@ import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
+import app.recly.windows.record.fillAsk
+import app.recly.windows.record.fillTitleBoxEnabled
 import app.recly.windows.ui.Consent
 import app.recly.windows.ui.DeleteDialog
 import app.recly.windows.ui.DevFlags
 import app.recly.windows.ui.DisconnectDialog
+import app.recly.windows.ui.FillHalf
 import app.recly.windows.ui.ByteFormat
 import app.recly.windows.ui.ChatGptWelcomeDialog
 import app.recly.windows.ui.MeteredDownloadDialog
@@ -464,9 +467,10 @@ private fun TitlePrompt(
  * The title dialog's answers and fields, which [frame] puts in a card — its own window here, a card on its own in the
  * off-screen shots.
  *
- * docs/08 "Titles and speaker names": under the head count, while ChatGPT is signed in and transcription is on, the
- * box that asks ChatGPT for this recording's title and speaker names once it is transcribed, with what that sends.
- * It starts as it was left last; Save says whether it was there and ticked.
+ * docs/08 "Titles and speaker names": under the head count, while ChatGPT is signed in and transcription is on, two
+ * boxes — one asking ChatGPT for this recording's title and one for its speakers' names once it is transcribed — with
+ * what that sends under both. Each starts as it was left last. While the field has a title the title box would do
+ * nothing, so it is disabled, keeping what it says; Save says what the boxes ask for ([fillAsk]).
  */
 @Composable
 internal fun TitleSheet(
@@ -480,7 +484,8 @@ internal fun TitleSheet(
     val transcribes = model.processing?.summary?.mode != TranscriptionMode.OFF
     val chatGpt = model.chatGpt
     val askFill = transcribes && chatGpt?.connection is ChatGptConnection.SignedIn
-    var fill by remember { mutableStateOf(chatGpt?.preferences?.let { it.fillTitleAfterStop || it.fillNamesAfterStop } ?: false) }
+    var fillTitle by remember { mutableStateOf(chatGpt?.preferences?.fillTitleAfterStop ?: false) }
+    var fillNames by remember { mutableStateOf(chatGpt?.preferences?.fillNamesAfterStop ?: false) }
     frame(
         {
             // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete
@@ -488,7 +493,7 @@ internal fun TitleSheet(
             BlueprintButton(strings[Str.RECORDING_DISCARD], model::cancelTitle, tone = ButtonTone.DANGER, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Str.SAVE],
-                onClick = { model.saveTitle(title, participants, askFill && fill) },
+                onClick = { model.saveTitle(title, participants, fillAsk(askFill, title, fillTitle, fillNames)) },
                 modifier = Modifier.widthIn(min = 120.dp),
                 tone = ButtonTone.PRIMARY,
             )
@@ -530,14 +535,23 @@ internal fun TitleSheet(
             }
             if (askFill) {
                 BlueprintCheckRow(
-                    label = strings[Str.FILL_AFTER_STOP],
-                    checked = fill,
+                    label = strings[Str.FILL_TITLE_AFTER_STOP],
+                    checked = fillTitle,
                     onCheckedChange = {
-                        fill = it
-                        chatGpt?.rememberFillAfterStop(it)
+                        fillTitle = it
+                        chatGpt?.rememberFillAfterStop(FillHalf.TITLE, it)
+                    },
+                    enabled = fillTitleBoxEnabled(title),
+                )
+                BlueprintCheckRow(
+                    label = strings[Str.FILL_NAMES_AFTER_STOP],
+                    checked = fillNames,
+                    onCheckedChange = {
+                        fillNames = it
+                        chatGpt?.rememberFillAfterStop(FillHalf.NAMES, it)
                     },
                 )
-                // What the box sends, when, and that it counts toward the plan: the consent it is (docs/15 §10).
+                // What the boxes send, when, and that it counts toward the plan: the consent they are (docs/15 §10).
                 BlueprintDialogText(strings[Str.FILL_AFTER_STOP_NOTE], tone = DialogTone.MUTED)
             }
         },

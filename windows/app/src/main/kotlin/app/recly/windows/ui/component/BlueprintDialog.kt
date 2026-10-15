@@ -341,23 +341,39 @@ fun BlueprintCheckRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Off: the box keeps what it says, drawn in `disabled` with a dashed edge, and cannot be changed (docs/09
+     * "Disabled, focus and structure").
+     */
+    enabled: Boolean = true,
 ) {
     OptionRow(
         label = label,
-        modifier = modifier.focusRing().toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange),
-        mark = { SelectionMark(selected = checked, filled = true) },
+        modifier = modifier.focusRing().toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckedChange),
+        mark = { if (enabled) SelectionMark(selected = checked, filled = true) else DisabledCheckMark(checked) },
+        enabled = enabled,
     )
 }
 
 @Composable
-private fun OptionRow(label: String, modifier: Modifier, mark: @Composable () -> Unit) {
+private fun OptionRow(label: String, modifier: Modifier, mark: @Composable () -> Unit, enabled: Boolean = true) {
     Row(
         modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = MinTouch),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         mark()
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = blueprint.text)
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) blueprint.text else blueprint.disabled)
+    }
+}
+
+/** A box that cannot be changed now: a dashed `disabled` edge, and the inner square in `disabled` when it is ticked. */
+@Composable
+private fun DisabledCheckMark(checked: Boolean) {
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.badge)
+    Box(Modifier.size(MARK).dashedBorder(palette.line, palette.disabled, Radius.badge), contentAlignment = Alignment.Center) {
+        if (checked) Box(Modifier.size(INNER).background(palette.disabled, shape))
     }
 }
 

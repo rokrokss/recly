@@ -204,28 +204,39 @@ class ShotsTest {
             val window: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
             shot("recordings-summary-more-signed-in-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
             shot("recordings-summary-as-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_SUMMARIZE_AS)) { window() }
-            // docs/08 "Titles and speaker names": the title dialog's card with its ChatGPT box as it was left — unticked,
-            // then ticked.
+            // docs/08 "Titles and speaker names": the title dialog's card with its two ChatGPT boxes as they were left —
+            // unticked, then ticked, then with a title typed, which leaves the title box disabled and still ticked.
             val sheet: @Composable () -> Unit = {
                 TitleSheet(model, strings) { actions, content ->
                     DialogCard(strings[Str.RECORDING_TITLE], androidx.compose.ui.Modifier, actions, content, fill = false)
                 }
             }
             shot("title-sheet-$lang", 460, 520, ko) { sheet() }
-            chatGpt.rememberFillAfterStop(true)
-            until { chatGpt.preferences.fillTitleAfterStop }
+            chatGpt.rememberFillAfterStop(FillHalf.TITLE, true)
+            chatGpt.rememberFillAfterStop(FillHalf.NAMES, true)
+            until { chatGpt.preferences.fillTitleAfterStop && chatGpt.preferences.fillNamesAfterStop }
             shot("title-sheet-ticked-$lang", 460, 520, ko) { sheet() }
-            chatGpt.rememberFillAfterStop(false)
-            until { !chatGpt.preferences.fillTitleAfterStop }
-            // More → Fill in title and names with a title to fill, and what a failure says: the plan is drawn signed in,
-            // but nothing here is, so the core answers that a sign-in is needed.
+            shot("title-sheet-typed-$lang", 460, 520, ko, clicks = listOf(TITLE_FIELD), typed = "Weekly sync") { sheet() }
+            chatGpt.rememberFillAfterStop(FillHalf.TITLE, false)
+            chatGpt.rememberFillAfterStop(FillHalf.NAMES, false)
+            until { !chatGpt.preferences.fillTitleAfterStop && !chatGpt.preferences.fillNamesAfterStop }
+            // More → Fill in title with a title to fill, Fill in speaker names with every speaker named, and what a
+            // failure says: the plan is drawn signed in, but nothing here is, so the core answers that a sign-in is needed.
             val named = (model.detail!!.title as app.recly.windows.i18n.UiMessage.Text).value
             model.rename(RenameRequest(model.detail!!.recordingId, named), "")
             until { model.detail?.title !is app.recly.windows.i18n.UiMessage.Text }
             shot("recordings-fill-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
-            model.fillTitleAndNames()
+            model.fill(FillHalf.TITLE)
             until { model.detail?.fillFailure != null }
             shot("recordings-fill-failed-$lang", 1000, 680, ko) { window() }
+            until { model.detail?.fillFailure == null }
+            // A fill running, drawn without asking ChatGPT: the row's `Filling in`, the detail's two lines, both items
+            // waiting for it, and the tray's row.
+            model.fills = listOf(recly.core.chatgpt.FillRun(model.detail!!.recordingId, title = true, names = true))
+            shot("recordings-filling-$lang", 1000, 680, ko) { window() }
+            shot("recordings-filling-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
+            shot("popup-filling-$lang", 520, 560, ko) { TrayPopup(model, strings) {} }
+            model.fills = emptyList()
             model.rename(RenameRequest(model.detail!!.recordingId, ""), named)
             until { (model.detail?.title as? app.recly.windows.i18n.UiMessage.Text)?.value == named }
             shot("settings-signed-in-$lang", 640, SETTINGS_HEIGHT, ko) { SettingsWindow(model, strings) }
@@ -458,6 +469,8 @@ class ShotsTest {
         val MORE_EDIT_SUMMARY = Offset(835f, 313f)
         val MORE_SUMMARIZE_AS = Offset(835f, 265f)
         val SUMMARY_FIELD = Offset(700f, 400f)
+        // The title dialog's field, in its 460-wide card.
+        val TITLE_FIELD = Offset(230f, 90f)
         const val SETTINGS_HEIGHT = 3100
 
         const val SUMMARY = "Summary:\nThe team reviewed the release notes and agreed to ship on Friday. [00:00:31]\n\n" +

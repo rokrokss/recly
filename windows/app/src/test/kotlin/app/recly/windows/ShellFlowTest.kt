@@ -11,6 +11,7 @@ import app.recly.windows.jobs.Recents
 import app.recly.windows.record.RecordingOutcome
 import app.recly.windows.record.WindowsRecorder
 import app.recly.windows.record.completeRecording
+import app.recly.windows.record.fillAsk
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -31,6 +32,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
 import recly.core.job.EnqueueResult
+import recly.core.recording.FillRequest
 import recly.core.job.JobStatus
 
 /**
@@ -117,7 +119,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun `a ticked ChatGPT box leaves its request for the job, and an unticked one none`() = runBlocking {
+    fun `ticked ChatGPT boxes leave their request for the job, and unticked ones none`() = runBlocking {
         // docs/08 "Titles and speaker names": the publication reads the request, so it is there once the job is.
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val core = AppModule.build(
@@ -139,9 +141,11 @@ class ShellFlowTest {
             return withTimeout(TIMEOUT_MS) { finalized.receive() }
         }
 
+        // A typed title leaves the title box nothing to do: the names box alone asks.
         val ticked = record()
-        assertIs<EnqueueResult.Enqueued>(completeRecording(core, ticked.recordingId, "주간 회의", fill = true).enqueued)
-        assertTrue(core.recordings.fillRequested(ticked.recordingId))
+        val ask = fillAsk(offered = true, title = "주간 회의", titleBox = true, namesBox = true)
+        assertIs<EnqueueResult.Enqueued>(completeRecording(core, ticked.recordingId, "주간 회의", fill = ask).enqueued)
+        assertEquals(FillRequest(title = false, names = true), core.recordings.fillRequest(ticked.recordingId))
 
         val unticked = record()
         assertIs<EnqueueResult.Enqueued>(completeRecording(core, unticked.recordingId, null).enqueued)
