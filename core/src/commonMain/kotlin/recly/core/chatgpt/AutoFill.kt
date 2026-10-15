@@ -7,8 +7,13 @@ import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -19,6 +24,7 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
 import recly.core.privacy.TransferConsents
 import recly.core.privacy.TransferTargets
+import recly.core.recording.FillRequest
 import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
 import recly.core.recording.RecordingRepository
@@ -30,10 +36,18 @@ import recly.core.transcribe.TranscriptFilled
 /**
  * docs/08 "Titles and speaker names": what a recording still lacks that ChatGPT can fill in — a title when it has
  * none, and a name for each speaker who says something, has none and is not `me`. Nothing when nothing was said.
- * The one rule the core asks by and the shells offer More → Fill in title and names by ([any]).
+ * The one rule the core asks by and the shells offer More → Fill in title ([title]) and Fill in speaker names
+ * ([names]) by.
  */
 data class FillNeeds(val title: Boolean, val speakers: List<String>) {
     val any: Boolean get() = title || speakers.isNotEmpty()
+
+    /** A speaker to name: what Fill in speaker names is offered by. */
+    val names: Boolean get() = speakers.isNotEmpty()
+
+    /** Only the halves asked for: the title when [title], the speakers when [names]. */
+    internal fun only(title: Boolean, names: Boolean): FillNeeds =
+        FillNeeds(this.title && title, if (names) speakers else emptyList())
 
     companion object {
         /** [title] is the recording's as it is now: blank asks for one, anything else — an import's file name too — stays. */
@@ -48,12 +62,22 @@ data class FillNeeds(val title: Boolean, val speakers: List<String>) {
     }
 }
 
-/** What `ReclyCore.fillTitleAndNames` did. Concrete classes, so Swift reads them as they are. */
+/**
+ * docs/08 "Titles and speaker names": a fill that is asking ChatGPT now, and applying its answer — at a publication or
+ * from the detail. [title] and [names] are what it asks for: the halves asked that the recording lacked. One per
+ * recording in `ReclyCore.observeFills`.
+ */
+data class FillRun(val recordingId: String, val title: Boolean, val names: Boolean)
+
+/** What `ReclyCore.fill`, `fillTitle` and `fillNames` did. Concrete classes, so Swift reads them as they are. */
 sealed interface FillResult {
     /** ChatGPT answered: [title] is whether the recording was given one, [names] how many speakers were named — either may be none. */
     data class Filled(val title: Boolean, val names: Int) : FillResult
 
-    /** The recording has its title and every speaker who speaks has a name, or nothing was said: nothing was sent. */
+    /**
+     * Of what was asked, the recording has its title, or every speaker who speaks has a name, or nothing was said:
+     * nothing was sent.
+     */
     data object NothingToFill : FillResult
 
     /** There is no transcript, here or in the recording's folder. */
@@ -71,11 +95,12 @@ sealed interface FillResult {
 
 /**
  * docs/08 "Titles and speaker names": a recording's title and speaker names from the user's ChatGPT plan, asked for
- * one recording at a time. The title sheet after Stop asks for it ([request]): the transcript about to be published
- * first asks — the publish runner's [TranscriptFill] — so the folder's first copy, and whatever reads it, has them;
- * nothing there stops the publication, a skip or a failure publishes the transcript as it was. More → Fill in title
- * and names asks for a recording already transcribed ([manual]). Either is the user's express consent to that use of
- * the plan (docs/15 §10).
+ * one recording at a time, each on its own. The title sheet after Stop asks for either or both ([request]): the
+ * transcript about to be published first asks — the publish runner's [TranscriptFill] — so the folder's first copy,
+ * and whatever reads it, has them; nothing there stops the publication, a skip or a failure publishes the transcript
+ * as it was. More → Fill in title and More → Fill in speaker names ask for a recording already transcribed
+ * ([manual]). Either is the user's express consent to that use of the plan (docs/15 §10). What is asking now, for
+ * either, is [observe].
  */
 internal class AutoFill(
     private val db: RecDatabase,
@@ -97,47 +122,63 @@ internal class AutoFill(
 ) : TranscriptFill {
     /** A fill goes on when the screen that asked for it closes. */
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val runs = mutableMapOf<String, Deferred<FillResult>>()
+
+    /** The detail's fill of a recording that is going, and the halves it was asked for. */
+    private class Manual(val title: Boolean, val names: Boolean, val outcome: Deferred<FillResult>) {
+        fun covers(title: Boolean, names: Boolean): Boolean = (this.title || !title) && (this.names || !names)
+    }
+
+    private val runs = mutableMapOf<String, Manual>()
     private val runLock = Mutex()
 
+    /** The fills asking ChatGPT now, by recording. */
+    private val asking = MutableStateFlow<Map<String, FillRun>>(emptyMap())
+
+    /** docs/08 "Titles and speaker names": what is being filled in now — a publication's fill or the detail's. */
+    fun observe(): Flow<List<FillRun>> = asking.map { it.values.toList() }
+
     override suspend fun fill(recording: RecordingRecord, transcript: Transcript): TranscriptFilled {
-        if (!recordings.fillRequested(recording.id)) return TranscriptFilled(transcript)
-        val filled = publish(recording, transcript)
+        val asked = recordings.fillRequest(recording.id) ?: return TranscriptFilled(transcript)
+        val filled = publish(recording, transcript, asked)
         // Asked once — filled, failed or skipped. A pass cut short never gets here, and its publication asks again.
         recordings.takeFillRequest(recording.id)
         return filled
     }
 
-    private suspend fun publish(recording: RecordingRecord, transcript: Transcript): TranscriptFilled {
+    private suspend fun publish(recording: RecordingRecord, transcript: Transcript, asked: FillRequest): TranscriptFilled {
         val unchanged = TranscriptFilled(transcript)
-        val needs = FillNeeds.of(recordings.get(recording.id)?.meta?.title, transcript)
+        val needs = FillNeeds.of(recordings.get(recording.id)?.meta?.title, transcript).only(asked.title, asked.names)
         if (!needs.any) return unchanged.also { skipped(recording.id, PUBLISH, "nothing") }
         backgroundSkip()?.let { reason -> return unchanged.also { skipped(recording.id, PUBLISH, reason) } }
-        val answer = try {
-            ask(recording.id, transcript, needs, PUBLISH)
-        } catch (e: ChatGptFailure) {
-            return unchanged
+        return shown(recording.id, needs) {
+            val answer = try {
+                ask(recording.id, transcript, needs, PUBLISH)
+            } catch (e: ChatGptFailure) {
+                return@shown unchanged
+            }
+            val named = transcript.copy(
+                speakers = transcript.speakers.map { speaker ->
+                    answer.speakers[speaker.id]?.takeIf { speaker.id in needs.speakers }?.let { speaker.copy(name = it) } ?: speaker
+                },
+            )
+            val titled = answer.title?.takeIf { needs.title }?.takeIf { giveTitle(recording.id, it, PUBLISH) }
+            done(recording.id, PUBLISH, titled != null, answer.speakers.count { it.key in needs.speakers })
+            TranscriptFilled(if (named.speakers == transcript.speakers) transcript else named, titled)
         }
-        val named = transcript.copy(
-            speakers = transcript.speakers.map { speaker ->
-                answer.speakers[speaker.id]?.takeIf { speaker.id in needs.speakers }?.let { speaker.copy(name = it) } ?: speaker
-            },
-        )
-        val titled = answer.title?.takeIf { needs.title }?.takeIf { title(recording.id, it, PUBLISH) }
-        done(recording.id, PUBLISH, titled != null, answer.speakers.count { it.key in needs.speakers })
-        return TranscriptFilled(if (named.speakers == transcript.speakers) transcript else named, titled)
     }
 
     /**
-     * The title sheet's box was ticked for [recordingId]: kept for its publication. A transcript already published —
-     * its job settled while the sheet was open — is filled now, in the background, as [manual] fills.
+     * The title sheet's boxes were ticked for [recordingId] — [title], [names] or both: kept for its publication. A
+     * transcript already published — its job settled while the sheet was open — is filled now, in the background, as
+     * [manual] fills.
      */
-    suspend fun request(recordingId: String) {
-        if (!recordings.requestFill(recordingId)) return
-        deps.logger.log(Logger.Level.INFO, "summary.fill.requested", mapOf("recordingId" to recordingId))
+    suspend fun request(recordingId: String, title: Boolean, names: Boolean) {
+        if (!title && !names) return
+        if (!recordings.requestFill(recordingId, title, names)) return
+        deps.logger.log(Logger.Level.INFO, "summary.fill.requested", mapOf("recordingId" to recordingId, "title" to title, "names" to names))
         if (busy(recordingId) || !transcribedHere(recordingId)) return
-        if (!recordings.takeFillRequest(recordingId)) return
-        scope.launch { manual(recordingId) }
+        val asked = recordings.takeFillRequest(recordingId) ?: return
+        scope.launch { manual(recordingId, asked.title, asked.names) }
     }
 
     /**
@@ -151,54 +192,74 @@ internal class AutoFill(
     }
 
     /**
-     * More → Fill in title and names: asks for what [recordingId] lacks ([FillNeeds]) and applies it — the title as a
-     * fill does, the names as an edit, since the transcript is already in the folder. The background pause does not
-     * apply: the user asked. One run per recording; asking again while it runs answers that run. On iPhone a
-     * destination the user has not allowed answers `TRANSFER_CONSENT_REQUIRED` before anything is sent, as a
-     * summary does.
+     * More → Fill in title ([title]) and More → Fill in speaker names ([names]): asks for what [recordingId] lacks of
+     * that ([FillNeeds]) and applies it — the title as a fill does, the names as an edit, since the transcript is
+     * already in the folder. The background pause does not apply: the user asked. One run per recording: asking again
+     * for what the run going asks for answers that run; asking for the other half waits for it, then runs on its own.
+     * On iPhone a destination the user has not allowed answers `TRANSFER_CONSENT_REQUIRED` before anything is sent,
+     * as a summary does.
      */
-    suspend fun manual(recordingId: String): FillResult {
+    suspend fun manual(recordingId: String, title: Boolean, names: Boolean): FillResult {
+        if (!title && !names) return FillResult.NothingToFill
         if (consents.missing(listOf(TransferTargets.chatGptSummary())).isNotEmpty()) {
             skipped(recordingId, MANUAL, "consent")
             return FillResult.Failed(CoreMessage.TRANSFER_CONSENT_REQUIRED.code())
         }
-        val run = runLock.withLock {
-            runs[recordingId]?.takeIf { it.isActive } ?: scope.async { manualRun(recordingId) }.also { runs[recordingId] = it }
+        while (true) {
+            val run = runLock.withLock {
+                runs[recordingId] ?: Manual(title, names, scope.async { manualRun(recordingId, title, names) }).also { runs[recordingId] = it }
+            }
+            if (run.covers(title, names)) return run.outcome.await()
+            run.outcome.join()
         }
-        return run.await()
     }
 
-    private suspend fun manualRun(recordingId: String): FillResult {
-        val outcome = attempt(recordingId)
-        runLock.withLock { runs.remove(recordingId) }
-        return outcome
+    private suspend fun manualRun(recordingId: String, title: Boolean, names: Boolean): FillResult = try {
+        attempt(recordingId, title, names)
+    } finally {
+        withContext(NonCancellable) { runLock.withLock { runs.remove(recordingId) } }
     }
 
-    private suspend fun attempt(recordingId: String): FillResult {
+    private suspend fun attempt(recordingId: String, title: Boolean, names: Boolean): FillResult {
         if (busy(recordingId)) return FillResult.Busy.also { skipped(recordingId, MANUAL, "busy") }
         val record = recordings.get(recordingId) ?: return FillResult.NoTranscript.also { skipped(recordingId, MANUAL, "transcript") }
         val current = transcript(recordingId) ?: return FillResult.NoTranscript.also { skipped(recordingId, MANUAL, "transcript") }
-        val needs = FillNeeds.of(record.meta.title, current)
+        val needs = FillNeeds.of(record.meta.title, current).only(title, names)
         if (!needs.any) return FillResult.NothingToFill.also { skipped(recordingId, MANUAL, "nothing") }
-        val answer = try {
-            ask(recordingId, current, needs, MANUAL)
-        } catch (e: ChatGptFailure) {
-            return FillResult.Failed(e.reason)
+        return shown(recordingId, needs) {
+            val answer = try {
+                ask(recordingId, current, needs, MANUAL)
+            } catch (e: ChatGptFailure) {
+                return@shown FillResult.Failed(e.reason)
+            }
+            val titled = answer.title?.takeIf { needs.title }?.let { giveTitle(recordingId, it, MANUAL) } ?: false
+            val given = answer.speakers.filterKeys { it in needs.speakers }
+            val named = if (given.isEmpty()) 0 else name(recordingId, given)
+            // A transcription started meanwhile: nothing of the transcript was changed.
+            if (named == null && !titled) return@shown FillResult.Busy.also { skipped(recordingId, MANUAL, "busy") }
+            done(recordingId, MANUAL, titled, named ?: 0)
+            FillResult.Filled(titled, named ?: 0)
         }
-        val titled = answer.title?.takeIf { needs.title }?.let { title(recordingId, it, MANUAL) } ?: false
-        val names = answer.speakers.filterKeys { it in needs.speakers }
-        val named = if (names.isEmpty()) 0 else name(recordingId, names)
-        // A transcription started meanwhile: nothing of the transcript was changed.
-        if (named == null && !titled) return FillResult.Busy.also { skipped(recordingId, MANUAL, "busy") }
-        done(recordingId, MANUAL, titled, named ?: 0)
-        return FillResult.Filled(titled, named ?: 0)
+    }
+
+    /** [block] asks ChatGPT for [needs] of [recordingId] and applies the answer: in [observe] while it goes, however it ends. */
+    private suspend fun <T> shown(recordingId: String, needs: FillNeeds, block: suspend () -> T): T {
+        asking.update { it + (recordingId to FillRun(recordingId, needs.title, needs.names)) }
+        try {
+            return block()
+        } finally {
+            asking.update { it - recordingId }
+        }
     }
 
     /** One request for [needs], logged; a failure is logged too, and the plan's own refusals pause the background fills. */
     private suspend fun ask(recordingId: String, transcript: Transcript, needs: FillNeeds, trigger: String): FillAnswer {
         deps.logger.log(
             Logger.Level.INFO, "summary.fill.start",
-            mapOf("recordingId" to recordingId, "trigger" to trigger, "title" to needs.title, "speakers" to needs.speakers.size),
+            mapOf(
+                "recordingId" to recordingId, "trigger" to trigger,
+                "title" to needs.title, "names" to needs.names, "speakers" to needs.speakers.size,
+            ),
         )
         return try {
             summaries.fill(transcript, needs.title, needs.speakers, trigger)
@@ -211,7 +272,7 @@ internal class AutoFill(
         }
     }
 
-    private suspend fun title(recordingId: String, title: String, trigger: String): Boolean = try {
+    private suspend fun giveTitle(recordingId: String, title: String, trigger: String): Boolean = try {
         setTitle(recordingId, title)
     } catch (e: CancellationException) {
         throw e
@@ -270,7 +331,10 @@ internal class AutoFill(
     internal companion object {
         const val PAUSED_UNTIL = "summary/fill/paused_until"
 
-        /** The `trigger` of the log events: a publication the title sheet asked for, or More → Fill in title and names. */
+        /**
+         * The `trigger` of the log events: a publication the title sheet asked for, or the detail's More → Fill in title
+         * or Fill in speaker names (and a request that came after the publication).
+         */
         const val PUBLISH = "publish"
         const val MANUAL = "manual"
 

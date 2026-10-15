@@ -83,15 +83,17 @@ enum class SummaryFormat(val wire: String) {
 
 /**
  * docs/08 "Summaries": what this device asks every summary for — Settings → ChatGPT. [format] is the one Summarize
- * uses; [customFormat] is My format's instructions; [aboutMe] tells ChatGPT who the notes are for. [fillAfterStop] is
- * how the title sheet's box of docs/08 "Titles and speaker names" was left last, off until the user ticks it. Local to
- * this device, like the model, and kept while signed out.
+ * uses; [customFormat] is My format's instructions; [aboutMe] tells ChatGPT who the notes are for.
+ * [fillTitleAfterStop] and [fillNamesAfterStop] are how the title sheet's two boxes of docs/08 "Titles and speaker
+ * names" were left last, each off until the user ticks it. Local to this device, like the model, and kept while signed
+ * out.
  */
 data class SummaryPreferences(
     val format: SummaryFormat = SummaryFormat.AUTO,
     val customFormat: String = "",
     val aboutMe: String = "",
-    val fillAfterStop: Boolean = false,
+    val fillTitleAfterStop: Boolean = false,
+    val fillNamesAfterStop: Boolean = false,
 ) {
     /** The formats on offer: My format only once it has words. */
     val formats: List<SummaryFormat> get() = SummaryFormat.entries.filter { it != SummaryFormat.CUSTOM || customFormat.isNotBlank() }
@@ -388,7 +390,8 @@ class Summaries internal constructor(
             format = SummaryFormat.of(db.recQueries.kvGet(PREF_FORMAT).executeAsOneOrNull()),
             customFormat = db.recQueries.kvGet(PREF_CUSTOM).executeAsOneOrNull().orEmpty(),
             aboutMe = db.recQueries.kvGet(PREF_ABOUT).executeAsOneOrNull().orEmpty(),
-            fillAfterStop = db.recQueries.kvGet(PREF_FILL_AFTER_STOP).executeAsOneOrNull() == ON,
+            fillTitleAfterStop = db.recQueries.kvGet(PREF_FILL_TITLE_AFTER_STOP).executeAsOneOrNull() == ON,
+            fillNamesAfterStop = db.recQueries.kvGet(PREF_FILL_NAMES_AFTER_STOP).executeAsOneOrNull() == ON,
         )
     }.also { loaded -> prefs.compareAndSet(null, loaded) }
 
@@ -399,14 +402,16 @@ class Summaries internal constructor(
             format = preferences.format,
             customFormat = preferences.customFormat.trim().take(SummaryPreferences.CUSTOM_MAX),
             aboutMe = preferences.aboutMe.trim().take(SummaryPreferences.ABOUT_MAX),
-            fillAfterStop = preferences.fillAfterStop,
+            fillTitleAfterStop = preferences.fillTitleAfterStop,
+            fillNamesAfterStop = preferences.fillNamesAfterStop,
         )
         withContext(deps.io) {
             db.recQueries.transaction {
                 db.recQueries.kvSet(PREF_FORMAT, kept.format.wire)
                 if (kept.customFormat.isEmpty()) db.recQueries.kvDelete(PREF_CUSTOM) else db.recQueries.kvSet(PREF_CUSTOM, kept.customFormat)
                 if (kept.aboutMe.isEmpty()) db.recQueries.kvDelete(PREF_ABOUT) else db.recQueries.kvSet(PREF_ABOUT, kept.aboutMe)
-                if (kept.fillAfterStop) db.recQueries.kvSet(PREF_FILL_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_AFTER_STOP)
+                if (kept.fillTitleAfterStop) db.recQueries.kvSet(PREF_FILL_TITLE_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_TITLE_AFTER_STOP)
+                if (kept.fillNamesAfterStop) db.recQueries.kvSet(PREF_FILL_NAMES_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_NAMES_AFTER_STOP)
             }
         }
         prefs.value = kept
@@ -543,7 +548,8 @@ class Summaries internal constructor(
         const val PREF_FORMAT = "summary/prefs/format"
         const val PREF_CUSTOM = "summary/prefs/custom"
         const val PREF_ABOUT = "summary/prefs/about"
-        const val PREF_FILL_AFTER_STOP = "summary/prefs/fill_after_stop"
+        const val PREF_FILL_TITLE_AFTER_STOP = "summary/prefs/fill_title_after_stop"
+        const val PREF_FILL_NAMES_AFTER_STOP = "summary/prefs/fill_names_after_stop"
         private const val ON = "1"
 
         const val FILL_TIMEOUT_SEC = 120

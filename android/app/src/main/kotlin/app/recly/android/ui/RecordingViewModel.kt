@@ -134,7 +134,7 @@ class RecordingViewModel @JvmOverloads constructor(
         }
         viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
         viewModelScope.launch {
-            core().summaries.observePreferences().collect { prefs -> _state.update { it.copy(fillAfterStop = prefs.fillAfterStop) } }
+            core().summaries.observePreferences().collect { prefs -> _state.update { it.copy(fillAfterStop = prefs.fillTitleAfterStop || prefs.fillNamesAfterStop) } }
         }
         viewModelScope.launch {
             val core = core()
@@ -327,7 +327,7 @@ class RecordingViewModel @JvmOverloads constructor(
     fun rememberFill(ticked: Boolean) {
         _state.update { it.copy(fillAfterStop = ticked) }
         // Through Settings' own saver, so the two never write over each other's fields.
-        ChatGptSignIn.get(getApplication()).updatePreferences { it.copy(fillAfterStop = ticked) }
+        ChatGptSignIn.get(getApplication()).updatePreferences { it.copy(fillTitleAfterStop = ticked, fillNamesAfterStop = ticked) }
     }
 
     fun cancelTitle() {
@@ -384,7 +384,7 @@ class RecordingViewModel @JvmOverloads constructor(
             val core = core()
             val (problem, enqueued) = saveInOrder(
                 name = { apply(core) },
-                requestFill = if (fill) ({ core.requestFill(untitled.recordingId) }) else null,
+                requestFill = if (fill) ({ core.requestFill(untitled.recordingId, title = true, names = true) }) else null,
                 enqueue = { core.enqueue(untitled.recordingId) },
                 failed = { event, e -> core.deps.logger.log(Logger.Level.ERROR, event, mapOf("recordingId" to untitled.recordingId), e) },
             )

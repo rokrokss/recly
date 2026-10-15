@@ -37,6 +37,9 @@ internal class ScriptedServer {
 
     private val queued = ArrayDeque<Reply>()
 
+    /** Runs as each request arrives, before it is answered: what a test looks at while the caller waits. */
+    var beforeReply: (suspend (Recorded) -> Unit)? = null
+
     fun reply(
         body: String = "{}",
         status: Int = 200,
@@ -47,6 +50,7 @@ internal class ScriptedServer {
 
     fun engine(): MockEngine = MockEngine { request ->
         requests += Recorded.of(request)
+        beforeReply?.invoke(requests.last())
         val reply = queued.removeFirstOrNull()
             ?: Reply(500, """{"error":"no scripted reply"}""", mapOf("Content-Type" to "application/json"))
         respond(

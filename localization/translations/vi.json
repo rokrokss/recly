@@ -560,5 +560,16 @@
   "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "Khi chép lời xong, bản chép lời được gửi tới ChatGPT để lấy tiêu đề còn thiếu và tên của những người nói được gọi tên. Việc này được tính vào mức sử dụng ChatGPT của bạn.",
   "Title and names are already filled in": "Tiêu đề và tên đã được điền",
   "Filling in…": "Đang điền…",
-  "Could not fill in the title and names": "Không thể điền tiêu đề và tên"
+  "Could not fill in the title and names": "Không thể điền tiêu đề và tên",
+  "Fill in title": "Điền tiêu đề",
+  "Fill in speaker names": "Điền tên người nói",
+  "Fill in the title with ChatGPT": "Điền tiêu đề bằng ChatGPT",
+  "Fill in speaker names with ChatGPT": "Điền tên người nói bằng ChatGPT",
+  "Already has a title": "Đã có tiêu đề",
+  "No unnamed speakers": "Không có người nói chưa có tên",
+  "Filling in the title…": "Đang điền tiêu đề…",
+  "Filling in speaker names…": "Đang điền tên người nói…",
+  "Filling in": "Đang điền",
+  "Could not fill in the title": "Không thể điền tiêu đề",
+  "Could not fill in speaker names": "Không thể điền tên người nói"
 }

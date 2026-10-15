@@ -1567,7 +1567,7 @@ class ShellModel(
         updateDetail(recordingId) { it.copy(filling = true) }
         scope.launch {
             val result = try {
-                graph.core.fillTitleAndNames(recordingId)
+                graph.core.fill(recordingId, title = true, names = true)
             } catch (e: kotlin.coroutines.cancellation.CancellationException) {
                 throw e
             } catch (e: Exception) {

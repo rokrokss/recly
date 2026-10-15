@@ -560,5 +560,16 @@
   "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "Une fois la transcription prête, elle est envoyée à ChatGPT pour obtenir le titre manquant et le nom des locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT.",
   "Title and names are already filled in": "Le titre et les noms sont déjà renseignés",
   "Filling in…": "Complétion en cours…",
-  "Could not fill in the title and names": "Impossible de compléter le titre et les noms"
+  "Could not fill in the title and names": "Impossible de compléter le titre et les noms",
+  "Fill in title": "Compléter le titre",
+  "Fill in speaker names": "Compléter les noms des locuteurs",
+  "Fill in the title with ChatGPT": "Compléter le titre avec ChatGPT",
+  "Fill in speaker names with ChatGPT": "Compléter les noms des locuteurs avec ChatGPT",
+  "Already has a title": "A déjà un titre",
+  "No unnamed speakers": "Aucun locuteur sans nom",
+  "Filling in the title…": "Complétion du titre…",
+  "Filling in speaker names…": "Complétion des noms des locuteurs…",
+  "Filling in": "Complétion",
+  "Could not fill in the title": "Impossible de compléter le titre",
+  "Could not fill in speaker names": "Impossible de compléter les noms des locuteurs"
 }

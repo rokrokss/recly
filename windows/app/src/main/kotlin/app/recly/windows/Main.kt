@@ -480,7 +480,7 @@ internal fun TitleSheet(
     val transcribes = model.processing?.summary?.mode != TranscriptionMode.OFF
     val chatGpt = model.chatGpt
     val askFill = transcribes && chatGpt?.connection is ChatGptConnection.SignedIn
-    var fill by remember { mutableStateOf(chatGpt?.preferences?.fillAfterStop ?: false) }
+    var fill by remember { mutableStateOf(chatGpt?.preferences?.let { it.fillTitleAfterStop || it.fillNamesAfterStop } ?: false) }
     frame(
         {
             // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete

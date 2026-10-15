@@ -139,6 +139,9 @@ sealed interface DeleteResult {
     data object NotFound : DeleteResult
 }
 
+/** docs/08 "Titles and speaker names": what the title sheet after Stop asked ChatGPT to fill in for one recording. */
+data class FillRequest(val title: Boolean, val names: Boolean)
+
 /**
  * The DB row and `meta.json` are written together: the row is what the UI and the executor query,
  * the file is what ships to Drive and survives an app reinstall.
@@ -435,24 +438,32 @@ class RecordingRepository(
     suspend fun fillTitle(recordingId: String, title: String): Boolean = locked { retitle(recordingId, title, untitledOnly = true) }
 
     /**
-     * docs/08 "Titles and speaker names": the title sheet's box was ticked — this recording's publication is to ask
-     * ChatGPT for its title and speaker names. Kept until that has been tried ([takeFillRequest]); goes with the
-     * recording. False when there is no such recording.
+     * docs/08 "Titles and speaker names": the title sheet's boxes were ticked — this recording's publication is to ask
+     * ChatGPT for its title ([title]), its speaker names ([names]) or both, added to what was asked before. Kept until
+     * that has been tried ([takeFillRequest]); goes with the recording. False when there is no such recording.
      */
-    suspend fun requestFill(recordingId: String): Boolean = locked {
+    suspend fun requestFill(recordingId: String, title: Boolean, names: Boolean): Boolean = locked {
         if (record(recordingId) == null) return@locked false
-        queries.kvSet(FILL_PREFIX + recordingId, "1")
+        val held = fillRequestOf(queries.kvGet(FILL_PREFIX + recordingId).executeAsOneOrNull())
+        queries.kvSet(FILL_PREFIX + recordingId, FillRequest(title || held?.title == true, names || held?.names == true).wire())
         true
     }
 
-    suspend fun fillRequested(recordingId: String): Boolean = locked { queries.kvGet(FILL_PREFIX + recordingId).executeAsOneOrNull() != null }
+    suspend fun fillRequested(recordingId: String): Boolean = fillRequest(recordingId) != null
 
-    /** The request is spent: true when there was one, so of two takers only one fills. */
-    suspend fun takeFillRequest(recordingId: String): Boolean = locked {
-        val held = queries.kvGet(FILL_PREFIX + recordingId).executeAsOneOrNull() != null
-        if (held) queries.kvDelete(FILL_PREFIX + recordingId)
+    /** What the title sheet asked to fill in for [recordingId], or null when nothing is asked. */
+    suspend fun fillRequest(recordingId: String): FillRequest? = locked { fillRequestOf(queries.kvGet(FILL_PREFIX + recordingId).executeAsOneOrNull()) }
+
+    /** The request is spent: what it asked when there was one, so of two takers only one fills. */
+    suspend fun takeFillRequest(recordingId: String): FillRequest? = locked {
+        val held = fillRequestOf(queries.kvGet(FILL_PREFIX + recordingId).executeAsOneOrNull())
+        queries.kvDelete(FILL_PREFIX + recordingId)
         held
     }
+
+    private fun fillRequestOf(wire: String?): FillRequest? = wire?.split(',')?.let { FillRequest(title = "title" in it, names = "names" in it) }
+
+    private fun FillRequest.wire(): String = listOfNotNull("title".takeIf { title }, "names".takeIf { names }).joinToString(",")
 
     private fun retitle(recordingId: String, title: String?, untitledOnly: Boolean): Boolean {
         val record = record(recordingId) ?: return false
@@ -1117,7 +1128,10 @@ class RecordingRepository(
         /** `kv` rows: `summary/seen/{recordingId}` → the folder's `summaryAt` this device took in. */
         private const val SUMMARY_SEEN_PREFIX: String = "summary/seen/"
 
-        /** `kv` rows: `summary/fill/requested/{recordingId}` → `1`; the title sheet asked ChatGPT to fill it in. */
+        /**
+         * `kv` rows: `summary/fill/requested/{recordingId}` → `title`, `names` or `title,names`; what the title sheet asked
+         * ChatGPT to fill in.
+         */
         private const val FILL_PREFIX: String = "summary/fill/requested/"
     }
 }

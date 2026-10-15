@@ -274,7 +274,7 @@ class ReclyCore(
 
     /**
      * docs/08 "Titles and speaker names": what a recording asks the user's ChatGPT plan for — before its transcript is
-     * published when the title sheet asked ([requestFill]), or on request ([fillTitleAndNames]).
+     * published when the title sheet asked ([requestFill]), or on request ([fillTitle], [fillNames]).
      */
     private val autoFill = recly.core.chatgpt.AutoFill(
         db, deps, summaries, transferConsents, recordings,
@@ -284,31 +284,50 @@ class ReclyCore(
         },
         transcript = { results(it).transcript },
         busy = ::transcriptBusy,
-        name = ::fillNames,
+        name = ::nameSpeakers,
     )
 
     /**
-     * docs/08 "Titles and speaker names": the title sheet after Stop was saved with its ChatGPT box ticked. The
-     * recording's publication then asks the plan for its title, when it has none, and its speakers' names before the
-     * transcript goes up; call it before [enqueue], as the sheet's title is written. A transcript already published
-     * is filled at once, in the background, as [fillTitleAndNames] fills. How the box was left is
-     * `SummaryPreferences.fillAfterStop`, saved by the shell.
+     * docs/08 "Titles and speaker names": the title sheet after Stop was saved with its ChatGPT boxes ticked — `Fill in
+     * the title with ChatGPT` ([title]), `Fill in speaker names with ChatGPT` ([names]) or both. The recording's
+     * publication then asks the plan for that — a title only when it has none, names only for unnamed speakers — before
+     * the transcript goes up; call it before [enqueue], as the sheet's title is written, and not at all with neither
+     * box ticked. A transcript already published is filled at once, in the background, as [fill] fills. How each box
+     * was left is `SummaryPreferences.fillTitleAfterStop` / `fillNamesAfterStop`, saved by the shell.
      */
     @Throws(Throwable::class)
-    suspend fun requestFill(recordingId: String): Unit = autoFill.request(recordingId)
+    suspend fun requestFill(recordingId: String, title: Boolean, names: Boolean): Unit = autoFill.request(recordingId, title, names)
 
     /**
-     * docs/08 "Titles and speaker names": More → Fill in title and names. Asks the plan for what the recording lacks
-     * (`FillNeeds`) — a title only when it has none, names only for unnamed speakers other than `me` who speak — and
-     * applies it: the title as [rename] carries one, the names as an [editTranscript] does, so the folder's
+     * docs/08 "Titles and speaker names": asks the plan for what the recording lacks of [title] and [names]
+     * (`FillNeeds`) — a title only when it has none, names only for unnamed speakers other than `me` who speak — in one
+     * request, and applies it: the title as [rename] carries one, the names as an [editTranscript] does, so the folder's
      * transcript is marked edited. [recly.core.chatgpt.FillResult.Busy] while a job of it has not settled, like an
-     * edit; on iPhone, `Failed(TRANSFER_CONSENT_REQUIRED)` before anything is sent, like `summaries.summarize`.
+     * edit; on iPhone, `Failed(TRANSFER_CONSENT_REQUIRED)` before anything is sent, like `summaries.summarize`. One run
+     * per recording: asking for what the run going asks for answers that run; asking for the other half runs after it.
+     * The detail's two items are [fillTitle] and [fillNames]; while either runs, [observeFills] has it.
      */
     @Throws(Throwable::class)
-    suspend fun fillTitleAndNames(recordingId: String): recly.core.chatgpt.FillResult = autoFill.manual(recordingId)
+    suspend fun fill(recordingId: String, title: Boolean, names: Boolean): recly.core.chatgpt.FillResult =
+        autoFill.manual(recordingId, title, names)
+
+    /** docs/08 "Titles and speaker names": More → Fill in title — [fill] for the title alone. */
+    @Throws(Throwable::class)
+    suspend fun fillTitle(recordingId: String): recly.core.chatgpt.FillResult = fill(recordingId, title = true, names = false)
+
+    /** docs/08 "Titles and speaker names": More → Fill in speaker names — [fill] for the names alone. */
+    @Throws(Throwable::class)
+    suspend fun fillNames(recordingId: String): recly.core.chatgpt.FillResult = fill(recordingId, title = false, names = true)
+
+    /**
+     * docs/08 "Titles and speaker names": the fills asking ChatGPT now, one per recording, with what each asks for — a
+     * publication's and the detail's alike, from the request until its answer is applied or it fails. The lists' badge
+     * `Filling in` and the detail's line under its header read it.
+     */
+    fun observeFills(): Flow<List<recly.core.chatgpt.FillRun>> = autoFill.observe()
 
     /** The names ChatGPT gave, for the speakers that still have none — one may have been named meanwhile — as one edit. */
-    private suspend fun fillNames(recordingId: String, names: Map<String, String>): Int? = remote.transcriptWrite {
+    private suspend fun nameSpeakers(recordingId: String, names: Map<String, String>): Int? = remote.transcriptWrite {
         val current = results(recordingId).transcript ?: return@transcriptWrite null
         val edits = names.filter { (id, _) -> current.speakers.any { it.id == id && it.name.isNullOrBlank() } }
             .map { (id, name) -> recly.core.transcribe.TranscriptEdit.RenameSpeaker(id, name) }

@@ -2075,30 +2075,42 @@ user's when `mic` sounds and `sys` is quiet, and the call's when `sys` sounds.
 
 ### Titles and speaker names
 
-2026-10-15 (user decision; the same day, one recording at a time instead of two switches in Settings → ChatGPT). A recording's
-title, when it has none, and its speakers' names come from the user's ChatGPT plan when the user asks for them for that recording —
-in the title sheet after Stop, or later from its detail (`AutoFill`).
+2026-10-15 (user decision; the same day, one recording at a time instead of two switches in Settings → ChatGPT, and the title and
+the names apart, never one action). A recording's title, when it has none, and its speakers' names come from the user's ChatGPT plan
+when the user asks for them for that recording — each on its own — in the title sheet after Stop, or later from its detail
+(`AutoFill`).
 
-- **After Stop.** The title sheet has a checkbox `Fill in the title and speaker names with ChatGPT` (§9 principle 5), shown only while
-  ChatGPT is offered and signed in and transcription is on. It starts as it was left last (`SummaryPreferences.fillAfterStop`, this
-  device's, in `kv` beside the other preferences — `summary/prefs/fill_after_stop`; unticked at first). Saved ticked, the shell calls
-  `requestFill(recordingId)` before it queues the recording, and the core keeps the request (`summary/fill/requested/{recordingId}` in
-  `kv`, gone with the recording). That recording's `transcript.publish` (§5 "Fixed processing settings") then first asks the plan for what
-  it lacks — the publish runner's `TranscriptFill` — **before anything of the transcript goes up**, so the folder's first copy has them,
-  and so do recly-events' event and its `get_transcript` (§15 §9). The request is spent once that was tried — filled, failed or skipped;
-  a pass cut short asks again at the next. A transcript already published when the request arrives — its job settled while the sheet
-  was open — is filled at once, as More fills it. Nothing else is asked at a publication: not a recording nobody asked for, not a
-  re-transcription (§10 "Re-transcription"), not another device's recording.
-- **From the detail.** More → `Fill in title and names` (§9 "Summary view") asks for a recording already transcribed, this device's or
-  another's: `fillTitleAndNames(recordingId)` answers `FillResult` — `Filled(title, names)` (whether a title was given and how many
-  speakers were named; ChatGPT may have told neither), `NothingToFill`, `NoTranscript`, `Busy` (a job of the recording has not settled,
-  the rule of an edit — §8 "Editing") or `Failed(reason)` with a `CoreMessage` code, `TRANSFER_CONSENT_REQUIRED` on iPhone before
-  anything is sent, as for a summary. One run per recording: asking again while it runs answers that run, and it goes on when its screen
-  closes.
-- **What is asked** (`FillNeeds.of(title, transcript)`, the rule the shells offer the item by). A title when the recording has none at that
-  moment — a title from the stop sheet, an import's file name or a rename is never replaced — and a name for each speaker who says
-  something, has none and is not `me` (§8 "Me and others"). Nothing is sent when there is nothing to fill: nothing said, no speakers to
-  name and the title set.
+- **After Stop.** The title sheet has two checkboxes, `Fill in the title with ChatGPT` and `Fill in speaker names with ChatGPT` (§9
+  principle 5), shown only while ChatGPT is offered and signed in and transcription is on. Each starts as it was left last
+  (`SummaryPreferences.fillTitleAfterStop` and `fillNamesAfterStop`, this device's, in `kv` beside the other preferences —
+  `summary/prefs/fill_title_after_stop`, `summary/prefs/fill_names_after_stop`; unticked at first). Saved with either ticked, the shell
+  calls `requestFill(recordingId, title, names)` before it queues the recording, and the core keeps what was asked
+  (`summary/fill/requested/{recordingId}` in `kv` — `title`, `names` or `title,names`; a later ask adds to it; gone with the recording).
+  That recording's `transcript.publish` (§5 "Fixed processing settings") then first asks the plan for what it lacks of that — the
+  publish runner's `TranscriptFill` — **before anything of the transcript goes up**, so the folder's first copy has it, and so do
+  recly-events' event and its `get_transcript` (§15 §9). With both ticked, one request asks for both; with one, it asks for that alone.
+  The request is spent once that was tried — filled, failed or skipped; a pass cut short asks again at the next. A transcript already
+  published when the request arrives — its job settled while the sheet was open — is filled at once, as More fills it. Nothing else is
+  asked at a publication: not a recording nobody asked for, not a re-transcription (§10 "Re-transcription"), not another device's
+  recording.
+- **From the detail.** More → `Fill in title` and More → `Fill in speaker names` (§9 "Summary view") ask for a recording already
+  transcribed, this device's or another's: `fillTitle(recordingId)` and `fillNames(recordingId)` — both `fill(recordingId, title, names)`
+  for one half — answer `FillResult`: `Filled(title, names)` (whether a title was given and how many speakers were named; ChatGPT may
+  have told neither), `NothingToFill` (nothing asked is missing — the title is there, every speaker who speaks has a name, or nothing was said), `NoTranscript`, `Busy` (a job of
+  the recording has not settled, the rule of an edit — §8 "Editing") or `Failed(reason)` with a `CoreMessage` code,
+  `TRANSFER_CONSENT_REQUIRED` on iPhone before anything is sent, as for a summary. One run per recording: asking for what the run going
+  asks for answers that run; asking for the other half waits for it and then runs on its own (a second request — the halves are never
+  folded into a request already sent). A run goes on when its screen closes.
+- **What is being filled in** (`observeFills()`, a list of `FillRun(recordingId, title, names)`, one per recording). A fill is in it
+  from the moment it asks the plan until the answer is applied — or the request fails, or the pass is cut short — whichever trigger
+  started it: a publication's or the detail's. `title` and `names` are what that request asks for: the halves asked that the recording
+  lacked. A fill that sends nothing (nothing to fill, a job in the way, no permission, the pause) and an ask waiting for the run before
+  it are not in it. The lists' `Filling in` badge and the detail's line under its header read it (§9 principle 2, "Summary view").
+- **What is asked** (`FillNeeds.of(title, transcript)`, the rule the shells offer the two items by: `title` for the title, `names` —
+  `speakers` not empty — for the names). A title when the recording has none at that moment — a title from the stop sheet, an import's
+  file name or a rename is never replaced — and a name for each speaker who says something, has none and is not `me` (§8 "Me and
+  others"); of these, only the halves asked. Nothing is sent when there is nothing to fill: nothing said, or the half asked already
+  there.
 - **The request** is a summary's (§15 §10) with other instructions: the transcript's lines with their times and the speakers' names — no
   title, no highlights, never audio — and the answer asked for is one JSON object: `title` in the summary's language (§8 "Summaries"), at
   most 60 characters, and `speakers`, each asked id's name only as the transcript gives it — what they call themselves, or what the others
@@ -2121,19 +2133,20 @@ in the title sheet after Stop, or later from its detail (`AutoFill`).
   the names as an edit (`editTranscript` with `RenameSpeaker`s): `editedAt` is set and the folder's copy is marked `edited` — the
   transcript is already there, and this is a change the user asked for; a speaker named meanwhile keeps that name.
 - **Never in the way.** At a publication a skip or a failure publishes the transcript as it was, and the step is not retried for it
-  (`summary.fill.requested`, `.start`, `.model` — the model and effort asked — `.done`, `.skipped`, `.failed`, and `.effort.refused` when
-  the plan refused `reasoning` and was asked again without it, each with `trigger` `publish` or `manual`; ids, counts and the model only,
-  never a title or a name). Signed out, or ChatGPT not offered in the storefront: skipped. iPhone: skipped until ChatGPT is an allowed
-  destination (§15 "iPhone providers"); the title sheet asks for that permission when the box is ticked. OpenAI asks apps to stop requests
+  (`summary.fill.requested` — with `title` and `names`, the boxes ticked — `.start` — with `title`, `names` and `speakers`, what the
+  request asks for — `.model` — the model and effort asked — `.done`, `.skipped`, `.failed`, and `.effort.refused` when the plan refused
+  `reasoning` and was asked again without it, each with `trigger` `publish` or `manual`; ids, flags, counts and the model only, never a
+  title or a name). Signed out, or ChatGPT not offered in the storefront: skipped. iPhone: skipped until ChatGPT is an allowed
+  destination (§15 "iPhone providers"); the title sheet asks for that permission when either box is ticked. OpenAI asks apps to stop requests
   at the usage limit and when the plan no longer covers the app (developers.openai.com/siwc "Errors and recovery", 2026-10-15):
   `CHATGPT_USAGE_LIMIT` pauses the publications' fills for five hours — the plan's shorter usage window — and `CHATGPT_PLAN_REQUIRED` for
-  a day (`summary/fill/paused_until`). The detail's item is not paused — the user asked — but sets the same pause when it meets either.
+  a day (`summary/fill/paused_until`). The detail's items are not paused — the user asked — but set the same pause when they meet either.
 - **Where it runs.** At a publication, on the device that runs the recording's job and showed its title sheet — the phone, the Mac or
   the Windows PC; a watch recording has no title sheet. In the offline pass (a local folder, on-device transcription) it is the one
   network call: offline it fails at once and the transcript is published without it.
 - **Consent.** OpenAI's Sign in with ChatGPT terms (2026-09-29, checked 2026-10-15) ask for express consent before background use of the
-  plan. The ticked box is that consent, for that one recording: its note says what is sent, when, and that it counts toward the plan's
-  usage. The detail's item, like Summaries and Ask, is on request.
+  plan. A ticked box is that consent, for that one recording and that half: the note under the boxes says what is sent, when, and that it
+  counts toward the plan's usage. The detail's items, like Summaries and Ask, are on request.
 
 ### What is not included
 
@@ -2318,9 +2331,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
 2. **List = ledger**: row = `time (mono) · title (and its preview line) · length · status word · progress`. In all four shells, regardless of language, the time column is
    **`MM-dd` over `HH:mm`** (month first; a fixed-width pattern, not locale formatting — only the spoken sentence uses locale formatting).
    The status is a text badge (both color and text), and the failure reason is a translated message key. The badge says a translated word, not the
-   code (2026-10-08, user decision): `Done` · `Failed` · `Retrying` · `Waiting` · `Uploading` · `Receiving` · `Transcribing` · `Importing` · `Recording` ·
+   code (2026-10-08, user decision): `Done` · `Failed` · `Retrying` · `Waiting` · `Uploading` · `Receiving` · `Transcribing` · `Filling in` · `Importing` · `Recording` ·
    `Waiting for Drive` (`NEEDS_AUTH`) · `Needs permission` · `Waiting for model` · `Storage full` · `Too short` · `Waiting for iCloud` · `Waiting for folder` ·
-   `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
+   `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `채우는 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
    `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. On phones and in the desktop Details lists the status column is capped at the width the code
    `TRANSCRIBING` needed, and a longer word wraps inside its badge onto a second line (centred, never cut), so the title column is never narrower
    than it was with codes. A word too long for its line breaks only at the language's own hyphenation points, with a hyphen (2026-10-11 — badges,
@@ -2347,6 +2360,11 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    row (details · delete). The length column keeps the placeholder used when there is no `durationSec` (it does not make up `0:00`),
    and shells that measure the badge column width measure these words, in the current language. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Waiting for Drive`, 2026-10-08) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
    The spoken states are `Receiving from the watch` · `Uploading on another device` · `Transcribing on another device` (§7).
+   **A recording being filled in** (2026-10-15, user decision; §8 "Titles and speaker names") — in the core's `observeFills()`, whether a
+   publication or the detail asked — shows `Filling in` (accent, with the 8 pt square loader to its left, as the status node shows
+   `Uploading`) on every list: the phones, the popover and tray ledgers, and the desktop Details lists. It is read after `REC` and
+   `RECEIVING` and ahead of everything else — the other things happening elsewhere and the job state mapping — and the row goes back to
+   what its job says when the run ends. The header count and the row's actions still go by the job state.
    Row expansion has **actions — in one horizontal line, wrapping to the next line when they overflow (no vertical listing)**: `Open in Drive` (when there is a link) ·
    `Retry` (**in the failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04; excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`) ·
    `Details` (opens the detail screen — on desktop, the window of the same name) · Delete (except while recording, importing or receiving from the watch;
@@ -2441,7 +2459,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in three groups parted by a hairline (2026-10-10, the same
      on every shell): `Rename` · `Edit transcript` · `Transcribe again`; `Summarize` · `Summarize as…` · `Edit summary` · `Ask about this
-     recording…` · `Fill in title and names` (§9 "Summary view"; the group is absent where ChatGPT is not offered); `Add highlight at 00:12:34` (the playhead).
+     recording…` · `Fill in title` · `Fill in speaker names` (§9 "Summary view"; the group is absent where ChatGPT is not offered); `Add highlight at 00:12:34` (the playhead).
      The desktops add two more groups (2026-10-15): the recording's folder — `Open in Drive`, or `Show in Finder` / `Open the folder` — and last,
      the red `Delete`, which opens the delete dialog (§3 "Deleting in the app"; no keyboard shortcut, user decision; disabled with `Still
      recording` or the importing word while the recording is being written). The phones keep Delete in the list's expanded row. The menu
@@ -2579,11 +2597,13 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`); `Rename` opens `Recording title` with the field `Title` (`Cancel` · `Save`), the same field label as the
    title sheet after Stop (2026-10-15, every shell). The title sheet after Stop has `Discard recording` · `Save` — the red
    `Discard recording` deletes the recording that just ended, as `Cancel` did (§3 "Titles"; relabelled 2026-10-08, user decision). Under
-   its fields, a checkbox `Fill in the title and speaker names with ChatGPT` (2026-10-15, user decision; §8 "Titles and speaker names"), shown
-   only while ChatGPT is offered and signed in and transcription is on — like the participant-count row's rule — with the note `Once
-   transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT
-   usage.` It starts as it was left last (`SummaryPreferences.fillAfterStop`); `Save` with it ticked asks for this recording. On iPhone,
-   ticking it asks for the ChatGPT permission first (§15 "iPhone providers"), as `Summarize` does.
+   its fields, two checkboxes, `Fill in the title with ChatGPT` and `Fill in speaker names with ChatGPT` (2026-10-15, user decision —
+   the title and the names apart; §8 "Titles and speaker names"), shown only while ChatGPT is offered and signed in and transcription is
+   on — like the participant-count row's rule — with one note under both: `Once transcribed, the transcript goes to ChatGPT for a missing
+   title and the names of speakers called by name. It counts toward your ChatGPT usage.` Each starts as it was left last
+   (`SummaryPreferences.fillTitleAfterStop`, `fillNamesAfterStop`) and is remembered on its own; `Save` with either ticked asks for what is
+   ticked, for this recording. On iPhone, ticking either asks for the ChatGPT permission first (§15 "iPhone providers"), as `Summarize`
+   does.
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
@@ -2655,13 +2675,17 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 - **The detail.** More → `Summarize` / `Summarize again`, then `Summarize as…` (a submenu on the desktops; on the phones a list of the formats —
   Android's More menu turns into it with a back row, the iPhone asks in the system's dialog, because an open SwiftUI menu
   cannot be told it closed and would reopen on the formats (2026-10-15); `✓` on the summary's format) and, after `Edit summary`, `Ask about this recording…` — disabled with their reason like the other items: `No transcript yet`,
-  `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. After `Ask about this recording…`, `Fill in title
-  and names` (2026-10-15, §8 "Titles and speaker names") — disabled with the first reason that applies, in this order: `Still recording`;
-  `No transcript yet` (a transcript with nothing said included) or the reason of an unsettled job (`Transcribing…`); `Sign in to ChatGPT in
-  Settings`; `Filling in…` while it runs; `Title and names are already filled in` (`FillNeeds.any` is false). It opens no view: the title
-  shows in the header and the names in the transcript. A failure says `Could not fill in the title and names` with the
-  core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on iPhone the
-  ChatGPT permission is asked first, as for `Summarize`. Once a summary exists or one was asked for, two
+  `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. After `Ask about this recording…`, `Fill in title`
+  and `Fill in speaker names` (2026-10-15, §8 "Titles and speaker names"; two items, the title and the names apart — `fillTitle`,
+  `fillNames`) — each disabled with the first reason that applies, in this order: `Still recording`; `No transcript yet` (a transcript
+  with nothing said included) or the reason of an unsettled job (`Transcribing…`); `Sign in to ChatGPT in Settings`; `Filling in…` while
+  a fill of that half runs (`observeFills()` — the title sheet's too); then `Already has a title` (`Fill in title`, `FillNeeds.title` is
+  false) or `No unnamed speakers` (`Fill in speaker names`, `FillNeeds.names` is false). They open no view: the title shows in the header
+  and the names in the transcript. While a fill of the recording runs, from either item or from the title sheet's boxes, the line under
+  the header says so with the square loader: `Filling in the title…`, `Filling in speaker names…`, or both lines, the title's first, when
+  one request asks for both; it goes when the run ends. A failure says `Could not fill in the title` or `Could not fill in speaker names`
+  with the core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on
+  iPhone the ChatGPT permission is asked first, as for `Summarize`. Once a summary exists or one was asked for, two
   chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects
   `Summary`; no chips while editing). The summary is selectable plain text with its line breaks, then `ChatGPT · <model>` (secondary, 12),
   ` · <format>` when it is not General, and a quiet `Copy all`. Each `[HH:MM:SS]` in it (`SummaryCitations`) plays the recording from that time
@@ -3761,9 +3785,9 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 - **ChatGPT summaries (§10, 2026-10-09).** OpenAI documents no training rule for the plan's API: the requests count as the plan's
   usage, and its help pages say ChatGPT's "Improve the model for everyone" setting governs personal plans (Codex included). So the
   iPhone treats it like ElevenLabs: the destination `TransferTargets.chatGptSummary()` (`summarize`, `chatgpt`,
-  `https://api.openai.com/v1`) needs the transfer permission, asked the first time `Summarize`, `Ask about this recording…` or `Fill in
-  title and names` is chosen or the title sheet's `Fill in the title and speaker names with ChatGPT` is ticked (§8 "Titles and speaker
-  names"), and its allow button turns on
+  `https://api.openai.com/v1`) needs the transfer permission, asked the first time `Summarize`, `Ask about this recording…`, `Fill in
+  title` or `Fill in speaker names` is chosen or the title sheet's `Fill in the title with ChatGPT` or `Fill in speaker names with
+  ChatGPT` is ticked (§8 "Titles and speaker names"), and its allow button turns on
   only when "I turned off “Improve the model for everyone” in ChatGPT." is checked, with a link to OpenAI's data-controls help
   (<https://help.openai.com/en/articles/7730893>). Settings → Privacy lists and withdraws it like the providers.
 
@@ -4049,10 +4073,10 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Ask | the same | the same, plus the preset's question or the user's own | the answer as a stream (`store: false`); kept in memory only |
 | Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, no highlights, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu |
 
-- Only when the user asks: signing in, and choosing `Summarize`, `Summarize as…`, a question in `Ask about this recording…` or `Fill in
-  title and names` on one recording. The one background use is a recording's title and speaker names: only for a recording whose title
-  sheet after Stop was saved with `Fill in the title and speaker names with ChatGPT` ticked — the user's express consent, which OpenAI's
-  terms require — when this device publishes its transcript.
+- Only when the user asks: signing in, and choosing `Summarize`, `Summarize as…`, a question in `Ask about this recording…`, `Fill in
+  title` or `Fill in speaker names` on one recording. The one background use is a recording's title or speaker names: only for a
+  recording whose title sheet after Stop was saved with `Fill in the title with ChatGPT` or `Fill in speaker names with ChatGPT` ticked,
+  and only for what is ticked — the user's express consent, which OpenAI's terms require — when this device publishes its transcript.
 - The tokens stay in the device's secure storage (§5, namespace `chatgpt`); the ID token's claims are checked (issuer, audience = the
   client id, expiry, `nonce`, the same `sub` on a later sign-in) without its signature, which OpenID Connect allows for a token received
   directly from the token endpoint over TLS. Requests that carry a code or token are never logged.

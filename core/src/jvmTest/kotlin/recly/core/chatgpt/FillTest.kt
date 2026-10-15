@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.serializer
 import recly.core.job.EnqueueResult
@@ -16,8 +17,11 @@ import recly.core.testing.FakeLocalEngine
 import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
 
-/** docs/08 "Titles and speaker names" through the whole core: the title sheet's request, and More → Fill in title and names. */
-class FillTitleAndNamesTest {
+/**
+ * docs/08 "Titles and speaker names" through the whole core: the title sheet's two boxes, More → Fill in title and
+ * More → Fill in speaker names, and what is being filled in meanwhile.
+ */
+class FillTest {
     private val chatGpt = ChatGptHarness()
     private val f = CoreFixture(engine = FakeLocalEngine(supportsDiarization = true), chatGpt = chatGpt.server.transport(chatGpt.fs))
 
@@ -42,10 +46,14 @@ class FillTitleAndNamesTest {
     fun `a recording the title sheet asked for goes up with its title and names`() = runBlocking {
         signIn()
         val meta = f.record()
-        f.core.requestFill(meta.recordingId)
+        f.core.requestFill(meta.recordingId, title = true, names = true)
         answer("""{"title":"Launch plan","speakers":{"S1":"Mina","S2":null}}""")
+        val seen = mutableListOf<List<FillRun>>()
+        chatGpt.server.beforeReply = { if (it.url.endsWith("/responses")) seen += f.core.observeFills().first() }
         assertEquals(EnqueueResult.Enqueued::class, f.core.enqueue(meta.recordingId)::class)
         f.drain()
+        assertEquals(listOf(listOf(FillRun(meta.recordingId, title = true, names = true))), seen, "being filled in while ChatGPT answers")
+        assertEquals(emptyList(), f.core.observeFills().first())
 
         val base = MetaWriter.baseName(meta)
         val (published, marks) = inFolder(base)
@@ -56,6 +64,21 @@ class FillTitleAndNamesTest {
         assertEquals("Launch plan", f.drive.byName(base)!!.description, "the folder has the title")
         assertFalse(f.core.recordings.fillRequested(meta.recordingId))
         assertEquals(1, asked())
+    }
+
+    @Test
+    fun `a recording whose title sheet asked for the names alone goes up named and untitled`() = runBlocking {
+        signIn()
+        val meta = f.record()
+        f.core.requestFill(meta.recordingId, title = false, names = true)
+        answer("""{"title":"Ignored","speakers":{"S1":"Mina"}}""")
+        f.core.enqueue(meta.recordingId)
+        f.drain()
+
+        assertEquals("Mina", inFolder(MetaWriter.baseName(meta)).first.speakers.single { it.id == "S1" }.name)
+        assertNull(f.core.recordings.get(meta.recordingId)!!.meta.title)
+        val asked = chatGpt.server.requests.last { it.url.endsWith("/responses") }.json().toString()
+        assertTrue("\\\"title\\\"" !in asked, "no title asked for")
     }
 
     @Test
@@ -72,7 +95,7 @@ class FillTitleAndNamesTest {
         signIn()
         val meta = f.recordAndRun()
         answer("""{"title":"Launch plan","speakers":{"S2":"Joon"}}""")
-        f.core.requestFill(meta.recordingId)
+        f.core.requestFill(meta.recordingId, title = true, names = true)
         f.core.awaitPushes()
 
         assertEquals("Launch plan", f.core.recordings.get(meta.recordingId)!!.meta.title)
@@ -86,32 +109,39 @@ class FillTitleAndNamesTest {
     }
 
     @Test
-    fun `More fills in what is missing and leaves a name the user gave`() = runBlocking {
+    fun `More fills in the names and the title, each on its own, and leaves a name the user gave`() = runBlocking {
         signIn()
         val meta = f.recordAndRun()
         f.core.editTranscript(meta.recordingId, recly.core.transcribe.TranscriptEdit.RenameSpeaker("S1", "Ji-won"))
         f.core.awaitPushes()
-        answer("""{"title":"Launch plan","speakers":{"S2":"Joon"}}""")
-        assertEquals(FillResult.Filled(title = true, names = 1), f.core.fillTitleAndNames(meta.recordingId))
+        answer("""{"title":"Ignored","speakers":{"S2":"Joon"}}""")
+        assertEquals(FillResult.Filled(title = false, names = 1), f.core.fillNames(meta.recordingId))
         val asked = chatGpt.server.requests.last { it.url.endsWith("/responses") }.json().toString()
         assertTrue("speaker ids: S2." in asked, "only the speaker with no name")
         f.core.awaitPushes()
         val names = f.core.results(meta.recordingId).transcript!!.speakers.associate { it.id to it.name }
         assertEquals(mapOf("S1" to "Ji-won", "S2" to "Joon"), names)
+        assertNull(f.core.recordings.get(meta.recordingId)!!.meta.title, "the title was not asked for")
         assertEquals(emptyMap(), f.core.recordings.pendingTranscripts(), "in the folder")
+
+        answer("""{"title":"Launch plan"}""")
+        assertEquals(FillResult.Filled(title = true, names = 0), f.core.fillTitle(meta.recordingId))
+        assertEquals("Launch plan", f.core.recordings.get(meta.recordingId)!!.meta.title)
         assertEquals(emptyMap(), f.core.recordings.pendingTitles())
 
-        assertEquals(FillResult.NothingToFill, f.core.fillTitleAndNames(meta.recordingId))
-        assertEquals(1, asked())
+        assertEquals(FillResult.NothingToFill, f.core.fillNames(meta.recordingId))
+        assertEquals(FillResult.NothingToFill, f.core.fillTitle(meta.recordingId))
+        assertEquals(2, asked())
+        assertEquals(emptyList(), f.core.observeFills().first())
     }
 
     @Test
     fun `More waits for the recording's job, and needs a transcript`() = runBlocking {
         signIn()
         val meta = f.record()
-        assertEquals(FillResult.NoTranscript, f.core.fillTitleAndNames(meta.recordingId))
+        assertEquals(FillResult.NoTranscript, f.core.fillTitle(meta.recordingId))
         f.core.enqueue(meta.recordingId)
-        assertEquals(FillResult.Busy, f.core.fillTitleAndNames(meta.recordingId))
+        assertEquals(FillResult.Busy, f.core.fillNames(meta.recordingId))
         assertEquals(0, asked())
     }
 }

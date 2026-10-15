@@ -37,7 +37,7 @@ suspend fun completeRecording(
     val named = title?.trim()?.takeIf { it.isNotEmpty() }
     return completeInOrder(
         name = { if (named != null || participants != null) core.recordings.updateTitle(recordingId, named, participants) else true },
-        requestFill = if (fill) ({ core.requestFill(recordingId) }) else null,
+        requestFill = if (fill) ({ core.requestFill(recordingId, title = true, names = true) }) else null,
         enqueue = { core.enqueue(recordingId) },
         fillFailed = { core.deps.logger.log(Logger.Level.ERROR, "rec.fill.failed", mapOf("recordingId" to recordingId), it) },
     )

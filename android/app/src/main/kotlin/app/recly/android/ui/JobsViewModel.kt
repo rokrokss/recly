@@ -533,7 +533,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         updateDetail(recordingId) { it.copy(filling = true) }
         val core = core()
         val result = try {
-            withContext(core.deps.io) { core.fillTitleAndNames(recordingId) }
+            withContext(core.deps.io) { core.fill(recordingId, title = true, names = true) }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {

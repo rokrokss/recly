@@ -106,15 +106,15 @@ class FillTest {
         val graph = AppModule.build(dataDir = Files.createTempDirectory("recly-fill").toString().toPath())
         fun viewModel() = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.loopback, scope, SilentLogger).also { it.start() }
         try {
-            assertFalse(graph.core.summaries.preferences().fillAfterStop, "unticked at first")
+            assertFalse(graph.core.summaries.preferences().fillTitleAfterStop, "unticked at first")
             val first = viewModel()
             first.rememberFillAfterStop(true)
-            withTimeout(10_000) { while (!graph.core.summaries.preferences().fillAfterStop || !first.preferences.fillAfterStop) delay(20) }
+            withTimeout(10_000) { while (!graph.core.summaries.preferences().fillTitleAfterStop || !first.preferences.fillTitleAfterStop) delay(20) }
             // The next dialog reads it from what this PC kept.
             val next = viewModel()
-            withTimeout(10_000) { while (!next.preferences.fillAfterStop) delay(20) }
+            withTimeout(10_000) { while (!next.preferences.fillTitleAfterStop) delay(20) }
             next.rememberFillAfterStop(false)
-            withTimeout(10_000) { while (graph.core.summaries.preferences().fillAfterStop) delay(20) }
+            withTimeout(10_000) { while (graph.core.summaries.preferences().fillTitleAfterStop) delay(20) }
         } finally {
             scope.cancel()
         }

@@ -229,7 +229,7 @@ class ChatGptViewModel(
      * docs/08 "Titles and speaker names": the title dialog's ChatGPT box, ticked or not, is how the next dialog
      * starts — kept the moment it is changed, as Settings keeps its own.
      */
-    fun rememberFillAfterStop(ticked: Boolean) = savePreferences { it.copy(fillAfterStop = ticked) }
+    fun rememberFillAfterStop(ticked: Boolean) = savePreferences { it.copy(fillTitleAfterStop = ticked, fillNamesAfterStop = ticked) }
 
     /** Shown at once; the core keeps it trimmed and capped, and [preferences] follows what it kept. */
     private fun savePreferences(change: (SummaryPreferences) -> SummaryPreferences) {

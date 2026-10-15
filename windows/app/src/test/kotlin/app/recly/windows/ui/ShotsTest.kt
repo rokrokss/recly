@@ -213,10 +213,10 @@ class ShotsTest {
             }
             shot("title-sheet-$lang", 460, 520, ko) { sheet() }
             chatGpt.rememberFillAfterStop(true)
-            until { chatGpt.preferences.fillAfterStop }
+            until { chatGpt.preferences.fillTitleAfterStop }
             shot("title-sheet-ticked-$lang", 460, 520, ko) { sheet() }
             chatGpt.rememberFillAfterStop(false)
-            until { !chatGpt.preferences.fillAfterStop }
+            until { !chatGpt.preferences.fillTitleAfterStop }
             // More → Fill in title and names with a title to fill, and what a failure says: the plan is drawn signed in,
             // but nothing here is, so the core answers that a sign-in is needed.
             val named = (model.detail!!.title as app.recly.windows.i18n.UiMessage.Text).value

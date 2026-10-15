@@ -560,5 +560,16 @@
   "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "เมื่อถอดเสียงเสร็จ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อที่ยังว่างและชื่อของผู้พูดที่ถูกเรียกชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ",
   "Title and names are already filled in": "มีชื่อและชื่อผู้พูดครบแล้ว",
   "Filling in…": "กำลังเติม…",
-  "Could not fill in the title and names": "เติมชื่อและชื่อผู้พูดไม่ได้"
+  "Could not fill in the title and names": "เติมชื่อและชื่อผู้พูดไม่ได้",
+  "Fill in title": "เติมชื่อ",
+  "Fill in speaker names": "เติมชื่อผู้พูด",
+  "Fill in the title with ChatGPT": "เติมชื่อด้วย ChatGPT",
+  "Fill in speaker names with ChatGPT": "เติมชื่อผู้พูดด้วย ChatGPT",
+  "Already has a title": "มีชื่อแล้ว",
+  "No unnamed speakers": "ไม่มีผู้พูดที่ยังไม่มีชื่อ",
+  "Filling in the title…": "กำลังเติมชื่อ…",
+  "Filling in speaker names…": "กำลังเติมชื่อผู้พูด…",
+  "Filling in": "กำลังเติม",
+  "Could not fill in the title": "เติมชื่อไม่ได้",
+  "Could not fill in speaker names": "เติมชื่อผู้พูดไม่ได้"
 }
