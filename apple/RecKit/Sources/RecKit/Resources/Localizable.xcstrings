@@ -61438,145 +61438,145 @@
         }
       }
     },
-    "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": {
+    "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent."
+            "value": "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "요약하거나 질문하는 녹음의 전사본 텍스트가 표시한 하이라이트, 설정 → ChatGPT에 적은 내용과 함께 이곳으로 전송됩니다. 오디오는 보내지 않습니다."
+            "value": "요약하거나 질문하거나 제목·이름을 채우는 녹음의 전사본 텍스트가 여기로 전송됩니다. 요약과 질문에는 하이라이트한 순간과 설정 → ChatGPT에 쓴 내용도 함께 전송됩니다. 오디오는 전송되지 않습니다."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "要約または質問した各録音の文字起こしテキストを、ハイライトした瞬間と「設定 → ChatGPT」に書いた内容とともにここへ送信します。音声は送信しません。"
+            "value": "要約・質問、またはタイトルと名前の入力をした各録音の文字起こしテキストをここへ送信します。要約と質問では、ハイライトした瞬間と「設定 → ChatGPT」に書いた内容も送信します。音声は送信しません。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你总结或提问的每段录音的转写文本，会连同你标记的时刻以及你在“设置 → ChatGPT”中填写的内容一起发送到这里。不会发送音频。"
+            "value": "你总结、提问或填写标题和名称的每段录音的转写文本会发送到这里。总结和提问还会一并发送你标记的时刻以及你在“设置 → ChatGPT”中填写的内容。不会发送音频。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "你摘要或提問的每段錄音的轉寫文字，會連同你標記的時刻以及你在「設定 → ChatGPT」中填寫的內容一起傳送到這裡。不會傳送音訊。"
+            "value": "你摘要、提問或填寫標題與名稱的每段錄音的轉寫文字會傳送到這裡。摘要和提問還會一併傳送你標記的時刻以及你在「設定 → ChatGPT」中填寫的內容。不會傳送音訊。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aquí se envía el texto de la transcripción de cada grabación que resumes o sobre la que preguntas, con los momentos que destacaste y lo que escribiste en Ajustes → ChatGPT. El audio no se envía."
+            "value": "Aquí se envía el texto de la transcripción de cada grabación que resumes, sobre la que preguntas o cuyo título y nombres completas. Los resúmenes y las preguntas envían además los momentos que destacaste y lo que escribiste en Ajustes → ChatGPT. El audio no se envía."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le texte de la transcription de chaque enregistrement que vous résumez ou sur lequel vous posez une question est envoyé ici, avec les moments surlignés et ce que vous avez écrit dans Réglages → ChatGPT. L’audio n’est pas envoyé."
+            "value": "Le texte de la transcription de chaque enregistrement que vous résumez, sur lequel vous posez une question ou dont vous faites compléter le titre et les noms est envoyé ici. Les résumés et les questions envoient aussi les moments surlignés et ce que vous avez écrit dans Réglages → ChatGPT. L’audio n’est pas envoyé."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Der Transkripttext jeder Aufnahme, die du zusammenfasst oder zu der du fragst, wird hierhin gesendet – mit den markierten Momenten und dem, was du unter Einstellungen → ChatGPT geschrieben hast. Das Audio wird nicht gesendet."
+            "value": "Der Transkripttext jeder Aufnahme, die du zusammenfasst, zu der du fragst oder deren Titel und Namen du ergänzen lässt, wird hierhin gesendet. Zusammenfassungen und Fragen senden außerdem die markierten Momente und das, was du unter Einstellungen → ChatGPT geschrieben hast. Das Audio wird nicht gesendet."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O texto da transcrição de cada gravação que você resume ou sobre a qual pergunta é enviado para cá, com os momentos que você destacou e o que escreveu em Ajustes → ChatGPT. O áudio não é enviado."
+            "value": "O texto da transcrição de cada gravação que você resume, sobre a qual pergunta ou cujo título e nomes preenche é enviado para cá. Resumos e perguntas também enviam os momentos que você destacou e o que escreveu em Ajustes → ChatGPT. O áudio não é enviado."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "O texto da transcrição de cada gravação que resume ou sobre a qual pergunta é enviado para aqui, com os momentos que destacou e o que escreveu em Definições → ChatGPT. O áudio não é enviado."
+            "value": "O texto da transcrição de cada gravação que resume, sobre a qual pergunta ou cujo título e nomes preenche é enviado para aqui. Os resumos e as perguntas também enviam os momentos que destacou e o que escreveu em Definições → ChatGPT. O áudio não é enviado."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يُرسل إلى هنا نص النسخة المكتوبة لكل تسجيل تلخّصه أو تسأل عنه، مع اللحظات التي ميّزتها وما كتبته في الإعدادات ← ChatGPT. لا يُرسل الصوت."
+            "value": "يُرسل إلى هنا نص النسخة المكتوبة لكل تسجيل تلخّصه أو تسأل عنه أو تملأ عنوانه وأسماءه. وتُرسل مع التلخيصات والأسئلة أيضًا اللحظات التي ميّزتها وما كتبته في الإعدادات ← ChatGPT. لا يُرسل الصوت."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "जिस भी रिकॉर्डिंग का आप सारांश बनाते हैं या जिसके बारे में पूछते हैं, उसका ट्रांसक्रिप्ट टेक्स्ट, आपके हाइलाइट किए पलों और सेटिंग → ChatGPT में लिखी बातों के साथ यहाँ भेजा जाता है। ऑडियो नहीं भेजा जाता।"
+            "value": "जिस भी रिकॉर्डिंग का आप सारांश बनाते हैं, जिसके बारे में पूछते हैं या जिसका शीर्षक और नाम भरवाते हैं, उसका ट्रांसक्रिप्ट टेक्स्ट यहाँ भेजा जाता है। सारांश और सवालों के साथ आपके हाइलाइट किए पल और सेटिंग → ChatGPT में लिखी बातें भी भेजी जाती हैं। ऑडियो नहीं भेजा जाता।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сюда отправляется текст расшифровки каждой записи, которую вы сводите или о которой спрашиваете, вместе с отмеченными моментами и тем, что вы написали в «Настройки → ChatGPT». Аудио не отправляется."
+            "value": "Сюда отправляется текст расшифровки каждой записи, которую вы сводите, о которой спрашиваете или для которой заполняете название и имена. Со сводками и вопросами также отправляются отмеченные моменты и то, что вы написали в «Настройки → ChatGPT». Аудио не отправляется."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Qui viene inviato il testo della trascrizione di ogni registrazione che riepiloghi o su cui fai domande, con i momenti evidenziati e ciò che hai scritto in Impostazioni → ChatGPT. L’audio non viene inviato."
+            "value": "Qui viene inviato il testo della trascrizione di ogni registrazione che riepiloghi, su cui fai domande o di cui fai completare titolo e nomi. Riepiloghi e domande inviano anche i momenti evidenziati e ciò che hai scritto in Impostazioni → ChatGPT. L’audio non viene inviato."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tutaj trafia tekst transkrypcji każdego nagrania, które podsumowujesz lub o które pytasz, razem z zaznaczonymi momentami i tym, co wpisano w Ustawienia → ChatGPT. Dźwięk nie jest wysyłany."
+            "value": "Tutaj trafia tekst transkrypcji każdego nagrania, które podsumowujesz, o które pytasz lub którego tytuł i imiona uzupełniasz. Podsumowania i pytania wysyłają też zaznaczone momenty i to, co wpisano w Ustawienia → ChatGPT. Dźwięk nie jest wysyłany."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Özetlediğiniz ya da hakkında soru sorduğunuz her kaydın döküm metni, vurguladığınız anlar ve Ayarlar → ChatGPT'ye yazdıklarınızla birlikte buraya gönderilir. Ses gönderilmez."
+            "value": "Özetlediğiniz, hakkında soru sorduğunuz ya da başlığını ve adlarını doldurduğunuz her kaydın döküm metni buraya gönderilir. Özetler ve sorular ayrıca vurguladığınız anları ve Ayarlar → ChatGPT'ye yazdıklarınızı gönderir. Ses gönderilmez."
           }
         },
         "fil": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ipinapadala rito ang teksto ng transcript ng bawat recording na ibinubuod mo o tinatanong, kasama ang mga sandaling na-highlight mo at ang isinulat mo sa Settings → ChatGPT. Hindi ipinapadala ang audio."
+            "value": "Ipinapadala rito ang teksto ng transcript ng bawat recording na ibinubuod mo, tinatanong, o pinupunan ng pamagat at mga pangalan. Kasama rin sa mga buod at tanong ang mga sandaling na-highlight mo at ang isinulat mo sa Settings → ChatGPT. Hindi ipinapadala ang audio."
           }
         },
         "bn": {
           "stringUnit": {
             "state": "translated",
-            "value": "যে রেকর্ডিং সারাংশ করেন বা যা নিয়ে জিজ্ঞাসা করেন, তার ট্রান্সক্রিপ্টের লেখা আপনার হাইলাইট করা মুহূর্ত আর সেটিংস → ChatGPT-তে লেখা তথ্যসহ এখানে পাঠানো হয়। অডিও পাঠানো হয় না।"
+            "value": "যে রেকর্ডিং সারাংশ করেন, যা নিয়ে জিজ্ঞাসা করেন বা যার শিরোনাম ও নাম পূরণ করেন, তার ট্রান্সক্রিপ্টের লেখা এখানে পাঠানো হয়। সারাংশ ও প্রশ্নের সঙ্গে আপনার হাইলাইট করা মুহূর্ত আর সেটিংস → ChatGPT-তে লেখা তথ্যও পাঠানো হয়। অডিও পাঠানো হয় না।"
           }
         },
         "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "جس ریکارڈنگ کا آپ خلاصہ بناتے ہیں یا جس کے بارے میں پوچھتے ہیں، اس کا ٹرانسکرپٹ متن آپ کے نمایاں کیے گئے لمحات اور ترتیبات ← ChatGPT میں لکھی باتوں کے ساتھ یہاں بھیجا جاتا ہے۔ آڈیو نہیں بھیجا جاتا۔"
+            "value": "جس ریکارڈنگ کا آپ خلاصہ بناتے ہیں، جس کے بارے میں پوچھتے ہیں یا جس کا عنوان اور نام بھرواتے ہیں، اس کا ٹرانسکرپٹ متن یہاں بھیجا جاتا ہے۔ خلاصوں اور سوالوں کے ساتھ آپ کے نمایاں کیے گئے لمحات اور ترتیبات ← ChatGPT میں لکھی باتیں بھی بھیجی جاتی ہیں۔ آڈیو نہیں بھیجا جاتا۔"
           }
         },
         "sw": {
           "stringUnit": {
             "state": "translated",
-            "value": "Maandishi ya nakala ya kila rekodi unayofupisha au kuuliza kuihusu hutumwa hapa, pamoja na nyakati ulizoangazia na ulichoandika kwenye Mipangilio → ChatGPT. Sauti haitumwi."
+            "value": "Maandishi ya nakala ya kila rekodi unayofupisha, kuuliza kuihusu au kujaza kichwa na majina yake hutumwa hapa. Muhtasari na maswali pia hutuma nyakati ulizoangazia na ulichoandika kwenye Mipangilio → ChatGPT. Sauti haitumwi."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Văn bản bản chép lời của mỗi bản ghi bạn tóm tắt hoặc đặt câu hỏi sẽ được gửi tới đây, kèm những khoảnh khắc bạn đánh dấu và nội dung bạn viết trong Cài đặt → ChatGPT. Âm thanh không được gửi."
+            "value": "Văn bản bản chép lời của mỗi bản ghi bạn tóm tắt, đặt câu hỏi hoặc điền tiêu đề và tên sẽ được gửi tới đây. Khi tóm tắt và đặt câu hỏi, những khoảnh khắc bạn đánh dấu và nội dung bạn viết trong Cài đặt → ChatGPT cũng được gửi. Âm thanh không được gửi."
           }
         },
         "fa": {
           "stringUnit": {
             "state": "translated",
-            "value": "متن رونوشت هر ضبطی که خلاصه می‌کنید یا دربارهٔ آن می‌پرسید، همراه لحظه‌های برجسته‌شده و آنچه در تنظیمات ← ChatGPT نوشته‌اید، به اینجا فرستاده می‌شود. صدا فرستاده نمی‌شود."
+            "value": "متن رونوشت هر ضبطی که خلاصه می‌کنید، دربارهٔ آن می‌پرسید یا عنوان و نام‌هایش را تکمیل می‌کنید، به اینجا فرستاده می‌شود. همراه خلاصه‌ها و پرسش‌ها، لحظه‌های برجسته‌شده و آنچه در تنظیمات ← ChatGPT نوشته‌اید هم فرستاده می‌شود. صدا فرستاده نمی‌شود."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "ข้อความถอดเสียงของแต่ละบันทึกที่คุณสรุปหรือถามจะถูกส่งมาที่นี่ พร้อมช่วงที่คุณไฮไลต์และสิ่งที่คุณเขียนใน การตั้งค่า → ChatGPT โดยจะไม่ส่งเสียง"
+            "value": "ข้อความถอดเสียงของแต่ละบันทึกที่คุณสรุป ถาม หรือเติมชื่อและชื่อผู้พูด จะถูกส่งมาที่นี่ ส่วนการสรุปและการถามจะส่งช่วงที่คุณไฮไลต์และสิ่งที่คุณเขียนใน การตั้งค่า → ChatGPT ไปด้วย โดยจะไม่ส่งเสียง"
           }
         }
       }

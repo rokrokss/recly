@@ -540,7 +540,7 @@
   "Play from {0}": "Odtwórz od {0}",
   "No summary yet": "Brak podsumowania",
   "Me": "Ja",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Tutaj trafia tekst transkrypcji każdego nagrania, które podsumowujesz lub o które pytasz, razem z zaznaczonymi momentami i tym, co wpisano w Ustawienia → ChatGPT. Dźwięk nie jest wysyłany.",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Tutaj trafia tekst transkrypcji każdego nagrania, które podsumowujesz, o które pytasz lub którego tytuł i imiona uzupełniasz. Podsumowania i pytania wysyłają też zaznaczone momenty i to, co wpisano w Ustawienia → ChatGPT. Dźwięk nie jest wysyłany.",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "Podsumowania i pytania wysyłają do OpenAI tekst transkrypcji, zaznaczone momenty i to, co tu wpisano — nigdy dźwięk — i wliczają się do wykorzystania Twojego planu ChatGPT.",
   "Summaries and answers use this to judge what matters to you.": "Podsumowania i odpowiedzi korzystają z tego, by ocenić, co jest dla Ciebie ważne.",
   "Write your format here; until then summaries use General.": "Wpisz tu swój format; do tego czasu podsumowania używają formatu Ogólny.",

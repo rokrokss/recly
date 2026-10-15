@@ -540,7 +540,7 @@
   "Play from {0}": "{0} سے چلائیں",
   "No summary yet": "ابھی کوئی خلاصہ نہیں",
   "Me": "میں",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "جس ریکارڈنگ کا آپ خلاصہ بناتے ہیں یا جس کے بارے میں پوچھتے ہیں، اس کا ٹرانسکرپٹ متن آپ کے نمایاں کیے گئے لمحات اور ترتیبات ← ChatGPT میں لکھی باتوں کے ساتھ یہاں بھیجا جاتا ہے۔ آڈیو نہیں بھیجا جاتا۔",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "جس ریکارڈنگ کا آپ خلاصہ بناتے ہیں، جس کے بارے میں پوچھتے ہیں یا جس کا عنوان اور نام بھرواتے ہیں، اس کا ٹرانسکرپٹ متن یہاں بھیجا جاتا ہے۔ خلاصوں اور سوالوں کے ساتھ آپ کے نمایاں کیے گئے لمحات اور ترتیبات ← ChatGPT میں لکھی باتیں بھی بھیجی جاتی ہیں۔ آڈیو نہیں بھیجا جاتا۔",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "خلاصے اور سوالات ٹرانسکرپٹ کا متن، آپ کے نمایاں کیے گئے لمحات اور جو آپ نے یہاں لکھا، OpenAI کو بھیجتے ہیں — آڈیو کبھی نہیں — اور یہ آپ کے ChatGPT پلان کے استعمال میں شمار ہوتے ہیں۔",
   "Summaries and answers use this to judge what matters to you.": "خلاصے اور جوابات اس سے اندازہ لگاتے ہیں کہ آپ کے لیے کیا اہم ہے۔",
   "Write your format here; until then summaries use General.": "اپنا فارمیٹ یہاں لکھیں؛ تب تک خلاصے «عمومی» فارمیٹ استعمال کریں گے۔",

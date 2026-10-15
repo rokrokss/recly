@@ -95,9 +95,10 @@ public struct TransferDisclosureList: View {
                     Text(verbatim: target.endpoint)
                         .font(blueprint.fonts.monoSmall)
                         .fixedSize(horizontal: false, vertical: true)
-                    // What: a summary sends the transcript's text, never the audio (docs/15 §10).
+                    // What: a summary sends the transcript's text, never the audio (docs/15 §10); a fill of the title and
+                    // names sends the text alone, without the highlights or what Settings → ChatGPT holds (docs/08).
                     Text(verbatim: summary
-                        ? loc("The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.")
+                        ? loc("The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.")
                         : loc("The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
                         .fixedSize(horizontal: false, vertical: true)

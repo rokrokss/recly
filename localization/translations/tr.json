@@ -540,7 +540,7 @@
   "Play from {0}": "{0} konumundan oynat",
   "No summary yet": "Henüz özet yok",
   "Me": "Ben",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Özetlediğiniz ya da hakkında soru sorduğunuz her kaydın döküm metni, vurguladığınız anlar ve Ayarlar → ChatGPT'ye yazdıklarınızla birlikte buraya gönderilir. Ses gönderilmez.",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Özetlediğiniz, hakkında soru sorduğunuz ya da başlığını ve adlarını doldurduğunuz her kaydın döküm metni buraya gönderilir. Özetler ve sorular ayrıca vurguladığınız anları ve Ayarlar → ChatGPT'ye yazdıklarınızı gönderir. Ses gönderilmez.",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "Özetler ve sorular; döküm metnini, vurguladığınız anları ve buraya yazdıklarınızı OpenAI'ye gönderir — sesi asla göndermez — ve ChatGPT planınızın kullanımına sayılır.",
   "Summaries and answers use this to judge what matters to you.": "Özetler ve yanıtlar, sizin için neyin önemli olduğunu anlamak için bunu kullanır.",
   "Write your format here; until then summaries use General.": "Biçiminizi buraya yazın; o zamana kadar özetler Genel biçimini kullanır.",

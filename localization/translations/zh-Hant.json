@@ -540,7 +540,7 @@
   "Play from {0}": "從 {0} 開始播放",
   "No summary yet": "還沒有摘要",
   "Me": "我",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "你摘要或提問的每段錄音的轉寫文字，會連同你標記的時刻以及你在「設定 → ChatGPT」中填寫的內容一起傳送到這裡。不會傳送音訊。",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "你摘要、提問或填寫標題與名稱的每段錄音的轉寫文字會傳送到這裡。摘要和提問還會一併傳送你標記的時刻以及你在「設定 → ChatGPT」中填寫的內容。不會傳送音訊。",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "摘要和提問會把轉寫文字、你標記的時刻以及你在此填寫的內容傳送給 OpenAI——絕不傳送音訊——並計入你的 ChatGPT 方案用量。",
   "Summaries and answers use this to judge what matters to you.": "摘要和回答會據此判斷哪些內容對你重要。",
   "Write your format here; until then summaries use General.": "在此寫下你的格式；在此之前，摘要使用「通用」格式。",

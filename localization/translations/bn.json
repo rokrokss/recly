@@ -540,7 +540,7 @@
   "Play from {0}": "{0} থেকে চালান",
   "No summary yet": "এখনও সারাংশ নেই",
   "Me": "আমি",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "যে রেকর্ডিং সারাংশ করেন বা যা নিয়ে জিজ্ঞাসা করেন, তার ট্রান্সক্রিপ্টের লেখা আপনার হাইলাইট করা মুহূর্ত আর সেটিংস → ChatGPT-তে লেখা তথ্যসহ এখানে পাঠানো হয়। অডিও পাঠানো হয় না।",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "যে রেকর্ডিং সারাংশ করেন, যা নিয়ে জিজ্ঞাসা করেন বা যার শিরোনাম ও নাম পূরণ করেন, তার ট্রান্সক্রিপ্টের লেখা এখানে পাঠানো হয়। সারাংশ ও প্রশ্নের সঙ্গে আপনার হাইলাইট করা মুহূর্ত আর সেটিংস → ChatGPT-তে লেখা তথ্যও পাঠানো হয়। অডিও পাঠানো হয় না।",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "সারাংশ ও প্রশ্ন ট্রান্সক্রিপ্টের লেখা, আপনার হাইলাইট করা মুহূর্ত আর এখানে যা লিখেছেন তা OpenAI-তে পাঠায় — অডিও কখনও নয় — এবং এগুলো আপনার ChatGPT প্ল্যানের ব্যবহারে গোনা হয়।",
   "Summaries and answers use this to judge what matters to you.": "কী আপনার কাছে গুরুত্বপূর্ণ, তা বুঝতে সারাংশ ও উত্তর এটি ব্যবহার করে।",
   "Write your format here; until then summaries use General.": "এখানে আপনার ফরম্যাট লিখুন; ততক্ষণ সারাংশ «সাধারণ» ফরম্যাটে হবে।",

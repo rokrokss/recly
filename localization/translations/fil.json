@@ -540,7 +540,7 @@
   "Play from {0}": "I-play mula {0}",
   "No summary yet": "Wala pang buod",
   "Me": "Ako",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Ipinapadala rito ang teksto ng transcript ng bawat recording na ibinubuod mo o tinatanong, kasama ang mga sandaling na-highlight mo at ang isinulat mo sa Settings → ChatGPT. Hindi ipinapadala ang audio.",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Ipinapadala rito ang teksto ng transcript ng bawat recording na ibinubuod mo, tinatanong, o pinupunan ng pamagat at mga pangalan. Kasama rin sa mga buod at tanong ang mga sandaling na-highlight mo at ang isinulat mo sa Settings → ChatGPT. Hindi ipinapadala ang audio.",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "Ipinapadala ng mga buod at tanong sa OpenAI ang teksto ng transcript, ang mga sandaling na-highlight mo at ang isinulat mo rito — hindi kailanman ang audio — at bilang ang mga ito sa paggamit ng iyong ChatGPT plan.",
   "Summaries and answers use this to judge what matters to you.": "Ginagamit ito ng mga buod at sagot para matantya kung ano ang mahalaga sa iyo.",
   "Write your format here; until then summaries use General.": "Isulat dito ang iyong format; hanggang doon, Pangkalahatan ang gagamitin ng mga buod.",

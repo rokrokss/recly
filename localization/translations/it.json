@@ -540,7 +540,7 @@
   "Play from {0}": "Riproduci da {0}",
   "No summary yet": "Ancora nessun riepilogo",
   "Me": "Io",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Qui viene inviato il testo della trascrizione di ogni registrazione che riepiloghi o su cui fai domande, con i momenti evidenziati e ciò che hai scritto in Impostazioni → ChatGPT. L’audio non viene inviato.",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Qui viene inviato il testo della trascrizione di ogni registrazione che riepiloghi, su cui fai domande o di cui fai completare titolo e nomi. Riepiloghi e domande inviano anche i momenti evidenziati e ciò che hai scritto in Impostazioni → ChatGPT. L’audio non viene inviato.",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "Riepiloghi e domande inviano a OpenAI il testo della trascrizione, i momenti evidenziati e ciò che hai scritto qui — mai l’audio — e contano nell’utilizzo del tuo piano ChatGPT.",
   "Summaries and answers use this to judge what matters to you.": "Riepiloghi e risposte lo usano per capire cosa conta per te.",
   "Write your format here; until then summaries use General.": "Scrivi qui il tuo formato; fino ad allora i riepiloghi usano Generale.",

@@ -540,7 +540,7 @@
   "Play from {0}": "Phát từ {0}",
   "No summary yet": "Chưa có tóm tắt",
   "Me": "Tôi",
-  "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Văn bản bản chép lời của mỗi bản ghi bạn tóm tắt hoặc đặt câu hỏi sẽ được gửi tới đây, kèm những khoảnh khắc bạn đánh dấu và nội dung bạn viết trong Cài đặt → ChatGPT. Âm thanh không được gửi.",
+  "The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here. Summaries and questions also send the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": "Văn bản bản chép lời của mỗi bản ghi bạn tóm tắt, đặt câu hỏi hoặc điền tiêu đề và tên sẽ được gửi tới đây. Khi tóm tắt và đặt câu hỏi, những khoảnh khắc bạn đánh dấu và nội dung bạn viết trong Cài đặt → ChatGPT cũng được gửi. Âm thanh không được gửi.",
   "Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.": "Bản tóm tắt và câu hỏi gửi văn bản bản chép lời, những khoảnh khắc bạn đánh dấu và nội dung bạn viết ở đây tới OpenAI — không bao giờ gửi âm thanh — và được tính vào mức sử dụng gói ChatGPT của bạn.",
   "Summaries and answers use this to judge what matters to you.": "Bản tóm tắt và câu trả lời dùng thông tin này để biết điều gì quan trọng với bạn.",
   "Write your format here; until then summaries use General.": "Hãy viết định dạng của bạn ở đây; trong lúc đó, bản tóm tắt dùng dạng Chung.",
