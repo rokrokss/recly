@@ -559,5 +559,11 @@
   "Asked once, before the first recording.": "Wird einmal vor der ersten Aufnahme gefragt.",
   "Still transcribing on this device — try again once it has finished": "Wird auf diesem Gerät noch transkribiert – versuche es danach erneut",
   "Turn it on in Settings → Apps → Recly → Permissions.": "Unter Einstellungen → Apps → Recly → Berechtigungen einschalten.",
-  "Asked before every recording.": "Wird vor jeder Aufnahme gefragt."
+  "Asked before every recording.": "Wird vor jeder Aufnahme gefragt.",
+  "Fill in title and names": "Titel und Namen ergänzen",
+  "Fill in the title and speaker names with ChatGPT": "Titel und Sprechernamen mit ChatGPT ergänzen",
+  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "Sobald das Transkript fertig ist, geht es an ChatGPT, um einen fehlenden Titel und die Namen angesprochener Sprecher zu ergänzen. Das zählt zu deiner ChatGPT-Nutzung.",
+  "Title and names are already filled in": "Titel und Namen sind schon ergänzt",
+  "Filling in…": "Wird ergänzt…",
+  "Could not fill in the title and names": "Titel und Namen konnten nicht ergänzt werden"
 }

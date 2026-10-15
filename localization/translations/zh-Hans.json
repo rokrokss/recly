@@ -559,5 +559,11 @@
   "Asked once, before the first recording.": "仅在第一次录音前询问一次。",
   "Still transcribing on this device — try again once it has finished": "此设备仍在转录——完成后再试一次",
   "Turn it on in Settings → Apps → Recly → Permissions.": "请在“设置→应用→Recly→权限”中开启。",
-  "Asked before every recording.": "每次录音前都会询问。"
+  "Asked before every recording.": "每次录音前都会询问。",
+  "Fill in title and names": "填写标题和名称",
+  "Fill in the title and speaker names with ChatGPT": "用ChatGPT填写标题和说话人名称",
+  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "转录完成后，会把转写文本发送给ChatGPT，以获取缺少的标题和被叫到名字的说话人名称。这会计入你的ChatGPT用量。",
+  "Title and names are already filled in": "标题和名称已填写",
+  "Filling in…": "正在填写…",
+  "Could not fill in the title and names": "无法填写标题和名称"
 }
