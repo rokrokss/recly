@@ -2578,7 +2578,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    The Galaxy Watch tile draws the app's square record node (outlined; filled with the inner square while recording), not a Material pill button,
    and says nothing when idle with nothing to send (2026-10-08).
    **Both watches alike** (2026-10-15): the screen reads timer (`00:00` when idle) → status line → record node; the recorder's words are the
-   phones' — `Starting`, `Saving` — on the screen, tiles and complications; a recording that failed says `The recording failed` without the
+   phones' — `Starting`, `Saving` — on the screen, the Galaxy Watch's tile and complication (the Apple Watch complication keeps its idle and
+   recording looks: a widget timeline is too slow for a state that lasts a second); a recording that failed says `The recording failed` without the
    platform's reason; a transfer the phone refused says `Transfer failed`, tiles and complications included; the node is disabled while
    starting and saving. Haptics: start, stop, a light tick when a highlight is kept, and the success haptic when the phone acks a recording's
    meta — the transfer is complete only then, not when the recording is queued. A tap on a complication never stops a recording (a face is
@@ -2609,7 +2610,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 - **Settings → ChatGPT**, after Recording processing, laid out like the Drive rows. Signed out: `Use
   your ChatGPT plan` / `Summarize recordings with the plan you already have. Recly charges nothing for it.` with `Continue with ChatGPT`
   (OpenAI's wording for the action, checked 2026-10-09). While the browser is open the button shows its processing state and a line
-  `Finish signing in in your browser` has a quiet `Cancel`; when no browser opened within 30 seconds it says `Could not sign in to ChatGPT`
+  `Finish signing in in your browser` has a quiet `Cancel`; when the system could not open a browser it says `Could not sign in to ChatGPT`
   with the detail `no browser opened` (2026-10-15, every shell). Signed in: the account's email / `Using your ChatGPT plan` with a quiet
   `Sign out` (no confirmation — signing in again restores it; when OpenAI did not confirm the revocation, a muted footnote under the
   account row says so, on every shell — 2026-10-11) and, under that line, the text link `Manage usage` (ChatGPT's usage
