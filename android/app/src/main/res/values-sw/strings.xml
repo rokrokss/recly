@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Kichwa cha rekodi</string>
     <string name="recording_title_field">Kichwa</string>
     <string name="recording_title_save">Hifadhi</string>
-    <string name="recording_title_skip">Ruka</string>
     <string name="recording_mic_required">Ruhusa ya maikrofoni inahitajika.</string>
     <string name="recording_open_settings">Fungua Mipangilio</string>
     <string name="recording_title_too_late">Imechelewa kuhifadhi kichwa — upakiaji umeanza</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Sauti tayari imefutwa</string>
     <string name="enqueue_skipped_short">Fupi mno — imerukwa</string>
     <string name="enqueue_already_done">Tayari imeshughulikiwa</string>
+    <string name="enqueue_failed">Imeshindwa kuunda kazi</string>
     <string name="jobs_title">Orodha ya rekodi</string>
     <string name="jobs_empty">Bado hakuna rekodi</string>
     <string name="jobs_empty_hint">Rekodi zako zitaonekana hapa.</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Futa pia folda ya Drive</string>
     <string name="delete_with_folder">Futa pia kwenye folda ya ndani</string>
     <string name="delete_remote_body">Ilirekodiwa kwenye kifaa kingine. Ukiifuta, itaondolewa kwenye Drive na kwenye kila kifaa.</string>
-    <string name="delete_busy">Bado inapakia — jaribu tena ikishakamilika</string>
+    <string name="delete_busy">Bado inanukuu kwenye kifaa hiki — jaribu tena itakapokamilika</string>
     <string name="delete_drive_failed">Imefutwa hapa, lakini Drive imekataa: %1$s</string>
     <string name="delete_folder_failed">Imefutwa hapa, lakini si kwenye folda ya ndani: %1$s</string>
     <string name="delete_unuploaded">Sauti ambayo bado haijafika kwenye Drive itafutwa pia.</string>
     <string name="delete_unuploaded_folder">Sauti ambayo bado haijahifadhiwa kwenye folda ya ndani itafutwa pia.</string>
     <string name="settings_disconnect">Tenganisha</string>
-    <string name="settings_disconnect_hint">Ondoa ufikiaji wa programu hii kwenye akaunti yako ya Google.</string>
     <string name="disconnect_title">Ungependa kutenganisha Google Drive?</string>
     <string name="disconnect_other_devices">Recly itapoteza ufikiaji wa Drive kwenye vifaa vyote vilivyounganishwa na akaunti hii ya Google. Kazi zinazosubiri zitasitishwa hadi uunganishe tena akaunti ile ile. Rekodi na mipangilio vitabaki.</string>
-    <string name="disconnect_local">Uchakataji unaosubiri utasitishwa hadi uunganishe tena akaunti ile ile. Rekodi, faili za Drive, mitiririko ya kazi na funguo vitabaki.</string>
-    <string name="disconnect_also_delete">Futa pia rekodi zilizo kwenye simu hii</string>
     <string name="disconnect_permissions">Ruhusa za Google</string>
     <string name="disconnect_revoke_failed">Google imekataa kuondoa ufikiaji (%1$s) — fanya hivyo katika ruhusa za akaunti yako ya Google</string>
     <string name="disconnect_done">Imetenganishwa. Rekodi zilizo kwenye simu hii zimeachwa zilipo.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Rekodi zilizobaki kwenye simu hii ambazo bado hazijafika kwenye Drive: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">Imetenganishwa. Rekodi zilizofutwa kwenye simu hii: %1$d</string>
     <string name="disconnect_busy">Ufikiaji wa Google umebatilishwa. Rekodi ambazo bado zinaendelea na zimebakizwa: %1$d — tenganisha tena zikishakamilika.</string>
     <string name="disconnect_stop_recording">Simamisha kurekodi kwanza</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">Mtoa huduma amekataa ufunguo</string>
     <string name="alert_quota">Mtoa huduma amefikia kikomo cha mgao — kagua vikomo na malipo yake</string>
     <string name="alert_uploads_waiting">Inasubiri Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">Rekodi zinazosubiri: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">Rekodi zinazosubiri: %1$d</string>
     <string name="provider_disclosure_transcribe">Unukuzi wa nje hutuma rekodi nzima kwa %1$s.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia.</string>
     <string name="settings_consent_reminder">Kikumbusho cha ridhaa</string>
+    <string name="settings_consent_reminder_note">Huulizwa mara moja, kabla ya rekodi ya kwanza.</string>
     <string name="consent_question">Je, umewaambia washiriki kwamba unarekodi?</string>
     <string name="consent_body">Wengine kwenye mkutano hawataona ishara yoyote ya rekodi hii. Kuwaarifu ni jukumu la anayerekodi.</string>
     <string name="consent_confirm">Nimewaambia · Anza kurekodi</string>

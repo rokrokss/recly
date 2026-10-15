@@ -50,7 +50,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
@@ -500,7 +499,7 @@ private fun AlertBanner(
                         } else {
                             Text(stringResource(alert.reason.label), style = MaterialTheme.typography.bodyMedium, color = palette.warningInk)
                             Text(
-                                pluralStringResource(R.plurals.alert_waiting, alert.count, alert.count),
+                                stringResource(R.string.alert_waiting, alert.count),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = palette.textMuted,
                             )
@@ -537,7 +536,7 @@ private fun AlertBanner(
                 return@forEach
             }
             val reason = stringResource(alert.reason.label)
-            val waiting = pluralStringResource(R.plurals.alert_waiting, alert.count, alert.count)
+            val waiting = stringResource(R.string.alert_waiting, alert.count)
             AlertLine(
                 code = alert.reason.code,
                 // A failure's `Failed` in the failure's own red, as its row says it; a wait in the warning.

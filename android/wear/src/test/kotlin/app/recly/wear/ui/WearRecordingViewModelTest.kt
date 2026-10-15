@@ -55,6 +55,11 @@ private class FakeRecorder : RecorderControl {
     /** When set, a highlight write waits for it — a slow disk. */
     var slowWrite: CompletableDeferred<Unit>? = null
 
+    /** The written-audio clock the screen marks a highlight on (D6) — null while nothing records. */
+    var audioSec: Double? = null
+
+    override suspend fun recordedSec(): Double? = audioSec
+
     override suspend fun highlight(recordingId: String, atSec: Double): Boolean {
         slowWrite?.await()
         if (highlights.any { it.first == recordingId && kotlin.math.abs(it.second - atSec) < 1.0 }) return false
@@ -102,6 +107,14 @@ private class FakeHaptics : Haptics {
 
     override fun doubleClick() {
         fired += "doubleClick"
+    }
+
+    override fun tick() {
+        fired += "tick"
+    }
+
+    override fun success() {
+        fired += "success"
     }
 }
 
@@ -212,7 +225,7 @@ class WearRecordingViewModelTest {
         recorder.emit(RecorderEvent.Finished("01J9REC", durationSec = 12.0, parts = 1, silenced = emptyList(), enqueue = true))
         runCurrent()
 
-        assertEquals(WearMessage.Failed("mic busy"), vm.state.value.message)
+        assertEquals(WearMessage.Failed, vm.state.value.message)
     }
 
     /** A deferred stop did not finalize: the meta is still open, so there is nothing to send yet. */
@@ -289,7 +302,8 @@ class WearRecordingViewModelTest {
         runCurrent()
 
         assertEquals(emptyList(), queue.added)
-        assertEquals(WearMessage.Failed("mic busy"), vm.state.value.message)
+        // P2: the phones' sentence, with no raw reason on the wrist — the cause is logged by the recorder.
+        assertEquals(WearMessage.Failed, vm.state.value.message)
     }
 
     @Test
@@ -298,7 +312,9 @@ class WearRecordingViewModelTest {
         runCurrent()
 
         vm.micDenied()
-        assertEquals(WearMessage.MicDenied, vm.state.value.message)
+        assertEquals(WearMessage.MicDenied(permanent = false), vm.state.value.message)
+        vm.micDenied(permanent = true)
+        assertEquals(WearMessage.MicDenied(permanent = true), vm.state.value.message, "the screen adds where to turn it on")
 
         // The next start clears it: a stale refusal over a running recording would be a lie.
         vm.start()
@@ -311,18 +327,22 @@ class WearRecordingViewModelTest {
         recorder.recording("01J9")
         runCurrent()
 
-        vm.highlight(Instant.fromEpochSeconds(754))
+        recorder.audioSec = 754.0
+        vm.highlight()
         runCurrent()
         assertEquals(listOf("01J9" to 754.0), recorder.highlights)
         assertEquals(754L, vm.state.value.highlightedSec)
+        assertEquals(listOf("tick"), haptics.fired, "a kept mark is felt once")
 
         dispatcher.scheduler.advanceTimeBy(HIGHLIGHT_NEWS_MS + 1)
         runCurrent()
         assertNull(vm.state.value.highlightedSec)
 
-        vm.highlight(Instant.fromEpochMilliseconds(754_400))
+        recorder.audioSec = 754.4
+        vm.highlight()
         runCurrent()
         assertNull(vm.state.value.highlightedSec)
+        assertEquals(listOf("tick"), haptics.fired, "a repeat the core did not keep is not felt")
     }
 
     @Test
@@ -333,7 +353,8 @@ class WearRecordingViewModelTest {
         recorder.recording("01J9")
         runCurrent()
 
-        vm.highlight(Instant.fromEpochSeconds(754))
+        recorder.audioSec = 754.0
+        vm.highlight()
         runCurrent()
         recorder.idle()
         runCurrent()
@@ -351,8 +372,23 @@ class WearRecordingViewModelTest {
         val vm = viewModel()
         runCurrent()
 
-        vm.highlight(Instant.fromEpochSeconds(5))
+        recorder.audioSec = 5.0
+        vm.highlight()
         runCurrent()
         assertEquals(emptyList(), recorder.highlights)
+    }
+
+    /** D6: the mark is at the audio the recorder has written, whatever the wall clock says since the start. */
+    @Test
+    fun `a highlight is marked on the written-audio clock`() = runTest(dispatcher) {
+        val vm = viewModel()
+        recorder.recording("01J9")
+        runCurrent()
+
+        recorder.audioSec = 61.5
+        vm.highlight()
+        runCurrent()
+
+        assertEquals(listOf("01J9" to 61.5), recorder.highlights)
     }
 }

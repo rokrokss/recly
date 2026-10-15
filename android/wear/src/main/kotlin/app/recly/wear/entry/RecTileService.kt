@@ -51,6 +51,8 @@ class RecTileService : TileService() {
         // Idle with nothing left on this watch says nothing: the hollow node already does (UX
         // decisions of 2026-10-08). The complication keeps its own word for the same state.
         val status = entryStatus().takeUnless { !recording && it == getString(R.string.entry_ready) }
+        // P1: a refused transfer in the failure's red, as the screen says it.
+        val failed = !recording && status == getString(R.string.transfer_failed_badge)
         TileBuilders.Tile.Builder()
             .setResourcesVersion(RESOURCES_VERSION)
             // The status goes stale on its own — a recording started from the app, a transfer that
@@ -58,7 +60,7 @@ class RecTileService : TileService() {
             // app also asks for an update when either changes (`RecWearApp.refreshEntryPoints`).
             .setFreshnessIntervalMillis(FRESHNESS_MILLIS)
             .setTileTimeline(
-                TimelineBuilders.Timeline.fromLayoutElement(layout(requestParams.deviceConfiguration, recording, status)),
+                TimelineBuilders.Timeline.fromLayoutElement(layout(requestParams.deviceConfiguration, recording, status, failed)),
             )
             .build()
     }
@@ -70,7 +72,7 @@ class RecTileService : TileService() {
         ResourceBuilders.Resources.Builder().setVersion(RESOURCES_VERSION).build()
     }
 
-    private fun layout(device: DeviceParameters, recording: Boolean, status: String?): LayoutElementBuilders.LayoutElement {
+    private fun layout(device: DeviceParameters, recording: Boolean, status: String?, failed: Boolean): LayoutElementBuilders.LayoutElement {
         val content = LayoutElementBuilders.Column.Builder()
             .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
             .addContent(recordNode(recording))
@@ -79,7 +81,7 @@ class RecTileService : TileService() {
             content.addContent(
                 Text.Builder(this, it)
                     .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                    .setColor(argb(if (recording) DANGER else TEXT))
+                    .setColor(argb(if (recording || failed) DANGER else TEXT))
                     .setMaxLines(2)
                     .build(),
             )

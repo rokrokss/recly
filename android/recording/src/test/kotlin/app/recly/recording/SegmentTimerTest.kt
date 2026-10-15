@@ -31,6 +31,16 @@ class SegmentTimerTest {
     }
 
     @Test
+    fun `the open segment can be read without closing it`() {
+        // D6: a highlight reads the written-audio clock in the middle of a segment.
+        timer.advance(13_000)
+        now = 20_500
+
+        assertEquals(7.5, timer.elapsedSec())
+        assertEquals(8.0, timer.advance(21_000), "the read did not move the boundary")
+    }
+
+    @Test
     fun `a clock that went backwards is zero, never negative`() {
         assertEquals(0.0, timer.advance(500))
     }

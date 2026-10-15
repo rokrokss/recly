@@ -25,6 +25,9 @@ interface RecorderControl {
 
     /** docs/03 "Metadata": marks [atSec] of [recordingId]; false when the core took it as a repeat. */
     suspend fun highlight(recordingId: String, atSec: Double): Boolean
+
+    /** The audio the running recording has written so far, in seconds — what a highlight is marked on (D6). */
+    suspend fun recordedSec(): Double?
 }
 
 /**
@@ -48,4 +51,6 @@ class ServiceRecorderControl(private val context: Context) : RecorderControl {
     override suspend fun highlight(recordingId: String, atSec: Double): Boolean = withContext(Dispatchers.IO) {
         CoreModule.get(context).recordings.addHighlight(recordingId, atSec)
     }
+
+    override suspend fun recordedSec(): Double? = RecorderService.recordedSec()
 }

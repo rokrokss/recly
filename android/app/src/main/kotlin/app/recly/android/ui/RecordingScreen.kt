@@ -102,7 +102,12 @@ fun RecordingSection(
     ledger: String? = null,
     /** The transcription node's tap: the processing settings, where what it says is changed. */
     onOpenProcessing: () -> Unit,
+    /** The record node's tap, and a tile's or widget's request: the consent question first (D4). */
     onStart: () -> Unit,
+    /** The permission prompts are done and the microphone is there: the recorder starts. */
+    onPermitted: () -> Unit,
+    /** Takes the ViewModel's cue to run the permission prompts ([RecordingUiState.askPermissions]). */
+    onConsumePermissionAsk: () -> Boolean,
     onStop: () -> Unit,
     /** docs/03 "Metadata": the Highlight node's tap, while recording. */
     onHighlight: () -> Unit,
@@ -119,21 +124,25 @@ fun RecordingSection(
 ) {
     val gate = rememberPermissionGate(
         refused = state.micRefused,
-        onStart = onStart,
+        onStart = onPermitted,
         onMicDenied = onMicDenied,
         onMicGranted = onMicGranted,
     )
-    val begin = gate.begin
     val palette = blueprint
     val context = LocalContext.current
 
     // docs/11 A9: a tile, widget or shortcut tap arrives as a flag on the ViewModel and is spent
-    // here — through the same permission gate as the button, because the entry point cannot ask.
+    // here — the same start as the button: the consent question, then the permission prompts (D4),
+    // because the entry point can ask neither.
     LaunchedEffect(state.autoStart) {
         if (state.autoStart == null) return@LaunchedEffect
         // Spent whether or not it is acted on, and only acted on while it is still what the user
         // asked for: a tap the app took too long to reach is not a recording (docs/11 A9).
-        if (onConsumeAutoStart() && recorder is RecorderState.Idle) begin()
+        if (onConsumeAutoStart() && recorder is RecorderState.Idle) onStart()
+    }
+    // D4: the consent question is answered (or was not due); the system's prompts come now.
+    LaunchedEffect(state.askPermissions) {
+        if (state.askPermissions && onConsumePermissionAsk()) gate.begin()
     }
 
     val elapsed = elapsedSeconds(recorder)
@@ -220,7 +229,7 @@ fun RecordingSection(
             // docs/03 "Metadata": while recording, the Highlight node 24 to the end side of the record node,
             // which stays exactly where it is — the new node takes no room from it.
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                RecordNode(recorder = recorder, busy = busy, onStart = begin, onStop = onStop)
+                RecordNode(recorder = recorder, busy = busy, onStart = onStart, onStop = onStop)
                 if (recording) HighlightNode(onClick = onHighlight, modifier = Modifier.offset(x = HIGHLIGHT_OFFSET))
             }
             // One line, however many things there are to say (`map` is inline, so the lookups are
@@ -523,7 +532,7 @@ private class PermissionGate(val begin: () -> Unit, val microphoneDenied: Boolea
 /**
  * Notifications first, then the microphone, then start — never two dialogs at once, and never a
  * start while one is up (a while-in-use foreground service refuses to launch from behind a
- * permission dialog).
+ * permission dialog). It runs after the consent question has been answered (D4).
  *
  * Both callbacks ask the system rather than trusting the result they were handed: the boolean is
  * about *this* request, not about what the app currently holds.
@@ -630,8 +639,8 @@ internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit, a
             )
         },
     ) {
-        BlueprintField(title, { title = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.jobs_untitled),
-            fieldModifier = Modifier.testTag("title-field"))
+        BlueprintField(title, { title = it }, Modifier.fillMaxWidth(), label = stringResource(R.string.recording_title_field),
+            placeholder = stringResource(R.string.jobs_untitled), fieldModifier = Modifier.testTag("title-field"))
         if (!askParticipants) return@BlueprintDialog
         BlueprintDialogText(
             stringResource(R.string.recording_participants),

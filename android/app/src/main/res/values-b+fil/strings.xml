@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Pamagat ng recording</string>
     <string name="recording_title_field">Pamagat</string>
     <string name="recording_title_save">I-save</string>
-    <string name="recording_title_skip">Laktawan</string>
     <string name="recording_mic_required">Kinakailangan ang pahintulot sa mikropono.</string>
     <string name="recording_open_settings">Buksan ang Mga Setting</string>
     <string name="recording_title_too_late">Huli na para i-save ang pamagat — nagsimula na ang pag-upload</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Nalinis na ang audio</string>
     <string name="enqueue_skipped_short">Masyadong maikli — nilaktawan</string>
     <string name="enqueue_already_done">Naproseso na</string>
+    <string name="enqueue_failed">Hindi magawa ang gawain</string>
     <string name="jobs_title">Mga Recording</string>
     <string name="jobs_empty">Wala pang recording</string>
     <string name="jobs_empty_hint">Lalabas dito ang mga recording na gagawin mo.</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">I-delete din ang folder sa Drive</string>
     <string name="delete_with_folder">I-delete din sa lokal na folder</string>
     <string name="delete_remote_body">Na-record sa ibang device. Kapag na-delete, aalisin ito sa Drive at sa bawat device.</string>
-    <string name="delete_busy">Ina-upload pa — subukang muli kapag tapos na</string>
+    <string name="delete_busy">Nagta-transcribe pa sa device na ito — subukan ulit kapag tapos na</string>
     <string name="delete_drive_failed">Na-delete dito, pero tumanggi ang Drive: %1$s</string>
     <string name="delete_folder_failed">Na-delete dito, pero hindi sa lokal na folder: %1$s</string>
     <string name="delete_unuploaded">Kasama ring made-delete ang audio na wala pa sa Drive.</string>
     <string name="delete_unuploaded_folder">Kasama ring made-delete ang audio na wala pa sa lokal na folder.</string>
     <string name="settings_disconnect">Idiskonekta</string>
-    <string name="settings_disconnect_hint">Bawiin ang access ng app na ito sa iyong Google account.</string>
     <string name="disconnect_title">Idiskonekta ang Google Drive?</string>
     <string name="disconnect_other_devices">Mawawalan ng access sa Drive ang Recly sa lahat ng device na nakakonekta sa Google account na ito. Naka-pause ang nakabinbing gawain hanggang ikonekta mo ulit ang parehong account. Mananatili ang mga recording at setting.</string>
-    <string name="disconnect_local">Naka-pause ang nakabinbing pagproseso hanggang ikonekta mo ulit ang parehong account. Mananatili ang mga recording, file sa Drive, workflow, at key.</string>
-    <string name="disconnect_also_delete">I-delete din ang mga recording sa teleponong ito</string>
     <string name="disconnect_permissions">Mga pahintulot sa Google</string>
     <string name="disconnect_revoke_failed">Ayaw bawiin ng Google ang access (%1$s) — gawin ito sa mga pahintulot ng iyong Google account</string>
     <string name="disconnect_done">Nadiskonekta. Hindi ginalaw ang mga recording sa teleponong ito.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Mga recording na wala pa sa Drive, nananatili sa teleponong ito: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">Nadiskonekta. Mga recording na na-delete sa teleponong ito: %1$d</string>
     <string name="disconnect_busy">Binawi ang access sa Google. Mga recording na tumatakbo pa at pinanatili: %1$d — idiskonekta ulit kapag tapos na ang mga ito.</string>
     <string name="disconnect_stop_recording">Ihinto muna ang pag-record</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">Tinanggihan ng provider ang key</string>
     <string name="alert_quota">Ubos na ang quota ng provider — suriin ang mga limitasyon at billing nito</string>
     <string name="alert_uploads_waiting">Naghihintay sa Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">Mga recording na naghihintay: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">Mga recording na naghihintay: %1$d</string>
     <string name="provider_disclosure_transcribe">Ipinapadala ng external na pag-transcribe ang buong recording sa %1$s.\nKung gaano katagal nila ito itatago, at kung gagamitin nila ito sa training, ay nakasalalay sa sariling patakaran ng provider — hindi ito kontrolado ng Recly.\nBasahin ang patakaran ng provider bago ito gamitin.</string>
     <string name="settings_consent_reminder">Paalala sa pagsang-ayon</string>
+    <string name="settings_consent_reminder_note">Itinatanong nang isang beses, bago ang unang recording.</string>
     <string name="consent_question">Sinabihan mo ba ang mga kalahok tungkol sa pag-record?</string>
     <string name="consent_body">Walang makikitang palatandaan ng recording na ito ang ibang tao sa meeting. Responsibilidad ng nagre-record na sabihan sila.</string>
     <string name="consent_confirm">Sinabihan ko na · Simulan ang pag-record</string>

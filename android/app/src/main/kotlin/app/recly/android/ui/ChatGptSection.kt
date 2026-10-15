@@ -113,6 +113,9 @@ fun ChatGptSection() {
 
         else -> TableRow(stringResource(R.string.chatgpt_use_plan), subtitle = stringResource(R.string.chatgpt_use_plan_note), trailing = continueButton)
     }
+    // Not a failure: this device is signed out either way, and the sentence says where the rest is done. Directly under
+    // the account rows it is about (D20).
+    if (ui.revokeUnconfirmed) SectionFootnote(stringResource(R.string.chatgpt_revoke_unconfirmed))
     // While the browser has the sign-in: what to do there, and the way out of it here.
     if (ui.signingIn) {
         Row(
@@ -139,8 +142,6 @@ fun ChatGptSection() {
     }
     // What every summary is asked for on this device, and the two fills — set signed in or out; only running them needs the sign-in.
     SummaryPreferenceRows(signIn)
-    // Not a failure: this device is signed out either way, and the sentence says where the rest is done.
-    if (ui.revokeUnconfirmed) SectionFootnote(stringResource(R.string.chatgpt_revoke_unconfirmed))
     SectionFootnote(stringResource(R.string.chatgpt_footnote))
 }
 
@@ -177,12 +178,15 @@ private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
             title = { stringResource(it.formatLabel()) },
         )
     })
+    // D20: the note follows what is typed, not what was saved — words being written are not "General meanwhile".
+    val customEmpty = stringResource(R.string.summary_custom_empty)
+    val customNote = stringResource(R.string.summary_custom_note)
     if (preferences.format == SummaryFormat.CUSTOM) PreferenceField(
         saved = preferences.customFormat,
         max = SummaryPreferences.CUSTOM_MAX,
         label = stringResource(R.string.summary_format_custom),
         placeholder = stringResource(R.string.summary_custom_placeholder),
-        supporting = stringResource(if (preferences.customFormat.isBlank()) R.string.summary_custom_empty else R.string.summary_custom_note),
+        supporting = { typed -> if (typed.isBlank()) customEmpty else customNote },
         lines = CUSTOM_LINES..CUSTOM_MAX_LINES,
         newlines = true,
         onSave = { text -> signIn.updatePreferences { it.copy(customFormat = text) } },
@@ -190,12 +194,13 @@ private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
         focus = writeFormat,
         onFocused = { writeFormat = false },
     )
+    val aboutNote = stringResource(R.string.summary_about_note)
     PreferenceField(
         saved = preferences.aboutMe,
         max = SummaryPreferences.ABOUT_MAX,
         label = stringResource(R.string.summary_about),
         placeholder = stringResource(R.string.summary_about_placeholder),
-        supporting = stringResource(R.string.summary_about_note),
+        supporting = { aboutNote },
         lines = 1..ABOUT_MAX_LINES,
         newlines = false,
         onSave = { text -> signIn.updatePreferences { it.copy(aboutMe = text) } },
@@ -229,7 +234,8 @@ private fun PreferenceField(
     max: Int,
     label: String,
     placeholder: String,
-    supporting: String,
+    /** The quiet line under the field, for what is typed in it now. */
+    supporting: (String) -> String,
     lines: IntRange,
     newlines: Boolean,
     onSave: (String) -> Unit,
@@ -268,7 +274,7 @@ private fun PreferenceField(
             modifier = Modifier.fillMaxWidth().padding(Space.m),
             label = label,
             placeholder = placeholder,
-            supporting = supporting,
+            supporting = supporting(text),
             keyboardOptions = if (newlines) KeyboardOptions.Default else KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
             fieldModifier = Modifier

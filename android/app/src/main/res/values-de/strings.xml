@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Aufnahmetitel</string>
     <string name="recording_title_field">Titel</string>
     <string name="recording_title_save">Speichern</string>
-    <string name="recording_title_skip">Überspringen</string>
     <string name="recording_mic_required">Mikrofonberechtigung erforderlich</string>
     <string name="recording_open_settings">Einstellungen öffnen</string>
     <string name="recording_title_too_late">Titel kann nicht mehr gespeichert werden: Upload gestartet</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Das Audio wurde bereits bereinigt</string>
     <string name="enqueue_skipped_short">Zu kurz; übersprungen</string>
     <string name="enqueue_already_done">Bereits verarbeitet</string>
+    <string name="enqueue_failed">Auftrag konnte nicht erstellt werden</string>
     <string name="jobs_title">Aufnahmen</string>
     <string name="jobs_empty">Noch keine Aufnahmen</string>
     <string name="jobs_empty_hint">Ihre Aufnahmen erscheinen hier.</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Auch den Drive-Ordner löschen</string>
     <string name="delete_with_folder">Auch aus dem lokalen Ordner löschen</string>
     <string name="delete_remote_body">Auf einem anderen Gerät aufgenommen. Löschen entfernt die Aufnahme aus Drive und von allen Geräten.</string>
-    <string name="delete_busy">Upload läuft noch. Nach Abschluss erneut versuchen</string>
+    <string name="delete_busy">Wird auf diesem Gerät noch transkribiert – versuche es danach erneut</string>
     <string name="delete_drive_failed">Hier gelöscht, aber Drive hat abgelehnt: %1$s</string>
     <string name="delete_folder_failed">Hier gelöscht, aber nicht aus dem lokalen Ordner: %1$s</string>
     <string name="delete_unuploaded">Noch nicht zu Drive übertragenes Audio wird ebenfalls gelöscht.</string>
     <string name="delete_unuploaded_folder">Noch nicht in den lokalen Ordner kopiertes Audio wird ebenfalls gelöscht.</string>
     <string name="settings_disconnect">Trennen</string>
-    <string name="settings_disconnect_hint">Dieser App den Zugriff auf Ihr Google-Konto entziehen.</string>
     <string name="disconnect_title">Google Drive trennen?</string>
     <string name="disconnect_other_devices">Recly verliert den Drive-Zugriff auf allen mit diesem Google-Konto verbundenen Geräten. Ausstehende Aufgaben pausieren bis zur erneuten Verbindung desselben Kontos. Aufnahmen und Einstellungen bleiben erhalten.</string>
-    <string name="disconnect_local">Ausstehende Verarbeitung pausiert, bis dasselbe Konto erneut verbunden ist. Aufnahmen, Drive-Dateien, Workflows und Schlüssel bleiben erhalten.</string>
-    <string name="disconnect_also_delete">Auch die Aufnahmen auf diesem Telefon löschen</string>
     <string name="disconnect_permissions">Google-Berechtigungen</string>
     <string name="disconnect_revoke_failed">Google hat den Zugriff nicht entzogen (%1$s). In den Berechtigungen Ihres Google-Kontos widerrufen</string>
     <string name="disconnect_done">Getrennt. Die Aufnahmen auf diesem Telefon bleiben erhalten.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Noch nicht zu Drive übertragene Aufnahmen bleiben auf diesem Telefon: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">Getrennt. Auf diesem Telefon gelöschte Aufnahmen: %1$d.</string>
     <string name="disconnect_busy">Google-Zugriff wurde widerrufen. Noch laufende Aufnahmen wurden behalten: %1$d. Trennen Sie nach deren Abschluss erneut.</string>
     <string name="disconnect_stop_recording">Zuerst die Aufnahme stoppen</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">Der Anbieter hat den Schlüssel abgelehnt</string>
     <string name="alert_quota">Anbieterkontingent erschöpft. Limits und Abrechnung prüfen</string>
     <string name="alert_uploads_waiting">Wartet auf Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">Wartende Aufnahmen: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">Wartende Aufnahmen: %1$d.</string>
     <string name="provider_disclosure_transcribe">Die externe Transkription sendet die gesamte Aufnahme an %1$s.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
     <string name="settings_consent_reminder">Einwilligungserinnerung</string>
+    <string name="settings_consent_reminder_note">Wird einmal vor der ersten Aufnahme gefragt.</string>
     <string name="consent_question">Haben Sie die Teilnehmenden über die Aufnahme informiert?</string>
     <string name="consent_body">Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren.</string>
     <string name="consent_confirm">Informiert · Aufnahme starten</string>

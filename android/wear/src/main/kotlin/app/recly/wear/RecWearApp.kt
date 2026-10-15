@@ -18,6 +18,7 @@ import app.recly.wear.core.CoreModule
 import app.recly.wear.core.WearLogger
 import app.recly.wear.entry.RecComplicationService
 import app.recly.wear.entry.RecTileService
+import app.recly.wear.language.PhoneLanguage
 import app.recly.wear.transfer.FileTransferQueue
 import app.recly.wear.transfer.Recordings
 import app.recly.wear.transfer.TransferScheduler
@@ -25,6 +26,7 @@ import app.recly.wear.transfer.TransferSender
 import app.recly.wear.transfer.TransferStore
 import app.recly.wear.transfer.WearableTransferLink
 import app.recly.wear.ui.MainActivity
+import app.recly.wear.ui.SystemHaptics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,6 +86,9 @@ class RecWearApp : Application(), RecorderHost {
     /** The badge, for the surfaces that are asked for it before anything has loaded the file. */
     suspend fun pendingCount(): Int = queue.all().count { it.waiting }
 
+    /** Recordings the phone refused — the tile and the complication say so, as the screen does (P1). */
+    suspend fun failedCount(): Int = queue.all().count { !it.waiting }
+
     /**
      * A process that is starting may have been killed mid-recording (docs/03 "after a crash, everything up to the last boundary is recoverable"). Recovery first, so anything it finalizes exists before the queue looks;
      * then the queue's own scan, which catches a recording that was finalized by a run that died
@@ -102,6 +107,11 @@ class RecWearApp : Application(), RecorderHost {
             TransferScheduler.runNow(this@RecWearApp)
             TransferScheduler.armPeriodic(this@RecWearApp)
         }
+        // The phone app's language, as it last wrote it — an item from before this install never arrives as a change.
+        scope.launch {
+            runCatching { PhoneLanguage.adoptStored(this@RecWearApp) }
+                .onFailure { logger.log(Logger.Level.DEBUG, "shell.wear.language.failed", emptyMap(), it) }
+        }
         // The tile and the complication render outside this process and nothing else would tell
         // them a recording started or a transfer finished. `drop(1)` because the first emission is
         // the state they already have.
@@ -110,6 +120,13 @@ class RecWearApp : Application(), RecorderHost {
         // docs/11 W2: the same count reads differently once a pass has a phone, so the two surfaces
         // that cannot notice anything for themselves are told when that changes too.
         scope.launch { queue.sending.drop(1).collect { refreshEntryPoints() } }
+        // P1: and a refusal, which the two surfaces now say as well.
+        scope.launch { queue.failed.drop(1).collect { refreshEntryPoints() } }
+        // P4: the end of a transfer is the phone acking the meta, and the wrist is told then — not when the
+        // last byte went out. The system drops it while the app is in the background, which is the rule
+        // for any app's vibration, not a choice made here.
+        val haptics = SystemHaptics(this)
+        scope.launch { TransferSender.delivered.collect { haptics.success() } }
     }
 
     /**

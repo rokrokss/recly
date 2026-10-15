@@ -399,10 +399,6 @@
   "recly {0} (build {1}) · android {2}": "recly {0} (بلڈ {1}) · android {2}",
   "soon": "جلد",
   "{0} of {1}": "{1} میں سے {0}",
-  "{0} recording has not reached Drive yet and stays on this phone.": "جو ریکارڈنگز ابھی Drive تک نہیں پہنچیں، اس فون پر رہیں گی: {0}۔",
-  "{0} recording is waiting.": "منتظر ریکارڈنگز: {0}۔",
-  "{0} recordings are waiting.": "منتظر ریکارڈنگز: {0}۔",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "جو ریکارڈنگز ابھی Drive تک نہیں پہنچیں، اس فون پر رہیں گی: {0}۔",
   "{0}, recorded {1}, length {2}, {3}": "{0}، ریکارڈنگ کا وقت {1}، دورانیہ {2}، {3}",
   "Add": "شامل کریں",
   "Add a name or term": "کوئی نام یا اصطلاح شامل کریں",
@@ -571,5 +567,8 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "جب یہ ڈیوائس بغیر عنوان والی ریکارڈنگ ٹرانسکرائب کرتی ہے تو عنوان کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔",
   "Fill in speaker names": "بولنے والوں کے نام خود بخود بھریں",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "جب یہ ڈیوائس کوئی ریکارڈنگ ٹرانسکرائب کرتی ہے تو اس میں نام لے کر پکارے گئے بولنے والوں کے نام رکھنے کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "عنوانات خود بخود بھریں یا بولنے والوں کے نام خود بخود بھریں آن ہو تو یہ iPhone جو بھی ریکارڈنگ ٹرانسکرائب کرے اس کا ٹرانسکرپٹ بھی یہاں بھیجا جاتا ہے۔"
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "عنوانات خود بخود بھریں یا بولنے والوں کے نام خود بخود بھریں آن ہو تو یہ iPhone جو بھی ریکارڈنگ ٹرانسکرائب کرے اس کا ٹرانسکرپٹ بھی یہاں بھیجا جاتا ہے۔",
+  "Asked once, before the first recording.": "پہلی ریکارڈنگ سے پہلے ایک بار پوچھا جاتا ہے۔",
+  "Still transcribing on this device — try again once it has finished": "اس ڈیوائس پر ابھی ٹرانسکرائب ہو رہا ہے — ختم ہونے پر دوبارہ کوشش کریں",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "اسے ترتیبات ← ایپس ← Recly ← اجازتیں میں آن کریں۔"
 }

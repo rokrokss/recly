@@ -321,10 +321,9 @@ private fun ModelDownloadBlock(
         Text(stringResource(sizeLine, modelSize(size)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
     }
     ModelDownloadLines(download, reading)
-    // A footnote like the iPhone's: the button under it is the way on, and red is
-    // kept for a failed recording (docs/09 "Red means only two things").
+    // D22: a download that could not finish is a failure, in the failure's red; the button under it is the way on.
     download.error?.let { error ->
-        Text(coreMessage(CoreMessage.STEP_FAILED, error).text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        Text(coreMessage(CoreMessage.STEP_FAILED, error).text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
     }
     EndButtons {
         if (download.active) {
@@ -339,7 +338,8 @@ private fun ModelDownloadBlock(
 /**
  * docs/09 "Vocabulary": the terms as chips with a remove each, and a field that adds one — Enter or Add, and
  * one chip per line of a paste. A term past [VOCABULARY_ENTRY_MAX] characters, or one past [VOCABULARY_MAX],
- * is not added and the limits are said in the warning tone; a repeat (ignoring case) is not added either.
+ * is not added and the limits are said in the warning tone; a repeat (ignoring case) is not added either. The field
+ * is cleared either way (D25): the warning says why, and the refused text is not left there to be added again.
  */
 @Composable
 private fun VocabularyEditor(terms: List<String>, onChange: (List<String>) -> Unit) {
@@ -357,7 +357,7 @@ private fun VocabularyEditor(terms: List<String>, onChange: (List<String>) -> Un
         }
         refused = over
         if (next != terms) onChange(next)
-        if (!over) text = ""
+        text = ""
     }
     if (terms.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
         terms.forEach { term -> VocabularyChip(term) { refused = false; onChange(terms - term) } }

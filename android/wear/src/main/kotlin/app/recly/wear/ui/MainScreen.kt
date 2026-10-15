@@ -170,6 +170,18 @@ private fun RecordScreen(
                         maxLines = 2,
                     )
 
+                    // P8: after a refusal the system will not ask about again, where to give it back — in the
+                    // warning tone, a permission being something the user can act on.
+                    if ((state.message as? WearMessage.MicDenied)?.permanent == true) {
+                        Text(
+                            text = monoWords(stringResource(R.string.recording_mic_settings)),
+                            style = WearBlueprint.small,
+                            color = WearBlueprint.warning,
+                            textAlign = TextAlign.Center,
+                            maxLines = 3,
+                        )
+                    }
+
                     Spacer(Modifier.height(10.dp))
                     RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
                     // docs/03 "Metadata": below the stop node, only while it records — the node slides up
@@ -223,7 +235,7 @@ private fun statusLine(state: WearUiState): Pair<String, Color>? {
         message != null -> message.text() to WearBlueprint.textMuted
         highlighted != null && state.canStop -> stringResource(R.string.highlight_status, stamp(highlighted)) to WearBlueprint.accent
         state.recorder is RecorderState.Recording -> stringResource(R.string.recording_active) to WearBlueprint.danger
-        state.recorder == RecorderState.Starting -> stringResource(R.string.recording_busy) to WearBlueprint.textMuted
+        state.recorder == RecorderState.Starting -> stringResource(R.string.recording_starting) to WearBlueprint.textMuted
         state.recorder == RecorderState.Stopping -> stringResource(R.string.recording_stopping) to WearBlueprint.textMuted
         state.failed > 0 -> stringResource(R.string.transfer_failed_badge) to WearBlueprint.danger
         state.pending > 0 -> stringResource(
@@ -297,13 +309,8 @@ private fun HighlightButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
 /** docs/09 "Shape": the round button is a square node here too — filled while it is recording. */
 @Composable
 private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
-    val label = stringResource(
-        when {
-            recording -> R.string.recording_stop
-            busy -> R.string.recording_busy
-            else -> R.string.recording_start
-        },
-    )
+    // While busy the node takes no tap, so its click label has nothing of its own to say.
+    val label = stringResource(if (recording) R.string.recording_stop else R.string.recording_start)
     // The node draws a square and no words, so this is its name (docs/09 "Accessibility") — the
     // phone's own: Start recording, or Stop.
     val name = stringResource(if (recording) R.string.recording_stop else R.string.tile_start)
@@ -335,8 +342,8 @@ private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
 @Composable
 private fun WearMessage.text(): String = when (this) {
     WearMessage.SaveDeferred -> stringResource(R.string.recording_save_deferred)
-    is WearMessage.Failed -> stringResource(R.string.recording_failed, reason)
-    WearMessage.MicDenied -> stringResource(R.string.recording_mic_denied)
+    WearMessage.Failed -> stringResource(R.string.recording_failed)
+    is WearMessage.MicDenied -> stringResource(R.string.recording_mic_denied)
 }
 
 /**

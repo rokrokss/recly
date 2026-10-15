@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">रिकॉर्डिंग का शीर्षक</string>
     <string name="recording_title_field">शीर्षक</string>
     <string name="recording_title_save">सहेजें</string>
-    <string name="recording_title_skip">छोड़ें</string>
     <string name="recording_mic_required">माइक्रोफ़ोन की अनुमति चाहिए</string>
     <string name="recording_open_settings">सेटिंग खोलें</string>
     <string name="recording_title_too_late">शीर्षक सहेजने में देर हो गई; अपलोड शुरू हो चुका है</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">ऑडियो पहले ही साफ़ किया जा चुका है</string>
     <string name="enqueue_skipped_short">बहुत छोटा; छोड़ दिया गया</string>
     <string name="enqueue_already_done">पहले ही पूरा हो चुका है</string>
+    <string name="enqueue_failed">कार्य बनाया नहीं जा सका</string>
     <string name="jobs_title">रिकॉर्डिंग</string>
     <string name="jobs_empty">अभी कोई रिकॉर्डिंग नहीं</string>
     <string name="jobs_empty_hint">आपकी रिकॉर्डिंग यहाँ दिखेंगी।</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Drive फ़ोल्डर भी हटाएँ</string>
     <string name="delete_with_folder">लोकल फ़ोल्डर से भी हटाएँ</string>
     <string name="delete_remote_body">दूसरे डिवाइस पर रिकॉर्ड हुआ। हटाने पर Drive और सभी डिवाइस से हटेगा।</string>
-    <string name="delete_busy">अभी अपलोड जारी है। पूरा होने पर फिर कोशिश करें</string>
+    <string name="delete_busy">इस डिवाइस पर अभी ट्रांसक्राइब हो रहा है — पूरा होने पर फिर कोशिश करें</string>
     <string name="delete_drive_failed">यहाँ हटा दिया गया, लेकिन Drive ने मना किया: %1$s</string>
     <string name="delete_folder_failed">यहाँ हटा दिया गया, लेकिन लोकल फ़ोल्डर से नहीं: %1$s</string>
     <string name="delete_unuploaded">Drive तक नहीं पहुँचा ऑडियो भी हटेगा।</string>
     <string name="delete_unuploaded_folder">लोकल फ़ोल्डर तक नहीं पहुँचा ऑडियो भी हटेगा।</string>
     <string name="settings_disconnect">डिस्कनेक्ट करें</string>
-    <string name="settings_disconnect_hint">इस ऐप का आपके Google खाते का एक्सेस हटाएँ।</string>
     <string name="disconnect_title">Google Drive डिस्कनेक्ट करें?</string>
     <string name="disconnect_other_devices">इस Google खाते से जुड़े सभी डिवाइस पर Recly का Drive एक्सेस हटेगा। वही खाता दोबारा कनेक्ट होने तक लंबित काम रुकेगा। रिकॉर्डिंग और सेटिंग बनी रहेंगी।</string>
-    <string name="disconnect_local">वही खाता फिर कनेक्ट होने तक लंबित प्रोसेसिंग रुकेगी। रिकॉर्डिंग, Drive फ़ाइलें, वर्कफ़्लो और कुंजियाँ बनी रहेंगी।</string>
-    <string name="disconnect_also_delete">इस फ़ोन की रिकॉर्डिंग भी हटाएँ</string>
     <string name="disconnect_permissions">Google अनुमतियाँ</string>
     <string name="disconnect_revoke_failed">Google ने एक्सेस नहीं हटाया (%1$s)। अपने Google खाते की अनुमतियों में हटाएँ</string>
     <string name="disconnect_done">डिस्कनेक्ट किया गया। इस फ़ोन की रिकॉर्डिंग यथावत हैं।</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Drive तक नहीं पहुँची रिकॉर्डिंग इस फ़ोन पर रहेंगी: %1$d।</item>
-    </plurals>
     <string name="disconnect_deleted">डिस्कनेक्ट किया गया। इस फ़ोन से हटाई गई रिकॉर्डिंग: %1$d।</string>
     <string name="disconnect_busy">Google एक्सेस रद्द हुआ, लेकिन चल रही %1$d रिकॉर्डिंग रखी गईं। उनके पूरा होने पर फिर डिस्कनेक्ट करें।</string>
     <string name="disconnect_stop_recording">पहले रिकॉर्डिंग बंद करें</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">प्रदाता ने कुंजी अस्वीकार की</string>
     <string name="alert_quota">प्रदाता का कोटा खत्म है। सीमा और बिलिंग जाँचें</string>
     <string name="alert_uploads_waiting">Drive की प्रतीक्षा: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">प्रतीक्षारत रिकॉर्डिंग: %1$d।</item>
-    </plurals>
+    <string name="alert_waiting">प्रतीक्षारत रिकॉर्डिंग: %1$d।</string>
     <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग %1$s को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
     <string name="settings_consent_reminder">सहमति की याद दिलाएँ</string>
+    <string name="settings_consent_reminder_note">पहली रिकॉर्डिंग से पहले एक बार पूछा जाता है।</string>
     <string name="consent_question">क्या आपने प्रतिभागियों को रिकॉर्डिंग के बारे में बताया है?</string>
     <string name="consent_body">यह रिकॉर्डिंग मीटिंग के अन्य लोगों को कोई संकेत नहीं देती। उन्हें बताना रिकॉर्ड करने वाले की ज़िम्मेदारी है।</string>
     <string name="consent_confirm">बता दिया · रिकॉर्डिंग शुरू करें</string>

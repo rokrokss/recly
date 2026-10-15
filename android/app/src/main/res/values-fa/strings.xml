@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">عنوان ضبط</string>
     <string name="recording_title_field">عنوان</string>
     <string name="recording_title_save">ذخیره</string>
-    <string name="recording_title_skip">رد شدن</string>
     <string name="recording_mic_required">اجازه میکروفون الزامی است.</string>
     <string name="recording_open_settings">باز کردن تنظیمات</string>
     <string name="recording_title_too_late">برای ذخیره عنوان دیر است؛ بارگذاری شروع شده است</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">صدا قبلاً پاک شده است</string>
     <string name="enqueue_skipped_short">خیلی کوتاه؛ رد شد</string>
     <string name="enqueue_already_done">قبلاً انجام شده</string>
+    <string name="enqueue_failed">وظیفه ایجاد نشد</string>
     <string name="jobs_title">ضبط‌ها</string>
     <string name="jobs_empty">هنوز ضبطی وجود ندارد</string>
     <string name="jobs_empty_hint">ضبط‌های شما اینجا نمایش داده می‌شوند.</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">پوشه Drive هم حذف شود</string>
     <string name="delete_with_folder">از پوشه محلی هم حذف شود</string>
     <string name="delete_remote_body">در دستگاه دیگری ضبط شده است. حذف، آن را از Drive و همه دستگاه‌ها پاک می‌کند.</string>
-    <string name="delete_busy">هنوز در حال بارگذاری است؛ پس از پایان آن دوباره امتحان کنید</string>
+    <string name="delete_busy">هنوز روی این دستگاه رونویسی می‌شود — پس از پایان دوباره امتحان کنید</string>
     <string name="delete_drive_failed">اینجا حذف شد، اما Drive نپذیرفت: %1$s</string>
     <string name="delete_folder_failed">اینجا حذف شد، اما از پوشه محلی حذف نشد: %1$s</string>
     <string name="delete_unuploaded">صدایی که هنوز به Drive نرسیده است نیز همراه آن حذف می‌شود.</string>
     <string name="delete_unuploaded_folder">صدایی که هنوز به پوشه محلی نرسیده است نیز همراه آن حذف می‌شود.</string>
     <string name="settings_disconnect">قطع اتصال</string>
-    <string name="settings_disconnect_hint">دسترسی این برنامه به حساب Google خود را لغو کنید.</string>
     <string name="disconnect_title">اتصال Google Drive قطع شود؟</string>
     <string name="disconnect_other_devices">دسترسی Recly به Drive در همه دستگاه‌های متصل به این حساب Google قطع می‌شود. کارهای در انتظار تا اتصال دوباره همان حساب متوقف می‌مانند. ضبط‌ها و تنظیمات باقی می‌مانند.</string>
-    <string name="disconnect_local">پردازش‌های در انتظار تا اتصال دوباره همان حساب متوقف می‌مانند. ضبط‌ها، فایل‌های Drive، گردش‌های کار و کلیدها باقی می‌مانند.</string>
-    <string name="disconnect_also_delete">ضبط‌های روی این تلفن هم حذف شوند</string>
     <string name="disconnect_permissions">اجازه‌های Google</string>
     <string name="disconnect_revoke_failed">دسترسی توسط Google لغو نشد (%1$s)؛ این کار را در اجازه‌های حساب Google خود انجام دهید</string>
     <string name="disconnect_done">اتصال قطع شد. ضبط‌های روی این تلفن دست‌نخورده باقی ماندند.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">%1$d ضبط هنوز به Drive نرسیده است و روی این تلفن می‌ماند.</item>
-    </plurals>
     <string name="disconnect_deleted">اتصال قطع شد. ضبط‌های حذف‌شده از این تلفن: %1$d</string>
     <string name="disconnect_busy">دسترسی Google لغو شد. ضبط‌هایی که هنوز در حال پردازش هستند و نگه داشته شدند: %1$d؛ پس از پایان آن‌ها دوباره اتصال را قطع کنید.</string>
     <string name="disconnect_stop_recording">ابتدا ضبط را متوقف کنید</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">ارائه‌دهنده کلید را رد کرد</string>
     <string name="alert_quota">سهمیه ارائه‌دهنده تمام شده است؛ محدودیت‌ها و صورت‌حساب آن را بررسی کنید</string>
     <string name="alert_uploads_waiting">در انتظار Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">%1$d ضبط در انتظار است.</item>
-    </plurals>
+    <string name="alert_waiting">ضبط‌های در انتظار: %1$d</string>
     <string name="provider_disclosure_transcribe">رونویسی خارجی کل ضبط را به %1$s می‌فرستد.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید.</string>
     <string name="settings_consent_reminder">یادآور رضایت</string>
+    <string name="settings_consent_reminder_note">یک بار، پیش از نخستین ضبط، پرسیده می‌شود.</string>
     <string name="consent_question">آیا شرکت‌کنندگان را از ضبط آگاه کرده‌اید؟</string>
     <string name="consent_body">این ضبط هیچ نشانه‌ای از خود به دیگر افراد حاضر در جلسه نشان نمی‌دهد. آگاه کردن آن‌ها بر عهده کسی است که ضبط می‌کند.</string>
     <string name="consent_confirm">آگاه کردم · شروع ضبط</string>

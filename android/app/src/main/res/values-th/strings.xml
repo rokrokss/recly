@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">ชื่อการบันทึกเสียง</string>
     <string name="recording_title_field">ชื่อ</string>
     <string name="recording_title_save">บันทึก</string>
-    <string name="recording_title_skip">ข้าม</string>
     <string name="recording_mic_required">ต้องได้รับอนุญาตให้ใช้ไมโครโฟน</string>
     <string name="recording_open_settings">เปิดการตั้งค่า</string>
     <string name="recording_title_too_late">สายเกินไปที่จะบันทึกชื่อ การอัปโหลดเริ่มแล้ว</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">เสียงถูกล้างออกไปแล้ว</string>
     <string name="enqueue_skipped_short">สั้นเกินไป ข้ามแล้ว</string>
     <string name="enqueue_already_done">ดำเนินการแล้ว</string>
+    <string name="enqueue_failed">สร้างงานไม่ได้</string>
     <string name="jobs_title">การบันทึกเสียง</string>
     <string name="jobs_empty">ยังไม่มีการบันทึกเสียง</string>
     <string name="jobs_empty_hint">การบันทึกเสียงของคุณจะแสดงที่นี่</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">ลบโฟลเดอร์ Drive ด้วย</string>
     <string name="delete_with_folder">ลบออกจากโฟลเดอร์ในเครื่องด้วย</string>
     <string name="delete_remote_body">บันทึกจากอุปกรณ์อื่น การลบจะนำออกจาก Drive และจากทุกอุปกรณ์</string>
-    <string name="delete_busy">ยังอัปโหลดอยู่ ลองอีกครั้งเมื่ออัปโหลดเสร็จ</string>
+    <string name="delete_busy">ยังถอดเสียงอยู่บนอุปกรณ์นี้ — ลองอีกครั้งเมื่อเสร็จแล้ว</string>
     <string name="delete_drive_failed">ลบที่นี่แล้ว แต่ Drive ปฏิเสธ: %1$s</string>
     <string name="delete_folder_failed">ลบที่นี่แล้ว แต่ลบออกจากโฟลเดอร์ในเครื่องไม่ได้: %1$s</string>
     <string name="delete_unuploaded">เสียงที่ยังไม่อยู่ใน Drive จะถูกลบไปด้วย</string>
     <string name="delete_unuploaded_folder">เสียงที่ยังไม่อยู่ในโฟลเดอร์ในเครื่องจะถูกลบไปด้วย</string>
     <string name="settings_disconnect">ยกเลิกการเชื่อมต่อ</string>
-    <string name="settings_disconnect_hint">เพิกถอนการเข้าถึงบัญชี Google ของคุณจากแอปนี้</string>
     <string name="disconnect_title">ยกเลิกการเชื่อมต่อ Google Drive ใช่ไหม?</string>
     <string name="disconnect_other_devices">Recly จะสูญเสียการเข้าถึง Drive ในทุกอุปกรณ์ที่เชื่อมต่อกับบัญชี Google นี้ งานที่รออยู่จะหยุดชั่วคราวจนกว่าคุณจะเชื่อมต่อบัญชีเดิมอีกครั้ง การบันทึกเสียงและการตั้งค่าจะยังคงอยู่</string>
-    <string name="disconnect_local">การประมวลผลที่รออยู่จะหยุดชั่วคราวจนกว่าคุณจะเชื่อมต่อบัญชีเดิมอีกครั้ง การบันทึกเสียง ไฟล์ใน Drive เวิร์กโฟลว์ และคีย์จะยังคงอยู่</string>
-    <string name="disconnect_also_delete">ลบการบันทึกเสียงในโทรศัพท์เครื่องนี้ด้วย</string>
     <string name="disconnect_permissions">สิทธิ์ของ Google</string>
     <string name="disconnect_revoke_failed">Google ไม่ยอมเพิกถอนการเข้าถึง (%1$s) โปรดเพิกถอนในสิทธิ์ของบัญชี Google ของคุณ</string>
     <string name="disconnect_done">ยกเลิกการเชื่อมต่อแล้ว การบันทึกเสียงในโทรศัพท์เครื่องนี้ยังคงอยู่ที่เดิม</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">การบันทึกเสียง %1$d รายการยังไม่ถึง Drive และยังอยู่ในโทรศัพท์เครื่องนี้</item>
-    </plurals>
     <string name="disconnect_deleted">ยกเลิกการเชื่อมต่อแล้ว การบันทึกเสียงที่ลบจากโทรศัพท์เครื่องนี้: %1$d</string>
     <string name="disconnect_busy">เพิกถอนการเข้าถึงของ Google แล้ว การบันทึกเสียงที่ยังดำเนินการอยู่และเก็บไว้: %1$d ยกเลิกการเชื่อมต่ออีกครั้งเมื่อดำเนินการเสร็จแล้ว</string>
     <string name="disconnect_stop_recording">หยุดการบันทึกเสียงก่อน</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">ผู้ให้บริการปฏิเสธคีย์</string>
     <string name="alert_quota">ผู้ให้บริการใช้โควตาหมดแล้ว ตรวจสอบขีดจำกัดและการเรียกเก็บเงิน</string>
     <string name="alert_uploads_waiting">กำลังรอ Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">การบันทึกเสียง %1$d รายการกำลังรอ</item>
-    </plurals>
+    <string name="alert_waiting">การบันทึกเสียงที่รออยู่: %1$d</string>
     <string name="provider_disclosure_transcribe">การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง %1$s\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน</string>
     <string name="settings_consent_reminder">การเตือนเรื่องความยินยอม</string>
+    <string name="settings_consent_reminder_note">ถามครั้งเดียวก่อนการบันทึกครั้งแรก</string>
     <string name="consent_question">คุณแจ้งผู้เข้าร่วมเรื่องการบันทึกเสียงแล้วหรือยัง?</string>
     <string name="consent_body">การบันทึกเสียงนี้ไม่แสดงสัญญาณใดๆ ให้ผู้อื่นในการประชุมรู้ ผู้บันทึกเสียงมีหน้าที่แจ้งให้ผู้อื่นทราบ</string>
     <string name="consent_confirm">แจ้งแล้ว · เริ่มบันทึกเสียง</string>

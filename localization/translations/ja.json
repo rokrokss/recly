@@ -322,14 +322,10 @@
   "recly {0} (build {1}) · android {2}": "recly {0}（ビルド {1}）・android {2}",
   "soon": "まもなく",
   "Audio not yet in Drive is deleted with it.": "Driveに未送信の音声も削除されます。",
-  "{0} recording has not reached Drive yet and stays on this phone.": "Driveに未送信の録音{0}件は、このスマートフォンに残ります。",
-  "{0} recording is waiting.": "録音{0}件が待機中です。",
   "Recordings waiting: {0}": "録音{0}件が待機中です。",
   "Recordings not yet in Drive, kept on this Mac: {0}": "Driveに未送信の録音{0}件は、このMacに残ります。",
   "Recordings not yet in Drive, kept on this PC: {0}": "Driveに未送信の録音{0}件は、このPCに残ります。",
   "Recordings not yet in Drive, kept on this phone: {0}": "Driveに未送信の録音{0}件は、このスマートフォンに残ります。",
-  "{0} recordings are waiting.": "録音{0}件が待機中です。",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "Driveに未送信の録音{0}件は、このスマートフォンに残ります。",
   "{0}, recorded {1}, length {2}, {3}": "{0}、録音日時{1}、長さ{2}、{3}",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "同じアカウントに再接続するまで処理を一時停止します。録音、Driveのファイル、キーは残ります。",
   "Saved on this device": "このデバイスに保存済み",
@@ -571,5 +567,8 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "この端末でタイトルのない録音を文字起こしすると、タイトルを付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。",
   "Fill in speaker names": "話者の名前を自動で入力",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "この端末で録音を文字起こしすると、会話の中で名前を呼ばれた話者に名前を付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "「タイトルを自動で入力」または「話者の名前を自動で入力」がオンのときは、このiPhoneで文字起こしした各録音の文字起こしもここへ送信します。"
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "「タイトルを自動で入力」または「話者の名前を自動で入力」がオンのときは、このiPhoneで文字起こしした各録音の文字起こしもここへ送信します。",
+  "Asked once, before the first recording.": "最初の録音の前に一度だけ確認します。",
+  "Still transcribing on this device — try again once it has finished": "この端末でまだ文字起こし中です。終わってからもう一度お試しください",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "「設定→アプリ→Recly→権限」でオンにしてください。"
 }

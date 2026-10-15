@@ -157,7 +157,7 @@ private class SystemShade(private val context: Context) : AlertShade {
             // library's resources in the library's own R.
             .setSmallIcon(RecordingR.drawable.ic_rec_notification)
             .setContentTitle(context.getString(alert.reason.label))
-            .setContentText(context.resources.getQuantityString(R.plurals.alert_waiting, alert.count, alert.count))
+            .setContentText(context.getString(R.string.alert_waiting, alert.count))
             // docs/10: "A tap goes to the screen that can fix it … It does not end at 'Open app'."
             .setContentIntent(
                 PendingIntent.getActivity(

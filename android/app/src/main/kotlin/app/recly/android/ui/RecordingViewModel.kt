@@ -34,6 +34,7 @@ import kotlinx.coroutines.withContext
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
 import recly.core.job.JobStatus
+import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.LocalEngineStatus
@@ -53,6 +54,12 @@ data class RecordingUiState(
     val autoStart: Long? = null,
     /** docs/12 M8: true while the consent reminder is up, and the recording is waiting on it. */
     val consentPrompt: Boolean = false,
+    /**
+     * The start is past the consent question and waits on the system's permission prompts, which only
+     * the screen can show — it takes this once ([RecordingViewModel.consumePermissionAsk]) and comes back
+     * through [RecordingViewModel.permitted]. The question first, the prompts after it (D4).
+     */
+    val askPermissions: Boolean = false,
     /**
      * What just happened, as names rather than sentences — a stop can report two things at once,
      * and this ViewModel outlives the screen the language setting recreates (docs/07).
@@ -95,6 +102,8 @@ data class Highlighted(val recordingId: String, val sec: Long)
 class RecordingViewModel @JvmOverloads constructor(
     application: Application,
     private val completionEvents: Flow<RecorderEvent> = RecorderService.events,
+    /** docs/03 "Metadata": the recorder's written-audio clock, which a highlight is marked on (D6). */
+    private val recordedSec: suspend () -> Double? = RecorderService::recordedSec,
 ) : AndroidViewModel(application) {
 
     private val settings = AppSettings(application)
@@ -160,6 +169,9 @@ class RecordingViewModel @JvmOverloads constructor(
      * The store is read here rather than kept in a field: a tap can land before the first value of
      * a `DataStore` flow has arrived, and defaulting to "ask" would put the dialog in front of
      * someone who had already turned it off.
+     *
+     * D4: the question comes before the system's permission prompts — the record node, the tile, the
+     * widget and the launcher shortcut all start here, and the prompts follow the answer.
      */
     fun start() {
         _state.update { it.copy(messages = emptyList(), highlighted = null) }
@@ -167,31 +179,33 @@ class RecordingViewModel @JvmOverloads constructor(
         // have to refuse the answer, and a question whose answer cannot count is not worth asking.
         if (refusedByDisconnect()) return
         viewModelScope.launch {
-            if (settings.askConsent.first()) {
-                _state.update { it.copy(consentPrompt = true) }
-            } else {
-                begin()
-            }
+            val ask = settings.askConsent.first()
+            _state.update { it.startAsked(ask) }
         }
     }
 
     /**
      * The reminder's answer. [suppress] is the "do not ask again" box, which — as on the Mac —
-     * applies whichever button was pressed; only [confirmed] starts the recording, because this is
-     * a question and Cancel has to mean something.
+     * applies whichever button was pressed; only [confirmed] goes on to the permissions and the
+     * recording, because this is a question and Cancel has to mean something.
      */
     fun consentAnswered(confirmed: Boolean, suppress: Boolean) {
-        _state.update { it.copy(consentPrompt = false) }
         viewModelScope.launch {
             if (suppress) settings.setConsentReminder(false)
-            if (confirmed) {
-                settings.markConsentAsked()
-                begin()
-            }
+            if (confirmed) settings.markConsentAsked()
+            _state.update { it.consentAnswered(confirmed) }
         }
     }
 
-    private fun begin() {
+    /** Spends the screen's cue to run the permission prompts: one answer is one round of them. */
+    fun consumePermissionAsk(): Boolean {
+        if (!_state.value.askPermissions) return false
+        _state.update { it.copy(askPermissions = false) }
+        return true
+    }
+
+    /** The permissions are there — asked for now or held already: the recorder starts. */
+    fun permitted() {
         if (refusedByDisconnect()) return
         RecorderService.start(getApplication())
     }
@@ -218,8 +232,10 @@ class RecordingViewModel @JvmOverloads constructor(
      */
     fun highlight() {
         val recording = recorder.value as? RecorderState.Recording ?: return
-        val atSec = (kotlin.time.Clock.System.now() - recording.startedAt).inWholeMilliseconds / 1000.0
         viewModelScope.launch {
+            // D6: the audio written so far, not the wall clock since the start — the recorder opens
+            // after `startedAt` is taken, and a clock that is changed meanwhile moves the wall time.
+            val atSec = recordedSec() ?: return@launch
             val core = core()
             if (withContext(core.deps.io) { core.recordings.addHighlight(recording.recordingId, atSec) }) {
                 _state.update { it.copy(highlighted = Highlighted(recording.recordingId, atSec.toLong())) }
@@ -346,11 +362,20 @@ class RecordingViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             val core = core()
             val problem = apply(core)
-            val enqueued = core.enqueue(untitled.recordingId)
+            // D2: a queue that threw is said, not swallowed — the recording is on disk, and recovery
+            // queues a finalized recording with no job at the next start.
+            val enqueued = try {
+                core.enqueue(untitled.recordingId)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                core.deps.logger.log(Logger.Level.ERROR, "shell.recording.enqueue.failed", mapOf("recordingId" to untitled.recordingId), e)
+                null
+            }
             // docs/11 A5 trigger (a). This is the deferred half of the stop: the service could not
             // wake the scheduler because there was no job yet, so it happens here.
             if (enqueued is EnqueueResult.Enqueued) WorkScheduler(getApplication()).onJobsDue()
-            _state.update { it.copy(messages = listOfNotNull(problem, enqueued.describe())) }
+            _state.update { it.copy(messages = listOfNotNull(problem, enqueueMessage(enqueued))) }
         }
     }
 
@@ -372,6 +397,21 @@ internal fun autoStartStillWanted(requestedAt: Long, now: Long): Boolean =
 
 /** Long enough for a cold start on a slow phone, short enough that nobody has forgotten the tap. */
 internal const val AUTO_START_TTL_MS: Long = 10_000
+
+/**
+ * D4: a start asks the consent question first when it is due, and the permission prompts otherwise —
+ * never both at once, and never the prompts before the question.
+ */
+internal fun RecordingUiState.startAsked(askConsent: Boolean): RecordingUiState =
+    if (askConsent) copy(consentPrompt = true, askPermissions = false) else copy(askPermissions = true)
+
+/** The question answered: yes goes on to the permission prompts; Cancel ends the start there. */
+internal fun RecordingUiState.consentAnswered(confirmed: Boolean): RecordingUiState =
+    copy(consentPrompt = false, askPermissions = confirmed)
+
+/** D2: what the queue made of a saved recording; null [result] is an enqueue that threw. */
+internal fun enqueueMessage(result: EnqueueResult?): UiMessage? =
+    if (result == null) UiMessage.Res(R.string.enqueue_failed) else result.describe()
 
 /**
  * ADR-016's selection rules, in the words of the person who just stopped a recording. A recording

@@ -399,10 +399,6 @@
   "recly {0} (build {1}) · android {2}": "recly {0} (kompilacja {1}) · android {2}",
   "soon": "wkrótce",
   "{0} of {1}": "{0} z {1}",
-  "{0} recording has not reached Drive yet and stays on this phone.": "Nagrania nieprzesłane jeszcze na Drive, zachowane na tym telefonie: {0}.",
-  "{0} recording is waiting.": "Oczekujące nagrania: {0}.",
-  "{0} recordings are waiting.": "Oczekujące nagrania: {0}.",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "Nagrania nieprzesłane jeszcze na Drive, zachowane na tym telefonie: {0}.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, nagrano {1}, długość {2}, {3}",
   "Add": "Dodaj",
   "Add a name or term": "Dodaj nazwę lub termin",
@@ -571,5 +567,8 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Gdy to urządzenie transkrybuje nagranie bez tytułu, transkrypcja trafia do ChatGPT po tytuł. Wlicza się to do Twojego użycia ChatGPT.",
   "Fill in speaker names": "Uzupełniaj nazwy mówców",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Gdy to urządzenie transkrybuje nagranie, transkrypcja trafia do ChatGPT, aby nazwać mówców, do których ktoś zwraca się po imieniu. Wlicza się to do Twojego użycia ChatGPT.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Gdy włączone jest Uzupełniaj tytuły lub Uzupełniaj nazwy mówców, trafia tu też transkrypcja każdego nagrania transkrybowanego na tym iPhonie."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Gdy włączone jest Uzupełniaj tytuły lub Uzupełniaj nazwy mówców, trafia tu też transkrypcja każdego nagrania transkrybowanego na tym iPhonie.",
+  "Asked once, before the first recording.": "Pytanie pada raz, przed pierwszym nagraniem.",
+  "Still transcribing on this device — try again once it has finished": "Transkrypcja na tym urządzeniu wciąż trwa — spróbuj ponownie po jej zakończeniu",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "Włącz je w Ustawienia → Aplikacje → Recly → Uprawnienia."
 }

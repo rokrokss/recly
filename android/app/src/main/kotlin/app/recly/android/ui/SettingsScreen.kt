@@ -132,9 +132,8 @@ fun SettingsScreen(
                         BlueprintButton(
                             label = stringResource(if (reachable) R.string.folder_change else R.string.folder_choose),
                             onClick = { folderPicker.launch(null) },
-                            // A folder in use only needs a way to change it; one that cannot be used
-                            // is what stands between the recordings and their copy.
-                            tone = if (reachable) ButtonTone.QUIET else ButtonTone.PRIMARY,
+                            // D26: the accent outline in every state, as Connect Drive's is.
+                            tone = ButtonTone.ACCENT,
                             modifier = Modifier.testTag("folder-choose"),
                         )
                     },
@@ -190,7 +189,12 @@ fun SettingsScreen(
                     it.text(),
                     modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
                     style = MaterialTheme.typography.bodySmall,
-                    color = palette.textMuted,
+                    // D22: a failure in red, something the user can act on in the warning, the rest muted.
+                    color = when (DisconnectGuard.tone(it)) {
+                        MessageTone.DANGER -> palette.danger
+                        MessageTone.WARNING -> palette.warningInk
+                        MessageTone.MUTED -> palette.textMuted
+                    },
                 )
             }
             settings.storageMessage?.let { SectionFootnote(it.text()) }
@@ -261,12 +265,13 @@ fun SettingsScreen(
             )
             // docs/12 M8: the Mac asks before every meeting recording. A phone has no meeting
             // detection, so it asks once before the first one — and the subtitle says so, because
-            // a reminder that behaves differently on two devices has to explain itself.
+            // a reminder that behaves differently on two devices has to explain itself (D4).
             SwitchRow(
                 title = stringResource(R.string.settings_consent_reminder),
                 checked = settings.consentReminder,
                 onCheckedChange = onConsentReminder,
                 modifier = Modifier.testTag("consent-reminder"),
+                subtitle = stringResource(R.string.settings_consent_reminder_note),
             )
 
             Section(stringResource(R.string.settings_uploads))

@@ -16,9 +16,16 @@ import kotlinx.coroutines.launch
  * and the queue is the same queue the screen's badge reads.
  */
 suspend fun Context.entryStatus(): String {
-    val recording = RecorderService.state.value != RecorderState.Idle
-    if (recording) return getString(R.string.recording_active)
+    // P7: the phones' words for the moments either side of the recording.
+    when (RecorderService.state.value) {
+        RecorderState.Idle -> Unit
+        RecorderState.Starting -> return getString(R.string.recording_starting)
+        is RecorderState.Recording -> return getString(R.string.recording_active)
+        RecorderState.Stopping -> return getString(R.string.recording_stopping)
+    }
     val app = applicationContext as? RecWearApp
+    // P1: a recording the phone refused outranks a wait, as on the screen.
+    if ((app?.failedCount() ?: 0) > 0) return getString(R.string.transfer_failed_badge)
     val pending = app?.pendingCount() ?: 0
     if (pending == 0) return getString(R.string.entry_ready)
     // docs/11 W2: the screen's own rule — a pass with a phone on the other end is "sending", and

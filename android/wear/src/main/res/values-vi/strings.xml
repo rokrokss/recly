@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">Bắt đầu</string>
     <string name="recording_stop">Dừng</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">Đang khởi động</string>
     <string name="recording_active">Đang ghi âm</string>
-    <string name="recording_stopping">Đang lưu…</string>
+    <string name="recording_stopping">Đang lưu</string>
     <string name="recording_mic_denied">Cần quyền truy cập micrô</string>
+    <string name="recording_mic_settings">Bật trong Cài đặt → Ứng dụng → Recly → Quyền.</string>
     <string name="recording_save_deferred">Chưa lưu xong — sẽ khôi phục vào lần sau</string>
-    <string name="recording_failed">Thất bại: %1$s</string>
+    <string name="recording_failed">Ghi âm thất bại</string>
     <string name="pending_badge">Chờ gửi</string>
     <string name="sending_badge">Đang gửi</string>
     <string name="transfer_failed_badge">Chuyển dữ liệu thất bại</string>

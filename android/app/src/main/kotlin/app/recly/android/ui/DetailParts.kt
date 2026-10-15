@@ -225,6 +225,8 @@ internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) ->
                 val format = row.export
                 val noAudio = detail.audio.isEmpty && detail.driveFetch == DriveFetch.IDLE
                 val reason = when {
+                    // D14: a take still being written has nothing whole to hand over — every row says so, Audio too.
+                    detail.writing -> stringResource(R.string.detail_still_recording)
                     format == ExportFormat.SUMMARY && (savedSummary(detail.summary) == null || format in unavailable) ->
                         stringResource(R.string.share_no_summary)
                     format == ExportFormat.SUMMARY -> null

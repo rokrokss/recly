@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Titolo della registrazione</string>
     <string name="recording_title_field">Titolo</string>
     <string name="recording_title_save">Salva</string>
-    <string name="recording_title_skip">Salta</string>
     <string name="recording_mic_required">È necessaria l’autorizzazione per il microfono.</string>
     <string name="recording_open_settings">Apri Impostazioni</string>
     <string name="recording_title_too_late">Troppo tardi per salvare il titolo: il caricamento è iniziato</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">L’audio è già stato rimosso</string>
     <string name="enqueue_skipped_short">Troppo breve: ignorata</string>
     <string name="enqueue_already_done">Già elaborata</string>
+    <string name="enqueue_failed">Impossibile creare l’attività</string>
     <string name="jobs_title">Registrazioni</string>
     <string name="jobs_empty">Ancora nessuna registrazione</string>
     <string name="jobs_empty_hint">Le tue registrazioni appariranno qui.</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Elimina anche la cartella di Drive</string>
     <string name="delete_with_folder">Elimina anche dalla cartella locale</string>
     <string name="delete_remote_body">Registrata su un altro dispositivo. L’eliminazione la rimuove da Drive e da tutti i dispositivi.</string>
-    <string name="delete_busy">Caricamento ancora in corso: riprova al termine</string>
+    <string name="delete_busy">Trascrizione ancora in corso su questo dispositivo: riprova quando è finita</string>
     <string name="delete_drive_failed">Eliminata qui, ma Drive ha rifiutato: %1$s</string>
     <string name="delete_folder_failed">Eliminata qui, ma non dalla cartella locale: %1$s</string>
     <string name="delete_unuploaded">Verrà eliminato anche l’audio non ancora su Drive.</string>
     <string name="delete_unuploaded_folder">Verrà eliminato anche l’audio non ancora nella cartella locale.</string>
     <string name="settings_disconnect">Scollega</string>
-    <string name="settings_disconnect_hint">Revoca a questa app l’accesso al tuo account Google.</string>
     <string name="disconnect_title">Scollegare Google Drive?</string>
     <string name="disconnect_other_devices">Recly perde l’accesso a Drive su tutti i dispositivi collegati a questo account Google. Le attività in sospeso si interrompono finché non ricolleghi lo stesso account. Registrazioni e impostazioni restano.</string>
-    <string name="disconnect_local">L’elaborazione in sospeso si interrompe finché non ricolleghi lo stesso account. Registrazioni, file di Drive, flussi di lavoro e chiavi restano.</string>
-    <string name="disconnect_also_delete">Elimina anche le registrazioni su questo telefono</string>
     <string name="disconnect_permissions">Autorizzazioni Google</string>
     <string name="disconnect_revoke_failed">Google non ha revocato l’accesso (%1$s): fallo dalle autorizzazioni del tuo account Google</string>
     <string name="disconnect_done">Scollegato. Le registrazioni su questo telefono restano dove sono.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">Registrazioni non ancora su Drive, conservate su questo telefono: %1$d.</item>
-    </plurals>
     <string name="disconnect_deleted">Scollegato. Registrazioni eliminate da questo telefono: %1$d</string>
     <string name="disconnect_busy">Accesso Google revocato. Registrazioni ancora in corso e conservate: %1$d. Scollega di nuovo quando saranno terminate.</string>
     <string name="disconnect_stop_recording">Prima interrompi la registrazione</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">Il fornitore ha rifiutato la chiave</string>
     <string name="alert_quota">Quota del fornitore esaurita: controlla limiti e fatturazione</string>
     <string name="alert_uploads_waiting">In attesa di Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">Registrazioni in attesa: %1$d.</item>
-    </plurals>
+    <string name="alert_waiting">Registrazioni in attesa: %1$d</string>
     <string name="provider_disclosure_transcribe">La trascrizione esterna invia l’intera registrazione a %1$s.\nPer quanto tempo la conserva e se la usa per l’addestramento dipende dall’informativa del fornitore: Recly non lo controlla.\nLeggi l’informativa del fornitore prima di usarlo.</string>
     <string name="settings_consent_reminder">Promemoria consenso</string>
+    <string name="settings_consent_reminder_note">Chiesto una volta, prima della prima registrazione.</string>
     <string name="consent_question">Hai avvisato i partecipanti della registrazione?</string>
     <string name="consent_body">Questa registrazione non lascia alcun segno visibile agli altri partecipanti alla riunione. Informarli è responsabilità di chi registra.</string>
     <string name="consent_confirm">Li ho avvisati · Avvia registrazione</string>

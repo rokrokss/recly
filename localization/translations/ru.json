@@ -322,14 +322,10 @@
   "recly {0} (build {1}) · android {2}": "recly {0} (сборка {1}) · android {2}",
   "soon": "скоро",
   "Audio not yet in Drive is deleted with it.": "Также удалится аудио, ещё не загруженное в Drive.",
-  "{0} recording has not reached Drive yet and stays on this phone.": "Ещё не загруженные в Drive записи останутся на этом телефоне: {0}.",
-  "{0} recording is waiting.": "Ожидающих записей: {0}.",
   "Recordings waiting: {0}": "Ожидающих записей: {0}.",
   "Recordings not yet in Drive, kept on this Mac: {0}": "Ещё не загруженные в Drive записи останутся на этом Mac: {0}.",
   "Recordings not yet in Drive, kept on this PC: {0}": "Ещё не загруженные в Drive записи останутся на этом ПК: {0}.",
   "Recordings not yet in Drive, kept on this phone: {0}": "Ещё не загруженные в Drive записи останутся на этом телефоне: {0}.",
-  "{0} recordings are waiting.": "Ожидающих записей: {0}.",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "Ещё не загруженные в Drive записи останутся на этом телефоне: {0}.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, записано {1}, длительность {2}, {3}",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Обработка приостановится до повторного подключения того же аккаунта. Записи, файлы Drive и ключи сохранятся.",
   "Saved on this device": "Сохранён на этом устройстве",
@@ -571,5 +567,8 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Когда это устройство расшифровывает запись без названия, расшифровка отправляется в ChatGPT, чтобы получить название. Это входит в ваше использование ChatGPT.",
   "Fill in speaker names": "Заполнять имена говорящих",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Когда это устройство расшифровывает запись, расшифровка отправляется в ChatGPT, чтобы назвать говорящих, к которым в ней обращаются по имени. Это входит в ваше использование ChatGPT.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Если включено «Заполнять названия» или «Заполнять имена говорящих», сюда также отправляется расшифровка каждой записи, которую расшифровывает этот iPhone."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Если включено «Заполнять названия» или «Заполнять имена говорящих», сюда также отправляется расшифровка каждой записи, которую расшифровывает этот iPhone.",
+  "Asked once, before the first recording.": "Спрашивается один раз, перед первой записью.",
+  "Still transcribing on this device — try again once it has finished": "На этом устройстве ещё идёт расшифровка — попробуйте снова, когда она завершится",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "Включите его в разделе Настройки → Приложения → Recly → Разрешения."
 }

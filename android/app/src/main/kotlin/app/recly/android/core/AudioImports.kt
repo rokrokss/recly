@@ -4,11 +4,14 @@ package app.recly.android.core
 
 import android.content.Context
 import android.net.Uri
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import java.io.File
 import java.io.InputStream
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -60,15 +63,15 @@ class AudioImports private constructor(private val context: Context) {
         _failure.value = null
     }
 
-    /** A picked or shared file, opened while its grant holds, with the name its provider gave it. */
-    private class Source(val input: InputStream, val name: String)
+    /** A picked or shared file, opened while its grant holds, with the name and date its provider gave it. */
+    private class Source(val input: InputStream, val name: String, val date: Instant?)
 
-    /** A file copied into the cache, with the name its provider gave it. */
-    private class Staged(val copy: File, val name: String)
+    /** A file copied into the cache, with the name and date its provider gave it. */
+    private class Staged(val copy: File, val name: String, val date: Instant?)
 
     private fun open(uri: Uri): Source {
         val input = context.contentResolver.openInputStream(uri) ?: throw java.io.FileNotFoundException(uri.toString())
-        return Source(input, displayName(uri))
+        return Source(input, displayName(uri), fileDate(uri))
     }
 
     /**
@@ -80,7 +83,7 @@ class AudioImports private constructor(private val context: Context) {
         return try {
             copy.parentFile!!.mkdirs()
             source.input.use { input -> copy.outputStream().use { input.copyTo(it) } }
-            Staged(copy, source.name)
+            Staged(copy, source.name, source.date)
         } catch (e: Exception) {
             failed(e)
             copy.delete()
@@ -97,7 +100,7 @@ class AudioImports private constructor(private val context: Context) {
     private suspend fun importOne(staged: Staged) {
         val core = CoreModule.get(context).core
         try {
-            when (val result = core.importAudio(staged.copy.path, staged.name, null, AndroidAudioImporter(Dispatchers.Default))) {
+            when (val result = core.importAudio(staged.copy.path, staged.name, staged.date, AndroidAudioImporter(Dispatchers.Default))) {
                 is ImportResult.Imported -> {
                     // Queued by the core like a stopped recording: the scheduler is woken the way the
                     // recorder's stop wakes it, and the waveform is drawn ahead of the first open.
@@ -123,6 +126,24 @@ class AudioImports private constructor(private val context: Context) {
         }
     }.getOrNull() ?: uri.lastPathSegment.orEmpty()
 
+    /**
+     * D27: the file's own date — the recording starts then, as a voice memo from last week starts last week. All
+     * columns are asked for, because a provider throws on one it does not have and each names its own; a provider
+     * that offers neither (a share through a `FileProvider` gives only the name and size) leaves the core's "now".
+     */
+    private fun fileDate(uri: Uri): Instant? = runCatching {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            fun long(column: String): Long? =
+                cursor.getColumnIndex(column).takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getLong)
+            importDate(
+                createdMs = long(MediaStore.MediaColumns.DATE_TAKEN),
+                modifiedMs = long(DocumentsContract.Document.COLUMN_LAST_MODIFIED),
+                modifiedSec = long(MediaStore.MediaColumns.DATE_MODIFIED),
+            )
+        }
+    }.getOrNull()
+
     companion object {
         private const val IMPORTS = "import"
 
@@ -133,3 +154,13 @@ class AudioImports private constructor(private val context: Context) {
         }
     }
 }
+
+/**
+ * D27: an imported file starts at its creation date when there is one, else at its modification date. Android
+ * providers have no creation date of their own; MediaStore's `datetaken` — the media's own — is the nearest, and
+ * the modification date comes as milliseconds from a document provider or as seconds from MediaStore. Zero or
+ * below is no date at all.
+ */
+internal fun importDate(createdMs: Long?, modifiedMs: Long?, modifiedSec: Long?): Instant? =
+    (createdMs?.takeIf { it > 0 } ?: modifiedMs?.takeIf { it > 0 } ?: modifiedSec?.takeIf { it > 0 }?.times(1000))
+        ?.let(Instant::fromEpochMilliseconds)

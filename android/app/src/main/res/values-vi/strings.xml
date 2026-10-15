@@ -28,7 +28,6 @@
     <string name="recording_title_prompt">Tiêu đề bản ghi âm</string>
     <string name="recording_title_field">Tiêu đề</string>
     <string name="recording_title_save">Lưu</string>
-    <string name="recording_title_skip">Bỏ qua</string>
     <string name="recording_mic_required">Cần cấp quyền truy cập micrô.</string>
     <string name="recording_open_settings">Mở Cài đặt</string>
     <string name="recording_title_too_late">Đã quá muộn để lưu tiêu đề — quá trình tải lên đã bắt đầu</string>
@@ -38,6 +37,7 @@
     <string name="enqueue_parts_purged">Âm thanh đã được dọn dẹp</string>
     <string name="enqueue_skipped_short">Quá ngắn — đã bỏ qua</string>
     <string name="enqueue_already_done">Đã xử lý</string>
+    <string name="enqueue_failed">Không thể tạo tác vụ</string>
     <string name="jobs_title">Bản ghi âm</string>
     <string name="jobs_empty">Chưa có bản ghi âm nào</string>
     <string name="jobs_empty_hint">Các bản ghi âm của bạn sẽ hiển thị ở đây.</string>
@@ -161,23 +161,17 @@
     <string name="delete_with_drive">Xóa cả thư mục Drive</string>
     <string name="delete_with_folder">Xóa cả khỏi thư mục cục bộ</string>
     <string name="delete_remote_body">Được ghi trên thiết bị khác. Khi xóa, bản ghi âm sẽ bị xóa khỏi Drive và mọi thiết bị.</string>
-    <string name="delete_busy">Vẫn đang tải lên — hãy thử lại khi hoàn tất</string>
+    <string name="delete_busy">Vẫn đang chép lời trên thiết bị này — hãy thử lại khi xong</string>
     <string name="delete_drive_failed">Đã xóa ở đây nhưng Drive từ chối: %1$s</string>
     <string name="delete_folder_failed">Đã xóa ở đây nhưng không xóa được khỏi thư mục cục bộ: %1$s</string>
     <string name="delete_unuploaded">Âm thanh chưa được tải lên Drive cũng sẽ bị xóa theo.</string>
     <string name="delete_unuploaded_folder">Âm thanh chưa được lưu vào thư mục cục bộ cũng sẽ bị xóa theo.</string>
     <string name="settings_disconnect">Ngắt kết nối</string>
-    <string name="settings_disconnect_hint">Thu hồi quyền truy cập của ứng dụng này vào tài khoản Google của bạn.</string>
     <string name="disconnect_title">Ngắt kết nối Google Drive?</string>
     <string name="disconnect_other_devices">Recly sẽ mất quyền truy cập Drive trên mọi thiết bị kết nối với tài khoản Google này. Công việc đang chờ sẽ tạm dừng cho đến khi bạn kết nối lại cùng tài khoản. Bản ghi âm và cài đặt vẫn được giữ.</string>
-    <string name="disconnect_local">Việc xử lý đang chờ sẽ tạm dừng cho đến khi bạn kết nối lại cùng tài khoản. Bản ghi âm, tệp Drive, quy trình và khóa vẫn được giữ.</string>
-    <string name="disconnect_also_delete">Xóa cả các bản ghi âm trên điện thoại này</string>
     <string name="disconnect_permissions">Quyền truy cập Google</string>
     <string name="disconnect_revoke_failed">Google không thu hồi quyền truy cập (%1$s) — hãy tự thu hồi trong phần quyền của tài khoản Google</string>
     <string name="disconnect_done">Đã ngắt kết nối. Các bản ghi âm trên điện thoại này vẫn được giữ nguyên.</string>
-    <plurals name="disconnect_unuploaded">
-        <item quantity="other">%1$d bản ghi âm chưa được tải lên Drive và vẫn ở trên điện thoại này.</item>
-    </plurals>
     <string name="disconnect_deleted">Đã ngắt kết nối. Đã xóa %1$d bản ghi âm khỏi điện thoại này</string>
     <string name="disconnect_busy">Đã thu hồi quyền truy cập Google. Vẫn giữ lại %1$d bản ghi âm đang xử lý — hãy ngắt kết nối lại khi chúng hoàn tất.</string>
     <string name="disconnect_stop_recording">Hãy dừng ghi âm trước</string>
@@ -196,11 +190,10 @@
     <string name="alert_auth_rejected">Nhà cung cấp đã từ chối khóa</string>
     <string name="alert_quota">Nhà cung cấp đã hết hạn mức — hãy kiểm tra giới hạn và thanh toán</string>
     <string name="alert_uploads_waiting">Đang chờ Drive: %1$d</string>
-    <plurals name="alert_waiting">
-        <item quantity="other">%1$d bản ghi âm đang chờ.</item>
-    </plurals>
+    <string name="alert_waiting">Bản ghi âm đang chờ: %1$d</string>
     <string name="provider_disclosure_transcribe">Chép lời bên ngoài sẽ gửi toàn bộ bản ghi âm đến %1$s.\nThời gian lưu giữ và việc có dùng để huấn luyện hay không là do chính sách riêng của nhà cung cấp đó — Recly không kiểm soát.\nHãy đọc chính sách của nhà cung cấp trước khi sử dụng.</string>
     <string name="settings_consent_reminder">Nhắc về sự đồng ý</string>
+    <string name="settings_consent_reminder_note">Hỏi một lần, trước bản ghi đầu tiên.</string>
     <string name="consent_question">Bạn đã báo cho người tham gia về việc ghi âm chưa?</string>
     <string name="consent_body">Việc ghi âm này không hiển thị dấu hiệu nào cho những người khác trong cuộc họp. Người ghi âm có trách nhiệm thông báo cho họ.</string>
     <string name="consent_confirm">Tôi đã báo · Bắt đầu ghi âm</string>

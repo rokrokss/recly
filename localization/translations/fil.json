@@ -399,10 +399,6 @@
   "recly {0} (build {1}) · android {2}": "recly {0} (build {1}) · android {2}",
   "soon": "maya-maya",
   "{0} of {1}": "{0} ng {1}",
-  "{0} recording has not reached Drive yet and stays on this phone.": "Mga recording na wala pa sa Drive, nananatili sa teleponong ito: {0}.",
-  "{0} recording is waiting.": "Mga recording na naghihintay: {0}.",
-  "{0} recordings are waiting.": "Mga recording na naghihintay: {0}.",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "Mga recording na wala pa sa Drive, nananatili sa teleponong ito: {0}.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, na-record {1}, haba {2}, {3}",
   "Add": "Idagdag",
   "Add a name or term": "Magdagdag ng pangalan o termino",
@@ -571,5 +567,8 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Kapag nag-transcribe ang device na ito ng recording na walang pamagat, ipinapadala ang transcript sa ChatGPT para sa pamagat. Kasama ito sa paggamit mo ng ChatGPT.",
   "Fill in speaker names": "Kusang lagyan ng pangalan ang mga nagsasalita",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Kapag nag-transcribe ang device na ito ng recording, ipinapadala ang transcript sa ChatGPT para pangalanan ang mga nagsasalitang tinatawag sa pangalan dito. Kasama ito sa paggamit mo ng ChatGPT.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Kapag naka-on ang Kusang lagyan ng pamagat o Kusang lagyan ng pangalan ang mga nagsasalita, ipinapadala rin dito ang transcript ng bawat recording na tina-transcribe ng iPhone na ito."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Kapag naka-on ang Kusang lagyan ng pamagat o Kusang lagyan ng pangalan ang mga nagsasalita, ipinapadala rin dito ang transcript ng bawat recording na tina-transcribe ng iPhone na ito.",
+  "Asked once, before the first recording.": "Itinatanong nang isang beses, bago ang unang recording.",
+  "Still transcribing on this device — try again once it has finished": "Nagta-transcribe pa sa device na ito — subukan ulit kapag tapos na",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "I-on ito sa Mga Setting → Mga App → Recly → Mga Pahintulot."
 }

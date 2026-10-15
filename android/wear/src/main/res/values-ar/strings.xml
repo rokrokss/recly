@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">بدء</string>
     <string name="recording_stop">إيقاف</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">جارٍ التشغيل</string>
     <string name="recording_active">جارٍ التسجيل</string>
-    <string name="recording_stopping">جارٍ الحفظ…</string>
+    <string name="recording_stopping">جارٍ الحفظ</string>
     <string name="recording_mic_denied">يلزم إذن الميكروفون</string>
+    <string name="recording_mic_settings">شغّله من الإعدادات ← التطبيقات ← Recly ← الأذونات.</string>
     <string name="recording_save_deferred">لم يكتمل الحفظ — ستتم الاستعادة لاحقًا</string>
-    <string name="recording_failed">فشل: %1$s</string>
+    <string name="recording_failed">فشل التسجيل</string>
     <string name="pending_badge">بانتظار الإرسال</string>
     <string name="sending_badge">جارٍ الإرسال</string>
     <string name="transfer_failed_badge">فشل النقل</string>

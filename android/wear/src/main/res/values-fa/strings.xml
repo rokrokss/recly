@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">شروع</string>
     <string name="recording_stop">توقف</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">در حال راه‌اندازی</string>
     <string name="recording_active">در حال ضبط</string>
-    <string name="recording_stopping">در حال ذخیره…</string>
+    <string name="recording_stopping">در حال ذخیره</string>
     <string name="recording_mic_denied">اجازه میکروفون لازم است</string>
+    <string name="recording_mic_settings">آن را در تنظیمات ← برنامه‌ها ← Recly ← مجوزها روشن کنید.</string>
     <string name="recording_save_deferred">ذخیره کامل نشد؛ دفعه بعد بازیابی می‌شود</string>
-    <string name="recording_failed">ناموفق: %1$s</string>
+    <string name="recording_failed">ضبط ناموفق بود</string>
     <string name="pending_badge">در انتظار ارسال</string>
     <string name="sending_badge">در حال ارسال</string>
     <string name="transfer_failed_badge">انتقال ناموفق بود</string>

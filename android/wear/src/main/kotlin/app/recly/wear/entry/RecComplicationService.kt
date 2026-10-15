@@ -48,6 +48,7 @@ class RecComplicationService : SuspendingComplicationDataSourceService() {
             // docs/11 W2: the same rule as the screen and the tile — a pass with a phone on the other
             // end is "sending", not "waiting" (Sol, 2026-09-04: the description said so, the text did not).
             sending = app?.queue?.sending?.value == true,
+            failed = app?.failedCount() ?: 0,
         )
         return data(request.complicationType, look)
     }
@@ -138,15 +139,17 @@ internal sealed interface ComplicationLook {
 /**
  * A recording being made outranks recordings waiting to go: it is the one the user is wearing the
  * watch for. The moments before the first sample and while the take is saved have no start time to
- * count from, and say so with the recorder's own words.
+ * count from, and say so with the phones' words, `Starting` and `Saving` (P7). A recording the phone
+ * refused outranks a wait, as on the screen (P1): its audio is still here and nothing will retry it.
  */
-internal fun complicationLook(recorder: RecorderState, pending: Int, sending: Boolean): ComplicationLook = when (recorder) {
+internal fun complicationLook(recorder: RecorderState, pending: Int, sending: Boolean, failed: Int = 0): ComplicationLook = when (recorder) {
     is RecorderState.Recording -> ComplicationLook.Elapsed(recorder.startedAt.toEpochMilliseconds())
     RecorderState.Starting ->
-        ComplicationLook.Words(R.string.recording_busy, R.string.recording_active, R.drawable.ic_complication_recording)
+        ComplicationLook.Words(R.string.recording_starting, R.string.recording_starting, R.drawable.ic_complication_recording)
     RecorderState.Stopping ->
-        ComplicationLook.Words(R.string.recording_busy, R.string.recording_stopping, R.drawable.ic_complication_recording)
+        ComplicationLook.Words(R.string.recording_stopping, R.string.recording_stopping, R.drawable.ic_complication_recording)
     RecorderState.Idle -> when {
+        failed > 0 -> ComplicationLook.Words(R.string.transfer_failed_badge, R.string.transfer_failed_badge, R.drawable.ic_complication_record)
         pending > 0 && sending -> ComplicationLook.Words(R.string.complication_sending, R.string.sending_badge, R.drawable.ic_complication_record)
         pending > 0 -> ComplicationLook.Words(R.string.complication_pending, R.string.pending_badge, R.drawable.ic_complication_record)
         else -> ComplicationLook.Words(R.string.complication_idle, R.string.entry_ready, R.drawable.ic_complication_record)

@@ -399,10 +399,6 @@
   "recly {0} (build {1}) · android {2}": "recly {0} (derleme {1}) · android {2}",
   "soon": "yakında",
   "{0} of {1}": "{0} / {1}",
-  "{0} recording has not reached Drive yet and stays on this phone.": "Henüz Drive'a yüklenmeyen, bu telefonda tutulan kayıtlar: {0}.",
-  "{0} recording is waiting.": "Bekleyen kayıtlar: {0}.",
-  "{0} recordings are waiting.": "Bekleyen kayıtlar: {0}.",
-  "{0} recordings have not reached Drive yet and stay on this phone.": "Henüz Drive'a yüklenmeyen, bu telefonda tutulan kayıtlar: {0}.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, kayıt tarihi {1}, süre {2}, {3}",
   "Add": "Ekle",
   "Add a name or term": "Ad veya terim ekle",
@@ -571,5 +567,8 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "Bu cihaz başlıksız bir kaydı metne dönüştürdüğünde, başlık için döküm ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır.",
   "Fill in speaker names": "Konuşmacı adlarını doldur",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Bu cihaz bir kaydı metne dönüştürdüğünde, dökümde adıyla seslenilen konuşmacılara ad vermek için döküm ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır.",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Başlıkları doldur veya Konuşmacı adlarını doldur açıkken, bu iPhone’un metne dönüştürdüğü her kaydın dökümü de buraya gönderilir."
+  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Başlıkları doldur veya Konuşmacı adlarını doldur açıkken, bu iPhone’un metne dönüştürdüğü her kaydın dökümü de buraya gönderilir.",
+  "Asked once, before the first recording.": "İlk kayıttan önce bir kez sorulur.",
+  "Still transcribing on this device — try again once it has finished": "Bu cihazda metne dönüştürme sürüyor — bittiğinde yeniden deneyin",
+  "Turn it on in Settings → Apps → Recly → Permissions.": "Ayarlar → Uygulamalar → Recly → İzinler bölümünden açın."
 }

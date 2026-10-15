@@ -4,12 +4,13 @@
     <string name="app_name">Recly</string>
     <string name="recording_start">Simulan</string>
     <string name="recording_stop">Ihinto</string>
-    <string name="recording_busy">…</string>
+    <string name="recording_starting">Sinisimulan</string>
     <string name="recording_active">Nagre-record</string>
-    <string name="recording_stopping">Sine-save…</string>
+    <string name="recording_stopping">Sine-save</string>
     <string name="recording_mic_denied">Kailangan ang pahintulot sa mikropono</string>
+    <string name="recording_mic_settings">I-on ito sa Mga Setting → Mga App → Recly → Mga Pahintulot.</string>
     <string name="recording_save_deferred">Kulang ang pag-save — mababawi mamaya</string>
-    <string name="recording_failed">Nabigo: %1$s</string>
+    <string name="recording_failed">Nabigo ang pag-record</string>
     <string name="pending_badge">Naghihintay maipadala</string>
     <string name="sending_badge">Ipinapadala</string>
     <string name="transfer_failed_badge">Nabigo ang paglilipat</string>
