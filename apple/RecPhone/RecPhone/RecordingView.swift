@@ -77,6 +77,7 @@ struct RecordingView: View {
                 title: $title,
                 participants: $participants,
                 asksPeople: !(model.processing?.transcriptionOff ?? false),
+                chatGpt: model.chatGpt,
                 onSave: { finishNaming(with: title, participants: participants) },
                 onCancel: cancelNaming
             )
@@ -321,9 +322,11 @@ struct RecordingView: View {
     private func finishNaming(with typed: String?, participants count: Int?) {
         guard model.naming != nil else { return }
         let answer = typed
+        // As the sheet showed it when Save was pressed.
+        let fill = model.fillsAfterStop
         title = ""
         participants = nil
-        Task { await model.finishNaming(with: answer, participants: count) }
+        Task { await model.finishNaming(with: answer, participants: count, fill: fill) }
     }
 
     private func cancelNaming() {
@@ -377,73 +380,93 @@ private struct ConsentDialog: View {
 }
 
 /// docs/03: the name, and how many people were in the room — the hint `transcribe` trusts over the
-/// workflow's own `speakers` (docs/08). "Unknown" is where it starts and it writes nothing.
+/// workflow's own `speakers` (docs/08). "Unknown" is where it starts and it writes nothing. Under them, the ChatGPT
+/// box of docs/08 "Titles and speaker names".
 ///
 /// A sheet rather than the alert the title alone used to be: an alert holds no picker.
 private struct NamingSheet: View {
     @Binding var title: String
     @Binding var participants: Int?
-    /// 2026-10-10 (3.5): the count is a hint to the transcription, so it is not asked while transcription is off.
+    /// 2026-10-10 (3.5): the count is a hint to the transcription, so it is not asked while transcription is off —
+    /// nor is a fill of the transcript.
     let asksPeople: Bool
+    /// The ChatGPT box's state and the permission it asks for; nil until the core is open.
+    let chatGpt: ChatGptSettingsModel?
     let onSave: () -> Void
     let onCancel: () -> Void
 
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
+    /// The sheet is as tall as what it asks, as a dialog's is ([BlueprintDialogSheet]): the ChatGPT box and its
+    /// note do not fit the half height on every phone.
+    @State private var height: CGFloat?
 
     /// docs/03: 2 · 3 · 4 · 5 · 6+ · unknown. docs/08 caps the hint at 10 speakers, so "6+" asks
     /// for six and lets the provider find more.
     private let choices: [Int?] = [nil, 2, 3, 4, 5, 6]
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScreenHeader(title: loc("Recording title"))
-            HairLine()
-            VStack(alignment: .leading, spacing: Space.m) {
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))
-                        .accessibilityIdentifier("titleField")
-                }
-                if asksPeople {
-                    VStack(alignment: .leading, spacing: Space.xs) {
-                        Text(verbatim: loc("People in the room"))
-                            .font(blueprint.fonts.label)
-                            .tracking(0.6)
-                            .foregroundStyle(blueprint.palette.textMuted)
-                        // docs/09 Fluid typography: six chips across a phone is a row at the design's own type
-                        // size and several rows at the user's.
-                        FlowLayout {
-                            ForEach(choices, id: \.self) { choice in
-                                BlueprintChip(label(choice), selected: participants == choice) {
-                                    participants = choice
-                                }
-                            }
-                        }
-                        .accessibilityIdentifier("participants")
-                    }
-                }
-                // docs/03 "Titles" · 2026-10-08 §5: the second answer throws the recording away, so it
-                // says so, in the red of every other irreversible delete. Side by side while both fit;
-                // stacked full width when they do not (docs/09 screen principle 8).
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: Space.s) {
-                        Spacer(minLength: 0)
-                        answers
-                    }
-                    VStack(spacing: Space.s) {
-                        answers
-                    }
-                    .environment(\.blueprintButtonFillsWidth, true)
-                }
+        ScrollView {
+            VStack(spacing: 0) {
+                ScreenHeader(title: loc("Recording title"))
+                HairLine()
+                fields
             }
-            .padding(Space.m)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
         }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .dotGridBackground()
-        .presentationDetents([.medium])
+        .presentationDetents(height.map { [.height($0)] } ?? [.medium])
         // docs/03 "Titles" · 2026-10-10 (1.3): the take leaves this sheet only through its two answers — a swipe
         // down was a Discard nobody chose.
         .interactiveDismissDisabled()
+    }
+
+    private var fields: some View {
+        VStack(alignment: .leading, spacing: Space.m) {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))
+                    .accessibilityIdentifier("titleField")
+            }
+            if asksPeople {
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    Text(verbatim: loc("People in the room"))
+                        .font(blueprint.fonts.label)
+                        .tracking(0.6)
+                        .foregroundStyle(blueprint.palette.textMuted)
+                    // docs/09 Fluid typography: six chips across a phone is a row at the design's own type
+                    // size and several rows at the user's.
+                    FlowLayout {
+                        ForEach(choices, id: \.self) { choice in
+                            BlueprintChip(label(choice), selected: participants == choice) {
+                                participants = choice
+                            }
+                        }
+                    }
+                    .accessibilityIdentifier("participants")
+                }
+            }
+            // docs/08 "Titles and speaker names": only while transcription is on and ChatGPT is signed in.
+            if asksPeople, let chatGpt {
+                FillAfterStopChoice(model: chatGpt)
+            }
+            // docs/03 "Titles" · 2026-10-08 §5: the second answer throws the recording away, so it
+            // says so, in the red of every other irreversible delete. Side by side while both fit;
+            // stacked full width when they do not (docs/09 screen principle 8).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Space.s) {
+                    Spacer(minLength: 0)
+                    answers
+                }
+                VStack(spacing: Space.s) {
+                    answers
+                }
+                .environment(\.blueprintButtonFillsWidth, true)
+            }
+        }
+        .padding(Space.m)
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 
     @ViewBuilder private var answers: some View {

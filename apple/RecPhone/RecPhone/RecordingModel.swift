@@ -579,11 +579,21 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
+    /// docs/08 "Titles and speaker names": the title sheet shows its ChatGPT box ticked — transcription is on,
+    /// ChatGPT is signed in, and the box was left ticked.
+    var fillsAfterStop: Bool {
+        guard let chatGpt, !(processing?.transcriptionOff ?? false) else { return false }
+        return chatGpt.fillOffered && chatGpt.preferences.fillAfterStop
+    }
+
     /// Saves the title prompt's answer and queues the recording, including an empty title.
     ///
-    /// - Parameter participants: how many people were in the room, or nil for "unknown" — docs/03's
-    ///   `context.participants`, which docs/08 lets override the settings' speaker hint.
-    func finishNaming(with title: String?, participants: Int? = nil) async {
+    /// - Parameters:
+    ///   - participants: how many people were in the room, or nil for "unknown" — docs/03's
+    ///     `context.participants`, which docs/08 lets override the settings' speaker hint.
+    ///   - fill: the ChatGPT box was ticked: the recording's publication first asks for its title and speaker names
+    ///     (docs/08 "Titles and speaker names") — asked after the title is written and before the job is queued.
+    func finishNaming(with title: String?, participants: Int? = nil, fill: Bool = false) async {
         guard let naming else { return }
         self.naming = nil
         let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -596,6 +606,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 participants: participants.map { KotlinInt(int: Int32($0)) }
             )
             titleRefused = saved?.boolValue != true
+        }
+        if fill {
+            do {
+                try await bridge?.core.requestFill(recordingId: naming.id)
+            } catch {
+                logger.error("shell.chatgpt.fill.request.failed error=\(String(describing: error), privacy: .private)")
+            }
         }
         await enqueue(recordingId: naming.id)
         // docs/03 "Titles": the job had read the meta already, so the name is not the recording's. Said over the
