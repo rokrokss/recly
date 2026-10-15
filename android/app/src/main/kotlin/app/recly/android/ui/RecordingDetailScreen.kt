@@ -89,6 +89,7 @@ import kotlinx.coroutines.launch
 import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.FillResult
+import recly.core.chatgpt.FillRun
 import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
 import recly.core.processing.ProcessingTranscription
@@ -159,10 +160,13 @@ class DetailActions(
     val askPresets: suspend () -> List<AskPreset> = { emptyList() },
     val onAsk: (AskPreset?, String?) -> Unit = { _, _ -> },
     val onClearAsk: () -> Unit = {},
-    /** docs/08 "Titles and speaker names": More → Fill in title and names, and what came of it — null when the call threw. */
-    val onFill: suspend () -> FillResult? = { null },
-    /** That fill, asked from this page, is still running: the item says `Filling in…`. */
-    val filling: Boolean = false,
+    /** docs/08 "Titles and speaker names": More → Fill in title or Fill in speaker names, and what came of it — null when the call threw. */
+    val onFill: suspend (FillHalf) -> FillResult? = { null },
+    /**
+     * The recording's fill asking ChatGPT now (`observeFills()`), from this page or the title sheet: its items say
+     * `Filling in…`, and the line under the header says what is being filled in.
+     */
+    val fill: FillRun? = null,
 )
 
 /**
@@ -443,22 +447,32 @@ fun RecordingDetailScreen(
                                     savedSummary(detail.summary)?.let { summaryDraft = SummaryDraft.of(it); view = DetailView.SUMMARY }
                                 },
                                 onAsk = { asking = true },
-                                onFill = {
+                                onFill = { half ->
                                     scope.launch {
-                                        when (val notice = fillNotice(actions.onFill(), detail.busyReason)) {
+                                        when (val notice = fillNotice(actions.onFill(half), half, detail.busyReason)) {
                                             is FillNotice.Refused -> refusal = notice.reason
                                             is FillNotice.Failed -> fillFailure = notice
                                             null -> Unit
                                         }
                                     }
                                 },
-                            ), filling = actions.filling)
+                            ), fill = actions.fill)
                         }
                     }
                 },
             )
         }
         HairLine()
+        // docs/09 "Summary view": what a fill of this recording is filling in, from this page or the title sheet, the
+        // title's line first — gone when the run ends.
+        val filling = FillHalf.entries.filter { it.runs(actions.fill) }
+        if (filling.isNotEmpty() && !detail.loading) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s).testTag("detail-filling"),
+                verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
+                filling.forEach { half -> LoadingText(stringResource(half.running), MaterialTheme.typography.bodySmall, blueprint.textMuted) }
+            }
+            HairLine()
+        }
         refusal?.let {
             Text(stringResource(it), Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s).testTag("detail-refusal"),
                 style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
@@ -468,7 +482,7 @@ fun RecordingDetailScreen(
             // A failure in the failure colour (docs/09 "Accessibility"), the core's sentence under it.
             Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s).testTag("detail-fill-failed"),
                 verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-                Text(stringResource(R.string.fill_failed), style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
+                Text(stringResource(failed.half.failed), style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                 failed.reason?.let { Text(coreMessage(it).text(), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
             }
             HairLine()

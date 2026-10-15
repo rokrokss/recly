@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">ماڈل کا انتظار</string>
     <string name="badge_storage_full">اسٹوریج بھر گئی</string>
     <string name="badge_waiting_folder">فولڈر کا انتظار</string>
+    <string name="badge_filling">بھرا جا رہا ہے</string>
     <string name="node_state_ready">تیار</string>
     <string name="node_state_starting">شروع ہو رہا ہے</string>
     <string name="node_state_saving">محفوظ ہو رہا ہے</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">پوچھیں</string>
     <string name="ask_running">پوچھا جا رہا ہے…</string>
     <string name="ask_failed">جواب نہیں دیا جا سکا</string>
-    <string name="fill_menu">عنوان اور نام بھریں</string>
-    <string name="fill_after_stop">ChatGPT سے عنوان اور بولنے والوں کے نام بھریں</string>
     <string name="fill_after_stop_note">ٹرانسکرپٹ تیار ہونے پر اسے ChatGPT کو بھیجا جاتا ہے تاکہ خالی عنوان اور نام لے کر پکارے گئے بولنے والوں کے نام مل سکیں۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔</string>
-    <string name="fill_nothing">عنوان اور نام پہلے سے بھرے ہوئے ہیں</string>
     <string name="fill_running">بھرا جا رہا ہے…</string>
-    <string name="fill_failed">عنوان اور نام نہیں بھرے جا سکے</string>
+    <string name="fill_title_menu">عنوان بھریں</string>
+    <string name="fill_names_menu">بولنے والوں کے نام بھریں</string>
+    <string name="fill_title_after_stop">ChatGPT سے عنوان بھریں</string>
+    <string name="fill_names_after_stop">ChatGPT سے بولنے والوں کے نام بھریں</string>
+    <string name="fill_has_title">عنوان پہلے سے موجود ہے</string>
+    <string name="fill_no_unnamed">کوئی بے نام بولنے والا نہیں</string>
+    <string name="fill_title_running">عنوان بھرا جا رہا ہے…</string>
+    <string name="fill_names_running">بولنے والوں کے نام بھرے جا رہے ہیں…</string>
+    <string name="fill_title_failed">عنوان نہیں بھرا جا سکا</string>
+    <string name="fill_names_failed">بولنے والوں کے نام نہیں بھرے جا سکے</string>
     <string name="share_no_summary">ابھی کوئی خلاصہ نہیں</string>
     <string name="speaker_me">میں</string>
 </resources>

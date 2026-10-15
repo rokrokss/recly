@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Inasubiri modeli</string>
     <string name="badge_storage_full">Hifadhi imejaa</string>
     <string name="badge_waiting_folder">Inasubiri folda</string>
+    <string name="badge_filling">Inajaza</string>
     <string name="node_state_ready">Tayari</string>
     <string name="node_state_starting">Inaanzishwa</string>
     <string name="node_state_saving">Inahifadhi</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Uliza</string>
     <string name="ask_running">Inauliza…</string>
     <string name="ask_failed">Imeshindwa kujibu</string>
-    <string name="fill_menu">Jaza kichwa na majina</string>
-    <string name="fill_after_stop">Jaza kichwa na majina ya wazungumzaji kwa ChatGPT</string>
     <string name="fill_after_stop_note">Nakala ikishakamilika, hutumwa kwa ChatGPT ili kupata kichwa kinachokosekana na majina ya wazungumzaji walioitwa kwa majina. Hii huhesabiwa katika matumizi yako ya ChatGPT.</string>
-    <string name="fill_nothing">Kichwa na majina tayari vimejazwa</string>
     <string name="fill_running">Inajaza…</string>
-    <string name="fill_failed">Imeshindwa kujaza kichwa na majina</string>
+    <string name="fill_title_menu">Jaza kichwa</string>
+    <string name="fill_names_menu">Jaza majina ya wazungumzaji</string>
+    <string name="fill_title_after_stop">Jaza kichwa kwa ChatGPT</string>
+    <string name="fill_names_after_stop">Jaza majina ya wazungumzaji kwa ChatGPT</string>
+    <string name="fill_has_title">Tayari ina kichwa</string>
+    <string name="fill_no_unnamed">Hakuna mzungumzaji asiye na jina</string>
+    <string name="fill_title_running">Inajaza kichwa…</string>
+    <string name="fill_names_running">Inajaza majina ya wazungumzaji…</string>
+    <string name="fill_title_failed">Imeshindwa kujaza kichwa</string>
+    <string name="fill_names_failed">Imeshindwa kujaza majina ya wazungumzaji</string>
     <string name="share_no_summary">Bado hakuna muhtasari</string>
     <string name="speaker_me">Mimi</string>
 </resources>

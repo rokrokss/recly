@@ -264,6 +264,7 @@ fun JobsScreen(
                     LazyColumn(modifier = Modifier.fillMaxSize(), state = ledger) {
                         items(state.items, key = { it.recordingId }) { item ->
                             val open = expanded == item.recordingId
+                            val filling = state.fills.any { it.recordingId == item.recordingId }
                             val title = item.title ?: stringResource(R.string.jobs_untitled)
                             // UX decisions of 2026-10-08: the transcript's first words under the title,
                             // and nothing — no line, no space — for a row without one here.
@@ -275,14 +276,14 @@ fun JobsScreen(
                                 title = title,
                                 subtitle = preview,
                                 length = item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
-                                status = item.badge(),
+                                status = item.badge(filling),
                                 columns = columns,
                                 announce = stringResource(
                                     R.string.jobs_row_description,
                                     if (preview.isEmpty()) title else "$title, $preview",
                                     startedAt(item.startedAt, R.string.jobs_started_at_format),
                                     item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
-                                    label(item),
+                                    label(item, filling),
                                 ),
                                 expanded = open,
                                 toggleLabel = stringResource(
@@ -683,8 +684,13 @@ fun ItemState.badge(): LedgerStatus = when (this) {
  * docs/08 "Polling · status": a job parked while a provider transcribes is waiting on someone else, not on
  * a retry timer, so it is its own code rather than the `RETRY` its `WAITING` status would give it —
  * the same code the desktop's ledger shows (`windows/.../Ledger.LedgerStates`).
+ *
+ * docs/09 screen principle 2: [filling] — the recording is in `observeFills()` — says `Filling in`, read after `REC`
+ * and `RECEIVING` and ahead of everything else; the header count and the row's actions still go by the job.
  */
-fun JobItem.badge(): LedgerStatus = when {
+fun JobItem.badge(filling: Boolean = false): LedgerStatus = when {
+    state == ItemState.RECORDING || state == ItemState.RECEIVING -> state.badge()
+    filling -> FILLING_BADGE
     waitingMinutes != null || localRunning -> TRANSCRIBING_BADGE
     localPending -> ItemState.PENDING.badge()
     // docs/03 "Storage location": waiting for the folder to be picked again, not for a retry timer.
@@ -696,6 +702,9 @@ fun JobItem.badge(): LedgerStatus = when {
 private val DetailMinWidth = 120.dp
 
 private val TRANSCRIBING_BADGE = LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT)
+
+/** docs/08 "Titles and speaker names": ChatGPT is filling in the title or the names — work in hand, the loader turning. */
+private val FILLING_BADGE = LedgerStatus("FILLING", BadgeTone.ACCENT, busy = true)
 
 /** A `WAITING` job held up by the local folder — the warning a retry wait already is, in its own word. */
 private val FOLDER_BADGE = LedgerStatus("WAITING_FOLDER", BadgeTone.WARNING)
@@ -717,7 +726,7 @@ internal fun ItemState.reasonTone(): BadgeTone = when (badge().tone) {
  * remembering to come back here.
  */
 internal val BADGE_CODES: List<String> =
-    ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code + FOLDER_BADGE.code
+    ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code + FOLDER_BADGE.code + FILLING_BADGE.code
 
 /** docs/09 screen principle 2: "14 · 2 waiting · 1 failed" — a count of none is not said ("3 · 1 waiting"). */
 internal fun headerCounts(total: Int, waiting: Int, failed: Int, waitingWord: (Int) -> String, failedWord: (Int) -> String): String =
@@ -772,9 +781,12 @@ fun ItemState.failing(): Boolean =
 /**
  * A `WAITING` job says when, because "waiting" on its own reads like "stuck" — and while a provider
  * is transcribing there is no "when" to give, only how long it has been (docs/08 "Polling · status").
+ * A row the badge says `Filling in` for is heard so too ([JobItem.badge]).
  */
 @Composable
-private fun label(item: JobItem): String = if (item.localPending) stringResource(
+private fun label(item: JobItem, filling: Boolean): String = if (item.badge(filling).code == "FILLING") {
+    stringResource(R.string.badge_filling)
+} else if (item.localPending) stringResource(
     when {
         item.localRunning -> R.string.processing_local_running
         item.localCooling -> R.string.processing_local_cooling

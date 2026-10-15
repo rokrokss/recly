@@ -455,7 +455,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
                 style = mono.small.copy(textDirection = TextDirection.Ltr),
                 color = palette.textMuted,
             )
-            FadingStatusBadge(item.state.ledgerStatus(strings))
+            FadingStatusBadge(item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id }))
         }
         // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line. The popup's
         // expanded row says the same thing about the same recording ([FailureReason]).
@@ -648,12 +648,21 @@ private fun Detail(
                 }
             },
         )
+        // docs/09 "Summary view": what a fill of this recording is filling in, from this window or the title dialog, the
+        // title's line first — gone when the run ends.
+        val run = model.fills.firstOrNull { it.recordingId == detail.recordingId }
+        val filling = FillHalf.entries.filter { it.runs(run) }
+        if (filling.isNotEmpty() && !detail.loading) {
+            Column(Modifier.padding(horizontal = Space.m).padding(bottom = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
+                filling.forEach { half -> LoadingText(strings[half.running], MaterialTheme.typography.bodySmall, blueprint.textMuted) }
+            }
+        }
         // Transcribe again that did not start says why, the way a refused edit does.
         detail.notice?.let { notice -> RefusedLine(strings[notice]) }
         // docs/08 "Titles and speaker names": a fill that came to nothing, red, with the core's sentence under it.
         detail.fillFailure?.let { failed ->
             Column(Modifier.padding(horizontal = Space.m).padding(bottom = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-                Text(strings[Str.FILL_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
+                Text(strings[failed.half.failed], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                 failed.reason?.let { Text(coreMessage(it).text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
             }
         }

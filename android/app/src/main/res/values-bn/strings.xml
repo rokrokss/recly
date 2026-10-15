@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">মডেলের অপেক্ষায়</string>
     <string name="badge_storage_full">স্টোরেজ পূর্ণ</string>
     <string name="badge_waiting_folder">ফোল্ডারের অপেক্ষায়</string>
+    <string name="badge_filling">পূরণ হচ্ছে</string>
     <string name="node_state_ready">প্রস্তুত</string>
     <string name="node_state_starting">শুরু হচ্ছে</string>
     <string name="node_state_saving">সেভ হচ্ছে</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">জিজ্ঞাসা</string>
     <string name="ask_running">জিজ্ঞাসা করা হচ্ছে…</string>
     <string name="ask_failed">উত্তর দেওয়া যায়নি</string>
-    <string name="fill_menu">শিরোনাম ও নাম পূরণ করুন</string>
-    <string name="fill_after_stop">ChatGPT দিয়ে শিরোনাম ও বক্তার নাম পূরণ করুন</string>
     <string name="fill_after_stop_note">ট্রান্সক্রিপ্ট তৈরি হলে তা ChatGPT-তে যায়, যাতে অনুপস্থিত শিরোনাম এবং নাম ধরে ডাকা বক্তাদের নাম পাওয়া যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।</string>
-    <string name="fill_nothing">শিরোনাম ও নাম আগেই পূরণ করা আছে</string>
     <string name="fill_running">পূরণ করা হচ্ছে…</string>
-    <string name="fill_failed">শিরোনাম ও নাম পূরণ করা যায়নি</string>
+    <string name="fill_title_menu">শিরোনাম পূরণ করুন</string>
+    <string name="fill_names_menu">বক্তার নাম পূরণ করুন</string>
+    <string name="fill_title_after_stop">ChatGPT দিয়ে শিরোনাম পূরণ করুন</string>
+    <string name="fill_names_after_stop">ChatGPT দিয়ে বক্তার নাম পূরণ করুন</string>
+    <string name="fill_has_title">শিরোনাম আগেই আছে</string>
+    <string name="fill_no_unnamed">নামহীন কোনো বক্তা নেই</string>
+    <string name="fill_title_running">শিরোনাম পূরণ করা হচ্ছে…</string>
+    <string name="fill_names_running">বক্তার নাম পূরণ করা হচ্ছে…</string>
+    <string name="fill_title_failed">শিরোনাম পূরণ করা যায়নি</string>
+    <string name="fill_names_failed">বক্তার নাম পূরণ করা যায়নি</string>
     <string name="share_no_summary">এখনও সারাংশ নেই</string>
     <string name="speaker_me">আমি</string>
 </resources>

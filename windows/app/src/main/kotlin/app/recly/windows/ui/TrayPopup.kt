@@ -378,20 +378,22 @@ private fun RecentRow(
 ) {
     val locale = Locale.forLanguageTag(strings.language)
     val length = LedgerFormat.length(item.durationSec)
+    // docs/09 screen principle 2: `Filling in` while ChatGPT fills it in, and heard so too.
+    val status = item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id })
     LedgerRow(
         date = LedgerFormat.date(item.startedAt),
         time = LedgerFormat.time(item.startedAt),
         title = item.title.text(strings),
         subtitle = "",
         length = length,
-        status = item.state.ledgerStatus(strings),
+        status = status,
         statusWidth = statusWidth,
         announce = strings[
             Str.LEDGER_ANNOUNCE,
             item.title.text(strings),
             LedgerFormat.spoken(item.startedAt, locale),
             length,
-            item.state.text(strings),
+            if (status.code == FillingStatus.code) status.label else item.state.text(strings),
         ],
         onClick = onClick,
     )

@@ -68,7 +68,9 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
+import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.FillResult
+import recly.core.chatgpt.FillRun
 import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryCitation
 import recly.core.chatgpt.SummaryCitations
@@ -107,45 +109,94 @@ internal fun askReason(hasTranscript: Boolean, transcribing: Boolean, @StringRes
 }
 
 /**
- * Why More → Fill in title and names cannot run now (docs/09 "Summary view"): Ask's reasons, then this page's own fill
- * still running, then nothing left to fill — [needed] is `FillNeeds.any` for the recording as it is now, which a fill
- * that is running may be about to change. A take still being written says `Still recording` before any of these.
+ * docs/08 "Titles and speaker names": the two things More can fill in, each its own item — the title and the speakers'
+ * names, never one action (2026-10-15) — with what each says while it cannot run, while it runs and when it failed.
+ */
+enum class FillHalf(
+    @param:StringRes val item: Int,
+    /** `FillNeeds` says nothing of this half is missing. */
+    @param:StringRes val nothing: Int,
+    /** The line under the detail's header while a fill of this half runs. */
+    @param:StringRes val running: Int,
+    @param:StringRes val failed: Int,
+) {
+    TITLE(R.string.fill_title_menu, R.string.fill_has_title, R.string.fill_title_running, R.string.fill_title_failed),
+    NAMES(R.string.fill_names_menu, R.string.fill_no_unnamed, R.string.fill_names_running, R.string.fill_names_failed);
+
+    /** Whether [run] — the recording's fill that is asking ChatGPT now, if any — asks for this half. */
+    fun runs(run: FillRun?): Boolean = when (this) {
+        TITLE -> run?.title == true
+        NAMES -> run?.names == true
+    }
+
+    /** Whether the recording still lacks this half: what the item is offered by. */
+    fun needed(needs: FillNeeds): Boolean = when (this) {
+        TITLE -> needs.title
+        NAMES -> needs.names
+    }
+}
+
+/**
+ * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "Summary view"), in this order: Ask's
+ * reasons, then a fill of [half] running ([running] — `observeFills()`, the title sheet's too), then nothing of it
+ * missing — [needed] is [FillHalf.needed] for the recording as it is now, which a fill that is running may be about
+ * to change. A take still being written says `Still recording` before any of these.
  */
 @StringRes
 internal fun fillReason(
+    half: FillHalf,
     hasTranscript: Boolean,
     transcribing: Boolean,
     @StringRes busyReason: Int,
     connection: ChatGptConnection,
-    filling: Boolean,
+    running: Boolean,
     needed: Boolean,
 ): Int? = askReason(hasTranscript, transcribing, busyReason, connection) ?: when {
-    filling -> R.string.fill_running
-    !needed -> R.string.fill_nothing
+    running -> R.string.fill_running
+    !needed -> half.nothing
     else -> null
 }
 
-/** What the detail says under its header once More → Fill in title and names has answered (docs/08 "Titles and speaker names"). */
+/** What the detail says under its header once Fill in title or Fill in speaker names has answered (docs/08 "Titles and speaker names"). */
 internal sealed interface FillNotice {
     /** Nothing was sent: the More menu's own reason, as a refused Transcribe again says it. */
     data class Refused(@param:StringRes val reason: Int) : FillNotice
 
-    /** `Could not fill in the title and names`, with the core's sentence for [reason] when it gave one. */
-    data class Failed(val reason: String?) : FillNotice
+    /** [half]'s failure — `Could not fill in the title` — with the core's sentence for [reason] when it gave one. */
+    data class Failed(val half: FillHalf, val reason: String?) : FillNotice
 }
 
 /**
- * [result] as a line under the header, or null for nothing to say — a title or a name that arrived is seen where it
- * goes, and nothing to fill sent nothing. ChatGPT answering with neither is a failure of its own. A null [result] is
- * a call that threw. [busyReason] is what the More menu says about the job in the way.
+ * [result] of asking for [half] as a line under the header, or null for nothing to say — what arrived is seen where it
+ * goes. Nothing of it missing says the item's own reason; ChatGPT answering without the half asked is that half's
+ * failure alone. A null [result] is a call that threw. [busyReason] is what the More menu says about the job in the way.
  */
-internal fun fillNotice(result: FillResult?, @StringRes busyReason: Int): FillNotice? = when (result) {
-    is FillResult.Filled -> if (result.title || result.names > 0) null else FillNotice.Failed(null)
-    FillResult.NothingToFill -> null
+internal fun fillNotice(result: FillResult?, half: FillHalf, @StringRes busyReason: Int): FillNotice? = when (result) {
+    is FillResult.Filled -> if (if (half == FillHalf.TITLE) result.title else result.names > 0) null else FillNotice.Failed(half, null)
+    FillResult.NothingToFill -> FillNotice.Refused(half.nothing)
     FillResult.Busy -> FillNotice.Refused(busyReason)
     FillResult.NoTranscript -> FillNotice.Refused(R.string.detail_no_transcript)
-    is FillResult.Failed -> FillNotice.Failed(result.reason)
-    null -> FillNotice.Failed(null)
+    is FillResult.Failed -> FillNotice.Failed(half, result.reason)
+    null -> FillNotice.Failed(half, null)
+}
+
+/** docs/08 "Titles and speaker names": the halves the title sheet's Save asks for — `requestFill`'s two flags. */
+data class FillAsk(val title: Boolean, val names: Boolean)
+
+/**
+ * The title sheet's title box can be changed only while the field is empty: with a title typed it would do nothing — a
+ * typed title is never replaced — so it is disabled, keeping what it says.
+ */
+internal fun fillTitleBoxEnabled(title: String): Boolean = title.isBlank()
+
+/**
+ * What the title sheet's Save asks ChatGPT for — null for nothing, so no request is made. The title box asks only
+ * while it is enabled ([fillTitleBoxEnabled]). [offered] is whether the boxes were there at all.
+ */
+internal fun fillAsk(offered: Boolean, title: String, titleBox: Boolean, namesBox: Boolean): FillAsk? {
+    if (!offered) return null
+    val askTitle = titleBox && fillTitleBoxEnabled(title)
+    return if (askTitle || namesBox) FillAsk(askTitle, namesBox) else null
 }
 
 /** docs/08 "Summaries": each format under its name in Settings, in Summarize as and in the summary's footer. */

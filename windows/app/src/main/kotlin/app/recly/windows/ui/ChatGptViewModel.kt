@@ -30,7 +30,9 @@ import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptAccount
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptResult
+import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.FillResult
+import recly.core.chatgpt.FillRun
 import recly.core.chatgpt.Summaries
 import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryCitations
@@ -226,10 +228,15 @@ class ChatGptViewModel(
     fun saveAboutMe(text: String) = savePreferences { it.copy(aboutMe = text) }
 
     /**
-     * docs/08 "Titles and speaker names": the title dialog's ChatGPT box, ticked or not, is how the next dialog
-     * starts — kept the moment it is changed, as Settings keeps its own.
+     * docs/08 "Titles and speaker names": each of the title dialog's ChatGPT boxes, ticked or not, is how the next
+     * dialog starts — kept on its own the moment it is changed, as Settings keeps its own.
      */
-    fun rememberFillAfterStop(ticked: Boolean) = savePreferences { it.copy(fillTitleAfterStop = ticked, fillNamesAfterStop = ticked) }
+    fun rememberFillAfterStop(half: FillHalf, ticked: Boolean) = savePreferences {
+        when (half) {
+            FillHalf.TITLE -> it.copy(fillTitleAfterStop = ticked)
+            FillHalf.NAMES -> it.copy(fillNamesAfterStop = ticked)
+        }
+    }
 
     /** Shown at once; the core keeps it trimmed and capped, and [preferences] follows what it kept. */
     private fun savePreferences(change: (SummaryPreferences) -> SummaryPreferences) {
@@ -410,44 +417,74 @@ internal fun askBlocked(
 }
 
 /**
- * Why More → Fill in title and names cannot run now (docs/09 "Summary view"): Ask's reasons, then this window's own
- * fill still running, then nothing left to fill — [needed] is `FillNeeds.any` for the recording as it is now, which a
- * fill that is running may be about to change.
+ * docs/08 "Titles and speaker names": the two things More can fill in, each its own item — the title and the speakers'
+ * names, never one action (2026-10-15) — with what each says while it cannot run, while it runs and when it failed.
+ */
+enum class FillHalf(
+    val item: Str,
+    /** `FillNeeds` says nothing of this half is missing. */
+    val nothing: Str,
+    /** The line under the detail's header while a fill of this half runs. */
+    val running: Str,
+    val failed: Str,
+) {
+    TITLE(Str.FILL_TITLE_MENU, Str.FILL_HAS_TITLE, Str.FILL_TITLE_RUNNING, Str.FILL_TITLE_FAILED),
+    NAMES(Str.FILL_NAMES_MENU, Str.FILL_NO_UNNAMED, Str.FILL_NAMES_RUNNING, Str.FILL_NAMES_FAILED);
+
+    /** Whether [run] — the recording's fill that is asking ChatGPT now, if any — asks for this half. */
+    fun runs(run: FillRun?): Boolean = when (this) {
+        TITLE -> run?.title == true
+        NAMES -> run?.names == true
+    }
+
+    /** Whether the recording still lacks this half: what the item is offered by. */
+    fun needed(needs: FillNeeds): Boolean = when (this) {
+        TITLE -> needs.title
+        NAMES -> needs.names
+    }
+}
+
+/**
+ * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "Summary view"), in this order: Ask's
+ * reasons, then a fill of [half] running ([running] — `observeFills()`, the title dialog's too), then nothing of it
+ * missing — [needed] is [FillHalf.needed] for the recording as it is now, which a fill that is running may be about
+ * to change.
  */
 internal fun fillBlocked(
+    half: FillHalf,
     writing: Boolean,
     hasTranscript: Boolean,
     busy: Str?,
     connection: ChatGptConnection,
-    filling: Boolean,
+    running: Boolean,
     needed: Boolean,
 ): Str? = askBlocked(writing, hasTranscript, busy, connection) ?: when {
-    filling -> Str.FILL_RUNNING
-    !needed -> Str.FILL_NOTHING
+    running -> Str.FILL_RUNNING
+    !needed -> half.nothing
     else -> null
 }
 
-/** What the detail says under its header once More → Fill in title and names has answered (docs/08 "Titles and speaker names"). */
+/** What the detail says under its header once Fill in title or Fill in speaker names has answered (docs/08 "Titles and speaker names"). */
 sealed interface FillNotice {
     /** Nothing was sent: the More menu's own reason, as a refused Transcribe again says it. */
     data class Refused(val reason: Str) : FillNotice
 
-    /** `Could not fill in the title and names`, with the core's sentence for [reason] when it gave one. */
-    data class Failed(val reason: String?) : FillNotice
+    /** [half]'s failure — `Could not fill in the title` — with the core's sentence for [reason] when it gave one. */
+    data class Failed(val half: FillHalf, val reason: String?) : FillNotice
 }
 
 /**
- * [result] as a line under the header, or null for nothing to say — a title or a name that arrived is seen where it
- * goes, and nothing to fill sent nothing. ChatGPT answering with neither is a failure of its own. A null [result] is
- * a call that threw. [busy] is what the More menu says about the job in the way.
+ * [result] of asking for [half] as a line under the header, or null for nothing to say — what arrived is seen where it
+ * goes. Nothing of it missing says the item's own reason; ChatGPT answering without the half asked is that half's
+ * failure alone. A null [result] is a call that threw. [busy] is what the More menu says about the job in the way.
  */
-internal fun fillNotice(result: FillResult?, busy: Str): FillNotice? = when (result) {
-    is FillResult.Filled -> if (result.title || result.names > 0) null else FillNotice.Failed(null)
-    FillResult.NothingToFill -> null
+internal fun fillNotice(result: FillResult?, half: FillHalf, busy: Str): FillNotice? = when (result) {
+    is FillResult.Filled -> if (if (half == FillHalf.TITLE) result.title else result.names > 0) null else FillNotice.Failed(half, null)
+    FillResult.NothingToFill -> FillNotice.Refused(half.nothing)
     FillResult.Busy -> FillNotice.Refused(busy)
     FillResult.NoTranscript -> FillNotice.Refused(Str.DETAIL_NO_TRANSCRIPT)
-    is FillResult.Failed -> FillNotice.Failed(result.reason)
-    null -> FillNotice.Failed(null)
+    is FillResult.Failed -> FillNotice.Failed(half, result.reason)
+    null -> FillNotice.Failed(half, null)
 }
 
 /**

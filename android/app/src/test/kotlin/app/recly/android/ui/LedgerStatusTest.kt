@@ -68,6 +68,33 @@ class LedgerStatusTest {
         )
     }
 
+    /**
+     * docs/09 screen principle 2 (2026-10-15): a recording ChatGPT is filling in says `Filling in`, with the loader,
+     * ahead of every state but `REC` and `RECEIVING` — a transcription waiting on a provider and this phone's own
+     * included — and goes back to what its job says when the run ends.
+     */
+    @Test
+    fun `a recording being filled in says so, after REC and RECEIVING only`() {
+        val row = JobItem(
+            recordingId = "r", jobId = "j", title = null, startedAt = "2026-10-15T00:00:00Z", durationSec = 1.0,
+            state = ItemState.DONE, error = null, waitingMinutes = null, link = null, nextRunAt = null,
+        )
+        val filling = LedgerStatus("FILLING", BadgeTone.ACCENT, busy = true)
+        assertEquals(filling, row.badge(filling = true))
+        assertEquals(ItemState.DONE.badge(), row.badge(filling = false))
+        assertEquals(ItemState.DONE.badge(), row.badge())
+        ItemState.entries.filter { it != ItemState.RECORDING && it != ItemState.RECEIVING }.forEach { state ->
+            assertEquals(filling, row.copy(state = state).badge(filling = true), "$state")
+        }
+        assertEquals(filling, row.copy(state = ItemState.WAITING, waitingMinutes = 3).badge(filling = true))
+        assertEquals(filling, row.copy(state = ItemState.RUNNING, localPending = true, localRunning = true).badge(filling = true))
+        assertEquals(ItemState.RECORDING.badge(), row.copy(state = ItemState.RECORDING).badge(filling = true))
+        assertEquals(ItemState.RECEIVING.badge(), row.copy(state = ItemState.RECEIVING).badge(filling = true))
+        // Measured with the other codes, and drawn as a word.
+        assertTrue("FILLING" in BADGE_CODES)
+        assertEquals(app.recly.android.R.string.badge_filling, app.recly.android.ui.component.badgeWord("FILLING"))
+    }
+
     /** docs/03: the three things happening somewhere else, as the ledger says them. */
     @Test
     fun `what another device is doing has its own codes`() {

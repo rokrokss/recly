@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Esperando el modelo</string>
     <string name="badge_storage_full">Almacenamiento lleno</string>
     <string name="badge_waiting_folder">Esperando la carpeta</string>
+    <string name="badge_filling">Completando</string>
     <string name="node_state_ready">Listo</string>
     <string name="node_state_starting">Iniciando</string>
     <string name="node_state_saving">Guardando</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Preguntar</string>
     <string name="ask_running">Preguntando…</string>
     <string name="ask_failed">No se pudo responder</string>
-    <string name="fill_menu">Completar título y nombres</string>
-    <string name="fill_after_stop">Completar el título y los nombres de hablantes con ChatGPT</string>
     <string name="fill_after_stop_note">Cuando la transcripción esté lista, se envía a ChatGPT para obtener el título que falta y los nombres de los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT.</string>
-    <string name="fill_nothing">El título y los nombres ya están completos</string>
     <string name="fill_running">Completando…</string>
-    <string name="fill_failed">No se pudieron completar el título y los nombres</string>
+    <string name="fill_title_menu">Completar título</string>
+    <string name="fill_names_menu">Completar nombres de hablantes</string>
+    <string name="fill_title_after_stop">Completar el título con ChatGPT</string>
+    <string name="fill_names_after_stop">Completar los nombres de hablantes con ChatGPT</string>
+    <string name="fill_has_title">Ya tiene título</string>
+    <string name="fill_no_unnamed">No hay hablantes sin nombre</string>
+    <string name="fill_title_running">Completando el título…</string>
+    <string name="fill_names_running">Completando los nombres de hablantes…</string>
+    <string name="fill_title_failed">No se pudo completar el título</string>
+    <string name="fill_names_failed">No se pudieron completar los nombres de hablantes</string>
     <string name="share_no_summary">Aún no hay resumen</string>
     <string name="speaker_me">Yo</string>
 </resources>

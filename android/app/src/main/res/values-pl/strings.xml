@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Oczekiwanie na model</string>
     <string name="badge_storage_full">Brak miejsca</string>
     <string name="badge_waiting_folder">Oczekiwanie na folder</string>
+    <string name="badge_filling">Uzupełnianie</string>
     <string name="node_state_ready">Gotowe</string>
     <string name="node_state_starting">Trwa uruchamianie</string>
     <string name="node_state_saving">Zapisywanie</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Zapytaj</string>
     <string name="ask_running">Pytanie…</string>
     <string name="ask_failed">Nie udało się odpowiedzieć</string>
-    <string name="fill_menu">Uzupełnij tytuł i imiona</string>
-    <string name="fill_after_stop">Uzupełnij tytuł i imiona mówców za pomocą ChatGPT</string>
     <string name="fill_after_stop_note">Gdy transkrypcja będzie gotowa, trafi do ChatGPT po brakujący tytuł i imiona mówców, do których ktoś zwrócił się po imieniu. Wlicza się to do Twojego użycia ChatGPT.</string>
-    <string name="fill_nothing">Tytuł i imiona są już uzupełnione</string>
     <string name="fill_running">Uzupełnianie…</string>
-    <string name="fill_failed">Nie udało się uzupełnić tytułu i imion</string>
+    <string name="fill_title_menu">Uzupełnij tytuł</string>
+    <string name="fill_names_menu">Uzupełnij imiona mówców</string>
+    <string name="fill_title_after_stop">Uzupełnij tytuł za pomocą ChatGPT</string>
+    <string name="fill_names_after_stop">Uzupełnij imiona mówców za pomocą ChatGPT</string>
+    <string name="fill_has_title">Ma już tytuł</string>
+    <string name="fill_no_unnamed">Brak mówców bez imion</string>
+    <string name="fill_title_running">Uzupełnianie tytułu…</string>
+    <string name="fill_names_running">Uzupełnianie imion mówców…</string>
+    <string name="fill_title_failed">Nie udało się uzupełnić tytułu</string>
+    <string name="fill_names_failed">Nie udało się uzupełnić imion mówców</string>
     <string name="share_no_summary">Brak podsumowania</string>
     <string name="speaker_me">Ja</string>
 </resources>

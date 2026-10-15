@@ -37,6 +37,7 @@ import recly.core.ReclyCore
 import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.AskState
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.FillRun
 import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryPreferences
 import recly.core.chatgpt.SummaryState
@@ -190,6 +191,11 @@ data class JobsUiState(
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
     /** docs/08 "Summaries": this device's formats — what More → Summarize as offers. */
     val summaryPreferences: SummaryPreferences = SummaryPreferences(),
+    /**
+     * docs/08 "Titles and speaker names": the fills asking ChatGPT now, one per recording — a publication's and the
+     * detail's alike. Their rows say `Filling in`, and the open detail what is being filled in.
+     */
+    val fills: List<FillRun> = emptyList(),
 )
 
 /** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
@@ -265,8 +271,6 @@ data class DetailState(
     val ask: AskState = AskState.None,
     /** docs/09 "Search": opened from a hit found only in the summary, so the page starts on it. */
     val openSummary: Boolean = false,
-    /** docs/08 "Titles and speaker names": More → Fill in title and names, asked from this page, is still running. */
-    val filling: Boolean = false,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -350,6 +354,21 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
         viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
         viewModelScope.launch { core().summaries.observePreferences().collect { prefs -> _state.update { it.copy(summaryPreferences = prefs) } } }
+        viewModelScope.launch {
+            val core = core()
+            var before = emptyList<FillRun>()
+            core.observeFills().collect { fills ->
+                _state.update { it.copy(fills = fills) }
+                // A title a fill gave the open recording — from its More menu or its title sheet — shows in the header,
+                // which does not follow the recording: read again once the run that asked for it is over.
+                val open = _state.value.detail?.recordingId
+                if (open != null && before.any { it.recordingId == open && it.title } && fills.none { it.recordingId == open && it.title }) {
+                    val title = runCatching { withContext(core.deps.io) { core.recordings.get(open)?.meta?.title } }.getOrNull()
+                    title?.takeIf { it.isNotBlank() }?.let { named -> updateDetail(open) { it.copy(title = named) } }
+                }
+                before = fills
+            }
+        }
         pullRemote()
     }
 
@@ -524,29 +543,26 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * docs/08 "Titles and speaker names": More → Fill in title and names. The run is the core's and goes on if the page
-     * closes; the names arrive through the transcript the page follows, and a title is set on the page's header here,
-     * as a rename's is — the header does not follow the recording. What came of it is the page's to say; null when
-     * the call threw.
+     * docs/08 "Titles and speaker names": More → Fill in title or Fill in speaker names. The run is the core's and goes on
+     * if the page closes; while it asks, [JobsUiState.fills] has it, the names arrive through the transcript the page
+     * follows, and the title through the header's read once the run is over. What came of it is the page's to say; null
+     * when the call threw.
      */
-    suspend fun fill(recordingId: String): recly.core.chatgpt.FillResult? = viewModelScope.async {
-        updateDetail(recordingId) { it.copy(filling = true) }
+    suspend fun fill(recordingId: String, half: FillHalf): recly.core.chatgpt.FillResult? = viewModelScope.async {
         val core = core()
-        val result = try {
-            withContext(core.deps.io) { core.fill(recordingId, title = true, names = true) }
+        try {
+            withContext(core.deps.io) {
+                when (half) {
+                    FillHalf.TITLE -> core.fillTitle(recordingId)
+                    FillHalf.NAMES -> core.fillNames(recordingId)
+                }
+            }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
             core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.fill.failed", mapOf("recordingId" to recordingId), e)
             null
-        } finally {
-            updateDetail(recordingId) { it.copy(filling = false) }
         }
-        if ((result as? recly.core.chatgpt.FillResult.Filled)?.title == true) {
-            val title = runCatching { withContext(core.deps.io) { core.recordings.get(recordingId)?.meta?.title } }.getOrNull()
-            title?.takeIf { it.isNotBlank() }?.let { named -> updateDetail(recordingId) { it.copy(title = named) } }
-        }
-        result
     }.await()
 
     /** docs/08 "Ask": the presets that make sense for the recording; none when it cannot be read. */

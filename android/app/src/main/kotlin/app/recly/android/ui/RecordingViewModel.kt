@@ -87,8 +87,9 @@ data class RecordingUiState(
     val highlighted: Highlighted? = null,
     /** docs/08 "Titles and speaker names": the title sheet offers its ChatGPT box only while this is signed in. */
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
-    /** How the sheet's ChatGPT box was left last, which the next sheet starts from. */
-    val fillAfterStop: Boolean = false,
+    /** How the sheet's two ChatGPT boxes were left last, which the next sheet starts from. */
+    val fillTitleAfterStop: Boolean = false,
+    val fillNamesAfterStop: Boolean = false,
 )
 
 /** A mark the core kept: [sec] into [recordingId], which is only news while that recording runs. */
@@ -134,7 +135,9 @@ class RecordingViewModel @JvmOverloads constructor(
         }
         viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
         viewModelScope.launch {
-            core().summaries.observePreferences().collect { prefs -> _state.update { it.copy(fillAfterStop = prefs.fillTitleAfterStop || prefs.fillNamesAfterStop) } }
+            core().summaries.observePreferences().collect { prefs ->
+                _state.update { it.copy(fillTitleAfterStop = prefs.fillTitleAfterStop, fillNamesAfterStop = prefs.fillNamesAfterStop) }
+            }
         }
         viewModelScope.launch {
             val core = core()
@@ -304,10 +307,10 @@ class RecordingViewModel @JvmOverloads constructor(
     /**
      * @param participants how many people were in the room, or null for "unknown" — docs/03's
      * `context.participants`, which docs/08 lets override the workflow's speaker hint.
-     * @param fill the sheet's ChatGPT box was there and ticked: this recording's publication asks for its title and
-     * speaker names (docs/08 "Titles and speaker names").
+     * @param fill what the sheet's ChatGPT boxes ask for, or null for nothing: this recording's publication asks for
+     * its title, its speaker names or both (docs/08 "Titles and speaker names").
      */
-    fun saveTitle(title: String, participants: Int? = null, fill: Boolean = false) {
+    fun saveTitle(title: String, participants: Int? = null, fill: FillAsk? = null) {
         val untitled = _state.value.untitled ?: return
         val trimmed = title.trim().takeIf { it.isNotEmpty() }
         finish(untitled, fill) { core ->
@@ -321,13 +324,23 @@ class RecordingViewModel @JvmOverloads constructor(
     }
 
     /**
-     * docs/08 "Titles and speaker names": the sheet's ChatGPT box, ticked or not, is how the next sheet starts — kept
-     * the moment it is changed, as Settings keeps its own.
+     * docs/08 "Titles and speaker names": each of the sheet's ChatGPT boxes, ticked or not, is how the next sheet starts
+     * — kept on its own the moment it is changed, as Settings keeps its own.
      */
-    fun rememberFill(ticked: Boolean) {
-        _state.update { it.copy(fillAfterStop = ticked) }
+    fun rememberFill(half: FillHalf, ticked: Boolean) {
+        _state.update {
+            when (half) {
+                FillHalf.TITLE -> it.copy(fillTitleAfterStop = ticked)
+                FillHalf.NAMES -> it.copy(fillNamesAfterStop = ticked)
+            }
+        }
         // Through Settings' own saver, so the two never write over each other's fields.
-        ChatGptSignIn.get(getApplication()).updatePreferences { it.copy(fillTitleAfterStop = ticked, fillNamesAfterStop = ticked) }
+        ChatGptSignIn.get(getApplication()).updatePreferences {
+            when (half) {
+                FillHalf.TITLE -> it.copy(fillTitleAfterStop = ticked)
+                FillHalf.NAMES -> it.copy(fillNamesAfterStop = ticked)
+            }
+        }
     }
 
     fun cancelTitle() {
@@ -378,13 +391,13 @@ class RecordingViewModel @JvmOverloads constructor(
     }
 
     /** Clears the prompt first: whatever the queue says, the recording is safe on disk already. */
-    private fun finish(untitled: UntitledRecording, fill: Boolean, apply: suspend (ReclyCore) -> UiMessage?) {
+    private fun finish(untitled: UntitledRecording, fill: FillAsk?, apply: suspend (ReclyCore) -> UiMessage?) {
         _state.update { it.copy(untitled = null) }
         viewModelScope.launch {
             val core = core()
             val (problem, enqueued) = saveInOrder(
                 name = { apply(core) },
-                requestFill = if (fill) ({ core.requestFill(untitled.recordingId, title = true, names = true) }) else null,
+                requestFill = fill?.let { ask -> { core.requestFill(untitled.recordingId, ask.title, ask.names) } },
                 enqueue = { core.enqueue(untitled.recordingId) },
                 failed = { event, e -> core.deps.logger.log(Logger.Level.ERROR, event, mapOf("recordingId" to untitled.recordingId), e) },
             )
@@ -426,7 +439,7 @@ internal fun RecordingUiState.consentAnswered(confirmed: Boolean): RecordingUiSt
     copy(consentPrompt = false, askPermissions = confirmed)
 
 /**
- * The title sheet's Save, in its order: the title, then — the ChatGPT box ticked — the fill request, then the job.
+ * The title sheet's Save, in its order: the title, then — a ChatGPT box ticked — the fill request, then the job.
  * The request is there before the job because the job's publication is what reads it (docs/08 "Titles and speaker
  * names"); one that could not be kept costs the fill, never the job. D2: a queue that threw is said, not swallowed —
  * the recording is on disk, and recovery queues a finalized recording with no job at the next start — so the job is
