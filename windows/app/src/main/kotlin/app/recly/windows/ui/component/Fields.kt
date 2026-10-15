@@ -355,6 +355,8 @@ fun BlueprintMenuColumn(content: @Composable () -> Unit) {
  * [mark] is the column before the label (2026-10-10): null for a menu with none, `""` to keep it empty, or the
  * glyph in it — [SELECTION_MARK] on the one that is chosen, [BACK_MARK] on a list's heading. Every row of a menu
  * with a chosen one keeps the column, so the labels line up whichever row wears it.
+ *
+ * [danger] is a row that deletes a recording, in the danger ink while it can run (2026-10-15).
  */
 @Composable
 fun BlueprintMenuRow(
@@ -365,10 +367,15 @@ fun BlueprintMenuRow(
     mark: String? = null,
     /** Data — a speed — read left to right in every language. */
     ltr: Boolean = false,
+    danger: Boolean = false,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
-    val ink = if (enabled) palette.text else palette.disabled
+    val ink = when {
+        !enabled -> palette.disabled
+        danger -> palette.danger
+        else -> palette.text
+    }
     val style = MaterialTheme.typography.labelLarge
     Row(
         Modifier
@@ -397,8 +404,9 @@ fun BlueprintMenuRow(
     secondary: String? = null,
     mark: String? = null,
     ltr: Boolean = false,
+    danger: Boolean = false,
     trailing: (@Composable () -> Unit)? = null,
-) = BlueprintMenuRow(AnnotatedString(label), onClick, enabled, secondary, mark, ltr, trailing)
+) = BlueprintMenuRow(AnnotatedString(label), onClick, enabled, secondary, mark, ltr, danger, trailing)
 
 /** The hairline between two groups of a menu's rows (docs/09 "Lines"). */
 @Composable

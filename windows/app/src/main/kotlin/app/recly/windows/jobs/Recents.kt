@@ -113,6 +113,17 @@ object Recents {
         }
     }
 
+    /**
+     * One recording's row, read on its own: the Details window's open recording, which a search hit can open past the
+     * pages [load] has read. Null when there is no such recording.
+     */
+    suspend fun one(core: ReclyCore, recordingId: String): RecentItem? {
+        val record = core.recordings.get(recordingId) ?: return null
+        val job = core.jobs.list().filter { it.recordingId == recordingId }.maxByOrNull { it.createdAt }
+        val steps = job?.let { core.jobs.steps(it.id) }.orEmpty()
+        return item(record, job, steps, core.deps.clock.now(), core.localTranscription.isRunning(recordingId))
+    }
+
     /** Pure, so the mapping the menu shows can be pinned down without a database. */
     fun item(
         record: RecordingRecord,

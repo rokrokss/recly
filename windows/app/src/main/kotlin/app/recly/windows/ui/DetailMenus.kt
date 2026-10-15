@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
+import app.recly.windows.jobs.RecentItem
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintDialog
 import app.recly.windows.ui.component.BlueprintDialogText
@@ -194,12 +195,12 @@ private val EXPORTS = listOf(
 )
 
 /**
- * docs/09 "Screen principles": the detail's ⋯, in three groups with a hairline between them (2026-10-10) — Rename ·
+ * docs/09 "Screen principles": the detail's ⋯, in groups with a hairline between them (2026-10-10) — Rename ·
  * Edit transcript · Transcribe again, then the summary's Summarize · Summarize as… · Edit summary · Ask about this
  * recording… · Fill in title and names where ChatGPT is offered, then Add highlight, then Open in Drive or Open the folder once the recording has
- * a folder there (D24). What cannot run now stays in its place, disabled, with the reason under it — `Still recording`
- * for every one of them while the take is being written. Summarize as… opens the formats in a submenu beside it, as
- * the Mac's does (D19).
+ * a folder there (D24), and last Delete, in red (2026-10-15). What cannot run now stays in its place, disabled, with the
+ * reason under it — `Still recording` for every one of them while the take is being written. Summarize as… opens the
+ * formats in a submenu beside it, as the Mac's does (D19).
  */
 @Composable
 internal fun MoreButton(
@@ -334,8 +335,31 @@ internal fun MoreButton(
                 BlueprintMenuDivider()
                 BlueprintMenuRow(strings[place], { open = false; model.openDetailStorage() })
             }
+            // docs/03 "Deleting in the app": last and on its own, by the list row's rule — never over a recording still
+            // being written — and with no shortcut, so a delete is never one key away (2026-10-15).
+            val row = detail.row
+            val deleteBlocked = row?.let(::deleteBlocked)
+            BlueprintMenuDivider()
+            BlueprintMenuRow(
+                strings[Str.DELETE],
+                { open = false; row?.let(model::askToDelete) },
+                // Not until the row has been read, a moment after the detail opens.
+                enabled = row != null && deleteBlocked == null,
+                secondary = deleteBlocked?.let { strings[it] },
+                danger = true,
+            )
         } }
     }
+}
+
+/**
+ * Why More → Delete waits (2026-10-15): the list row's own rule ([RecentItem.deletable]), said as `Still recording` the
+ * way every other item says it, or as the row's own state word — `Importing`, `Receiving from the watch`.
+ */
+internal fun deleteBlocked(item: RecentItem): Str? = when {
+    item.deletable -> null
+    (item.state as? UiMessage.Res)?.key == Str.STATUS_RECORDING -> Str.DETAIL_STILL_RECORDING
+    else -> (item.state as? UiMessage.Res)?.key
 }
 
 /** The mark at the end of a row that opens a submenu: toward where the submenu opens, so mirrored in a right-to-left language. */
@@ -618,7 +642,7 @@ private const val COPIED_MS = 3_000L
 private val SPEED_MARK_INSET = 16.dp + Space.s
 
 /**
- * Export's seven items and More's nine whole, each with a second line under it, and More's three hairlines — none
+ * Export's seven items and More's eleven whole, each with a second line under it, and More's four hairlines — none
  * behind a scroll while the window has the room ([BlueprintMenu] keeps it inside the window).
  */
 private val DETAIL_MENU_HEIGHT = 620.dp

@@ -28,6 +28,21 @@ class DeleteToneTest {
         assertEquals(emptyList(), deletes.filterNot { "ButtonTone.DANGER" in it })
     }
 
+    /** And a menu's Delete — the detail's More (2026-10-15) — in the danger ink. */
+    @Test
+    fun `every Delete menu item is drawn in the danger ink`() {
+        val sources = File("src/main/kotlin").walkTopDown().filter { it.extension == "kt" }.toList()
+        val deletes = sources.flatMap { file ->
+            val text = file.readText()
+            Regex("""BlueprintMenuRow\(""").findAll(text).mapNotNull { match ->
+                val call = callAt(text, match.range.last)
+                if ("Str.DELETE]" in call) "${file.name}: ${call.replace(Regex("\\s+"), " ")}" else null
+            }.toList()
+        }
+        assertTrue(deletes.isNotEmpty(), "the Delete menu items were not found")
+        assertEquals(emptyList(), deletes.filterNot { "danger = true" in it })
+    }
+
     /** The argument list of the call whose opening parenthesis is at [open]. */
     private fun callAt(text: String, open: Int): String {
         var depth = 0

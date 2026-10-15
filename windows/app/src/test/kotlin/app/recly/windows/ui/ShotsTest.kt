@@ -295,6 +295,11 @@ class ShotsTest {
         delay(1_500)
         shot("popup-recording-en", 520, 560, false) { TrayPopup(model, strings) {} }
         shot("popup-highlighted-en", 520, 560, false, clicks = listOf(POPUP_HIGHLIGHT)) { TrayPopup(model, strings) {} }
+        // 2026-10-15: More over the take still being written — every item waits, Delete too, each saying why.
+        until { model.recents.any { it.id !in before } }
+        model.openDetail(model.recents.first { it.id !in before })
+        until { model.detail?.loading == false }
+        shot("recordings-more-recording-en", 1000, 680, false, clicks = listOf(MORE)) { RecordingsWindow(model, strings) { it() } }
         model.stop()
         until { !model.recording }
         // The fake helper writes no audio here, so nothing of this take reached storage: Transcribe again cannot run.
@@ -318,6 +323,26 @@ class ShotsTest {
         model.retranscribe(RetranscribeRequest(short.id, provider = null, language = recly.core.model.Language.EN, replacesEdits = false))
         until { model.detail?.notice != null }
         shot("recordings-retranscribe-refused-en", 1000, 680, false) { RecordingsWindow(model, strings) { it() } }
+        // 2026-10-15: a failed recording on show — Retry and Check the key under its row, and no Delete, which is More's.
+        // A provider with no key stored fails the transcription before it calls anyone.
+        processing.edit { it.selectTranscriptionMode(TranscriptionMode.EXTERNAL, "en") }
+        processing.save()
+        runCatching { until { processing.summary.mode == TranscriptionMode.EXTERNAL } }.onFailure { error("save: ${processing.message}") }
+        val call = File(dir, "Call.wav")
+        run("ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=10:sample_rate=16000", call.path)
+        val known = model.recents.map { it.id }.toSet()
+        model.importFiles(listOf(call))
+        until { model.recents.any { it.id !in known && it.jobStatus == recly.core.job.JobStatus.FAILED } }
+        model.openDetail(model.recents.first { it.id !in known })
+        until { model.detail?.loading == false }
+        for (ko in listOf(false, true)) {
+            model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
+            shot("recordings-failed-${if (ko) "ko" else "en"}", 1000, 680, ko) { RecordingsWindow(model, model.localization.current) { it() } }
+        }
+        model.selectLanguage(AppLanguage.ENGLISH)
+        processing.edit { it.selectTranscriptionMode(TranscriptionMode.LOCAL, "en") }
+        processing.save()
+        until { processing.summary.mode == TranscriptionMode.LOCAL }
         // The folder choice is a local folder's alone (2026-10-09): with Google Drive chosen, the panel has none.
         model.selectStorage(StorageKind.DRIVE)
         until { model.storage == StorageKind.DRIVE && !showsFolderChoice(processing.stored) }

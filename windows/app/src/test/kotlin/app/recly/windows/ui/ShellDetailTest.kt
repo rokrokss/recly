@@ -104,4 +104,50 @@ class ShellDetailTest {
             directory.deleteRecursively()
         }
     }
+
+    /**
+     * 2026-10-15: More → Delete reads the recording's own row, so a recording search opened — which need not be among
+     * the list's pages — waits while it is written, then asks the list's own delete question, and the detail goes with it.
+     */
+    @Test
+    fun `More's Delete works on a recording opened from search`() = runBlocking {
+        val directory = Files.createTempDirectory("recly-detail-").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val model = ShellModel(scope = scope, localization = Localization(
+            FakeSettings(consentReminder = false, language = AppLanguage.ENGLISH),
+        ) { StringTable.BASE })
+        var observer: Job? = null
+        suspend fun until(ready: () -> Boolean) = withTimeout(60_000) {
+            while (!ready()) delay(20)
+        }
+        try {
+            model.load(directory.absolutePath.toPath(), FakeHelperCommand.command("parts=1", "sec=2.0", "write"))
+            model.start()
+            until { model.recording && model.recents.isNotEmpty() }
+            val id = model.recents.first().id
+            model.openSearchHit(SearchHit(id, "Weekly sync", "2026-10-15T00:00:00Z", true, listOf(SearchRange(0, 6)), emptyList()), "weekly")
+            until { model.detail?.loading == false }
+            observer = launch { model.followDetailState(id) }
+
+            // Still being written: Delete waits, and says why.
+            until { model.detail?.row != null }
+            assertEquals(Str.DETAIL_STILL_RECORDING, deleteBlocked(model.detail!!.row!!))
+            model.stop()
+            until { !model.recording && model.detail?.row?.let(::deleteBlocked) == null }
+
+            // The list's question: nothing was uploaded (no storage is connected), so there is no folder to ask about.
+            model.askToDelete(model.detail!!.row!!)
+            until { model.deleteRequest != null }
+            assertEquals(id, model.deleteRequest!!.recordingId)
+            assertFalse(model.deleteRequest!!.hasDriveFolder)
+            model.delete(model.deleteRequest!!, deleteDrive = false)
+            assertNull(model.deleteRequest)
+            until { model.detail == null }
+        } finally {
+            observer?.cancelAndJoin()
+            model.shutdown()
+            scope.coroutineContext[Job]?.cancelAndJoin()
+            directory.deleteRecursively()
+        }
+    }
 }

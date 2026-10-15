@@ -93,6 +93,7 @@ import recly.core.transcribe.RetranscribeResult
 import recly.core.transcribe.TranscriptEdit
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import recly.core.recording.RecordingRecord
 import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptAvailability
@@ -220,6 +221,11 @@ data class RecordingDetail(
     val showingSummary: Boolean = false,
     /** docs/08 "Ask": the question asked about it in this run of the app, and where it has got to. */
     val ask: AskState = AskState.None,
+    /**
+     * The recording as its list row has it ([Recents.one]), null until it has been read: More → Delete's rule and
+     * what the delete dialog asks with (2026-10-15), the same as the list's own Delete had.
+     */
+    val row: RecentItem? = null,
 )
 
 /** docs/10 "Re-transcription": what the confirmation names — the method and the language — before it runs. */
@@ -1381,8 +1387,8 @@ class ShellModel(
 
     /**
      * What the detail's menus and lines depend on besides the transcript: the highlights, which the audio
-     * observation does not follow, and whether a job of this recording — a re-transcription among them —
-     * is still in flight.
+     * observation does not follow, whether a job of this recording — a re-transcription among them —
+     * is still in flight, and its list row ([RecordingDetail.row]).
      */
     suspend fun followDetailState(recordingId: String) = coroutineScope {
         val graph = graph ?: return@coroutineScope
@@ -1391,6 +1397,16 @@ class ShellModel(
                 .map { graph.core.recordings.get(recordingId)?.meta?.highlights?.map { it.atSec }.orEmpty() }
                 .distinctUntilChanged()
                 .collect { highlights -> updateDetail(recordingId) { it.copy(highlights = highlights) } }
+        }
+        // More → Delete: the recording's row read on its own rather than found in [recents], whose pages a search hit
+        // can open past — again whenever a recording or a job changes, as the list's rows are.
+        launch {
+            merge(graph.core.recordings.observe(), graph.core.jobs.observe().map { })
+                .conflate()
+                .collect {
+                    val row = runCatching { Recents.one(graph.core, recordingId) }.getOrElse { return@collect }
+                    updateDetail(recordingId) { it.copy(row = row) }
+                }
         }
         graph.core.jobs.observe()
             .map { jobs -> jobs.filter { it.recordingId == recordingId && it.status !in SETTLED } }
