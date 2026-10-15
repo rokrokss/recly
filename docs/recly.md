@@ -2623,8 +2623,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   the highlighted moments and what is written there, never the audio — for summaries and questions, and that they count toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
   ChatGPT plan. You can manage usage in ChatGPT settings.` with `Manage usage` and `Got it`. The whole section and the More item are
   absent where the core says `Unavailable` (§15 "China mainland App Store").
-- **The detail.** More → `Summarize` / `Summarize again`, then `Summarize as…` (a submenu on the desktops; on the phones the More menu turns
-  into the format list with a back row — 2026-10-15, iPhone as Android; `✓` on the summary's format) and, after `Edit summary`, `Ask about this recording…` — disabled with their reason like the other items: `No transcript yet`,
+- **The detail.** More → `Summarize` / `Summarize again`, then `Summarize as…` (a submenu on the desktops; on the phones a list of the formats —
+  Android's More menu turns into it with a back row, the iPhone asks in the system's dialog, because an open SwiftUI menu
+  cannot be told it closed and would reopen on the formats (2026-10-15); `✓` on the summary's format) and, after `Edit summary`, `Ask about this recording…` — disabled with their reason like the other items: `No transcript yet`,
   `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. Once a summary exists or one was asked for, two
   chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects
   `Summary`; no chips while editing). The summary is selectable plain text with its line breaks, then `ChatGPT · <model>` (secondary, 12),
