@@ -711,10 +711,11 @@ final class MenuModel: ObservableObject {
     var canSignIn: Bool { GoogleAuth.isConfigured }
 
     /// The last sign-in failure in words, made where Settings draws it (docs/07 rule 3): `GoogleAuth.Failure.message`
-    /// for the ones that say what to do (a build with no client configured), `Could not connect Drive` for the rest.
+    /// for the ones that say what to do (a build with no client configured), "Could not connect Drive" for the rest —
+    /// the phone's key and words.
     var authNote: String? {
         guard let authError else { return nil }
-        return (authError as? GoogleAuth.Failure)?.message ?? AppStrings.localized("Could not connect Drive")
+        return (authError as? GoogleAuth.Failure)?.message ?? AppStrings.localized("The sign-in failed")
     }
 
     /// docs/03: why the popover's sign-in is refused, or nil when it is not. A second account signed

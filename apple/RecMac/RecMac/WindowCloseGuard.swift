@@ -23,6 +23,15 @@ struct WindowCloseGuard: NSViewRepresentable {
     private final class GuardView: NSView {
         let guardian = CloseGuardDelegate()
 
+        /// Leaving the window, the delegate it stood in front of goes back: the window holds its delegate weakly,
+        /// and this view is the guard's only owner.
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if let window, window.delegate === guardian {
+                window.delegate = guardian.original
+            }
+            super.viewWillMove(toWindow: newWindow)
+        }
+
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             guard let window, window.delegate !== guardian else { return }

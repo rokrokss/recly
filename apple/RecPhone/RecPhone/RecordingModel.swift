@@ -1168,8 +1168,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         case .privacy:
             tab = .settings
             privacyPresented = true
-        // The banner's Connect Drive is the sign-in itself, as the detail's is — not a trip to the tab.
+        // The banner's Connect Drive is the sign-in itself, as the detail's is — on the Settings tab, where the
+        // Drive row says how it went (and where a tap from a cold launch, with no window to present from yet, lands).
         case .signIn:
+            tab = .settings
             signIn()
 
         case .driveStorage:

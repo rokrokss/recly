@@ -102,9 +102,6 @@ struct RecordingsWindow: View {
             Group {
                 if let detail = menu.detail {
                     RecordingDetailView(model: detail)
-                        // docs/09 "Editing and speakers": closing the window is one more way out of an editor, and asks
-                        // as the others do.
-                        .background(WindowCloseGuard { menu.mayLeaveDetail() })
                 } else {
                     Text(verbatim: loc("Pick a recording."))
                         .font(blueprint.fonts.bodySmall)
@@ -116,6 +113,9 @@ struct RecordingsWindow: View {
             .frame(minWidth: 380, maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 720, minHeight: 420)
+        // docs/09 "Editing and speakers": closing the window is one more way out of an editor, and asks as the others
+        // do. On the window's root, so it lives exactly as long as the window — not as long as the open recording.
+        .background(WindowCloseGuard { menu.mayLeaveDetail() })
         // ux §2–3: the picked recording's `Share` in the window's toolbar, at its end.
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
