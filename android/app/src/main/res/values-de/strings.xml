@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Wartet auf Modell</string>
     <string name="badge_storage_full">Speicher voll</string>
     <string name="badge_waiting_folder">Wartet auf Ordner</string>
+    <string name="badge_filling">Wird ergänzt</string>
     <string name="node_state_ready">Bereit</string>
     <string name="node_state_starting">Wird gestartet</string>
     <string name="node_state_saving">Wird gespeichert</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Fragen</string>
     <string name="ask_running">Wird gefragt…</string>
     <string name="ask_failed">Keine Antwort möglich</string>
-    <string name="fill_menu">Titel und Namen ergänzen</string>
-    <string name="fill_after_stop">Titel und Sprechernamen mit ChatGPT ergänzen</string>
     <string name="fill_after_stop_note">Sobald das Transkript fertig ist, geht es an ChatGPT, um einen fehlenden Titel und die Namen angesprochener Sprecher zu ergänzen. Das zählt zu deiner ChatGPT-Nutzung.</string>
-    <string name="fill_nothing">Titel und Namen sind schon ergänzt</string>
     <string name="fill_running">Wird ergänzt…</string>
-    <string name="fill_failed">Titel und Namen konnten nicht ergänzt werden</string>
+    <string name="fill_title_menu">Titel ergänzen</string>
+    <string name="fill_names_menu">Sprechernamen ergänzen</string>
+    <string name="fill_title_after_stop">Titel mit ChatGPT ergänzen</string>
+    <string name="fill_names_after_stop">Sprechernamen mit ChatGPT ergänzen</string>
+    <string name="fill_has_title">Hat schon einen Titel</string>
+    <string name="fill_no_unnamed">Keine Sprecher ohne Namen</string>
+    <string name="fill_title_running">Titel wird ergänzt…</string>
+    <string name="fill_names_running">Sprechernamen werden ergänzt…</string>
+    <string name="fill_title_failed">Titel konnte nicht ergänzt werden</string>
+    <string name="fill_names_failed">Sprechernamen konnten nicht ergänzt werden</string>
     <string name="share_no_summary">Noch keine Zusammenfassung</string>
     <string name="speaker_me">Ich</string>
 </resources>

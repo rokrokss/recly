@@ -398,6 +398,7 @@
     <string name="badge_waiting_model">모델 대기</string>
     <string name="badge_storage_full">저장 공간 부족</string>
     <string name="badge_waiting_folder">폴더 대기</string>
+    <string name="badge_filling">채우는 중</string>
     <string name="node_state_ready">준비</string>
     <string name="node_state_starting">시작 중</string>
     <string name="node_state_saving">저장 중</string>
@@ -469,12 +470,18 @@
     <string name="ask_ask">묻기</string>
     <string name="ask_running">묻는 중…</string>
     <string name="ask_failed">답하지 못했습니다</string>
-    <string name="fill_menu">제목·이름 채우기</string>
-    <string name="fill_after_stop">ChatGPT로 제목·화자 이름 채우기</string>
     <string name="fill_after_stop_note">전사가 끝나면 전사본을 ChatGPT에 보내, 비어 있는 제목과 대화에서 이름이 불린 화자의 이름을 받습니다. ChatGPT 사용량에 포함됩니다.</string>
-    <string name="fill_nothing">제목과 이름이 이미 있습니다</string>
     <string name="fill_running">채우는 중…</string>
-    <string name="fill_failed">제목과 이름을 채우지 못했습니다</string>
+    <string name="fill_title_menu">제목 채우기</string>
+    <string name="fill_names_menu">화자 이름 채우기</string>
+    <string name="fill_title_after_stop">ChatGPT로 제목 채우기</string>
+    <string name="fill_names_after_stop">ChatGPT로 화자 이름 채우기</string>
+    <string name="fill_has_title">이미 제목이 있습니다</string>
+    <string name="fill_no_unnamed">이름 없는 화자가 없습니다</string>
+    <string name="fill_title_running">제목을 채우는 중…</string>
+    <string name="fill_names_running">화자 이름을 채우는 중…</string>
+    <string name="fill_title_failed">제목을 채우지 못했습니다</string>
+    <string name="fill_names_failed">화자 이름을 채우지 못했습니다</string>
     <string name="share_no_summary">아직 요약이 없습니다</string>
     <string name="speaker_me">나</string>
 </resources>

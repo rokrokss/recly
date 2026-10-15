@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">मॉडल की प्रतीक्षा</string>
     <string name="badge_storage_full">स्टोरेज भर गया</string>
     <string name="badge_waiting_folder">फ़ोल्डर की प्रतीक्षा</string>
+    <string name="badge_filling">भरा जा रहा है</string>
     <string name="node_state_ready">तैयार</string>
     <string name="node_state_starting">शुरू हो रहा है</string>
     <string name="node_state_saving">सहेजा जा रहा है</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">पूछें</string>
     <string name="ask_running">पूछा जा रहा है…</string>
     <string name="ask_failed">जवाब नहीं मिल सका</string>
-    <string name="fill_menu">शीर्षक और नाम भरें</string>
-    <string name="fill_after_stop">ChatGPT से शीर्षक और वक्ताओं के नाम भरें</string>
     <string name="fill_after_stop_note">ट्रांसक्रिप्ट तैयार होने पर उसे ChatGPT को भेजा जाता है, ताकि खाली शीर्षक और नाम से पुकारे गए वक्ताओं के नाम मिल सकें। यह आपके ChatGPT उपयोग में गिना जाता है।</string>
-    <string name="fill_nothing">शीर्षक और नाम पहले से भरे हैं</string>
     <string name="fill_running">भरा जा रहा है…</string>
-    <string name="fill_failed">शीर्षक और नाम नहीं भरे जा सके</string>
+    <string name="fill_title_menu">शीर्षक भरें</string>
+    <string name="fill_names_menu">वक्ताओं के नाम भरें</string>
+    <string name="fill_title_after_stop">ChatGPT से शीर्षक भरें</string>
+    <string name="fill_names_after_stop">ChatGPT से वक्ताओं के नाम भरें</string>
+    <string name="fill_has_title">शीर्षक पहले से है</string>
+    <string name="fill_no_unnamed">बिना नाम का कोई वक्ता नहीं</string>
+    <string name="fill_title_running">शीर्षक भरा जा रहा है…</string>
+    <string name="fill_names_running">वक्ताओं के नाम भरे जा रहे हैं…</string>
+    <string name="fill_title_failed">शीर्षक नहीं भरा जा सका</string>
+    <string name="fill_names_failed">वक्ताओं के नाम नहीं भरे जा सके</string>
     <string name="share_no_summary">अभी कोई सारांश नहीं</string>
     <string name="speaker_me">मैं</string>
 </resources>

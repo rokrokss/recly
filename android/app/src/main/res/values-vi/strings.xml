@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Đang chờ mô hình</string>
     <string name="badge_storage_full">Hết dung lượng</string>
     <string name="badge_waiting_folder">Đang chờ thư mục</string>
+    <string name="badge_filling">Đang điền</string>
     <string name="node_state_ready">Sẵn sàng</string>
     <string name="node_state_starting">Đang khởi động</string>
     <string name="node_state_saving">Đang lưu</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Hỏi</string>
     <string name="ask_running">Đang hỏi…</string>
     <string name="ask_failed">Không thể trả lời</string>
-    <string name="fill_menu">Điền tiêu đề và tên</string>
-    <string name="fill_after_stop">Điền tiêu đề và tên người nói bằng ChatGPT</string>
     <string name="fill_after_stop_note">Khi chép lời xong, bản chép lời được gửi tới ChatGPT để lấy tiêu đề còn thiếu và tên của những người nói được gọi tên. Việc này được tính vào mức sử dụng ChatGPT của bạn.</string>
-    <string name="fill_nothing">Tiêu đề và tên đã được điền</string>
     <string name="fill_running">Đang điền…</string>
-    <string name="fill_failed">Không thể điền tiêu đề và tên</string>
+    <string name="fill_title_menu">Điền tiêu đề</string>
+    <string name="fill_names_menu">Điền tên người nói</string>
+    <string name="fill_title_after_stop">Điền tiêu đề bằng ChatGPT</string>
+    <string name="fill_names_after_stop">Điền tên người nói bằng ChatGPT</string>
+    <string name="fill_has_title">Đã có tiêu đề</string>
+    <string name="fill_no_unnamed">Không có người nói chưa có tên</string>
+    <string name="fill_title_running">Đang điền tiêu đề…</string>
+    <string name="fill_names_running">Đang điền tên người nói…</string>
+    <string name="fill_title_failed">Không thể điền tiêu đề</string>
+    <string name="fill_names_failed">Không thể điền tên người nói</string>
     <string name="share_no_summary">Chưa có tóm tắt</string>
     <string name="speaker_me">Tôi</string>
 </resources>

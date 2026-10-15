@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">等待模型</string>
     <string name="badge_storage_full">存储空间已满</string>
     <string name="badge_waiting_folder">等待文件夹</string>
+    <string name="badge_filling">正在填写</string>
     <string name="node_state_ready">就绪</string>
     <string name="node_state_starting">正在启动</string>
     <string name="node_state_saving">正在保存</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">提问</string>
     <string name="ask_running">正在提问…</string>
     <string name="ask_failed">无法回答</string>
-    <string name="fill_menu">填写标题和名称</string>
-    <string name="fill_after_stop">用ChatGPT填写标题和说话人名称</string>
     <string name="fill_after_stop_note">转录完成后，会把转写文本发送给ChatGPT，以获取缺少的标题和被叫到名字的说话人名称。这会计入你的ChatGPT用量。</string>
-    <string name="fill_nothing">标题和名称已填写</string>
     <string name="fill_running">正在填写…</string>
-    <string name="fill_failed">无法填写标题和名称</string>
+    <string name="fill_title_menu">填写标题</string>
+    <string name="fill_names_menu">填写说话人名称</string>
+    <string name="fill_title_after_stop">用ChatGPT填写标题</string>
+    <string name="fill_names_after_stop">用ChatGPT填写说话人名称</string>
+    <string name="fill_has_title">已有标题</string>
+    <string name="fill_no_unnamed">没有未命名的说话人</string>
+    <string name="fill_title_running">正在填写标题…</string>
+    <string name="fill_names_running">正在填写说话人名称…</string>
+    <string name="fill_title_failed">无法填写标题</string>
+    <string name="fill_names_failed">无法填写说话人名称</string>
     <string name="share_no_summary">还没有摘要</string>
     <string name="speaker_me">我</string>
 </resources>

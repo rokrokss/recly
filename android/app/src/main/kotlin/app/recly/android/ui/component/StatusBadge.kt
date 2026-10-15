@@ -143,5 +143,6 @@ internal fun badgeWord(code: String): Int? = when (code) {
     "NEEDS_SPACE", "NO_SPACE" -> R.string.badge_storage_full
     "SKIPPED" -> R.string.job_state_skipped_short
     "WAITING_FOLDER" -> R.string.badge_waiting_folder
+    "FILLING" -> R.string.badge_filling
     else -> null
 }

@@ -496,8 +496,8 @@ private fun JobsTab(
                 askPresets = { model.askPresets(detail.recordingId) },
                 onAsk = { preset, question -> model.ask(detail.recordingId, preset, question) },
                 onClearAsk = { model.clearAsk(detail.recordingId) },
-                onFill = { model.fill(detail.recordingId) },
-                filling = detail.filling,
+                onFill = { half -> model.fill(detail.recordingId, half) },
+                fill = state.fills.firstOrNull { it.recordingId == detail.recordingId },
             ),
         )
     } else {

@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Naghihintay sa modelo</string>
     <string name="badge_storage_full">Puno na ang storage</string>
     <string name="badge_waiting_folder">Naghihintay sa folder</string>
+    <string name="badge_filling">Pinupunan</string>
     <string name="node_state_ready">Handa</string>
     <string name="node_state_starting">Sinisimulan</string>
     <string name="node_state_saving">Sine-save</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Itanong</string>
     <string name="ask_running">Nagtatanong…</string>
     <string name="ask_failed">Hindi nakasagot</string>
-    <string name="fill_menu">Punan ang pamagat at mga pangalan</string>
-    <string name="fill_after_stop">Punan ang pamagat at mga pangalan ng nagsasalita gamit ang ChatGPT</string>
     <string name="fill_after_stop_note">Kapag handa na ang transcript, ipapadala ito sa ChatGPT para sa kulang na pamagat at sa mga pangalan ng mga nagsasalitang tinawag sa pangalan. Kasama ito sa paggamit mo ng ChatGPT.</string>
-    <string name="fill_nothing">Kumpleto na ang pamagat at mga pangalan</string>
     <string name="fill_running">Pinupunan…</string>
-    <string name="fill_failed">Hindi mapunan ang pamagat at mga pangalan</string>
+    <string name="fill_title_menu">Punan ang pamagat</string>
+    <string name="fill_names_menu">Punan ang mga pangalan ng nagsasalita</string>
+    <string name="fill_title_after_stop">Punan ang pamagat gamit ang ChatGPT</string>
+    <string name="fill_names_after_stop">Punan ang mga pangalan ng nagsasalita gamit ang ChatGPT</string>
+    <string name="fill_has_title">May pamagat na</string>
+    <string name="fill_no_unnamed">Walang nagsasalitang walang pangalan</string>
+    <string name="fill_title_running">Pinupunan ang pamagat…</string>
+    <string name="fill_names_running">Pinupunan ang mga pangalan ng nagsasalita…</string>
+    <string name="fill_title_failed">Hindi mapunan ang pamagat</string>
+    <string name="fill_names_failed">Hindi mapunan ang mga pangalan ng nagsasalita</string>
     <string name="share_no_summary">Wala pang buod</string>
     <string name="speaker_me">Ako</string>
 </resources>

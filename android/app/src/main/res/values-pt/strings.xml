@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Aguardando o modelo</string>
     <string name="badge_storage_full">Armazenamento cheio</string>
     <string name="badge_waiting_folder">Aguardando a pasta</string>
+    <string name="badge_filling">Preenchendo</string>
     <string name="node_state_ready">Pronto</string>
     <string name="node_state_starting">Iniciando</string>
     <string name="node_state_saving">Salvando</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Perguntar</string>
     <string name="ask_running">Perguntando…</string>
     <string name="ask_failed">Não foi possível responder</string>
-    <string name="fill_menu">Preencher título e nomes</string>
-    <string name="fill_after_stop">Preencher o título e os nomes dos falantes com o ChatGPT</string>
     <string name="fill_after_stop_note">Quando a transcrição estiver pronta, ela vai para o ChatGPT para receber o título que falta e os nomes dos falantes chamados pelo nome. Isso conta no seu uso do ChatGPT.</string>
-    <string name="fill_nothing">O título e os nomes já estão preenchidos</string>
     <string name="fill_running">Preenchendo…</string>
-    <string name="fill_failed">Não foi possível preencher o título e os nomes</string>
+    <string name="fill_title_menu">Preencher título</string>
+    <string name="fill_names_menu">Preencher nomes dos falantes</string>
+    <string name="fill_title_after_stop">Preencher o título com o ChatGPT</string>
+    <string name="fill_names_after_stop">Preencher os nomes dos falantes com o ChatGPT</string>
+    <string name="fill_has_title">Já tem título</string>
+    <string name="fill_no_unnamed">Nenhum falante sem nome</string>
+    <string name="fill_title_running">Preenchendo o título…</string>
+    <string name="fill_names_running">Preenchendo os nomes dos falantes…</string>
+    <string name="fill_title_failed">Não foi possível preencher o título</string>
+    <string name="fill_names_failed">Não foi possível preencher os nomes dos falantes</string>
     <string name="share_no_summary">Ainda não há resumo</string>
     <string name="speaker_me">Eu</string>
 </resources>

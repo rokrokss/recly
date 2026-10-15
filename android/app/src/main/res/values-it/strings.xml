@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">In attesa del modello</string>
     <string name="badge_storage_full">Spazio esaurito</string>
     <string name="badge_waiting_folder">In attesa della cartella</string>
+    <string name="badge_filling">Completamento</string>
     <string name="node_state_ready">Pronto</string>
     <string name="node_state_starting">Avvio in corso</string>
     <string name="node_state_saving">Salvataggio</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Chiedi</string>
     <string name="ask_running">Domanda in corso…</string>
     <string name="ask_failed">Impossibile rispondere</string>
-    <string name="fill_menu">Completa titolo e nomi</string>
-    <string name="fill_after_stop">Completa il titolo e i nomi degli interlocutori con ChatGPT</string>
     <string name="fill_after_stop_note">Quando la trascrizione è pronta, viene inviata a ChatGPT per il titolo mancante e i nomi degli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT.</string>
-    <string name="fill_nothing">Titolo e nomi sono già completi</string>
     <string name="fill_running">Completamento in corso…</string>
-    <string name="fill_failed">Impossibile completare titolo e nomi</string>
+    <string name="fill_title_menu">Completa titolo</string>
+    <string name="fill_names_menu">Completa nomi degli interlocutori</string>
+    <string name="fill_title_after_stop">Completa il titolo con ChatGPT</string>
+    <string name="fill_names_after_stop">Completa i nomi degli interlocutori con ChatGPT</string>
+    <string name="fill_has_title">Ha già un titolo</string>
+    <string name="fill_no_unnamed">Nessun interlocutore senza nome</string>
+    <string name="fill_title_running">Completamento del titolo…</string>
+    <string name="fill_names_running">Completamento dei nomi degli interlocutori…</string>
+    <string name="fill_title_failed">Impossibile completare il titolo</string>
+    <string name="fill_names_failed">Impossibile completare i nomi degli interlocutori</string>
     <string name="share_no_summary">Ancora nessun riepilogo</string>
     <string name="speaker_me">Io</string>
 </resources>

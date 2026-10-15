@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">في انتظار النموذج</string>
     <string name="badge_storage_full">التخزين ممتلئ</string>
     <string name="badge_waiting_folder">في انتظار المجلد</string>
+    <string name="badge_filling">جارٍ الملء</string>
     <string name="node_state_ready">جاهز</string>
     <string name="node_state_starting">جارٍ التشغيل</string>
     <string name="node_state_saving">جارٍ الحفظ</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">اسأل</string>
     <string name="ask_running">جارٍ السؤال…</string>
     <string name="ask_failed">تعذّرت الإجابة</string>
-    <string name="fill_menu">ملء العنوان والأسماء</string>
-    <string name="fill_after_stop">ملء العنوان وأسماء المتحدثين باستخدام ChatGPT</string>
     <string name="fill_after_stop_note">بعد اكتمال النسخ، يُرسَل نص النسخة إلى ChatGPT للحصول على العنوان الناقص وأسماء المتحدثين الذين نودوا بأسمائهم. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.</string>
-    <string name="fill_nothing">العنوان والأسماء مكتملة بالفعل</string>
     <string name="fill_running">جارٍ الملء…</string>
-    <string name="fill_failed">تعذّر ملء العنوان والأسماء</string>
+    <string name="fill_title_menu">ملء العنوان</string>
+    <string name="fill_names_menu">ملء أسماء المتحدثين</string>
+    <string name="fill_title_after_stop">ملء العنوان باستخدام ChatGPT</string>
+    <string name="fill_names_after_stop">ملء أسماء المتحدثين باستخدام ChatGPT</string>
+    <string name="fill_has_title">للتسجيل عنوان بالفعل</string>
+    <string name="fill_no_unnamed">لا يوجد متحدثون بلا أسماء</string>
+    <string name="fill_title_running">جارٍ ملء العنوان…</string>
+    <string name="fill_names_running">جارٍ ملء أسماء المتحدثين…</string>
+    <string name="fill_title_failed">تعذّر ملء العنوان</string>
+    <string name="fill_names_failed">تعذّر ملء أسماء المتحدثين</string>
     <string name="share_no_summary">لا يوجد ملخص بعد</string>
     <string name="speaker_me">أنا</string>
 </resources>

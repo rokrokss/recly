@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">En attente du modèle</string>
     <string name="badge_storage_full">Stockage plein</string>
     <string name="badge_waiting_folder">En attente du dossier</string>
+    <string name="badge_filling">Complétion</string>
     <string name="node_state_ready">Prêt</string>
     <string name="node_state_starting">Démarrage</string>
     <string name="node_state_saving">Enregistrement en cours</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Demander</string>
     <string name="ask_running">Question en cours…</string>
     <string name="ask_failed">Impossible de répondre</string>
-    <string name="fill_menu">Compléter le titre et les noms</string>
-    <string name="fill_after_stop">Compléter le titre et les noms des locuteurs avec ChatGPT</string>
     <string name="fill_after_stop_note">Une fois la transcription prête, elle est envoyée à ChatGPT pour obtenir le titre manquant et le nom des locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT.</string>
-    <string name="fill_nothing">Le titre et les noms sont déjà renseignés</string>
     <string name="fill_running">Complétion en cours…</string>
-    <string name="fill_failed">Impossible de compléter le titre et les noms</string>
+    <string name="fill_title_menu">Compléter le titre</string>
+    <string name="fill_names_menu">Compléter les noms des locuteurs</string>
+    <string name="fill_title_after_stop">Compléter le titre avec ChatGPT</string>
+    <string name="fill_names_after_stop">Compléter les noms des locuteurs avec ChatGPT</string>
+    <string name="fill_has_title">A déjà un titre</string>
+    <string name="fill_no_unnamed">Aucun locuteur sans nom</string>
+    <string name="fill_title_running">Complétion du titre…</string>
+    <string name="fill_names_running">Complétion des noms des locuteurs…</string>
+    <string name="fill_title_failed">Impossible de compléter le titre</string>
+    <string name="fill_names_failed">Impossible de compléter les noms des locuteurs</string>
     <string name="share_no_summary">Pas encore de résumé</string>
     <string name="speaker_me">Moi</string>
 </resources>

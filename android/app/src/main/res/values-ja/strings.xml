@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">モデル待ち</string>
     <string name="badge_storage_full">容量不足</string>
     <string name="badge_waiting_folder">フォルダ待ち</string>
+    <string name="badge_filling">入力中</string>
     <string name="node_state_ready">準備完了</string>
     <string name="node_state_starting">起動中</string>
     <string name="node_state_saving">保存中</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">質問</string>
     <string name="ask_running">質問中…</string>
     <string name="ask_failed">回答できませんでした</string>
-    <string name="fill_menu">タイトルと名前を入力</string>
-    <string name="fill_after_stop">ChatGPTでタイトルと話者の名前を入力</string>
     <string name="fill_after_stop_note">文字起こしが終わると、空のタイトルと、名前で呼ばれた話者の名前を受け取るために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。</string>
-    <string name="fill_nothing">タイトルと名前はすでに入力されています</string>
     <string name="fill_running">入力しています…</string>
-    <string name="fill_failed">タイトルと名前を入力できませんでした</string>
+    <string name="fill_title_menu">タイトルを入力</string>
+    <string name="fill_names_menu">話者の名前を入力</string>
+    <string name="fill_title_after_stop">ChatGPTでタイトルを入力</string>
+    <string name="fill_names_after_stop">ChatGPTで話者の名前を入力</string>
+    <string name="fill_has_title">タイトルはすでにあります</string>
+    <string name="fill_no_unnamed">名前のない話者はいません</string>
+    <string name="fill_title_running">タイトルを入力しています…</string>
+    <string name="fill_names_running">話者の名前を入力しています…</string>
+    <string name="fill_title_failed">タイトルを入力できませんでした</string>
+    <string name="fill_names_failed">話者の名前を入力できませんでした</string>
     <string name="share_no_summary">まだ要約がありません</string>
     <string name="speaker_me">自分</string>
 </resources>

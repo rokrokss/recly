@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">กำลังรอโมเดล</string>
     <string name="badge_storage_full">พื้นที่เต็ม</string>
     <string name="badge_waiting_folder">กำลังรอโฟลเดอร์</string>
+    <string name="badge_filling">กำลังเติม</string>
     <string name="node_state_ready">พร้อม</string>
     <string name="node_state_starting">กำลังเริ่ม</string>
     <string name="node_state_saving">กำลังบันทึก</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">ถาม</string>
     <string name="ask_running">กำลังถาม…</string>
     <string name="ask_failed">ตอบไม่ได้</string>
-    <string name="fill_menu">เติมชื่อและชื่อผู้พูด</string>
-    <string name="fill_after_stop">เติมชื่อและชื่อผู้พูดด้วย ChatGPT</string>
     <string name="fill_after_stop_note">เมื่อถอดเสียงเสร็จ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อที่ยังว่างและชื่อของผู้พูดที่ถูกเรียกชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ</string>
-    <string name="fill_nothing">มีชื่อและชื่อผู้พูดครบแล้ว</string>
     <string name="fill_running">กำลังเติม…</string>
-    <string name="fill_failed">เติมชื่อและชื่อผู้พูดไม่ได้</string>
+    <string name="fill_title_menu">เติมชื่อ</string>
+    <string name="fill_names_menu">เติมชื่อผู้พูด</string>
+    <string name="fill_title_after_stop">เติมชื่อด้วย ChatGPT</string>
+    <string name="fill_names_after_stop">เติมชื่อผู้พูดด้วย ChatGPT</string>
+    <string name="fill_has_title">มีชื่อแล้ว</string>
+    <string name="fill_no_unnamed">ไม่มีผู้พูดที่ยังไม่มีชื่อ</string>
+    <string name="fill_title_running">กำลังเติมชื่อ…</string>
+    <string name="fill_names_running">กำลังเติมชื่อผู้พูด…</string>
+    <string name="fill_title_failed">เติมชื่อไม่ได้</string>
+    <string name="fill_names_failed">เติมชื่อผู้พูดไม่ได้</string>
     <string name="share_no_summary">ยังไม่มีสรุป</string>
     <string name="speaker_me">ฉัน</string>
 </resources>

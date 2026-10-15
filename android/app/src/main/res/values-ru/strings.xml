@@ -366,6 +366,7 @@
     <string name="badge_waiting_model">Ожидание модели</string>
     <string name="badge_storage_full">Хранилище заполнено</string>
     <string name="badge_waiting_folder">Ожидание папки</string>
+    <string name="badge_filling">Заполнение</string>
     <string name="node_state_ready">Готово</string>
     <string name="node_state_starting">Запуск</string>
     <string name="node_state_saving">Сохранение</string>
@@ -436,12 +437,18 @@
     <string name="ask_ask">Спросить</string>
     <string name="ask_running">Задаём вопрос…</string>
     <string name="ask_failed">Не удалось ответить</string>
-    <string name="fill_menu">Заполнить название и имена</string>
-    <string name="fill_after_stop">Заполнить название и имена говорящих с помощью ChatGPT</string>
     <string name="fill_after_stop_note">Когда расшифровка будет готова, она отправится в ChatGPT, чтобы получить недостающее название и имена говорящих, к которым обращались по имени. Это входит в ваше использование ChatGPT.</string>
-    <string name="fill_nothing">Название и имена уже заполнены</string>
     <string name="fill_running">Заполняем…</string>
-    <string name="fill_failed">Не удалось заполнить название и имена</string>
+    <string name="fill_title_menu">Заполнить название</string>
+    <string name="fill_names_menu">Заполнить имена говорящих</string>
+    <string name="fill_title_after_stop">Заполнить название с помощью ChatGPT</string>
+    <string name="fill_names_after_stop">Заполнить имена говорящих с помощью ChatGPT</string>
+    <string name="fill_has_title">Название уже есть</string>
+    <string name="fill_no_unnamed">Нет говорящих без имени</string>
+    <string name="fill_title_running">Заполняем название…</string>
+    <string name="fill_names_running">Заполняем имена говорящих…</string>
+    <string name="fill_title_failed">Не удалось заполнить название</string>
+    <string name="fill_names_failed">Не удалось заполнить имена говорящих</string>
     <string name="share_no_summary">Сводки пока нет</string>
     <string name="speaker_me">Я</string>
 </resources>
