@@ -579,7 +579,8 @@ is always immediate.
 
 #### Deleting in the app — "Delete recording"
 
-The delete action on a list row. **One recording at a time**, and every time it asks what to do about Drive.
+The delete action on a list row — on the desktops, the last item of the detail's More menu (2026-10-15). **One recording at a time**, and every
+time it asks what to do about Drive.
 
 | Target | Action |
 |---|---|
@@ -2331,8 +2332,11 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    has no word of its own (a missing or rejected key, a quota, local transcription or speaker separation unavailable) shows `Failed`. Under the title, a row whose
    recording has a transcript on this device shows its first words on one secondary line (`core.previews`; phones and the desktop Details lists,
    not the popover or tray ledgers; 2026-10-08). In the desktop Details lists only the open row carries its reason, its diagnostic line and its
-   actions (`Download model`, `Retry` by the ledger's rule, `Check the key`, the Mac's `Open Drive storage` on a full Drive, and the red `Delete`
-   end-aligned) — the other rows are title, preview, time and badge only (2026-10-11).
+   actions (`Download model`, `Retry` by the ledger's rule, `Check the key`, `Open Drive storage` on a full Drive) — the other rows are title,
+   preview, time and badge only (2026-10-11). The open row's band appears only when it has something to say or fix: `Delete` moved to the
+   detail's More menu (2026-10-15, user decision — a finished row's band held Delete alone, a wide empty strip that read as an accordion to
+   collapse). The Details list is a selection, not an accordion: clicking the open row again — or a search hit or the tray's or popover's
+   `Details` for it — changes nothing, with no reload and no flicker.
    **Three things happening elsewhere** (2026-09-04, §3 "Recordings from other devices") are read **before** the job state mapping — none of the three is a job of this
    device, so they cannot be read from the queue: `RECEIVING` (being received from the watch = `receiving`; its `status = recording`, so
    left alone it would show as `REC`) · `UPLOADING` (another device is uploading = `remoteUploading`; the **same
@@ -2437,7 +2441,10 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in three groups parted by a hairline (2026-10-10, the same
      on every shell): `Rename` · `Edit transcript` · `Transcribe again`; `Summarize` · `Summarize as…` · `Edit summary` · `Ask about this
-     recording…` · `Fill in title and names` (§9 "Summary view"; the group is absent where ChatGPT is not offered); `Add highlight at 00:12:34` (the playhead). The menu
+     recording…` · `Fill in title and names` (§9 "Summary view"; the group is absent where ChatGPT is not offered); `Add highlight at 00:12:34` (the playhead).
+     The desktops add two more groups (2026-10-15): the recording's folder — `Open in Drive`, or `Show in Finder` / `Open the folder` — and last,
+     the red `Delete`, which opens the delete dialog (§3 "Deleting in the app"; no keyboard shortcut, user decision; disabled with `Still
+     recording` or the importing word while the recording is being written). The phones keep Delete in the list's expanded row. The menu
      is never cut short: it may be as tall as the window. An item that cannot run now stays in the menu, disabled, with the reason as its second line —
      `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `Not uploaded yet` (`Transcribe again` on a recording that has not
      reached the storage) or `Waiting for Drive` (its pending job waits for a Drive connection); `Still recording` while it is being written — for
