@@ -61,6 +61,7 @@ import app.recly.windows.ui.theme.mono
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryState
 
 /** docs/08 "Summaries": Transcript | Summary, under the detail's header. One is always chosen. */
@@ -98,30 +99,43 @@ internal fun SummaryPane(
         when (val summary = detail.summary) {
             // Chosen a moment ago, and the core has not said it is running yet.
             SummaryState.None -> LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
+            // The previous summary stays readable under a run and a failure — with its footer, which model wrote it and
+            // Copy all, as when it is the one on show (D17).
             is SummaryState.Running -> {
                 LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
-                summary.previous?.let { CitedText(it.text, canPlay, onPlay, strings, detail.audio.totalSec) }
+                summary.previous?.let { SummaryWithFooter(it, model, detail, canPlay, onPlay, strings) }
             }
-            is SummaryState.Ready -> {
-                CitedText(summary.summary.text, canPlay, onPlay, strings, detail.audio.totalSec)
-                SummaryFooter(
-                    text = summary.summary.text,
-                    source = summaryFooter(
-                        strings,
-                        summaryModelLabel(summary.summary.model, summary.summary.modelName, model.chatGpt?.connection ?: ChatGptConnection.SignedOut),
-                        summary.summary.summaryFormat,
-                        edited = summary.summary.editedAt != null,
-                    ),
-                    recordingId = detail.recordingId,
-                    strings = strings,
-                )
-            }
+            is SummaryState.Ready -> SummaryWithFooter(summary.summary, model, detail, canPlay, onPlay, strings)
             is SummaryState.Failed -> {
                 SummaryFailureNotice(summaryFailure(summary.reason), { model.chatGpt?.openUsage() }, model::retrySummary, strings)
-                summary.previous?.let { CitedText(it.text, canPlay, onPlay, strings, detail.audio.totalSec) }
+                summary.previous?.let { SummaryWithFooter(it, model, detail, canPlay, onPlay, strings) }
             }
         }
     }
+}
+
+/** A summary's text with its times, and under it the footer: the model, the format, whether it was edited, Copy all. */
+@Composable
+private fun SummaryWithFooter(
+    summary: Summary,
+    model: ShellModel,
+    detail: RecordingDetail,
+    canPlay: Boolean,
+    onPlay: (Double) -> Unit,
+    strings: Strings,
+) {
+    CitedText(summary.text, canPlay, onPlay, strings, detail.audio.totalSec)
+    SummaryFooter(
+        text = summary.text,
+        source = summaryFooter(
+            strings,
+            summaryModelLabel(summary.model, summary.modelName, model.chatGpt?.connection ?: ChatGptConnection.SignedOut),
+            summary.summaryFormat,
+            edited = summary.editedAt != null,
+        ),
+        recordingId = detail.recordingId,
+        strings = strings,
+    )
 }
 
 /**

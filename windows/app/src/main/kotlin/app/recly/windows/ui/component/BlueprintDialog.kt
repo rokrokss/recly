@@ -27,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.DpSize
@@ -45,8 +44,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
-import androidx.compose.ui.window.DialogModalityType
-import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -78,8 +75,6 @@ import app.recly.windows.ui.theme.blueprint
  *
  * The Android twin is `ui/component/BlueprintDialog.kt`, and the Mac's is `Design/BlueprintDialog`.
  */
-// The modeless dialog's window (its decoration and its modality) is Compose Desktop's experimental API.
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun BlueprintDialog(
     title: String,
@@ -111,8 +106,6 @@ fun BlueprintDialog(
     maxHeight: Dp? = null,
     /** A close mark at the end of the title row, which a reader hears as this; it does what Escape does. */
     closeLabel: String? = null,
-    /** The window it is opened over stays in use while it is up — its player plays and pauses (docs/09 "Ask"). */
-    modeless: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val state = rememberDialogState(width = width, height = height)
@@ -145,29 +138,16 @@ fun BlueprintDialog(
             }
         }
     }
-    if (modeless) {
-        DialogWindow(
-            onCloseRequest = onDismissRequest,
-            state = state,
-            title = title,
-            decoration = WindowDecoration.Undecorated(),
-            transparent = true,
-            resizable = false,
-            modalityType = DialogModalityType.Modeless,
-            onKeyEvent = onKey,
-        ) { card() }
-    } else {
-        DialogWindow(
-            onCloseRequest = onDismissRequest,
-            // The taskbar still wants a name for it, even though the card draws its own.
-            title = title,
-            state = state,
-            undecorated = true,
-            transparent = true,
-            resizable = false,
-            onKeyEvent = onKey,
-        ) { card() }
-    }
+    DialogWindow(
+        onCloseRequest = onDismissRequest,
+        // The taskbar still wants a name for it, even though the card draws its own.
+        title = title,
+        state = state,
+        undecorated = true,
+        transparent = true,
+        resizable = false,
+        onKeyEvent = onKey,
+    ) { card() }
 }
 
 @Composable

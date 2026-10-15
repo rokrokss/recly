@@ -170,6 +170,10 @@ data class RecordingDetail(
     val folder: Boolean = false,
     /** Where the recording's folder is, and null while it is not uploaded: whether an edit reaches the other devices. */
     val storage: StorageKind? = null,
+    /** Its folder in Drive, once it has one — More → Open in Drive (D24). */
+    val driveUrl: String? = null,
+    /** Its folder under the local folder, once its files are there — More → Open the folder (D24). */
+    val folderPath: String? = null,
     /** docs/03 "Metadata": the moments the user marked, in seconds of the recording. */
     val highlights: List<Double> = emptyList(),
     /** The recording's whole length as its meta records it, which picks how its times are drawn (2026-10-08). */
@@ -194,8 +198,6 @@ data class RecordingDetail(
     /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
     val find: String? = null,
     val findAtSec: Double? = null,
-    /** A transcription of it is really queued or running — the text is about to change (docs/08 "Summaries"). */
-    val transcriptionRunning: Boolean = false,
     /** docs/08 "Summaries": the recording's summary, as the core has it. */
     val summary: SummaryState = SummaryState.None,
     /** The Summary chip is the chosen one. A detail opens on the transcript, or on a summary search found it in. */
@@ -1313,6 +1315,17 @@ class ShellModel(
         open(File(root, path).path)
     }
 
+    /** D24: More → Open in Drive, or Open the folder, for the recording the detail is showing. */
+    fun openDetailStorage() {
+        val detail = detail ?: return
+        detail.driveUrl?.let {
+            open(it)
+            return
+        }
+        val root = localFolder ?: return
+        detail.folderPath?.let { open(File(root, it).path) }
+    }
+
     /**
      * docs/08 "Result files": the local copy if the step ran on this PC, and Drive's if it ran
      * elsewhere — the core decides which, and keeps what it downloads. The audio beside it is read
@@ -1340,7 +1353,8 @@ class ShellModel(
             updateDetail(recordingId) {
                 it.copy(audio = local, writing = record?.meta?.status == RecordingStatus.RECORDING,
                     driveFetch = DriveFetch.DECIDING, folder = record?.storage == StorageKind.FOLDER,
-                    storage = record?.storage, lengthSec = record?.meta?.durationSec)
+                    storage = record?.storage, lengthSec = record?.meta?.durationSec,
+                    driveUrl = record?.driveFolderUrl, folderPath = record?.localFolderPath)
             }
             fetchFromDrive(graph, recordingId, record, local)
         }
@@ -1380,7 +1394,6 @@ class ShellModel(
                         notUploaded = !uploaded,
                         waitsForDrive = waitsForDrive,
                         busyReason = busyReason(transcribingNow, waitsForDrive, uploaded),
-                        transcriptionRunning = transcribingNow,
                     )
                 }
             }

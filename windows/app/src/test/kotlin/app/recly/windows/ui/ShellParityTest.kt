@@ -168,6 +168,44 @@ class ShellParityTest {
         model.shutdown()
     }
 
+    /** D8 · D9: a retry the queue refuses says so over the list and on the tray's line, and the button wears no check. */
+    @Test
+    fun `a refused retry says it cannot be retried now`() = runBlocking {
+        val model = shell(consentReminder = false)
+        model.load(dataDirectory = dir.absolutePath.toPath(), helperCommand = FakeHelperCommand.command())
+        val gone = app.recly.windows.jobs.RecentItem(
+            id = "rec-gone", jobId = "job-gone", jobStatus = JobStatus.FAILED, title = Str.UNTITLED.message(),
+            startedAt = "2026-10-15T10:00:00Z", state = Str.STATE_FAILED.message(), link = null,
+        )
+
+        model.retry(gone)
+        withTimeout(TIMEOUT_MS) { while (model.listMessage == null) delay(POLL_MS) }
+
+        assertEquals(ShellNotice(Str.RECENT_RETRY_UNAVAILABLE.message(), BadgeTone.WARNING), model.listMessage)
+        assertEquals(Str.RECENT_RETRY_UNAVAILABLE.message(), model.status)
+        assertEquals(app.recly.windows.ui.theme.ProcessingState.FAILED, model.action)
+        model.dismissListMessage()
+        assertNull(model.listMessage)
+        model.shutdown()
+    }
+
+    /** D11: the Details header, by the phones' counting rule. */
+    @Test
+    fun `the list header counts what waits and what failed`() {
+        fun row(state: Str) = app.recly.windows.jobs.RecentItem(
+            id = state.name, jobId = null, title = Str.UNTITLED.message(), startedAt = "2026-10-15T10:00:00Z",
+            state = state.message(), link = null,
+        )
+        assertEquals("0", ledgerCounts(emptyList(), { "$it waiting" }, { "$it failed" }))
+        assertEquals("2", ledgerCounts(listOf(row(Str.STATE_DONE), row(Str.STATE_UPLOADING)), { "$it waiting" }, { "$it failed" }))
+        val rows = listOf(
+            row(Str.STATE_DONE), row(Str.STATUS_SIGN_IN_NEEDED), row(Str.STATE_RETRY_WAIT), row(Str.PROCESSING_LOCAL_RUNNING),
+            row(Str.STATE_FAILED), row(Str.STATE_NO_SPACE), row(Str.STATE_TOO_SHORT), row(Str.STATE_UPLOADING),
+        )
+        assertEquals("8 · 3 waiting · 3 failed", ledgerCounts(rows, { "$it waiting" }, { "$it failed" }))
+        assertEquals("1 · 1 failed", ledgerCounts(listOf(row(Str.STATE_FAILED)), { "$it waiting" }, { "$it failed" }))
+    }
+
     private fun shell(consentReminder: Boolean) = ShellModel(
         scope = scope,
         localization = Localization(FakeSettings(consentReminder = consentReminder, language = AppLanguage.ENGLISH)) { StringTable.BASE },

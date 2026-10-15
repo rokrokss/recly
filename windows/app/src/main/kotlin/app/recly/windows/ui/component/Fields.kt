@@ -93,8 +93,10 @@ fun BlueprintTextField(
     /** A key: drawn as dots, never as what was typed. */
     secret: Boolean = false,
     focusRequester: FocusRequester? = null,
+    /** False where the label is drawn elsewhere — above what the field adds to: it still names the field for a reader. */
+    labelShown: Boolean = true,
 ) {
-    FieldFrame(label, modifier, hint, enabled, monospace, minHeight, if (value.isEmpty()) placeholder else null, focusRequester) { box, style, decoration ->
+    FieldFrame(label, modifier, hint, enabled, monospace, minHeight, if (value.isEmpty()) placeholder else null, focusRequester, labelShown) { box, style, decoration ->
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -128,7 +130,7 @@ fun BlueprintTextField(
     placeholder: String? = null,
     focusRequester: FocusRequester? = null,
 ) {
-    FieldFrame(label, modifier, hint, enabled, monospace, minHeight, if (value.text.isEmpty()) placeholder else null, focusRequester) { box, style, decoration ->
+    FieldFrame(label, modifier, hint, enabled, monospace, minHeight, if (value.text.isEmpty()) placeholder else null, focusRequester, true) { box, style, decoration ->
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -160,6 +162,7 @@ private fun FieldFrame(
     /** What the box says while it is empty, or null. */
     placeholder: String?,
     focusRequester: FocusRequester?,
+    labelShown: Boolean,
     field: @Composable (box: Modifier, style: TextStyle, decoration: @Composable (@Composable () -> Unit) -> Unit) -> Unit,
 ) {
     val palette = blueprint
@@ -172,7 +175,7 @@ private fun FieldFrame(
     }
     val spoken = fieldSemantics(label, hint)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.xs)) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
+        if (labelShown) Text(label, style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
         field(
             Modifier
                 .fillMaxWidth()
@@ -257,13 +260,15 @@ fun BlueprintMenu(
     end: Boolean = false,
     /** How tall it gets before it scrolls: a menu of actions that should be seen whole asks for more. */
     maxHeight: Dp = MENU_MAX_HEIGHT,
+    /** A submenu: beside the row that opened it rather than under it ([SubmenuPosition]). */
+    submenu: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     if (!expanded) return
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
     Popup(
-        popupPositionProvider = remember(end) { MenuPosition(end) },
+        popupPositionProvider = remember(end, submenu) { if (submenu) SubmenuPosition else MenuPosition(end) },
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),
     ) {
@@ -307,6 +312,32 @@ internal class MenuPosition(private val end: Boolean) : PopupPositionProvider {
         return IntOffset(
             x.coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0)),
             y.coerceIn(0, (windowSize.height - popupContentSize.height).coerceAtLeast(0)),
+        )
+    }
+}
+
+/**
+ * Where a submenu opens: its top on the top of the row that opened it, at the row's end edge — the right in a
+ * left-to-right language, the left in a right-to-left one — and on the other side when that one has no room. Inside
+ * the window either way.
+ */
+internal object SubmenuPosition : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset {
+        val after = anchorBounds.right
+        val before = anchorBounds.left - popupContentSize.width
+        val x = if (layoutDirection == LayoutDirection.Ltr) {
+            if (after + popupContentSize.width <= windowSize.width) after else before
+        } else {
+            if (before >= 0) before else after
+        }
+        return IntOffset(
+            x.coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0)),
+            anchorBounds.top.coerceIn(0, (windowSize.height - popupContentSize.height).coerceAtLeast(0)),
         )
     }
 }

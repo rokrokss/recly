@@ -377,17 +377,17 @@ internal fun summaryEditNote(storage: StorageKind?): Str =
 
 /**
  * Why More → Summarize cannot run now, or null when it can. One reason, in this order: a take still being
- * written has no transcript yet either, and says so first, as Rename does; then no transcript; then a
- * transcription of it queued or running, which would replace the text; then the ChatGPT sign-in; then a
- * summary already running.
+ * written has no transcript yet either, and says so first, as Rename does; then no transcript; then a job of the
+ * recording not settled yet — [busy] is its reason, the one Edit transcript gives (D16) — which may still replace
+ * the text; then the ChatGPT sign-in; then a summary already running.
  */
 internal fun summarizeBlocked(
     writing: Boolean,
     hasTranscript: Boolean,
-    transcriptionRunning: Boolean,
+    busy: Str?,
     connection: ChatGptConnection,
     summary: SummaryState,
-): Str? = askBlocked(writing, hasTranscript, transcriptionRunning, connection)
+): Str? = askBlocked(writing, hasTranscript, busy, connection)
     ?: if (summary is SummaryState.Running) Str.SUMMARY_RUNNING else null
 
 /**
@@ -397,12 +397,12 @@ internal fun summarizeBlocked(
 internal fun askBlocked(
     writing: Boolean,
     hasTranscript: Boolean,
-    transcriptionRunning: Boolean,
+    busy: Str?,
     connection: ChatGptConnection,
 ): Str? = when {
     writing -> Str.DETAIL_STILL_RECORDING
     !hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
-    transcriptionRunning -> Str.DETAIL_TRANSCRIBING
+    busy != null -> busy
     connection is ChatGptConnection.SignedOut || connection is ChatGptConnection.Expired -> Str.CORE_CHATGPT_SIGN_IN_REQUIRED
     else -> null
 }

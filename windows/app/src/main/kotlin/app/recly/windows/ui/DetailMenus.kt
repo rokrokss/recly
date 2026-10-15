@@ -36,6 +36,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.BlueprintButton
@@ -192,10 +194,10 @@ private val EXPORTS = listOf(
 /**
  * docs/09 "Screen principles": the detail's ⋯, in three groups with a hairline between them (2026-10-10) — Rename ·
  * Edit transcript · Transcribe again, then the summary's Summarize · Summarize as… · Edit summary · Ask about this
- * recording… where ChatGPT is offered, then Add highlight. What cannot run now stays in its place, disabled, with the
- * reason under it — `Still recording` for every one of them while the take is being written. Summarize as… turns the
- * menu into the formats under a heading that goes back, the way Change speaker turns the speaker's menu into the
- * speakers.
+ * recording… where ChatGPT is offered, then Add highlight, then Open in Drive or Open the folder once the recording has
+ * a folder there (D24). What cannot run now stays in its place, disabled, with the reason under it — `Still recording`
+ * for every one of them while the take is being written. Summarize as… opens the formats in a submenu beside it, as
+ * the Mac's does (D19).
  */
 @Composable
 internal fun MoreButton(
@@ -222,19 +224,6 @@ internal fun MoreButton(
             minWidth = MinTouch,
         )
         BlueprintMenu(open, { open = false }, end = true, maxHeight = DETAIL_MENU_HEIGHT) { BlueprintMenuColumn {
-            if (choosingFormat) {
-                BlueprintMenuRow(strings[Str.SUMMARY_AS], { choosingFormat = false }, mark = BACK_MARK)
-                // The formats Settings offers; the summary on show has its own marked.
-                val current = detail.summary.saved()?.summaryFormat
-                model.chatGpt?.preferences?.formats.orEmpty().forEach { format ->
-                    BlueprintMenuRow(
-                        strings[summaryFormatLabel(format)],
-                        { open = false; model.askToSummarize(format) },
-                        mark = if (format == current) SELECTION_MARK else "",
-                    )
-                }
-                return@BlueprintMenuColumn
-            }
             // A take still being written: every item waits for it, and says so (2026-10-10).
             val recording = Str.DETAIL_STILL_RECORDING.takeIf { detail.writing }
             // The core refuses to rename a take still being written, and the item says so.
@@ -267,19 +256,35 @@ internal fun MoreButton(
             val connection = model.chatGpt?.connection
             if (connection != null && connection != ChatGptConnection.Unavailable) {
                 BlueprintMenuDivider()
-                val summaryBlocked = summarizeBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection, detail.summary)
+                // Any job of it not settled yet, with that job's reason, as Edit transcript says it (D16).
+                val busy = detail.busyReason.takeIf { detail.transcribing }
+                val summaryBlocked = summarizeBlocked(detail.writing, detail.hasTranscript, busy, connection, detail.summary)
                 BlueprintMenuRow(
                     strings[summarizeLabel(detail.summary)],
                     { open = false; model.askToSummarize() },
                     enabled = summaryBlocked == null,
                     secondary = summaryBlocked?.let { strings[it] },
                 )
-                BlueprintMenuRow(
-                    strings[Str.SUMMARY_AS],
-                    { choosingFormat = true },
-                    enabled = summaryBlocked == null,
-                    secondary = summaryBlocked?.let { strings[it] },
-                )
+                Box {
+                    BlueprintMenuRow(
+                        strings[Str.SUMMARY_AS],
+                        { choosingFormat = !choosingFormat },
+                        enabled = summaryBlocked == null,
+                        secondary = summaryBlocked?.let { strings[it] },
+                        trailing = { SubmenuMark(summaryBlocked == null) },
+                    )
+                    BlueprintMenu(choosingFormat, { choosingFormat = false }, submenu = true) { BlueprintMenuColumn {
+                        // The formats Settings offers; the summary on show has its own marked.
+                        val current = detail.summary.saved()?.summaryFormat
+                        model.chatGpt?.preferences?.formats.orEmpty().forEach { format ->
+                            BlueprintMenuRow(
+                                strings[summaryFormatLabel(format)],
+                                { choosingFormat = false; open = false; model.askToSummarize(format) },
+                                mark = if (format == current) SELECTION_MARK else "",
+                            )
+                        }
+                    } }
+                }
                 summaryEditItem(detail.summary)?.let { item ->
                     val editSummaryBlocked = recording ?: item.blocked
                     BlueprintMenuRow(
@@ -290,7 +295,7 @@ internal fun MoreButton(
                     )
                 }
                 // docs/08 "Ask": one question about this recording, in a panel over the detail.
-                val askBlocked = askBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection)
+                val askBlocked = askBlocked(detail.writing, detail.hasTranscript, busy, connection)
                 BlueprintMenuRow(
                     strings[Str.ASK_MENU],
                     { open = false; model.openAsk() },
@@ -308,8 +313,25 @@ internal fun MoreButton(
                 enabled = highlightBlocked == null,
                 secondary = highlightBlocked?.let { strings[it] },
             )
+            // D24: where the recording is kept, the way the tray's row opens it.
+            val place = when {
+                detail.driveUrl != null -> Str.RECENT_OPEN_DRIVE
+                detail.folderPath != null -> Str.SETTINGS_OPEN_FOLDER
+                else -> null
+            }
+            if (place != null) {
+                BlueprintMenuDivider()
+                BlueprintMenuRow(strings[place], { open = false; model.openDetailStorage() })
+            }
         } }
     }
+}
+
+/** The mark at the end of a row that opens a submenu: toward where the submenu opens, so mirrored in a right-to-left language. */
+@Composable
+private fun SubmenuMark(enabled: Boolean) {
+    val mark = if (LocalLayoutDirection.current == LayoutDirection.Rtl) "◂" else "▸"
+    Text(mark, style = MaterialTheme.typography.labelLarge, color = if (enabled) blueprint.textMuted else blueprint.disabled)
 }
 
 /** [sentence] with [stamp] in it set in [family] — a time inside a translated sentence, wherever the language puts it. */
@@ -357,7 +379,7 @@ internal fun speakerName(speaker: TranscriptSpeaker?, strings: Strings): String?
  * control that opens the speaker menu. Speakers are told apart by this label alone.
  */
 @Composable
-internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, reason: String? = null, onClick: () -> Unit) {
     val palette = blueprint
     // The time button's box beside it (2026-10-09): the same 44 height, corner and edge, and the same 14 type every
     // button label is (docs/09 "Component measurements"), so the two share one height, one centre and one baseline.
@@ -367,6 +389,8 @@ internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, on
             .border(palette.line, if (enabled) palette.inputBorder else palette.disabled, RoundedCornerShape(Radius.node))
             .focusRing(RoundedCornerShape(Radius.node))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            // Why it is off, for whoever cannot see that it is (D13).
+            .semantics { if (!enabled && reason != null) stateDescription = reason }
             .padding(horizontal = Space.s, vertical = Space.xs),
         contentAlignment = Alignment.Center,
     ) {
@@ -583,7 +607,7 @@ private const val COPIED_MS = 3_000L
 private val SPEED_MARK_INSET = 16.dp + Space.s
 
 /**
- * Export's seven items and More's eight whole, each with a second line under it, and More's two hairlines — none
+ * Export's seven items and More's nine whole, each with a second line under it, and More's three hairlines — none
  * behind a scroll while the window has the room ([BlueprintMenu] keeps it inside the window).
  */
-private val DETAIL_MENU_HEIGHT = 560.dp
+private val DETAIL_MENU_HEIGHT = 620.dp

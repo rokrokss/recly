@@ -117,6 +117,8 @@ import app.recly.windows.ui.component.EmptyList
 import app.recly.windows.ui.component.FadingStatusBadge
 import app.recly.windows.ui.component.VerticalHairLine
 import app.recly.windows.ui.component.focusRing
+import app.recly.windows.ui.component.BadgeTone
+import app.recly.windows.ui.component.ink
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -198,6 +200,12 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
             model.closeAnswered()
         }
     }
+    // The tray's Details on another row: the same leave as this window's own list (D7).
+    LaunchedEffect(model.detailAsked) {
+        val item = model.detailAsked ?: return@LaunchedEffect
+        model.detailAnswered()
+        leave { model.openDetail(item) }
+    }
     // docs/10 "Search": the list's query, its results 200 ms after the last key, and the detail's find bar.
     var query by remember { mutableStateOf("") }
     var hits by remember { mutableStateOf<List<SearchHit>?>(null) }
@@ -244,31 +252,38 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
             modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
         )
         VerticalHairLine(Modifier.fillMaxHeight())
-        Column(Modifier.weight(1f).fillMaxHeight()) {
-            val detail = model.detail
-            if (detail == null) {
-                // With no recordings at all there is nothing to pick, and the pane says nothing (2026-10-10): the list
-                // beside it says what to do.
-                if (model.recents.isNotEmpty()) Placeholder(strings[Str.DETAIL_PICK])
-            } else {
-                Detail(
-                    model, detail, player,
-                    waveforms = WaveformKeeping(
-                        kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
-                        keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
-                    ),
-                    draft = draft,
-                    onDraft = { draft = it },
-                    // Only over the recording it was opened on: the tray can open another one under it.
-                    summaryDraft = summaryDraft?.takeIf { it.recordingId == detail.recordingId },
-                    onSummaryDraft = { summaryDraft = it },
-                    onLeaveEditor = leave,
-                    findOpen = findOpen,
-                    onFindOpen = { findOpen = it },
-                    findRequest = findRequest,
-                    theme = theme,
-                    strings = strings,
-                )
+        Box(Modifier.weight(1f).fillMaxHeight()) {
+            Column(Modifier.fillMaxSize()) {
+                val detail = model.detail
+                if (detail == null) {
+                    // With no recordings at all there is nothing to pick, and the pane says nothing (2026-10-10): the list
+                    // beside it says what to do.
+                    if (model.recents.isNotEmpty()) Placeholder(strings[Str.DETAIL_PICK])
+                } else {
+                    Detail(
+                        model, detail, player,
+                        waveforms = WaveformKeeping(
+                            kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
+                            keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
+                        ),
+                        // Each draft only over the recording it was opened on, and saved to that one (D7).
+                        draft = draft?.takeIf { it.original.recordingId == detail.recordingId },
+                        onDraft = { draft = it },
+                        // Only over the recording it was opened on: the tray can open another one under it.
+                        summaryDraft = summaryDraft?.takeIf { it.recordingId == detail.recordingId },
+                        onSummaryDraft = { summaryDraft = it },
+                        onLeaveEditor = leave,
+                        findOpen = findOpen,
+                        onFindOpen = { findOpen = it },
+                        findRequest = findRequest,
+                        theme = theme,
+                        strings = strings,
+                    )
+                }
+            }
+            // D18: Ask is a modal question about the recording, as on the Mac — the detail under it dimmed while it is up.
+            if (model.askingAbout != null && model.askingAbout == model.detail?.recordingId) {
+                Box(Modifier.fillMaxSize().background(blueprint.background.copy(alpha = SCRIM_ALPHA)).clearAndSetSemantics { })
             }
         }
     }
@@ -310,9 +325,20 @@ private fun Sidebar(
         item {
             ScreenHeader(
                 title = strings[Str.WINDOW_RECORDINGS],
+                // "14 · 2 waiting · 1 failed", as the phones head their lists (D11) — once the list has been read.
+                meta = if (model.recentsLoading) null else ledgerCounts(
+                    model.recents,
+                    waitingWord = { strings[Str.LIST_WAITING, it] },
+                    failedWord = { strings[Str.LIST_FAILED, it] },
+                ),
                 trailing = { BlueprintButton(strings[Str.IMPORT_AUDIO], model::chooseImport, tone = ButtonTone.QUIET, enabled = model.ready) },
             )
             HairLine()
+            // What the last delete or retry had to say, above the list (D9); a click puts it away.
+            model.listMessage?.let { notice ->
+                ListMessage(notice, strings, model::dismissListMessage)
+                HairLine()
+            }
             // The row is gone with the failed import, so the reason is said here, until the next import.
             model.importFailure?.let { reason ->
                 Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
@@ -430,11 +456,42 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
                 style = mono.small.copy(textDirection = TextDirection.Ltr),
                 color = palette.textMuted,
             )
+            // The ledger's length column, as the tray's rows have it (D11): time · title · length · status.
+            Text(
+                LedgerFormat.length(item.durationSec),
+                style = mono.small.copy(textDirection = TextDirection.Ltr),
+                color = palette.textMuted,
+            )
             FadingStatusBadge(item.state.ledgerStatus(strings))
         }
         // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line. The popup's
         // expanded row says the same thing about the same recording ([FailureReason]).
         if (selected) FailureReason(item, strings)
+    }
+}
+
+/**
+ * D9: the last list action's outcome, over the list — in its tone, a failure red and a refusal or a wait in the warning
+ * ink (D22), on the surface with a border of the same tone. A click, or Enter on it, puts it away — Close, to a reader.
+ */
+@Composable
+private fun ListMessage(notice: ShellNotice, strings: Strings, onDismiss: () -> Unit) {
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.node)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Space.m, vertical = Space.s)
+            .defaultMinSize(minHeight = MinTouch)
+            .focusRing(shape)
+            .background(palette.surface, shape)
+            // A border is a graphic, so a warning's may be the documented amber rather than its darker ink.
+            .border(palette.line, if (notice.tone == BadgeTone.WARNING) palette.warning else notice.tone.ink(), shape)
+            .clickable(onClickLabel = strings[Str.CLOSE], role = Role.Button, onClick = onDismiss)
+            .padding(horizontal = Space.sm, vertical = Space.s),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(notice.message.text(strings), style = MaterialTheme.typography.bodySmall, color = notice.tone.ink())
     }
 }
 
@@ -491,7 +548,6 @@ private fun Detail(
     var saving by remember(detail.recordingId) { mutableStateOf(mapOf<Int, InlineSave>()) }
     var editSave by remember { mutableStateOf<InlineSave?>(null) }
     var editRefused by remember(draft) { mutableStateOf(false) }
-    var summaryRefused by remember(summaryDraft) { mutableStateOf(false) }
     /**
      * A reading-mode change, saved at once with `Saving…` and then a check beside the group it was made on.
      * One at a time: while one saves, the speaker badges do not open ([TranscriptReader]'s `saving`).
@@ -521,7 +577,7 @@ private fun Detail(
                 } else {
                     scope.launch {
                         editSave = InlineSave.SAVING
-                        if (model.editTranscript(detail.recordingId, edit) is EditResult.Edited) {
+                        if (model.editTranscript(draft.original.recordingId, edit) is EditResult.Edited) {
                             editSave = InlineSave.SAVED
                             delay(SAVED_MS)
                             onDraft(null)
@@ -554,8 +610,8 @@ private fun Detail(
                                 delay(SAVED_MS)
                                 onSummaryDraft(null)
                             }
-                            is SummaryState.Running -> summaryRefused = true
-                            // Not saved, and logged; the draft stays for another try.
+                            // Not saved — a new summary is being made over it, or the save failed and was logged; the
+                            // draft stays for another try.
                             else -> Unit
                         }
                         editSave = null
@@ -564,8 +620,6 @@ private fun Detail(
             },
             strings = strings,
         )
-        // The core keeps the summary as it is while a new one is being made over it.
-        if (summaryRefused) RefusedLine(strings[Str.SUMMARY_RUNNING])
     } else {
         ScreenHeader(
             // The title alone: the recording's id is not something the user reads (docs/09 screen principle 2).
@@ -732,6 +786,8 @@ private fun Detail(
                 modifier = Modifier.fillMaxSize(),
                 seekableDurationSec = detail.audio.totalSec,
                 spanSec = detail.spanSec,
+                // The core refuses a speaker change while a job of the recording is unsettled, as it refuses Edit transcript.
+                speakersBlocked = detail.busyReason.takeIf { detail.transcribing }?.let { strings[it] },
             )
         }
     }
@@ -1030,6 +1086,9 @@ private fun FetchProgress(fraction: Float, label: String, strings: Strings) {
 
 /** docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound. */
 private const val LOADER_BAND = 10
+
+/** The scrim over the detail while Ask is up: the page colour, as the Mac's `BlueprintDialogScrim` draws it. */
+private const val SCRIM_ALPHA = 0.86f
 
 /** docs/10 "Search": how long the list waits after the last key before it searches. */
 private const val SEARCH_DEBOUNCE_MS = 200L

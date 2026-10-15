@@ -85,6 +85,11 @@ internal fun TranscriptReader(
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
     /** The recording's length, which picks the format of every time drawn here ([LedgerFormat.clock]). */
     spanSec: Double? = transcript.durationSec,
+    /**
+     * Why the speakers cannot be changed now — a job of the recording is still unsettled, and the core refuses the
+     * edit (D13) — or null. The badges are off and say it to a reader.
+     */
+    speakersBlocked: String? = null,
 ) {
     val blocks = document.blocks
     val ranges = remember(transcript) { blockSegments(transcript, blocks) }
@@ -147,7 +152,8 @@ internal fun TranscriptReader(
                         onSpeakerMenu = { at -> menu = GroupMenu(index, at - origin, speaker = block.speaker) },
                         onHighlightMenu = { at, highlight -> menu = GroupMenu(index, at - origin, highlight = highlight) },
                         saving = saving[index],
-                        speakerEnabled = !busy,
+                        speakerEnabled = !busy && speakersBlocked == null,
+                        speakerReason = speakersBlocked,
                         strings = strings,
                         spanSec = spanSec,
                     )
@@ -189,6 +195,7 @@ private fun Group(
     onHighlightMenu: (Offset, Double) -> Unit,
     saving: InlineSave?,
     speakerEnabled: Boolean,
+    speakerReason: String?,
     strings: Strings,
     spanSec: Double?,
 ) {
@@ -215,7 +222,7 @@ private fun Group(
                     var place by remember { mutableStateOf(Offset.Zero) }
                     // Its menu opens under it (2026-10-10).
                     Box(Modifier.onGloballyPositioned { place = it.positionInRoot() + startFoot(it.size.width, it.size.height, rtl) }) {
-                        SpeakerBadge(speaker, speakerName(transcript.speakers.firstOrNull { it.id == speaker }, strings), speakerEnabled) { onSpeakerMenu(place) }
+                        SpeakerBadge(speaker, speakerName(transcript.speakers.firstOrNull { it.id == speaker }, strings), speakerEnabled, speakerReason) { onSpeakerMenu(place) }
                     }
                 }
                 when (saving) {

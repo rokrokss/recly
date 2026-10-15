@@ -44,9 +44,9 @@ import recly.core.chatgpt.ChatGptConnection
  * the detail. Nothing is kept: closing it forgets the answer ([ShellModel.closeAsk]), though a question still
  * running finishes, and reopening the panel shows it running.
  *
- * Its one way out is the close mark in its title row (2026-10-10). It is as tall as what it holds, up to
- * [ASK_HEIGHT], where the body scrolls under the title; and it leaves the detail usable under it — the player there
- * pauses what one of the answer's times started.
+ * Its one way out is the close mark in its title row (2026-10-10), or Escape. It is as tall as what it holds, up to
+ * [ASK_HEIGHT], where the body scrolls under the title. It is modal, as on the Mac (D18): the detail under it is
+ * dimmed ([RecordingsWindow]) and waits for it to close.
  */
 @Composable
 internal fun AskDialog(
@@ -69,7 +69,6 @@ internal fun AskDialog(
         fitContent = true,
         maxHeight = ASK_HEIGHT,
         closeLabel = strings[Str.CLOSE],
-        modeless = true,
     ) {
         AskPanel(
             state = detail.ask,
