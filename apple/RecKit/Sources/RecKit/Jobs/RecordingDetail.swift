@@ -91,22 +91,40 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var ask: AskState = AskState.None.shared
     /// docs/08 "Ask": the presets that make sense for this recording, read when the panel opens.
     @Published public private(set) var askPresets: [AskPreset] = []
-    /// docs/08 "Titles and speaker names": a Fill in title and names this page asked for has not answered yet.
-    @Published public private(set) var filling = false
-    /// What the last Fill in title and names came to when it changed nothing, under the header for a few seconds.
+    /// docs/08 "Titles and speaker names": the fill of this recording asking ChatGPT now, with what it asks for — the
+    /// title sheet's or this page's (`observeFills()`); nil while none runs.
+    @Published public private(set) var fillRun: FillRun?
+    /// The halves this page asked for that have not answered yet — a second tap meanwhile asks nothing again.
+    private var fillsAsked: Set<FillHalf> = []
+    /// What the last Fill in title or Fill in speaker names came to when it changed nothing, under the header for a
+    /// few seconds.
     @Published public private(set) var fillNotice: FillNotice?
     /// docs/10 "Search": the page opens on the summary — a search hit whose only match is in it.
     public var opensOnSummary = false
 
     public enum Retranscribing: Sendable { case external, local }
 
-    /// docs/09 "Summary view": what a Fill in title and names that changed nothing says under the header — kept as
-    /// keys and a code, so a line still standing follows a language change.
+    /// docs/08 "Titles and speaker names": the two things ChatGPT fills in, each asked for on its own — More's `Fill in
+    /// title` and `Fill in speaker names`.
+    public enum FillHalf: Sendable, Hashable {
+        case title, names
+
+        /// The item's own reason once there is nothing of it to fill (`FillNeeds`).
+        var doneKey: String { self == .title ? "Already has a title" : "No unnamed speakers" }
+        /// What a fill of it that gave nothing says.
+        var failedKey: String { self == .title ? "Could not fill in the title" : "Could not fill in speaker names" }
+        /// The line under the header while a run asks for it.
+        var runningKey: String { self == .title ? "Filling in the title…" : "Filling in speaker names…" }
+    }
+
+    /// docs/09 "Summary view": what a Fill in title or Fill in speaker names that changed nothing says under the
+    /// header — kept as keys and a code, so a line still standing follows a language change.
     public enum FillNotice: Equatable, Sendable {
         /// Refused before anything was sent: the More menu's own reason, as its key.
         case refused(String)
-        /// `Could not fill in the title and names`, with the core's sentence for [reason] under it when there is one.
-        case failed(reason: String?)
+        /// `Could not fill in the title` or `Could not fill in speaker names`, with the core's sentence for [reason]
+        /// under it when there is one.
+        case failed(FillHalf, reason: String?)
     }
 
     /// What the page does with a [FillResult].
@@ -547,25 +565,49 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         return nil
     }
 
-    /// Why `Fill in title and names` cannot run now, or nil when it can (docs/09 "Summary view"): Ask's reasons, then
-    /// the run already going, then nothing left to fill — by the core's own rule ([FillNeeds]).
-    public var fillReason: String? {
-        Self.fillReason(
+    /// Why `Fill in title` cannot run now, or nil when it can (docs/09 "Summary view"): Ask's reasons, then a run that
+    /// asks for the title, then a title already there — by the core's own rule ([FillNeeds]).
+    public var fillTitleReason: String? { fillReason(.title) }
+
+    /// Why `Fill in speaker names` cannot run now, or nil when it can — [fillTitleReason]'s order, for the names.
+    public var fillNamesReason: String? { fillReason(.names) }
+
+    private func fillReason(_ half: FillHalf) -> String? {
+        let needs = transcript.map { FillNeeds.companion.of(title: givenTitle, transcript: $0) }
+        return Self.fillReason(
+            half,
             writing: writing,
             hasTranscript: transcript != nil && availability != .empty,
             busy: transcriptionBusy ? busyReason : nil,
             connection: chatGpt,
-            filling: filling,
-            needsFill: transcript.map { FillNeeds.companion.of(title: givenTitle, transcript: $0).any } ?? false
+            running: Self.runs(fillRun, half),
+            needed: needs.map { half == .title ? $0.title : $0.names } ?? false
         )
     }
 
+    /// The rule, apart from the page. A run of the other half does not stand in this one's way — the core asks for it
+    /// after that run.
     static func fillReason(
-        writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, filling: Bool, needsFill: Bool
+        _ half: FillHalf, writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, running: Bool,
+        needed: Bool
     ) -> String? {
         if let reason = askReason(writing: writing, hasTranscript: hasTranscript, busy: busy, connection: connection) { return reason }
-        if filling { return RecKitStrings.localized("Filling in…") }
-        return needsFill ? nil : RecKitStrings.localized("Title and names are already filled in")
+        if running { return RecKitStrings.localized("Filling in…") }
+        return needed ? nil : RecKitStrings.localized(half.doneKey)
+    }
+
+    /// Whether [run] asks for [half].
+    static func runs(_ run: FillRun?, _ half: FillHalf) -> Bool {
+        guard let run else { return false }
+        return half == .title ? run.title : run.names
+    }
+
+    /// docs/09 "Summary view": the lines under the header while a fill of this recording runs — the title's first —
+    /// as keys.
+    public var fillLines: [String] { Self.fillLines(fillRun) }
+
+    static func fillLines(_ run: FillRun?) -> [String] {
+        [FillHalf.title, .names].filter { runs(run, $0) }.map(\.runningKey)
     }
 
     /// The format of the summary the recording has, for the ✓ in `Summarize as…`; nil when it has none.
@@ -682,39 +724,57 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         await next?()
     }
 
-    // MARK: - Fill in title and names (docs/08 "Titles and speaker names")
+    // MARK: - Fill in title · Fill in speaker names (docs/08 "Titles and speaker names")
 
-    /// The More menu's Fill in title and names: the core asks the plan for what the recording lacks and applies it,
-    /// and the title and the names arrive through [followCapture] and [followResults]. It goes on when the page
-    /// closes. On the iPhone a destination the user has not allowed yet is asked about first, as for a summary.
-    public func fillTitleAndNames() async {
-        guard !filling else { return }
-        filling = true
+    /// What is filling this recording in now, from the title sheet's boxes or this page's items: the More menu's
+    /// reasons and the lines under the header.
+    public func followFills() async {
+        for await runs in core.observeFills() {
+            guard !Task.isCancelled else { return }
+            let run = runs.first { $0.recordingId == recordingId }
+            if run != fillRun { fillRun = run }
+        }
+    }
+
+    /// The More menu's Fill in title ([FillHalf.title]) or Fill in speaker names ([FillHalf.names]): the core asks the
+    /// plan for that half when the recording lacks it and applies it, and the title and the names arrive through
+    /// [followCapture] and [followResults]. It goes on when the page closes. On the iPhone a destination the user has
+    /// not allowed yet is asked about first, as for a summary.
+    public func fill(_ half: FillHalf) async {
+        guard !fillsAsked.contains(half) else { return }
+        fillsAsked.insert(half)
         let outcome: FillOutcome
         do {
-            outcome = Self.fillOutcome(try await core.fillTitleAndNames(recordingId: recordingId), busyKey: busyReasonKey)
+            let result = half == .title
+                ? try await core.fillTitle(recordingId: recordingId)
+                : try await core.fillNames(recordingId: recordingId)
+            outcome = Self.fillOutcome(result, half: half, busyKey: busyReasonKey)
         } catch {
             logger.error("shell.chatgpt.fill.failed error=\(String(describing: error), privacy: .private)")
-            outcome = .notice(.failed(reason: nil))
+            outcome = .notice(.failed(half, reason: nil))
         }
-        filling = false
+        fillsAsked.remove(half)
         switch outcome {
         case .quiet: break
-        case .askConsent: askConsent { [weak self] in await self?.fillTitleAndNames() }
+        case .askConsent: askConsent { [weak self] in await self?.fill(half) }
         case .notice(let notice): showFillNotice(notice)
         }
     }
 
-    /// The rule, apart from the page: an answer that filled something says nothing; one that filled nothing, or failed,
-    /// says so; a refusal says the More menu's reason.
-    static func fillOutcome(_ result: FillResult, busyKey: String) -> FillOutcome {
+    /// The rule, apart from the page: an answer that filled the half asked for says nothing; one that did not, or
+    /// failed, says so; a refusal — nothing of that half to fill included — says the More menu's reason.
+    static func fillOutcome(_ result: FillResult, half: FillHalf, busyKey: String) -> FillOutcome {
         switch onEnum(of: result) {
-        case .filled(let filled): return filled.title || filled.names > 0 ? .quiet : .notice(.failed(reason: nil))
-        case .nothingToFill: return .quiet
+        case .filled(let filled):
+            let given = half == .title ? filled.title : filled.names > 0
+            return given ? .quiet : .notice(.failed(half, reason: nil))
+        case .nothingToFill: return .notice(.refused(half.doneKey))
         case .busy: return .notice(.refused(busyKey))
         case .noTranscript: return .notice(.refused("No transcript yet"))
         case .failed(let failed):
-            return ChatGptText.message(failed.reason) == .transferConsentRequired ? .askConsent : .notice(.failed(reason: failed.reason))
+            return ChatGptText.message(failed.reason) == .transferConsentRequired
+                ? .askConsent
+                : .notice(.failed(half, reason: failed.reason))
         }
     }
 
@@ -1201,13 +1261,27 @@ public struct RecordingDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("retranscribe-refusal")
             } else if let notice = model.fillNotice, !editing {
-                // docs/09 "Summary view": a Fill in title and names that changed nothing says why, as a refused start does.
+                // docs/09 "Summary view": a Fill in title or speaker names that changed nothing says why, as a refused
+                // start does.
                 fillNotice(notice)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("fill-notice")
+            }
+            // docs/09 "Summary view": what ChatGPT is filling in now — the title sheet's ask or More's — the title's
+            // line first. Apart from the lines above: a publication's fill runs whatever else the page says.
+            if !model.fillLines.isEmpty, !editing {
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    ForEach(model.fillLines, id: \.self) { key in
+                        LoadingText(text: loc(key), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+                    }
+                }
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("filling")
             }
             // docs/09 "Summary view": Transcript | Summary, once there is a summary or one was asked for —
             // never over the transcript's editor; over the summary's, Transcript asks before it drops changes.
@@ -1410,6 +1484,7 @@ public struct RecordingDetailView: View {
         .task(id: ObjectIdentifier(model)) { await model.followChatGpt() }
         .task(id: ObjectIdentifier(model)) { await model.followSummaryPreferences() }
         .task(id: ObjectIdentifier(model)) { await model.followAsk() }
+        .task(id: ObjectIdentifier(model)) { await model.followFills() }
         .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
         // docs/09 "Editing and speakers": what a shell about to put another recording here has to ask about first.
         .onChange(of: unsavedEdits, initial: true) { _, edits in model.unsavedEdits = edits }
@@ -2034,9 +2109,9 @@ public struct RecordingDetailView: View {
             Text(verbatim: loc(key))
                 .font(blueprint.fonts.sans(TypeSize.small))
                 .foregroundStyle(blueprint.palette.textMuted)
-        case .failed(let reason):
+        case .failed(let half, let reason):
             VStack(alignment: .leading, spacing: Space.xs) {
-                Text(verbatim: loc("Could not fill in the title and names"))
+                Text(verbatim: loc(half.failedKey))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.danger)
                 if let reason {
