@@ -132,6 +132,13 @@ public struct RecentItem: Identifiable, Sendable {
         "Recording", "Importing", "Receiving from the watch",
     ]
 
+    /// Why a recording in [state] is not one to delete ([canDelete]), as the Mac detail's More menu says it under
+    /// its Delete — a take still being written in the menu's own words, the others in the list's — or nil when it is.
+    static func deleteReason(state: String) -> String? {
+        guard undeletable.contains(state) else { return nil }
+        return RecKitStrings.localized(state == "Recording" ? "Still recording" : state)
+    }
+
     /// docs/03: whether another device recorded this and this one only adopted the Drive folder —
     /// which is what the delete question has to know, because there is no local half to keep.
     ///
@@ -212,10 +219,20 @@ public enum Recents {
 
     public static func load(core: ReclyCore_, limit: Int32 = Recents.page) async throws -> [RecentItem] {
         let jobs = try await core.jobs.list()
+        return try await items(core: core, records: core.recordings.list(limit: limit), jobs: jobs)
+    }
+
+    /// One recording's row, read as [load] reads the ledger's — for a recording older than the page that is
+    /// loaded, such as a search hit open in the Mac's Details window. Nil when there is no such recording.
+    public static func item(core: ReclyCore_, recordingId: String) async throws -> RecentItem? {
+        guard let record = try await core.recordings.get(id: recordingId) else { return nil }
+        return try await items(core: core, records: [record], jobs: core.jobs.list()).first
+    }
+
+    private static func items(core: ReclyCore_, records: [RecordingRecord], jobs: [ReclyCore.Job]) async throws -> [RecentItem] {
         let byRecording = Dictionary(grouping: jobs, by: \.recordingId)
         let now = core.deps.clock.now()
         var items: [RecentItem] = []
-        let records = try await core.recordings.list(limit: limit)
         let previews = await Self.previews(core: core, recordingIds: records.map(\.id))
         for record in records {
             // The newest job is the one the user last asked for.

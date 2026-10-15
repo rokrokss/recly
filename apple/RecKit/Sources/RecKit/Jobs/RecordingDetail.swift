@@ -369,6 +369,16 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var openInDrive: (() -> Void)?
     public var showInFinder: (() -> Void)?
 
+    /// docs/03 "Deleting in the app" (the Mac): the More menu's Delete, which asks the shell's delete question. Nil
+    /// where the shell has the list row's own Delete (the phone), and then the menu shows none.
+    public var delete: (() -> Void)?
+
+    /// Why `Delete` cannot run now, or nil when it can: a recording still being recorded or imported is not one to
+    /// delete ([RecentItem.canDelete]). Read off the record the page keeps, so it follows the take as it finishes.
+    public var deleteReason: String? {
+        audioRecord.flatMap { RecentItem.deleteReason(state: Recents.stateLabel(record: $0, job: nil)) }
+    }
+
     /// Which of the page's editors holds changes nobody has saved, or nil — written by the page, read by a shell that
     /// is about to put another recording (or nothing) where this one is, and asks first (docs/09 "Editing and
     /// speakers": leaving an editor with changes asks, by every route).
