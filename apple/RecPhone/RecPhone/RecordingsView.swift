@@ -60,7 +60,7 @@ struct RecordingsView: View {
             // fixes it.
             AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
             if let message = model.message {
-                dismissible(Banner(message.text, tone: .warning)) { model.dismissMessage() }
+                dismissible(Banner(message.text, tone: model.messageFailed ? .danger : .warning)) { model.dismissMessage() }
                     .accessibilityIdentifier("message")
             }
             // docs/09 "Import": a failed import leaves no row, so the list says it here — and why.

@@ -41,7 +41,7 @@ struct RecordingsWindow: View {
                 // What the last delete or retry from a list came to, above the list, as the phone says it — it goes
                 // when it is clicked.
                 if let message = menu.listMessage {
-                    Button { menu.dismissListMessage() } label: { Banner(message.text, tone: .warning) }
+                    Button { menu.dismissListMessage() } label: { Banner(message.text, tone: menu.listMessageFailed ? .danger : .warning) }
                         .buttonStyle(.plain)
                         .padding(Space.s)
                         .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Close"))) { menu.dismissListMessage() }

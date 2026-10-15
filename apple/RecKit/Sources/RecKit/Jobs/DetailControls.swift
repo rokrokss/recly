@@ -93,17 +93,15 @@ struct DetailMoreMenu: View {
     let addHighlight: () -> Void
     @Environment(\.locale) private var locale
     #if os(iOS)
-    /// `Summarize as…` turned the menu into the list of formats under a row that goes back, as Android's does.
+    /// `Summarize as…` asks for the format in a list of its own, where Android's menu turns into one. Not inside
+    /// the menu: SwiftUI cannot tell that an open menu closed, so a menu turned into the formats opened on them
+    /// again the next time (checked on iOS 26.5, 2026-10-15).
     @State private var choosingFormat = false
     #endif
 
     var body: some View {
-        Menu {
-            #if os(iOS)
-            if choosingFormat { formats } else { items }
-            #else
+        let menu = Menu {
             items
-            #endif
         } label: {
             BlueprintIconLabel("ellipsis.circle")
         }
@@ -113,6 +111,18 @@ struct DetailMoreMenu: View {
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("More")))
         .accessibilityIdentifier("detail-more")
+        #if os(iOS)
+        menu.confirmationDialog(
+            RecKitStrings.localized("Summarize as…"),
+            isPresented: $choosingFormat,
+            titleVisibility: .visible
+        ) {
+            formatButtons
+            Button(RecKitStrings.localized("Cancel"), role: .cancel) {}
+        }
+        #else
+        menu
+        #endif
     }
 
     @ViewBuilder
@@ -129,9 +139,8 @@ struct DetailMoreMenu: View {
                 ReasonedMenuItem(title: RecKitStrings.localized("Summarize as…"), reason: reason) {}
             } else {
                 #if os(iOS)
-                // The phone's list with a back row: the menu stays open and becomes the formats.
+                // The phone's list: the menu closes and the formats are asked for on their own.
                 Button(RecKitStrings.localized("Summarize as…")) { choosingFormat = true }
-                    .menuActionDismissBehavior(.disabled)
                     .accessibilityIdentifier("more-summarize-as")
                 #else
                 // A submenu on the desktop — the speaker menu's one-of-many — with the current summary's ✓.
@@ -163,26 +172,11 @@ struct DetailMoreMenu: View {
         }
     }
 
-    #if os(iOS)
-    /// The formats, under the row that takes the menu back to what it was.
-    @ViewBuilder
-    private var formats: some View {
-        Button("‹ \(RecKitStrings.localized("Summarize as…"))") { choosingFormat = false }
-            .menuActionDismissBehavior(.disabled)
-            .accessibilityIdentifier("summarize-as-back")
-        Divider()
-        formatButtons
-    }
-    #endif
-
     @ViewBuilder
     private var formatButtons: some View {
         ForEach(model.summaryFormats, id: \.self) { format in
             let label = ChatGptText.formatLabel(format)
             Button(model.summaryFormat == format ? "\(BlueprintChip.selectionMark) \(label)" : label) {
-                #if os(iOS)
-                choosingFormat = false
-                #endif
                 summarize(format)
             }
         }

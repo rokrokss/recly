@@ -966,7 +966,7 @@ final class MenuModel: ObservableObject {
                         : .key(
                             request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
                             args: [.verbatim(driveError)]
-                        ))
+                        ), failed: true)
                 }
                 return driveError == nil
 
@@ -1073,14 +1073,17 @@ final class MenuModel: ObservableObject {
 
     /// docs/07 rule 3: what the last delete or retry from a list had to say — on the popover's line, and above
     /// the list in the Details window, where the row it was asked from is ([listMessage]).
-    private func say(_ outcome: UiMessage) {
+    private func say(_ outcome: UiMessage, failed: Bool = false) {
         message = outcome
         listMessage = outcome
+        listMessageFailed = failed
     }
 
     /// The Details window's own copy of [message], for a delete or a retry: it outlives the popover's line, which
     /// the next note replaces, and goes when it is dismissed or the next one is said.
     @Published private(set) var listMessage: UiMessage?
+    /// docs/09 "The tone of a status sentence": [listMessage] is a failure (red), not a wait or a block.
+    @Published private(set) var listMessageFailed = false
 
     func dismissListMessage() {
         listMessage = nil

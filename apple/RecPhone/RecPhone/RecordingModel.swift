@@ -120,7 +120,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published private(set) var alerts: [JobAlert] = []
     /// docs/07 rule 3: what the last delete, disconnect or refused retry had to say, kept as a message
     /// rather than as words so a line still on screen answers a language change.
-    @Published private(set) var message: UiMessage?
+    @Published private(set) var message: UiMessage? { didSet { messageFailed = false } }
+    /// docs/09 "The tone of a status sentence": [message] says a failure — a delete that could not reach the
+    /// storage copy — rather than something waiting or blocked.
+    @Published private(set) var messageFailed = false
     /// Non-nil while the docs/03 delete dialog is up.
     @Published var deleteRequest: DeleteRequest?
     /// Non-nil while the docs/03 disconnect warning is up, with the count it has to name.
@@ -1267,6 +1270,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                             : request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
                         args: [.verbatim(driveError)]
                     )
+                    self.messageFailed = true
                 }
                 return driveError == nil
 
