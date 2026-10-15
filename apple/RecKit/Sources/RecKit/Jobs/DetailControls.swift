@@ -76,7 +76,8 @@ struct ReasonedMenuItem: View {
 }
 
 /// docs/09 "Detail header and More menu": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again ─ Summarize · Summarize as… · Edit summary · Ask about this recording… ─ Add highlight — with the ones
+/// again ─ Summarize · Summarize as… · Edit summary · Ask about this recording… · Fill in title and names ─ Add
+/// highlight — with the ones
 /// that cannot run now shown off, and why. The three groups are parted by a hairline, and a group with nothing in
 /// it (no ChatGPT, no summary) takes its divider with it (2026-10-10, 2.2). On the Mac a fourth group is the
 /// recording's folder — Open in Drive, or Show in Finder — where the shell hands the page one.
@@ -155,6 +156,11 @@ struct DetailMoreMenu: View {
         // docs/08 "Ask": one question about the recording, in a panel of its own.
         if model.summaryOffered {
             ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
+            // docs/08 "Titles and speaker names": what the recording lacks, from the plan. It opens nothing — the title
+            // shows in the header and the names in the transcript.
+            ReasonedMenuItem(title: RecKitStrings.localized("Fill in title and names"), reason: model.fillReason) {
+                Task { await model.fillTitleAndNames() }
+            }
         }
         Divider()
         ReasonedMenuItem(

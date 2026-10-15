@@ -555,7 +555,6 @@
   "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": "जब यह डिवाइस बिना शीर्षक वाली रिकॉर्डिंग ट्रांसक्राइब करता है, तो शीर्षक के लिए ट्रांसक्रिप्ट ChatGPT को भेजा जाता है। यह आपके ChatGPT उपयोग में गिना जाता है।",
   "Fill in speaker names": "वक्ताओं के नाम अपने आप भरें",
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "जब यह डिवाइस कोई रिकॉर्डिंग ट्रांसक्राइब करता है, तो उसमें नाम से पुकारे गए वक्ताओं के नाम रखने के लिए ट्रांसक्रिप्ट ChatGPT को भेजा जाता है। यह आपके ChatGPT उपयोग में गिना जाता है।",
-  "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "शीर्षक अपने आप भरें या वक्ताओं के नाम अपने आप भरें चालू होने पर, यह iPhone जो भी रिकॉर्डिंग ट्रांसक्राइब करता है उसका ट्रांसक्रिप्ट भी यहाँ भेजा जाता है।",
   "Asked once, before the first recording.": "पहली रिकॉर्डिंग से पहले एक बार पूछा जाता है।",
   "Still transcribing on this device — try again once it has finished": "इस डिवाइस पर अभी ट्रांसक्राइब हो रहा है — पूरा होने पर फिर कोशिश करें",
   "Turn it on in Settings → Apps → Recly → Permissions.": "इसे सेटिंग → ऐप्स → Recly → अनुमतियाँ में चालू करें।",

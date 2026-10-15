@@ -91,10 +91,32 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var ask: AskState = AskState.None.shared
     /// docs/08 "Ask": the presets that make sense for this recording, read when the panel opens.
     @Published public private(set) var askPresets: [AskPreset] = []
+    /// docs/08 "Titles and speaker names": a Fill in title and names this page asked for has not answered yet.
+    @Published public private(set) var filling = false
+    /// What the last Fill in title and names came to when it changed nothing, under the header for a few seconds.
+    @Published public private(set) var fillNotice: FillNotice?
     /// docs/10 "Search": the page opens on the summary — a search hit whose only match is in it.
     public var opensOnSummary = false
 
     public enum Retranscribing: Sendable { case external, local }
+
+    /// docs/09 "Summary view": what a Fill in title and names that changed nothing says under the header — kept as
+    /// keys and a code, so a line still standing follows a language change.
+    public enum FillNotice: Equatable, Sendable {
+        /// Refused before anything was sent: the More menu's own reason, as its key.
+        case refused(String)
+        /// `Could not fill in the title and names`, with the core's sentence for [reason] under it when there is one.
+        case failed(reason: String?)
+    }
+
+    /// What the page does with a [FillResult].
+    enum FillOutcome: Equatable {
+        /// Nothing to say: the title and the names arrive through the page's own observations.
+        case quiet
+        case notice(FillNotice)
+        /// The iPhone's permission for ChatGPT first, then the fill again.
+        case askConsent
+    }
 
     /// What the player bar has to say while the parts are on their way back, and after.
     public enum DriveFetch: Equatable, Sendable {
@@ -266,8 +288,18 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             deviceRecording = (try? await somethingIsBeingRecorded()) ?? deviceRecording
             if let record = try? await core.recordings.get(id: recordingId) {
                 highlights = record.meta.highlights.map(\.atSec)
+                adoptTitle(record.meta.title)
             }
         }
+    }
+
+    /// docs/08 "Titles and speaker names": a title given from elsewhere — ChatGPT's, another device's rename — shows
+    /// in the header as a rename here does.
+    private func adoptTitle(_ saved: String?) {
+        let given = saved ?? ""
+        if givenTitle != given { givenTitle = given }
+        let shown = given.isEmpty ? RecKitStrings.localized("Untitled") : given
+        if title != shown { title = shown }
     }
 
     public func followAudio() async {
@@ -427,10 +459,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// off while it lasts (docs/08 "Editing"), only the words are what it really is. The transcription
     /// comes after the upload in every plan, so a job past the upload is transcribing (or queued to);
     /// one before it is waiting for Drive, or simply not uploaded yet.
-    var busyReason: String {
-        if waitingForDrive { return RecKitStrings.localized("Waiting for Drive") }
-        if !uploaded { return RecKitStrings.localized("Not uploaded yet") }
-        return RecKitStrings.localized("Transcribing…")
+    var busyReason: String { RecKitStrings.localized(busyReasonKey) }
+
+    private var busyReasonKey: String {
+        if waitingForDrive { return "Waiting for Drive" }
+        if !uploaded { return "Not uploaded yet" }
+        return "Transcribing…"
     }
 
     /// Why `Rename` cannot run now, or nil when it can: a take still being written has no name to give
@@ -501,6 +535,27 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             return CoreMessages.sentence(.chatgptSignInRequired)
         }
         return nil
+    }
+
+    /// Why `Fill in title and names` cannot run now, or nil when it can (docs/09 "Summary view"): Ask's reasons, then
+    /// the run already going, then nothing left to fill — by the core's own rule ([FillNeeds]).
+    public var fillReason: String? {
+        Self.fillReason(
+            writing: writing,
+            hasTranscript: transcript != nil && availability != .empty,
+            busy: transcriptionBusy ? busyReason : nil,
+            connection: chatGpt,
+            filling: filling,
+            needsFill: transcript.map { FillNeeds.companion.of(title: givenTitle, transcript: $0).any } ?? false
+        )
+    }
+
+    static func fillReason(
+        writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, filling: Bool, needsFill: Bool
+    ) -> String? {
+        if let reason = askReason(writing: writing, hasTranscript: hasTranscript, busy: busy, connection: connection) { return reason }
+        if filling { return RecKitStrings.localized("Filling in…") }
+        return needsFill ? nil : RecKitStrings.localized("Title and names are already filled in")
     }
 
     /// The format of the summary the recording has, for the ✓ in `Summarize as…`; nil when it has none.
@@ -591,8 +646,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    /// What the permission dialog goes on to do once it is allowed: the summary, or the question, it stood in
-    /// front of.
+    /// What the permission dialog goes on to do once it is allowed: the summary, the question or the fill it stood
+    /// in front of.
     private var afterConsent: (() async -> Void)?
 
     private func askConsent(then next: @escaping () async -> Void) {
@@ -615,6 +670,51 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             return
         }
         await next?()
+    }
+
+    // MARK: - Fill in title and names (docs/08 "Titles and speaker names")
+
+    /// The More menu's Fill in title and names: the core asks the plan for what the recording lacks and applies it,
+    /// and the title and the names arrive through [followCapture] and [followResults]. It goes on when the page
+    /// closes. On the iPhone a destination the user has not allowed yet is asked about first, as for a summary.
+    public func fillTitleAndNames() async {
+        guard !filling else { return }
+        filling = true
+        let outcome: FillOutcome
+        do {
+            outcome = Self.fillOutcome(try await core.fillTitleAndNames(recordingId: recordingId), busyKey: busyReasonKey)
+        } catch {
+            logger.error("shell.chatgpt.fill.failed error=\(String(describing: error), privacy: .private)")
+            outcome = .notice(.failed(reason: nil))
+        }
+        filling = false
+        switch outcome {
+        case .quiet: break
+        case .askConsent: askConsent { [weak self] in await self?.fillTitleAndNames() }
+        case .notice(let notice): showFillNotice(notice)
+        }
+    }
+
+    /// The rule, apart from the page: an answer that filled something says nothing; one that filled nothing, or failed,
+    /// says so; a refusal says the More menu's reason.
+    static func fillOutcome(_ result: FillResult, busyKey: String) -> FillOutcome {
+        switch onEnum(of: result) {
+        case .filled(let filled): return filled.title || filled.names > 0 ? .quiet : .notice(.failed(reason: nil))
+        case .nothingToFill: return .quiet
+        case .busy: return .notice(.refused(busyKey))
+        case .noTranscript: return .notice(.refused("No transcript yet"))
+        case .failed(let failed):
+            return ChatGptText.message(failed.reason) == .transferConsentRequired ? .askConsent : .notice(.failed(reason: failed.reason))
+        }
+    }
+
+    /// For a few seconds, as a refused Transcribe again is.
+    private func showFillNotice(_ notice: FillNotice) {
+        fillNotice = notice
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(3))
+            if self?.fillNotice == notice { self?.fillNotice = nil }
+        }
     }
 
     // MARK: - Ask (docs/08 "Ask" · docs/09 "Ask")
@@ -1090,6 +1190,14 @@ public struct RecordingDetailView: View {
                     .padding(.top, Space.s)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("retranscribe-refusal")
+            } else if let notice = model.fillNotice, !editing {
+                // docs/09 "Summary view": a Fill in title and names that changed nothing says why, as a refused start does.
+                fillNotice(notice)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("fill-notice")
             }
             // docs/09 "Summary view": Transcript | Summary, once there is a summary or one was asked for —
             // never over the transcript's editor; over the summary's, Transcript asks before it drops changes.
@@ -1906,6 +2014,29 @@ public struct RecordingDetailView: View {
             .multilineTextAlignment(.center)
             .padding(Space.l)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// A refusal in the refused start's muted words; a failure in the failure's red, the core's sentence under it.
+    @ViewBuilder
+    private func fillNotice(_ notice: RecordingDetailModel.FillNotice) -> some View {
+        switch notice {
+        case .refused(let key):
+            Text(verbatim: loc(key))
+                .font(blueprint.fonts.sans(TypeSize.small))
+                .foregroundStyle(blueprint.palette.textMuted)
+        case .failed(let reason):
+            VStack(alignment: .leading, spacing: Space.xs) {
+                Text(verbatim: loc("Could not fill in the title and names"))
+                    .font(blueprint.fonts.sans(TypeSize.small))
+                    .foregroundStyle(blueprint.palette.danger)
+                if let reason {
+                    Text(verbatim: CoreMessages.text(reason).sentence)
+                        .font(blueprint.fonts.sans(TypeSize.small))
+                        .foregroundStyle(blueprint.palette.textMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }

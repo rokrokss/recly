@@ -101,12 +101,6 @@ public struct TransferDisclosureList: View {
                         : loc("The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
                         .fixedSize(horizontal: false, vertical: true)
-                    // docs/08 "Titles and speaker names": the switches send transcripts nobody asked about one by one.
-                    if summary {
-                        Text(verbatim: loc("With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too."))
-                            .font(blueprint.fonts.bodySmall)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
                     // The list's text colour would turn a plain `Link` into body text; this one reads as a link.
                     if let url = PrivacyLinks.provider(target.provider) {
                         BlueprintDialogLink(loc("Provider privacy information")) { openURL(url) }

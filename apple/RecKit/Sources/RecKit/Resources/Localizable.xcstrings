@@ -61581,721 +61581,6 @@
         }
       }
     },
-    "Fill in titles": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fill in titles"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "제목 자동으로 채우기"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タイトルを自動で入力"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动填写标题"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動填寫標題"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Completar títulos"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compléter les titres"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titel automatisch ergänzen"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preencher títulos"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preencher títulos"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ملء العناوين تلقائيًا"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शीर्षक अपने आप भरें"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заполнять названия"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Completa i titoli"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzupełniaj tytuły"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Başlıkları doldur"
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kusang lagyan ng pamagat"
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "শিরোনাম স্বয়ংক্রিয়ভাবে পূরণ"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عنوانات خود بخود بھریں"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaza vichwa kiotomatiki"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tự điền tiêu đề"
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تکمیل خودکار عنوان‌ها"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ใส่ชื่ออัตโนมัติ"
-          }
-        }
-      }
-    },
-    "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When this device transcribes an untitled recording, the transcript goes to ChatGPT for a title. It counts toward your ChatGPT usage."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 기기에서 제목 없는 녹음을 전사하면 전사본을 ChatGPT에 보내 제목을 받습니다. ChatGPT 사용량에 포함됩니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この端末でタイトルのない録音を文字起こしすると、タイトルを付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本设备转录没有标题的录音时，会把转写文本发送给ChatGPT来生成标题。这会计入你的ChatGPT用量。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本裝置轉錄沒有標題的錄音時，會將轉寫文字傳送給ChatGPT來產生標題。這會計入你的ChatGPT用量。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cuando este dispositivo transcribe una grabación sin título, la transcripción se envía a ChatGPT para obtener uno. Cuenta para tu uso de ChatGPT."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quand cet appareil transcrit un enregistrement sans titre, la transcription est envoyée à ChatGPT pour en obtenir un. Cela compte dans votre utilisation de ChatGPT."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transkribiert dieses Gerät eine Aufnahme ohne Titel, geht das Transkript für einen Titel an ChatGPT. Das zählt zu deiner ChatGPT-Nutzung."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quando este dispositivo transcreve uma gravação sem título, a transcrição vai para o ChatGPT para receber um. Isso conta no seu uso do ChatGPT."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quando este dispositivo transcreve uma gravação sem título, a transcrição é enviada para o ChatGPT para obter um. Isto conta para a sua utilização do ChatGPT."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عندما ينسخ هذا الجهاز تسجيلًا بلا عنوان، يُرسَل نص النسخة إلى ChatGPT للحصول على عنوان. يُحتسب ذلك ضمن استخدامك لـ ChatGPT."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "जब यह डिवाइस बिना शीर्षक वाली रिकॉर्डिंग ट्रांसक्राइब करता है, तो शीर्षक के लिए ट्रांसक्रिप्ट ChatGPT को भेजा जाता है। यह आपके ChatGPT उपयोग में गिना जाता है।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Когда это устройство расшифровывает запись без названия, расшифровка отправляется в ChatGPT, чтобы получить название. Это входит в ваше использование ChatGPT."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quando questo dispositivo trascrive una registrazione senza titolo, la trascrizione viene inviata a ChatGPT per ottenerne uno. Conta nel tuo utilizzo di ChatGPT."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gdy to urządzenie transkrybuje nagranie bez tytułu, transkrypcja trafia do ChatGPT po tytuł. Wlicza się to do Twojego użycia ChatGPT."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bu cihaz başlıksız bir kaydı metne dönüştürdüğünde, başlık için döküm ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır."
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kapag nag-transcribe ang device na ito ng recording na walang pamagat, ipinapadala ang transcript sa ChatGPT para sa pamagat. Kasama ito sa paggamit mo ng ChatGPT."
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "এই ডিভাইস শিরোনামহীন কোনো রেকর্ডিং ট্রান্সক্রাইব করলে, শিরোনামের জন্য ট্রান্সক্রিপ্ট ChatGPT-তে যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "جب یہ ڈیوائس بغیر عنوان والی ریکارڈنگ ٹرانسکرائب کرتی ہے تو عنوان کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kifaa hiki kinaponukuu rekodi isiyo na kichwa, nakala hutumwa kwa ChatGPT ili kupata kichwa. Hii huhesabiwa katika matumizi yako ya ChatGPT."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Khi thiết bị này chép lời một bản ghi chưa có tiêu đề, bản chép lời được gửi tới ChatGPT để đặt tiêu đề. Việc này được tính vào mức sử dụng ChatGPT của bạn."
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "وقتی این دستگاه ضبطی بی‌عنوان را رونویسی می‌کند، رونوشت برای گرفتن عنوان به ChatGPT فرستاده می‌شود. این جزو مصرف ChatGPT شما حساب می‌شود."
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "เมื่ออุปกรณ์นี้ถอดเสียงบันทึกที่ไม่มีชื่อ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ"
-          }
-        }
-      }
-    },
-    "Fill in speaker names": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fill in speaker names"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "화자 이름 자동으로 채우기"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "話者の名前を自動で入力"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动填写说话人名称"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動填寫說話者名稱"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Completar nombres de hablantes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compléter les noms des locuteurs"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sprechernamen automatisch ergänzen"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preencher nomes dos falantes"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preencher nomes dos oradores"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ملء أسماء المتحدثين تلقائيًا"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वक्ताओं के नाम अपने आप भरें"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заполнять имена говорящих"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Completa i nomi degli interlocutori"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzupełniaj nazwy mówców"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Konuşmacı adlarını doldur"
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kusang lagyan ng pangalan ang mga nagsasalita"
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "বক্তার নাম স্বয়ংক্রিয়ভাবে পূরণ"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "بولنے والوں کے نام خود بخود بھریں"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaza majina ya wazungumzaji kiotomatiki"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tự điền tên người nói"
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تکمیل خودکار نام گوینده‌ها"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ใส่ชื่อผู้พูดอัตโนมัติ"
-          }
-        }
-      }
-    },
-    "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 기기에서 녹음을 전사하면 전사본을 ChatGPT에 보내, 대화에서 이름이 불린 화자에게 이름을 붙입니다. ChatGPT 사용량에 포함됩니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この端末で録音を文字起こしすると、会話の中で名前を呼ばれた話者に名前を付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本设备转录录音时，会把转写文本发送给ChatGPT，为对话中被叫到名字的说话人命名。这会计入你的ChatGPT用量。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本裝置轉錄錄音時，會將轉寫文字傳送給ChatGPT，為對話中被叫到名字的說話者命名。這會計入你的ChatGPT用量。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cuando este dispositivo transcribe una grabación, la transcripción se envía a ChatGPT para poner nombre a los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quand cet appareil transcrit un enregistrement, la transcription est envoyée à ChatGPT pour nommer les locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transkribiert dieses Gerät eine Aufnahme, geht das Transkript an ChatGPT, um die Sprecher zu benennen, die darin mit Namen angesprochen werden. Das zählt zu deiner ChatGPT-Nutzung."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quando este dispositivo transcreve uma gravação, a transcrição vai para o ChatGPT para dar nome aos falantes chamados pelo nome nela. Isso conta no seu uso do ChatGPT."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quando este dispositivo transcreve uma gravação, a transcrição é enviada para o ChatGPT para dar nome aos oradores tratados pelo nome. Isto conta para a sua utilização do ChatGPT."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عندما ينسخ هذا الجهاز تسجيلًا، يُرسَل نص النسخة إلى ChatGPT لتسمية المتحدثين الذين يُنادَون بأسمائهم فيه. يُحتسب ذلك ضمن استخدامك لـ ChatGPT."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "जब यह डिवाइस कोई रिकॉर्डिंग ट्रांसक्राइब करता है, तो उसमें नाम से पुकारे गए वक्ताओं के नाम रखने के लिए ट्रांसक्रिप्ट ChatGPT को भेजा जाता है। यह आपके ChatGPT उपयोग में गिना जाता है।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Когда это устройство расшифровывает запись, расшифровка отправляется в ChatGPT, чтобы назвать говорящих, к которым в ней обращаются по имени. Это входит в ваше использование ChatGPT."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quando questo dispositivo trascrive una registrazione, la trascrizione viene inviata a ChatGPT per dare un nome agli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gdy to urządzenie transkrybuje nagranie, transkrypcja trafia do ChatGPT, aby nazwać mówców, do których ktoś zwraca się po imieniu. Wlicza się to do Twojego użycia ChatGPT."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bu cihaz bir kaydı metne dönüştürdüğünde, dökümde adıyla seslenilen konuşmacılara ad vermek için döküm ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır."
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kapag nag-transcribe ang device na ito ng recording, ipinapadala ang transcript sa ChatGPT para pangalanan ang mga nagsasalitang tinatawag sa pangalan dito. Kasama ito sa paggamit mo ng ChatGPT."
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "এই ডিভাইস কোনো রেকর্ডিং ট্রান্সক্রাইব করলে, যাদের নাম ধরে ডাকা হয়েছে সেই বক্তাদের নাম দিতে ট্রান্সক্রিপ্ট ChatGPT-তে যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "جب یہ ڈیوائس کوئی ریکارڈنگ ٹرانسکرائب کرتی ہے تو اس میں نام لے کر پکارے گئے بولنے والوں کے نام رکھنے کے لیے ٹرانسکرپٹ ChatGPT کو بھیجا جاتا ہے۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kifaa hiki kinaponukuu rekodi, nakala hutumwa kwa ChatGPT ili kuwapa majina wazungumzaji wanaoitwa kwa majina ndani yake. Hii huhesabiwa katika matumizi yako ya ChatGPT."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Khi thiết bị này chép lời một bản ghi, bản chép lời được gửi tới ChatGPT để đặt tên cho những người nói được gọi tên trong đó. Việc này được tính vào mức sử dụng ChatGPT của bạn."
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "وقتی این دستگاه ضبطی را رونویسی می‌کند، رونوشت به ChatGPT فرستاده می‌شود تا گوینده‌هایی که در آن با نام صدا زده می‌شوند نام بگیرند. این جزو مصرف ChatGPT شما حساب می‌شود."
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "เมื่ออุปกรณ์นี้ถอดเสียงบันทึก จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อตั้งชื่อผู้พูดที่ถูกเรียกชื่อในบทสนทนา ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ"
-          }
-        }
-      }
-    },
-    "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "제목 자동으로 채우기나 화자 이름 자동으로 채우기를 켜면, 이 iPhone에서 전사하는 녹음의 전사본도 여기로 보냅니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「タイトルを自動で入力」または「話者の名前を自動で入力」がオンのときは、このiPhoneで文字起こしした各録音の文字起こしもここへ送信します。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开启“自动填写标题”或“自动填写说话人名称”时，这台iPhone转录的每段录音的转写文本也会发送到这里。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開啟「自動填寫標題」或「自動填寫說話者名稱」時，這支iPhone轉錄的每段錄音的轉寫文字也會傳送到這裡。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con Completar títulos o Completar nombres de hablantes activado, también se envía aquí la transcripción de cada grabación que transcribe este iPhone."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Si Compléter les titres ou Compléter les noms des locuteurs est activé, la transcription de chaque enregistrement transcrit par cet iPhone est aussi envoyée ici."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ist „Titel automatisch ergänzen“ oder „Sprechernamen automatisch ergänzen“ an, wird auch das Transkript jeder Aufnahme, die dieses iPhone transkribiert, hierhin gesendet."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Com Preencher títulos ou Preencher nomes dos falantes ativado, a transcrição de cada gravação que este iPhone transcreve também é enviada para cá."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Com Preencher títulos ou Preencher nomes dos oradores ativado, a transcrição de cada gravação que este iPhone transcreve também é enviada para aqui."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عند تشغيل «ملء العناوين تلقائيًا» أو «ملء أسماء المتحدثين تلقائيًا»، يُرسَل إلى هنا أيضًا نص النسخة لكل تسجيل ينسخه هذا الـ iPhone."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शीर्षक अपने आप भरें या वक्ताओं के नाम अपने आप भरें चालू होने पर, यह iPhone जो भी रिकॉर्डिंग ट्रांसक्राइब करता है उसका ट्रांसक्रिप्ट भी यहाँ भेजा जाता है।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Если включено «Заполнять названия» или «Заполнять имена говорящих», сюда также отправляется расшифровка каждой записи, которую расшифровывает этот iPhone."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con Completa i titoli o Completa i nomi degli interlocutori attivo, qui viene inviata anche la trascrizione di ogni registrazione trascritta da questo iPhone."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gdy włączone jest Uzupełniaj tytuły lub Uzupełniaj nazwy mówców, trafia tu też transkrypcja każdego nagrania transkrybowanego na tym iPhonie."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Başlıkları doldur veya Konuşmacı adlarını doldur açıkken, bu iPhone’un metne dönüştürdüğü her kaydın dökümü de buraya gönderilir."
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kapag naka-on ang Kusang lagyan ng pamagat o Kusang lagyan ng pangalan ang mga nagsasalita, ipinapadala rin dito ang transcript ng bawat recording na tina-transcribe ng iPhone na ito."
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "শিরোনাম স্বয়ংক্রিয়ভাবে পূরণ বা বক্তার নাম স্বয়ংক্রিয়ভাবে পূরণ চালু থাকলে, এই iPhone যে রেকর্ডিং ট্রান্সক্রাইব করে তার ট্রান্সক্রিপ্টও এখানে পাঠানো হয়।"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عنوانات خود بخود بھریں یا بولنے والوں کے نام خود بخود بھریں آن ہو تو یہ iPhone جو بھی ریکارڈنگ ٹرانسکرائب کرے اس کا ٹرانسکرپٹ بھی یہاں بھیجا جاتا ہے۔"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaza vichwa kiotomatiki au Jaza majina ya wazungumzaji kiotomatiki ikiwa imewashwa, nakala ya kila rekodi inayonukuliwa na iPhone hii pia hutumwa hapa."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Khi bật Tự điền tiêu đề hoặc Tự điền tên người nói, bản chép lời của mỗi bản ghi mà iPhone này chép lời cũng được gửi tới đây."
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "وقتی «تکمیل خودکار عنوان‌ها» یا «تکمیل خودکار نام گوینده‌ها» روشن است، رونوشت هر ضبطی که این iPhone رونویسی می‌کند نیز به اینجا فرستاده می‌شود."
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "เมื่อเปิด ใส่ชื่ออัตโนมัติ หรือ ใส่ชื่อผู้พูดอัตโนมัติ ข้อความถอดเสียงของทุกบันทึกที่ iPhone เครื่องนี้ถอดเสียงจะถูกส่งมาที่นี่ด้วย"
-          }
-        }
-      }
-    },
     "Review recording settings to continue": {
       "extractionState": "manual",
       "localizations": {
@@ -63722,6 +63007,864 @@
           "stringUnit": {
             "state": "translated",
             "value": "ยังถอดเสียงอยู่บนอุปกรณ์นี้ — ลองอีกครั้งเมื่อเสร็จแล้ว"
+          }
+        }
+      }
+    },
+    "Fill in title and names": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill in title and names"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제목·이름 채우기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイトルと名前を入力"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "填写标题和名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "填寫標題與名稱"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completar título y nombres"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compléter le titre et les noms"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel und Namen ergänzen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preencher título e nomes"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preencher título e nomes"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملء العنوان والأسماء"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शीर्षक और नाम भरें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заполнить название и имена"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completa titolo e nomi"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzupełnij tytuł i imiona"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlığı ve adları doldur"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punan ang pamagat at mga pangalan"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শিরোনাম ও নাম পূরণ করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان اور نام بھریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jaza kichwa na majina"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điền tiêu đề và tên"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تکمیل عنوان و نام‌ها"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เติมชื่อและชื่อผู้พูด"
+          }
+        }
+      }
+    },
+    "Fill in the title and speaker names with ChatGPT": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill in the title and speaker names with ChatGPT"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT로 제목·화자 이름 채우기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPTでタイトルと話者の名前を入力"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用ChatGPT填写标题和说话人名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用ChatGPT填寫標題與說話者名稱"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completar el título y los nombres de hablantes con ChatGPT"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compléter le titre et les noms des locuteurs avec ChatGPT"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel und Sprechernamen mit ChatGPT ergänzen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preencher o título e os nomes dos falantes com o ChatGPT"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preencher o título e os nomes dos oradores com o ChatGPT"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملء العنوان وأسماء المتحدثين باستخدام ChatGPT"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT से शीर्षक और वक्ताओं के नाम भरें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заполнить название и имена говорящих с помощью ChatGPT"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completa il titolo e i nomi degli interlocutori con ChatGPT"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzupełnij tytuł i imiona mówców za pomocą ChatGPT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlığı ve konuşmacı adlarını ChatGPT ile doldur"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punan ang pamagat at mga pangalan ng nagsasalita gamit ang ChatGPT"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT দিয়ে শিরোনাম ও বক্তার নাম পূরণ করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT سے عنوان اور بولنے والوں کے نام بھریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jaza kichwa na majina ya wazungumzaji kwa ChatGPT"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điền tiêu đề và tên người nói bằng ChatGPT"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تکمیل عنوان و نام گویندگان با ChatGPT"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เติมชื่อและชื่อผู้พูดด้วย ChatGPT"
+          }
+        }
+      }
+    },
+    "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전사가 끝나면 전사본을 ChatGPT에 보내, 비어 있는 제목과 대화에서 이름이 불린 화자의 이름을 받습니다. ChatGPT 사용량에 포함됩니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字起こしが終わると、空のタイトルと、名前で呼ばれた話者の名前を受け取るために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转录完成后，会把转写文本发送给ChatGPT，以获取缺少的标题和被叫到名字的说话人名称。这会计入你的ChatGPT用量。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉錄完成後，會將轉寫文字傳送給ChatGPT，以取得缺少的標題和被叫到名字的說話者名稱。這會計入你的ChatGPT用量。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando la transcripción esté lista, se envía a ChatGPT para obtener el título que falta y los nombres de los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une fois la transcription prête, elle est envoyée à ChatGPT pour obtenir le titre manquant et le nom des locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobald das Transkript fertig ist, geht es an ChatGPT, um einen fehlenden Titel und die Namen angesprochener Sprecher zu ergänzen. Das zählt zu deiner ChatGPT-Nutzung."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando a transcrição estiver pronta, ela vai para o ChatGPT para receber o título que falta e os nomes dos falantes chamados pelo nome. Isso conta no seu uso do ChatGPT."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando a transcrição estiver pronta, é enviada para o ChatGPT para obter o título em falta e os nomes dos oradores chamados pelo nome. Isto conta para a sua utilização do ChatGPT."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بعد اكتمال النسخ، يُرسَل نص النسخة إلى ChatGPT للحصول على العنوان الناقص وأسماء المتحدثين الذين نودوا بأسمائهم. يُحتسب ذلك ضمن استخدامك لـ ChatGPT."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ट्रांसक्रिप्ट तैयार होने पर उसे ChatGPT को भेजा जाता है, ताकि खाली शीर्षक और नाम से पुकारे गए वक्ताओं के नाम मिल सकें। यह आपके ChatGPT उपयोग में गिना जाता है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда расшифровка будет готова, она отправится в ChatGPT, чтобы получить недостающее название и имена говорящих, к которым обращались по имени. Это входит в ваше использование ChatGPT."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando la trascrizione è pronta, viene inviata a ChatGPT per il titolo mancante e i nomi degli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy transkrypcja będzie gotowa, trafi do ChatGPT po brakujący tytuł i imiona mówców, do których ktoś zwrócił się po imieniu. Wlicza się to do Twojego użycia ChatGPT."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Döküm hazır olduğunda eksik başlık ve adıyla seslenilen konuşmacıların adları için ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapag handa na ang transcript, ipapadala ito sa ChatGPT para sa kulang na pamagat at sa mga pangalan ng mga nagsasalitang tinawag sa pangalan. Kasama ito sa paggamit mo ng ChatGPT."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ট্রান্সক্রিপ্ট তৈরি হলে তা ChatGPT-তে যায়, যাতে অনুপস্থিত শিরোনাম এবং নাম ধরে ডাকা বক্তাদের নাম পাওয়া যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ٹرانسکرپٹ تیار ہونے پر اسے ChatGPT کو بھیجا جاتا ہے تاکہ خالی عنوان اور نام لے کر پکارے گئے بولنے والوں کے نام مل سکیں۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nakala ikishakamilika, hutumwa kwa ChatGPT ili kupata kichwa kinachokosekana na majina ya wazungumzaji walioitwa kwa majina. Hii huhesabiwa katika matumizi yako ya ChatGPT."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi chép lời xong, bản chép lời được gửi tới ChatGPT để lấy tiêu đề còn thiếu và tên của những người nói được gọi tên. Việc này được tính vào mức sử dụng ChatGPT của bạn."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وقتی رونوشت آماده شد، برای گرفتن عنوانِ خالی و نام گویندگانی که با نام صدا زده شده‌اند به ChatGPT فرستاده می‌شود. این جزو مصرف ChatGPT شما حساب می‌شود."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อถอดเสียงเสร็จ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อที่ยังว่างและชื่อของผู้พูดที่ถูกเรียกชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ"
+          }
+        }
+      }
+    },
+    "Title and names are already filled in": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title and names are already filled in"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제목과 이름이 이미 있습니다"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイトルと名前はすでに入力されています"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标题和名称已填写"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標題與名稱已填寫"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El título y los nombres ya están completos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le titre et les noms sont déjà renseignés"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel und Namen sind schon ergänzt"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O título e os nomes já estão preenchidos"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O título e os nomes já estão preenchidos"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "العنوان والأسماء مكتملة بالفعل"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शीर्षक और नाम पहले से भरे हैं"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Название и имена уже заполнены"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titolo e nomi sono già completi"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tytuł i imiona są już uzupełnione"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık ve adlar zaten dolu"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kumpleto na ang pamagat at mga pangalan"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শিরোনাম ও নাম আগেই পূরণ করা আছে"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان اور نام پہلے سے بھرے ہوئے ہیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kichwa na majina tayari vimejazwa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề và tên đã được điền"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان و نام‌ها از قبل تکمیل شده‌اند"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "มีชื่อและชื่อผู้พูดครบแล้ว"
+          }
+        }
+      }
+    },
+    "Filling in…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filling in…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "채우는 중…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "入力しています…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在填写…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在填寫…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completando…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complétion en cours…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird ergänzt…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preenchendo…"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A preencher…"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الملء…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "भरा जा रहा है…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заполняем…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completamento in corso…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzupełnianie…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dolduruluyor…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinupunan…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পূরণ করা হচ্ছে…"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بھرا جا رہا ہے…"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inajaza…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang điền…"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "در حال تکمیل…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังเติม…"
+          }
+        }
+      }
+    },
+    "Could not fill in the title and names": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not fill in the title and names"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제목과 이름을 채우지 못했습니다"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイトルと名前を入力できませんでした"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法填写标题和名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法填寫標題與名稱"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron completar el título y los nombres"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de compléter le titre et les noms"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel und Namen konnten nicht ergänzt werden"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível preencher o título e os nomes"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível preencher o título e os nomes"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر ملء العنوان والأسماء"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शीर्षक और नाम नहीं भरे जा सके"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось заполнить название и имена"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile completare titolo e nomi"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się uzupełnić tytułu i imion"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık ve adlar doldurulamadı"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi mapunan ang pamagat at mga pangalan"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শিরোনাম ও নাম পূরণ করা যায়নি"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان اور نام نہیں بھرے جا سکے"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imeshindwa kujaza kichwa na majina"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể điền tiêu đề và tên"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تکمیل عنوان و نام‌ها ممکن نشد"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เติมชื่อและชื่อผู้พูดไม่ได้"
           }
         }
       }
