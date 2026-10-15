@@ -274,6 +274,7 @@ final class MenuModel: ObservableObject {
             Task { await chatGpt.refresh() }
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
+            observeFills(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
             //
@@ -342,6 +343,23 @@ final class MenuModel: ObservableObject {
         Task { [weak self] in
             for await _ in core.recordings.observe() {
                 guard let self else { return }
+                await self.refreshRecents()
+            }
+        }
+    }
+
+    /// docs/09 screen principle 2: the recordings ChatGPT is filling in now, whose rows say `Filling in` in the popover
+    /// and in Details — a fill moves neither the queue nor the recordings table until its answer is applied, so the
+    /// rows are read again as one starts and ends.
+    private var filling: Set<String> = []
+
+    private func observeFills(core: ReclyCore_) {
+        Task { [weak self] in
+            for await runs in core.observeFills() {
+                guard let self else { return }
+                let ids = Set(runs.map(\.recordingId))
+                guard ids != self.filling else { continue }
+                self.filling = ids
                 await self.refreshRecents()
             }
         }
@@ -810,7 +828,7 @@ final class MenuModel: ObservableObject {
         guard let core = bridge?.core else { return }
         defer { recentsLoading = false }
         do {
-            recents = try await Recents.load(core: core, limit: recentsLimit)
+            recents = try await Recents.load(core: core, limit: recentsLimit, filling: filling)
             recordingCount = try await core.recordings.ids().count
         } catch {
             logger.error("shell.recents.failed error=\(String(describing: error), privacy: .private)")

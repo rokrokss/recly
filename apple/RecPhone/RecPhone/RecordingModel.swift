@@ -337,6 +337,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             self.storage = storage
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
+            observeFills(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
             // Read once at launch, so a recording's More menu knows the sign-in before Settings is opened.
             let chatGpt = ChatGptSettingsModel(core: bridge.core)
@@ -421,6 +422,23 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         Task { [weak self] in
             for await _ in core.recordings.observe() {
                 guard let self else { return }
+                await self.refreshRecents()
+            }
+        }
+    }
+
+    /// docs/09 screen principle 2: the recordings ChatGPT is filling in now, whose rows say `Filling in` — a fill moves
+    /// neither the queue nor the recordings table until its answer is applied, so the rows are read again as one
+    /// starts and ends.
+    private var filling: Set<String> = []
+
+    private func observeFills(core: ReclyCore_) {
+        Task { [weak self] in
+            for await runs in core.observeFills() {
+                guard let self else { return }
+                let ids = Set(runs.map(\.recordingId))
+                guard ids != self.filling else { continue }
+                self.filling = ids
                 await self.refreshRecents()
             }
         }
@@ -1141,7 +1159,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         guard let core = bridge?.core else { return }
         defer { recentsLoading = false }
         do {
-            recents = try await Recents.load(core: core, limit: Self.recentsLimit)
+            recents = try await Recents.load(core: core, limit: Self.recentsLimit, filling: filling)
             // The states are the list's whole content and none of them is the user's text — the
             // titles are, and they stay out of the log (as on macOS).
             logger.info("shell.recents states=\(self.recents.map(\.state).joined(separator: ","), privacy: .public)")

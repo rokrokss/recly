@@ -79,15 +79,23 @@ public struct RecentItem: Identifiable, Sendable {
     /// nothing to explain.
     public let lastError: String?
 
+    /// docs/08 "Titles and speaker names": ChatGPT is filling in this recording's title or speaker names now
+    /// (`observeFills()`). Only the badge says so — the header's counts and the row's actions go by [state].
+    public let filling: Bool
+
     /// docs/09 screen principle 2: the ledger's badge. docs/08 "Polling · status": a job parked while a provider
     /// transcribes is waiting on someone else, not on a retry timer, so it is its own code rather
     /// than the `RETRY` its `WAITING` status would give it — the code the desktop already shows
-    /// (`windows/.../Ledger.LedgerStates`).
+    /// (`windows/.../Ledger.LedgerStates`). A fill is read after `REC` and `RECEIVING` and ahead of everything else.
     public var badge: LedgerStatus {
-        waitingMinutes == nil
+        if filling, !Self.aheadOfFill.contains(state) { return LedgerStatus.filling }
+        return waitingMinutes == nil
             ? LedgerStatus.forRecent(state: state)
             : LedgerStatus(code: "TRANSCRIBING", tone: .accent)
     }
+
+    /// The two states a fill does not cover: the take still being written here, and one still arriving from the watch.
+    private static let aheadOfFill: Set<String> = ["Recording", "Receiving from the watch"]
 
     /// The same thing as words, read where it is drawn — so a list already on screen follows a
     /// language change (docs/07 rule 3). The system uploading to iCloud is progress, as a running
@@ -187,7 +195,8 @@ public struct RecentItem: Identifiable, Sendable {
         remote: Bool = false,
         alert: AlertReason? = nil,
         localLanguage: String? = nil,
-        preview: String? = nil
+        preview: String? = nil,
+        filling: Bool = false
     ) {
         self.id = id
         self.jobId = jobId
@@ -205,6 +214,7 @@ public struct RecentItem: Identifiable, Sendable {
         self.alert = alert
         self.localLanguage = localLanguage
         self.preview = preview
+        self.filling = filling
     }
 }
 
@@ -217,19 +227,22 @@ public enum Recents {
     /// and asks for another each time the last row it has is scrolled into view.
     public static let page: Int32 = 20
 
-    public static func load(core: ReclyCore_, limit: Int32 = Recents.page) async throws -> [RecentItem] {
+    /// - Parameter filling: the recordings ChatGPT is filling in now (`observeFills()`), whose rows say so.
+    public static func load(core: ReclyCore_, limit: Int32 = Recents.page, filling: Set<String> = []) async throws -> [RecentItem] {
         let jobs = try await core.jobs.list()
-        return try await items(core: core, records: core.recordings.list(limit: limit), jobs: jobs)
+        return try await items(core: core, records: core.recordings.list(limit: limit), jobs: jobs, filling: filling)
     }
 
     /// One recording's row, read as [load] reads the ledger's — for a recording older than the page that is
     /// loaded, such as a search hit open in the Mac's Details window. Nil when there is no such recording.
     public static func item(core: ReclyCore_, recordingId: String) async throws -> RecentItem? {
         guard let record = try await core.recordings.get(id: recordingId) else { return nil }
-        return try await items(core: core, records: [record], jobs: core.jobs.list()).first
+        return try await items(core: core, records: [record], jobs: core.jobs.list(), filling: []).first
     }
 
-    private static func items(core: ReclyCore_, records: [RecordingRecord], jobs: [ReclyCore.Job]) async throws -> [RecentItem] {
+    private static func items(
+        core: ReclyCore_, records: [RecordingRecord], jobs: [ReclyCore.Job], filling: Set<String>
+    ) async throws -> [RecentItem] {
         let byRecording = Dictionary(grouping: jobs, by: \.recordingId)
         let now = core.deps.clock.now()
         var items: [RecentItem] = []
@@ -272,7 +285,8 @@ public enum Recents {
                     remote: record.remote,
                     alert: job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) },
                     localLanguage: job.flatMap { $0.status == .needsModel ? localLanguage(job: $0, steps: steps) : nil },
-                    preview: previews[record.id]
+                    preview: previews[record.id],
+                    filling: filling.contains(record.id)
                 )
             )
         }
