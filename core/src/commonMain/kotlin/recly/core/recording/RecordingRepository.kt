@@ -434,6 +434,26 @@ class RecordingRepository(
      */
     suspend fun fillTitle(recordingId: String, title: String): Boolean = locked { retitle(recordingId, title, untitledOnly = true) }
 
+    /**
+     * docs/08 "Titles and speaker names": the title sheet's box was ticked — this recording's publication is to ask
+     * ChatGPT for its title and speaker names. Kept until that has been tried ([takeFillRequest]); goes with the
+     * recording. False when there is no such recording.
+     */
+    suspend fun requestFill(recordingId: String): Boolean = locked {
+        if (record(recordingId) == null) return@locked false
+        queries.kvSet(FILL_PREFIX + recordingId, "1")
+        true
+    }
+
+    suspend fun fillRequested(recordingId: String): Boolean = locked { queries.kvGet(FILL_PREFIX + recordingId).executeAsOneOrNull() != null }
+
+    /** The request is spent: true when there was one, so of two takers only one fills. */
+    suspend fun takeFillRequest(recordingId: String): Boolean = locked {
+        val held = queries.kvGet(FILL_PREFIX + recordingId).executeAsOneOrNull() != null
+        if (held) queries.kvDelete(FILL_PREFIX + recordingId)
+        held
+    }
+
     private fun retitle(recordingId: String, title: String?, untitledOnly: Boolean): Boolean {
         val record = record(recordingId) ?: return false
         if (record.meta.status == RecordingStatus.RECORDING) return false
@@ -584,7 +604,7 @@ class RecordingRepository(
     internal suspend fun <T> summaryWrite(block: suspend () -> T): T = summaryWrites.withLock { block() }
 
     private fun forgetPending(recordingId: String) {
-        for (prefix in listOf(TITLE_PREFIX, META_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, SUMMARY_PREFIX, SUMMARY_SEEN_PREFIX)) {
+        for (prefix in listOf(TITLE_PREFIX, META_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, SUMMARY_PREFIX, SUMMARY_SEEN_PREFIX, FILL_PREFIX)) {
             queries.kvDelete(prefix + recordingId)
         }
     }
@@ -1096,5 +1116,8 @@ class RecordingRepository(
 
         /** `kv` rows: `summary/seen/{recordingId}` → the folder's `summaryAt` this device took in. */
         private const val SUMMARY_SEEN_PREFIX: String = "summary/seen/"
+
+        /** `kv` rows: `summary/fill/requested/{recordingId}` → `1`; the title sheet asked ChatGPT to fill it in. */
+        private const val FILL_PREFIX: String = "summary/fill/requested/"
     }
 }

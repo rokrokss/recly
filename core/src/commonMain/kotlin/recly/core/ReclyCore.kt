@@ -272,14 +272,49 @@ class ReclyCore(
         summariesChanged = { summaries.changed() },
     )
 
-    /** docs/08 "Titles and speaker names": what a transcript asks the user's ChatGPT plan for before it is published. */
+    /**
+     * docs/08 "Titles and speaker names": what a recording asks the user's ChatGPT plan for — before its transcript is
+     * published when the title sheet asked ([requestFill]), or on request ([fillTitleAndNames]).
+     */
     private val autoFill = recly.core.chatgpt.AutoFill(
         db, deps, summaries, transferConsents, recordings,
         setTitle = { recordingId, title ->
             // In the folder before the transcript: whatever sees the transcript arrive reads the title with it.
             recordings.fillTitle(recordingId, title).also { if (it) remote.pushTitles() }
         },
+        transcript = { results(it).transcript },
+        busy = ::transcriptBusy,
+        name = ::fillNames,
     )
+
+    /**
+     * docs/08 "Titles and speaker names": the title sheet after Stop was saved with its ChatGPT box ticked. The
+     * recording's publication then asks the plan for its title, when it has none, and its speakers' names before the
+     * transcript goes up; call it before [enqueue], as the sheet's title is written. A transcript already published
+     * is filled at once, in the background, as [fillTitleAndNames] fills. How the box was left is
+     * `SummaryPreferences.fillAfterStop`, saved by the shell.
+     */
+    @Throws(Throwable::class)
+    suspend fun requestFill(recordingId: String): Unit = autoFill.request(recordingId)
+
+    /**
+     * docs/08 "Titles and speaker names": More → Fill in title and names. Asks the plan for what the recording lacks
+     * (`FillNeeds`) — a title only when it has none, names only for unnamed speakers other than `me` who speak — and
+     * applies it: the title as [rename] carries one, the names as an [editTranscript] does, so the folder's
+     * transcript is marked edited. [recly.core.chatgpt.FillResult.Busy] while a job of it has not settled, like an
+     * edit; on iPhone, `Failed(TRANSFER_CONSENT_REQUIRED)` before anything is sent, like `summaries.summarize`.
+     */
+    @Throws(Throwable::class)
+    suspend fun fillTitleAndNames(recordingId: String): recly.core.chatgpt.FillResult = autoFill.manual(recordingId)
+
+    /** The names ChatGPT gave, for the speakers that still have none — one may have been named meanwhile — as one edit. */
+    private suspend fun fillNames(recordingId: String, names: Map<String, String>): Int? = remote.transcriptWrite {
+        val current = results(recordingId).transcript ?: return@transcriptWrite null
+        val edits = names.filter { (id, _) -> current.speakers.any { it.id == id && it.name.isNullOrBlank() } }
+            .map { (id, name) -> recly.core.transcribe.TranscriptEdit.RenameSpeaker(id, name) }
+        if (edits.isEmpty()) return@transcriptWrite 0
+        if (applyEdit(recordingId, recly.core.transcribe.TranscriptEdit.Batch(edits)) is recly.core.transcribe.EditResult.Edited) edits.size else null
+    }
 
     private val searchIndex = recly.core.recording.RecordingSearch(recordings, deps)
 
@@ -381,10 +416,7 @@ class ReclyCore(
 
     private suspend fun applyEdit(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
         val record = recordings.get(recordingId) ?: return recly.core.transcribe.EditResult.NoTranscript
-        val unsettled = jobs.list().any {
-            it.recordingId == recordingId && it.status !in setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)
-        }
-        if (unsettled || localTranscription.isRunning(recordingId)) return recly.core.transcribe.EditResult.Busy
+        if (transcriptBusy(recordingId)) return recly.core.transcribe.EditResult.Busy
         val current = results(recordingId).transcript ?: return recly.core.transcribe.EditResult.NoTranscript
         val edited = try {
             recly.core.transcribe.TranscriptEdits.apply(current, edit, deps.clock.now().isoUtc())
@@ -401,11 +433,17 @@ class ReclyCore(
         return recly.core.transcribe.EditResult.Edited(edited)
     }
 
+    /** A job of the recording has not settled, or it is being transcribed here: it may write over the transcript. */
+    private suspend fun transcriptBusy(recordingId: String): Boolean =
+        jobs.list().any { it.recordingId == recordingId && it.status !in setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT) } ||
+            localTranscription.isRunning(recordingId)
+
     /** Where an edit's push to storage runs, so the screen that saved it does not wait for the network. */
     private val pushes = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
 
-    /** Tests: wait for the background pushes [editTranscript] and [setHighlights] started. */
+    /** Tests: wait for the background pushes [editTranscript] and [setHighlights] started, and the fills [requestFill] did. */
     internal suspend fun awaitPushes() {
+        autoFill.awaitRuns()
         pushes.coroutineContext[kotlinx.coroutines.Job]?.children?.toList()?.forEach { it.join() }
     }
 

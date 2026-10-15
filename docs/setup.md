@@ -191,6 +191,7 @@ recording.**
 | **More** → **Summarize as…** | the same in another format: General, One-on-one, Lecture, Interview, or your own **My format** from **Settings** → **ChatGPT** |
 | **More** → **Edit summary** | fix the summary; in Google Drive or iCloud your other devices show the edit, with a local folder it stays on this device |
 | **More** → **Ask about this recording…** | a follow-up email, the action items, the open questions, a translation, feedback on how you spoke, or your own question; the answer is not saved |
+| **More** → **Fill in title and names** | a title, if the recording has none, and the names of the speakers called by name, from your ChatGPT plan. To have them before the transcript is saved, tick **Fill in the title and speaker names with ChatGPT** when you name a recording after stopping it |
 | a time such as `[00:12:34]` in a summary | plays from there |
 | speed (`1×`) | 0.75× to 2×, and **Skip silence** |
 

@@ -224,11 +224,6 @@ class ChatGptViewModel(
 
     fun saveAboutMe(text: String) = savePreferences { it.copy(aboutMe = text) }
 
-    /** docs/08 "Titles and speaker names": saved the moment it is switched, signed out too. */
-    fun toggleAutoTitle(on: Boolean) = savePreferences { it.copy(autoTitle = on) }
-
-    fun toggleAutoSpeakers(on: Boolean) = savePreferences { it.copy(autoSpeakers = on) }
-
     /** Shown at once; the core keeps it trimmed and capped, and [preferences] follows what it kept. */
     private fun savePreferences(change: (SummaryPreferences) -> SummaryPreferences) {
         val wanted = change(preferences)

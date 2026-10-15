@@ -34,13 +34,14 @@ internal class ChatGptHarness(requireTransferConsent: Boolean = false, locale: S
     )
     val account = ChatGptAccount(db, deps)
 
-    /** The whole first sign-in: authorize, the callback, the exchange, and the model list after it. */
+    /** The whole first sign-in: authorize, the callback, the exchange, and the model list after it — of [account], or a core's. */
     suspend fun signIn(
         access: String = "access-1",
         refresh: String = "refresh-1",
         expiresIn: Long = 3600,
         earliestRefreshAt: Long? = null,
         models: String = MODELS,
+        account: ChatGptAccount = this.account,
     ): ChatGptResult {
         val signIn = account.beginSignIn(REDIRECT)
         val nonce = Url(signIn.authorizationUrl).parameters["nonce"]!!

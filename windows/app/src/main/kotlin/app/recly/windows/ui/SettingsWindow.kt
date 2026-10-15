@@ -411,21 +411,6 @@ private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
             lines = ABOUT_LINES,
         )
     }
-    HairLine()
-    // docs/08 "Titles and speaker names": off until the user turns them on; each switch is the consent to send a
-    // transcript this PC makes to ChatGPT in the background (docs/15 §10).
-    SwitchRow(
-        title = strings[Str.SUMMARY_AUTO_TITLE],
-        subtitle = strings[Str.SUMMARY_AUTO_TITLE_NOTE],
-        checked = preferences.autoTitle,
-        onCheckedChange = chatGpt::toggleAutoTitle,
-    )
-    SwitchRow(
-        title = strings[Str.SUMMARY_AUTO_SPEAKERS],
-        subtitle = strings[Str.SUMMARY_AUTO_SPEAKERS_NOTE],
-        checked = preferences.autoSpeakers,
-        onCheckedChange = chatGpt::toggleAutoSpeakers,
-    )
 }
 
 /**

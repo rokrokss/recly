@@ -45,6 +45,8 @@ class CoreFixture(
     tokenProvider: TokenProvider = ScriptedTokenProvider(),
     platform: Platform = Platform.MACOS,
     localFolder: ((FakeFileSystem) -> LocalFolder)? = null,
+    /** Where requests to OpenAI go (docs/15 §10); everything else goes to the fake Drive. */
+    chatGpt: recly.core.platform.Transport? = null,
 ) {
     val drive = FakeDrive()
     val clock = FakeClock()
@@ -56,7 +58,9 @@ class CoreFixture(
         logger = logger,
         secureStore = store,
         tokenProvider = tokenProvider,
-        transport = mockTransport(drive, fs),
+        transport = mockTransport(drive, fs).let { storage ->
+            chatGpt?.let { RoutingTransport("https://auth.openai.com/", it, RoutingTransport("https://api.openai.com/", it, storage)) } ?: storage
+        },
         fileSystem = fs,
         audio = FakeAudioTools(fs),
         dataDir = "/data".toPath(),

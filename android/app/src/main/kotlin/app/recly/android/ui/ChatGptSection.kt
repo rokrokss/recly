@@ -47,7 +47,6 @@ import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.ProcessingButton
 import app.recly.android.ui.component.SectionFootnote
 import app.recly.android.ui.component.SectionHeader
-import app.recly.android.ui.component.SwitchRow
 import app.recly.android.ui.component.TableRow
 import app.recly.android.ui.component.TextLink
 import app.recly.android.ui.theme.MinTouch
@@ -152,9 +151,6 @@ fun ChatGptSection() {
  *
  * The format offers all five; My format's field is there only while it is the format, and chosen with no words yet it
  * takes the focus and its note says General is used meanwhile.
- *
- * Under them, docs/08 "Titles and speaker names": Fill in titles and Fill in speaker names, saved the moment they are
- * flipped. Turned on while signed out, a switch is simply kept — the fills wait for a sign-in.
  */
 @Composable
 private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
@@ -205,20 +201,6 @@ private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
         newlines = false,
         onSave = { text -> signIn.updatePreferences { it.copy(aboutMe = text) } },
         tag = "summary-about",
-    )
-    SwitchRow(
-        title = stringResource(R.string.summary_auto_title),
-        checked = preferences.autoTitle,
-        onCheckedChange = { on -> signIn.updatePreferences { it.copy(autoTitle = on) } },
-        modifier = Modifier.testTag("auto-title"),
-        subtitle = stringResource(R.string.summary_auto_title_note),
-    )
-    SwitchRow(
-        title = stringResource(R.string.summary_auto_speakers),
-        checked = preferences.autoSpeakers,
-        onCheckedChange = { on -> signIn.updatePreferences { it.copy(autoSpeakers = on) } },
-        modifier = Modifier.testTag("auto-speakers"),
-        subtitle = stringResource(R.string.summary_auto_speakers_note),
     )
 }
 

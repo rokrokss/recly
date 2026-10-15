@@ -83,16 +83,15 @@ enum class SummaryFormat(val wire: String) {
 
 /**
  * docs/08 "Summaries": what this device asks every summary for — Settings → ChatGPT. [format] is the one Summarize
- * uses; [customFormat] is My format's instructions; [aboutMe] tells ChatGPT who the notes are for. [autoTitle] and
- * [autoSpeakers] are the switches of docs/08 "Titles and speaker names", off until the user turns them on. Local to
+ * uses; [customFormat] is My format's instructions; [aboutMe] tells ChatGPT who the notes are for. [fillAfterStop] is
+ * how the title sheet's box of docs/08 "Titles and speaker names" was left last, off until the user ticks it. Local to
  * this device, like the model, and kept while signed out.
  */
 data class SummaryPreferences(
     val format: SummaryFormat = SummaryFormat.AUTO,
     val customFormat: String = "",
     val aboutMe: String = "",
-    val autoTitle: Boolean = false,
-    val autoSpeakers: Boolean = false,
+    val fillAfterStop: Boolean = false,
 ) {
     /** The formats on offer: My format only once it has words. */
     val formats: List<SummaryFormat> get() = SummaryFormat.entries.filter { it != SummaryFormat.CUSTOM || customFormat.isNotBlank() }
@@ -349,11 +348,11 @@ class Summaries internal constructor(
     // --- Titles and speaker names (docs/08 "Titles and speaker names") ---
 
     /**
-     * One request for what a publication fills in: a title when [title], and a name for each of [speakers] — the
-     * transcript's lines, as a summary sends them, and nothing else. Throws [ChatGptFailure]; what ChatGPT could not
-     * tell is absent from the answer.
+     * One request for what a fill asks: a title when [title], and a name for each of [speakers] — the transcript's
+     * lines, as a summary sends them, and nothing else. [trigger] is what asked, for the log. Throws [ChatGptFailure];
+     * what ChatGPT could not tell is absent from the answer.
      */
-    internal suspend fun fill(transcript: Transcript, title: Boolean, speakers: List<String>): FillAnswer {
+    internal suspend fun fill(transcript: Transcript, title: Boolean, speakers: List<String>, trigger: String): FillAnswer {
         val text = TranscriptNormalizer.text(transcript).takeIf { it.isNotBlank() }
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
         // The first of the models measured for this that the plan offers, at the effort measured (docs/08 "Titles and speaker
@@ -362,14 +361,14 @@ class Summaries internal constructor(
         val chosen = FILL_MODELS.firstOrNull { (id, _) -> id in offered }
         val model = chosen?.first ?: account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         val instructions = fillInstructions(SummaryLanguage.of(transcript.language, locale.value), title, speakers, transcript.speakers.any { it.me == true })
-        deps.logger.log(Logger.Level.INFO, "summary.fill.model", mapOf("model" to model, "effort" to (chosen?.second ?: "default")))
-        // The transcript waits for this before it goes up: a model that has not answered in two minutes is not waited for.
+        deps.logger.log(Logger.Level.INFO, "summary.fill.model", mapOf("model" to model, "effort" to (chosen?.second ?: "default"), "trigger" to trigger))
+        // A transcript waits for this before it goes up: a model that has not answered in two minutes is not waited for.
         val answer = try {
             complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC, effort = chosen?.second)
         } catch (e: ChatGptFailure) {
             // The plan's API documents no `reasoning` field either way: refused, the request goes again without it.
             if (chosen == null || !e.reason.startsWith(CoreMessage.PROVIDER_ERROR.code(detail = "400"))) throw e
-            deps.logger.log(Logger.Level.WARN, "summary.fill.effort.refused", mapOf("model" to model))
+            deps.logger.log(Logger.Level.WARN, "summary.fill.effort.refused", mapOf("model" to model, "trigger" to trigger))
             complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC)
         }
         return FillAnswer.parse(answer, title, speakers)
@@ -389,8 +388,7 @@ class Summaries internal constructor(
             format = SummaryFormat.of(db.recQueries.kvGet(PREF_FORMAT).executeAsOneOrNull()),
             customFormat = db.recQueries.kvGet(PREF_CUSTOM).executeAsOneOrNull().orEmpty(),
             aboutMe = db.recQueries.kvGet(PREF_ABOUT).executeAsOneOrNull().orEmpty(),
-            autoTitle = db.recQueries.kvGet(PREF_AUTO_TITLE).executeAsOneOrNull() == ON,
-            autoSpeakers = db.recQueries.kvGet(PREF_AUTO_SPEAKERS).executeAsOneOrNull() == ON,
+            fillAfterStop = db.recQueries.kvGet(PREF_FILL_AFTER_STOP).executeAsOneOrNull() == ON,
         )
     }.also { loaded -> prefs.compareAndSet(null, loaded) }
 
@@ -401,16 +399,14 @@ class Summaries internal constructor(
             format = preferences.format,
             customFormat = preferences.customFormat.trim().take(SummaryPreferences.CUSTOM_MAX),
             aboutMe = preferences.aboutMe.trim().take(SummaryPreferences.ABOUT_MAX),
-            autoTitle = preferences.autoTitle,
-            autoSpeakers = preferences.autoSpeakers,
+            fillAfterStop = preferences.fillAfterStop,
         )
         withContext(deps.io) {
             db.recQueries.transaction {
                 db.recQueries.kvSet(PREF_FORMAT, kept.format.wire)
                 if (kept.customFormat.isEmpty()) db.recQueries.kvDelete(PREF_CUSTOM) else db.recQueries.kvSet(PREF_CUSTOM, kept.customFormat)
                 if (kept.aboutMe.isEmpty()) db.recQueries.kvDelete(PREF_ABOUT) else db.recQueries.kvSet(PREF_ABOUT, kept.aboutMe)
-                if (kept.autoTitle) db.recQueries.kvSet(PREF_AUTO_TITLE, ON) else db.recQueries.kvDelete(PREF_AUTO_TITLE)
-                if (kept.autoSpeakers) db.recQueries.kvSet(PREF_AUTO_SPEAKERS, ON) else db.recQueries.kvDelete(PREF_AUTO_SPEAKERS)
+                if (kept.fillAfterStop) db.recQueries.kvSet(PREF_FILL_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_AFTER_STOP)
             }
         }
         prefs.value = kept
@@ -547,8 +543,7 @@ class Summaries internal constructor(
         const val PREF_FORMAT = "summary/prefs/format"
         const val PREF_CUSTOM = "summary/prefs/custom"
         const val PREF_ABOUT = "summary/prefs/about"
-        const val PREF_AUTO_TITLE = "summary/prefs/auto_title"
-        const val PREF_AUTO_SPEAKERS = "summary/prefs/auto_speakers"
+        const val PREF_FILL_AFTER_STOP = "summary/prefs/fill_after_stop"
         private const val ON = "1"
 
         const val FILL_TIMEOUT_SEC = 120
