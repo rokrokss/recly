@@ -156,6 +156,35 @@ final class RecentsRemoteTests: XCTestCase {
         XCTAssertEqual(Recents.summary([item]), "1")
     }
 
+    /// 2026-10-15: the Mac detail's Delete reads a search hit older than the loaded ledger on its own — the same row
+    /// the ledger reads, so its question offers the Drive folder as the row's would.
+    func testOneRowIsReadAsTheLedgerReadsIt() async throws {
+        let bridge = try await CoreBridge.make(
+            deviceName: "RecKitTests",
+            dataDirectory: dataDirectory,
+            databaseName: "recents-remote-tests.db",
+            secureStore: InMemorySecureStore()
+        )
+        _ = try await bridge.core.recordings.adopt(
+            meta: Self.meta(startedAt: bridge.deps.clock.now().isoUtc),
+            folderId: "1FolderId",
+            fileIds: [:]
+        )
+        let rows = try await Recents.load(core: bridge.core)
+        let listed = try XCTUnwrap(rows.first)
+
+        let read = try await Recents.item(core: bridge.core, recordingId: listed.id)
+        let item = try XCTUnwrap(read)
+
+        XCTAssertEqual(item.id, listed.id)
+        XCTAssertEqual(item.state, listed.state)
+        XCTAssertEqual(item.remote, listed.remote)
+        XCTAssertEqual(item.link, listed.link)
+        XCTAssertTrue(item.hasCloudFolder)
+        let missing = try await Recents.item(core: bridge.core, recordingId: "01J9REC0000000000000000099")
+        XCTAssertNil(missing)
+    }
+
     /// The meta another device wrote beside its parts in Drive — finalized, because a recording that
     /// is still running is never adopted.
     private static func meta(startedAt: String) -> RecordingMeta {
@@ -542,6 +571,24 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
             // docs/09 screen principle 2: no length yet, and the ledger says so with its own placeholder
             // rather than by inventing a zero.
             XCTAssertEqual(LedgerFormat.length(item.durationSec), LedgerFormat.length(nil))
+        }
+    }
+
+    /// 2026-10-15: the Mac detail's More menu says why its Delete is off, read off the record as the row's state is —
+    /// the menu's own `Still recording` for a take, the list's word for an import or a transfer — and says nothing
+    /// for another device's upload, which carries `RECORDING` too but is one to delete.
+    func testDeleteSaysWhyItIsOffWhereTheRowWithholdsIt() {
+        let cases: [(RecordingRecord, String?)] = [
+            (record(source: .phone, status: .recording), "Still recording"),
+            (record(source: .import, status: .recording), "Importing"),
+            (record(source: .watch, status: .recording), "Receiving from the watch"),
+            (record(source: .desktop, status: .recording, remote: true), nil),
+            (record(source: .phone), nil),
+        ]
+        for (record, reason) in cases {
+            let state = Recents.stateLabel(record: record, job: nil)
+            XCTAssertEqual(RecentItem.deleteReason(state: state), reason.map { RecKitStrings.localized($0) }, state)
+            XCTAssertEqual(reason == nil, item(state: state).canDelete, state)
         }
     }
 

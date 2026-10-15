@@ -19,9 +19,6 @@ struct RecordingsWindow: View {
     /// Files are being dragged over the list.
     @State private var dropping = false
     @FocusState private var searchFocused: Bool
-    /// Where each row's badge starts inside its status column, so the open row's Delete ends where its
-    /// badge ends (the popover's `statusTrailingInsets`).
-    @State private var statusTrailingInsets: [String: CGFloat] = [:]
 
     var body: some View {
         HSplitView {
@@ -130,7 +127,7 @@ struct RecordingsWindow: View {
         // nothing here waits for it.
         .task { await menu.pullRemoteRecordings() }
         // docs/03 "Deleting in the app": this window has one, so the dialog is the platform's own sheet here
-        // rather than the popover's in-place overlay — and only for the deletes its own rows asked.
+        // rather than the popover's in-place overlay — and only for the deletes it asked (the open recording's More).
         // A question started in the popover is answered there, not on a window behind it.
         .blueprintDialog(
             item: Binding(
@@ -227,22 +224,22 @@ struct RecordingsWindow: View {
             action: { menu.showDetail(item) }
         )
         .accessibilityIdentifier("open-detail")
-        .onPreferenceChange(LedgerStatusTrailingInset.self) { statusTrailingInsets[item.id] = $0 }
         if opened, hasActions(item) {
             actions(item)
         }
     }
 
-    /// Whether the open row has anything to say or offer under it.
+    /// Whether the open row has anything to say or to fix under it. 2026-10-15: Delete is the detail's More menu
+    /// item, so a finished recording has no strip.
     private func hasActions(_ item: RecentItem) -> Bool {
-        (item.alert != .needsAuth && item.reason != nil) || item.canDelete || item.canRetry
+        (item.alert != .needsAuth && item.reason != nil) || item.canRetry
             || item.needsKey || item.alert == .needsSpace || item.waitingForModel || item.waitingMinutes != nil
     }
 
     /// 2026-10-11 (N1): under the open row only, on its tint and behind its accent bar — the popover's
-    /// expanded row, less what the detail beside it already offers (Open, Open in Drive, Show in Finder):
-    /// why the job is stuck, the things to do about it, Retry for a job that has stopped, and the red
-    /// Delete at the end, its edge on the badge's. The other rows carry no buttons at all.
+    /// expanded row, less what the detail beside it already offers (Open, Open in Drive, Show in Finder,
+    /// and since 2026-10-15 Delete): why the job is stuck, the things to do about it, and Retry for a job that
+    /// has stopped. The other rows carry no buttons at all.
     private func actions(_ item: RecentItem) -> some View {
         VStack(alignment: .leading, spacing: Space.s) {
             // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
@@ -260,43 +257,30 @@ struct RecordingsWindow: View {
             if item.alert != .needsAuth, item.reason != nil {
                 RowReason(item: item, download: menu.modelDownload)
             }
-            HStack(alignment: .top, spacing: Space.s) {
-                FlowLayout {
-                    // docs/05 "Fixed processing settings": the model this recording waits for, first.
-                    if item.waitingForModel, let download = menu.modelDownload {
-                        ModelDownloadButton(download: download, language: item.localLanguage)
-                            .accessibilityIdentifier("download-model")
-                    }
-                    // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
-                    // comes back on its own `next_run_at`, and asking now is all the row can add.
-                    if item.canRetry {
-                        ProcessingButton(loc("Retry"), state: menu.action) { menu.retry(item) }
-                    }
-                    if item.needsKey {
-                        BlueprintButton(RecordingDetailStrings.checkKey) {
-                            // The settings are a window of their own (`LSUIElement`), and it
-                            // may not be open.
-                            openWindow(id: "processing-settings")
-                        }
-                        .accessibilityIdentifier("check-key")
-                    }
-                    if item.alert == .needsSpace {
-                        BlueprintButton(FixSurface.driveStorage.label) {
-                            menu.openDriveStorage()
-                        }
-                        .accessibilityIdentifier("open-storage")
-                    }
+            FlowLayout {
+                // docs/05 "Fixed processing settings": the model this recording waits for, first.
+                if item.waitingForModel, let download = menu.modelDownload {
+                    ModelDownloadButton(download: download, language: item.localLanguage)
+                        .accessibilityIdentifier("download-model")
                 }
-                Spacer(minLength: 0)
-                // docs/03: a recording being written to, imported, or arriving from the watch is not one
-                // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
-                if item.canDelete {
-                    BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) {
-                        menu.confirmDelete(item, from: .recordingsWindow)
+                // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
+                // comes back on its own `next_run_at`, and asking now is all the row can add.
+                if item.canRetry {
+                    ProcessingButton(loc("Retry"), state: menu.action) { menu.retry(item) }
+                }
+                if item.needsKey {
+                    BlueprintButton(RecordingDetailStrings.checkKey) {
+                        // The settings are a window of their own (`LSUIElement`), and it
+                        // may not be open.
+                        openWindow(id: "processing-settings")
                     }
-                    .accessibilityIdentifier("delete")
-                    .fixedSize(horizontal: true, vertical: false)
-                    .padding(.trailing, statusTrailingInsets[item.id] ?? 0)
+                    .accessibilityIdentifier("check-key")
+                }
+                if item.alert == .needsSpace {
+                    BlueprintButton(FixSurface.driveStorage.label) {
+                        menu.openDriveStorage()
+                    }
+                    .accessibilityIdentifier("open-storage")
                 }
             }
         }

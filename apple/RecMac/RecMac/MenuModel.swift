@@ -1136,12 +1136,14 @@ final class MenuModel: ObservableObject {
         detail?.opensOnSummary = hit.onlyInSummary
     }
 
-    /// Every way a recording is put in the Details window — a row, a search hit, the popover's Details, the same
-    /// row again — comes through here, so every one of them asks before an editor's changes are dropped.
+    /// Every way a recording is put in the Details window — a row, a search hit, the popover's Details — comes
+    /// through here, so every one of them asks before an editor's changes are dropped. The recording that is already
+    /// open stays as it is (2026-10-15): nothing is loaded again, and there is nothing to lose to ask about.
     ///
-    /// - Returns: false when the user kept editing, and the page stays as it is.
+    /// - Returns: false when the page stays as it is — the user kept editing, or it is this recording's already.
     @discardableResult
     private func showDetail(recordingId: String, title: String) -> Bool {
+        guard detail?.recordingId != recordingId else { return false }
         guard let core = bridge?.core, mayLeaveDetail() else { return false }
         // docs/09 "Ask": the answer belongs to the page going away, not to the next one.
         detail?.closeAsk()
@@ -1156,8 +1158,22 @@ final class MenuModel: ObservableObject {
             if item.link != nil { model.openInDrive = { [weak self] in self?.openInDrive(item) } }
             if item.cloudFolder != nil { model.showInFinder = { [weak self] in self?.showInFinder(item) } }
         }
+        // 2026-10-15: Delete is the More menu's last item here, not a button under the open row.
+        model.delete = { [weak self] in self?.confirmDelete(recordingId: recordingId) }
         detail = model
         return true
+    }
+
+    /// docs/03 "Deleting in the app": the open page's Delete asks the question its row's did — off the row as it is
+    /// when the item is chosen, or off the core for a search hit older than the loaded page.
+    private func confirmDelete(recordingId: String) {
+        let listed = recents.first { $0.id == recordingId }
+        Task {
+            var item = listed
+            if item == nil, let core = bridge?.core { item = try? await Recents.item(core: core, recordingId: recordingId) }
+            guard let item, item.canDelete else { return }
+            confirmDelete(item, from: .recordingsWindow)
+        }
     }
 
     /// docs/09 "Editing and speakers": the page holds changes nobody has saved — the same question its own Cancel

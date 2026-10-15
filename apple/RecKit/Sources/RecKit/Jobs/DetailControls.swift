@@ -64,10 +64,11 @@ public enum ShareFormat: CaseIterable, Identifiable, Sendable {
 struct ReasonedMenuItem: View {
     let title: String
     let reason: String?
+    var role: ButtonRole?
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(role: role, action: action) {
             Text(verbatim: title)
             if let reason { Text(verbatim: reason) }
         }
@@ -80,7 +81,8 @@ struct ReasonedMenuItem: View {
 /// highlight — with the ones
 /// that cannot run now shown off, and why. The three groups are parted by a hairline, and a group with nothing in
 /// it (no ChatGPT, no summary) takes its divider with it (2026-10-10, 2.2). On the Mac a fourth group is the
-/// recording's folder — Open in Drive, or Show in Finder — where the shell hands the page one.
+/// recording's folder — Open in Drive, or Show in Finder — where the shell hands the page one, and the last is the
+/// red Delete (2026-10-15), which only the Mac hands in: the phone's list row has its own.
 struct DetailMoreMenu: View {
     @ObservedObject var model: RecordingDetailModel
     let positionSec: Double
@@ -175,6 +177,12 @@ struct DetailMoreMenu: View {
         }
         if let showInFinder = model.showInFinder {
             Button(RecKitStrings.localized("Show in Finder"), action: showInFinder)
+        }
+        // docs/03 "Deleting in the app": the shell's question, with its storage choice. No shortcut — a delete is
+        // asked for by a hand on the menu.
+        if let delete = model.delete {
+            Divider()
+            ReasonedMenuItem(title: RecKitStrings.localized("Delete"), reason: model.deleteReason, role: .destructive, action: delete)
         }
     }
 

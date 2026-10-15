@@ -360,20 +360,44 @@ final class RecordingDetailTests: XCTestCase {
         let still = RecKitStrings.localized("Still recording")
         let reasons = [
             model.renameReason, model.editReason, model.retranscribeReason, model.summarizeReason,
-            model.editSummaryReason, model.askReason, model.fillReason, model.highlightReason,
+            model.editSummaryReason, model.askReason, model.fillReason, model.highlightReason, model.deleteReason,
         ]
         XCTAssertEqual(reasons, Array(repeating: still, count: reasons.count))
     }
 
+    /// 2026-10-15: Delete is in the More menu only where the shell hands it in (the Mac) — and a finished recording's
+    /// is on.
+    @MainActor
+    func testDeleteIsTheShellsAndOnForAFinishedRecording() async throws {
+        let bridge = try await makeBridge()
+        let model = RecordingDetailModel(core: bridge.core, recordingId: try await seed(bridge), title: "Meeting")
+        await model.load()
+
+        XCTAssertNil(model.delete)
+        XCTAssertNil(model.deleteReason)
+    }
+
+    /// 2026-10-15: a file still being imported is not one to delete, and the More menu's Delete says so in the list's
+    /// word for it.
+    @MainActor
+    func testDeleteSaysImportingWhileTheFileIsImported() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge, status: .recording, source: .import)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        await model.load()
+
+        XCTAssertEqual(model.deleteReason, RecKitStrings.localized("Importing"))
+    }
+
     /// A finalized recording and its directory, with no title of its own — the row a rename is
     /// about, minus the microphone that would otherwise have to make one.
-    private func seed(_ bridge: CoreBridge, status: RecordingStatus = .finalized) async throws -> String {
+    private func seed(_ bridge: CoreBridge, status: RecordingStatus = .finalized, source: Source = .desktop) async throws -> String {
         let startedAt = bridge.deps.clock.now()
         let recordingId = Ulid.shared.generate(clock: FixedKotlinClock(startedAt))
         let meta = RecordingMeta(
             schema: 1,
             recordingId: recordingId,
-            source: Source.desktop,
+            source: source,
             platform: Platform.macos,
             deviceId: bridge.deps.device.deviceId,
             deviceName: bridge.deps.device.name,
