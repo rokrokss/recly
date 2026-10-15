@@ -209,8 +209,8 @@ struct AskFrame<Content: View>: View {
     }
 }
 
-/// docs/15 "iPhone providers": the permission a summary, a question or a fill-in switch waits on — drawn where the
-/// user is, the detail, the Ask sheet over it, or Settings → ChatGPT.
+/// docs/15 "iPhone providers": the permission a summary, a question or a fill of the title and names waits on — drawn
+/// where the user is, the detail, the Ask sheet over it, or the title sheet after Stop.
 struct SummaryConsentDialog: View {
     let targets: [TransferTarget]
     @Binding var trainingOff: Bool

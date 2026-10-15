@@ -291,6 +291,27 @@ final class RecordingDetailTests: XCTestCase {
         XCTAssertNil(cleared?.meta.title, "an empty answer clears the title rather than storing one")
     }
 
+    /// docs/08 "Titles and speaker names": a title given from elsewhere — ChatGPT's fill, another device's rename — shows
+    /// in the open page's header and in the rename prompt, as one given here does.
+    @MainActor
+    func testATitleGivenElsewhereShowsInTheOpenHeader() async throws {
+        let bridge = try await makeBridge()
+        let recordingId = try await seed(bridge)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: recordingId, title: RecKitStrings.localized("Untitled"))
+        await model.load()
+        let watch = Task { await model.followCapture() }
+        addTeardownBlock { watch.cancel(); await watch.value }
+
+        let filled = try await bridge.core.recordings.fillTitle(recordingId: recordingId, title: "Weekly sync")
+        XCTAssertTrue(filled.boolValue)
+        for _ in 0..<100 {
+            if model.title == "Weekly sync" { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(model.title, "Weekly sync")
+        XCTAssertEqual(model.givenTitle, "Weekly sync")
+    }
+
     /// A rename the core refuses — no such recording, or one still being written — leaves the
     /// header saying what it said, rather than a name nothing was written under.
     @MainActor
@@ -339,7 +360,7 @@ final class RecordingDetailTests: XCTestCase {
         let still = RecKitStrings.localized("Still recording")
         let reasons = [
             model.renameReason, model.editReason, model.retranscribeReason, model.summarizeReason,
-            model.editSummaryReason, model.askReason, model.highlightReason,
+            model.editSummaryReason, model.askReason, model.fillReason, model.highlightReason,
         ]
         XCTAssertEqual(reasons, Array(repeating: still, count: reasons.count))
     }
