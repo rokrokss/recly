@@ -123,6 +123,18 @@ internal fun completionLine(failed: Boolean, completion: Completion?): Str = whe
 }
 
 /**
+ * docs/09 "What a start or a stop says": what a stop had to report — anything [completionLine] says but plain waiting —
+ * is news of that moment, so the wait for Drive a job pass finds next does not take its place on the line. The banner
+ * and the row already say that wait.
+ */
+internal fun isStopReport(status: UiMessage): Boolean = (status as? UiMessage.Res)?.key in STOP_REPORTS
+
+private val STOP_REPORTS = setOf(
+    Str.ENQUEUE_FAILED, Str.RECORDING_FAILED, Str.RECORDING_TITLE_TOO_LATE, Str.ENQUEUE_NO_WORKFLOW,
+    Str.ENQUEUE_PARTS_PURGED, Str.ENQUEUE_SKIPPED_SHORT, Str.ENQUEUE_ALREADY_DONE,
+)
+
+/**
  * D21 · D22: a disconnect's outcome under the Drive row — what failed in the danger colour, what is in the way in the
  * warning ink, the rest muted — and nothing where the revoke-debt rows under it already say it.
  */
@@ -1178,7 +1190,7 @@ class ShellModel(
 
     private fun adopt(jobs: List<Job>) {
         needsAuth = jobs.any { it.status == JobStatus.NEEDS_AUTH }
-        if (needsAuth) status = NEEDS_AUTH_NOTICE.message()
+        if (needsAuth && !isStopReport(status)) status = NEEDS_AUTH_NOTICE.message()
         scope.launch {
             refreshRecents()
             refreshAlerts(jobs)

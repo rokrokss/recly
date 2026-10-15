@@ -65,6 +65,16 @@ class ShellParityTest {
         assertEquals(Str.RECORDING_FAILED, completionLine(true, Completion(EnqueueResult.SkippedShort("j"))))
     }
 
+    /** D1 · D2: a job pass that finds the wait for Drive does not say it over what the stop had to report. */
+    @Test
+    fun `a stop's report keeps the line from the wait for Drive`() {
+        listOf(
+            Str.RECORDING_FAILED, Str.ENQUEUE_FAILED, Str.RECORDING_TITLE_TOO_LATE, Str.ENQUEUE_NO_WORKFLOW,
+            Str.ENQUEUE_PARTS_PURGED, Str.ENQUEUE_SKIPPED_SHORT, Str.ENQUEUE_ALREADY_DONE,
+        ).forEach { assertTrue(isStopReport(it.message()), "$it") }
+        listOf(Str.STATUS_WAITING, Str.STATUS_SAVING, Str.HIGHLIGHT_MARKED).forEach { assertFalse(isStopReport(it.message()), "$it") }
+    }
+
     @Test
     fun `retry on a row waiting for Drive connects Drive instead`() {
         assertTrue(retriesBySigningIn(JobStatus.NEEDS_AUTH))
