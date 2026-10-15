@@ -283,6 +283,8 @@ public struct BlueprintCheckRow: View {
 
 private struct OptionRow: View {
     @Environment(\.blueprint) private var blueprint
+    /// docs/09 "Disabled, focus and structure": an answer that cannot be changed now draws in `disabled`.
+    @Environment(\.isEnabled) private var isEnabled
     let label: String
     let selected: Bool
     let filled: Bool
@@ -294,7 +296,7 @@ private struct OptionRow: View {
                 .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 3 }
             Text(verbatim: label)
                 .font(blueprint.fonts.bodySmall)
-                .foregroundStyle(blueprint.palette.text)
+                .foregroundStyle(isEnabled ? blueprint.palette.text : blueprint.palette.disabled)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -312,13 +314,17 @@ private struct OptionRow: View {
 /// The outline is on [BlueprintPalette.line] — the token the hairline and every bordered node take
 /// — so high contrast thickens it here too (docs/09 "High-contrast mode"). An unchecked box is nothing
 /// *but* its outline, which is what made it the one that needed it.
+///
+/// Disabled, it keeps what it shows — ticked or not — in `disabled`, its edge dashed (docs/09 "Disabled, focus and
+/// structure").
 private struct SelectionMark: View {
     @Environment(\.blueprint) private var blueprint
+    @Environment(\.isEnabled) private var isEnabled
     let selected: Bool
     let filled: Bool
 
     var body: some View {
-        let ink = selected ? blueprint.palette.accent : blueprint.palette.textMuted
+        let ink = !isEnabled ? blueprint.palette.disabled : selected ? blueprint.palette.accent : blueprint.palette.textMuted
         RoundedRectangle(cornerRadius: Radius.badge)
             .fill(selected && filled ? ink : .clear)
             .overlay {
@@ -330,7 +336,7 @@ private struct SelectionMark: View {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.badge)
-                    .strokeBorder(ink, lineWidth: blueprint.line)
+                    .strokeBorder(ink, style: StrokeStyle(lineWidth: blueprint.line, dash: isEnabled ? [] : BlueprintButton.dash))
             }
             .frame(width: 18, height: 18)
     }

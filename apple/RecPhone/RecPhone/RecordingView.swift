@@ -323,7 +323,7 @@ struct RecordingView: View {
         guard model.naming != nil else { return }
         let answer = typed
         // As the sheet showed it when Save was pressed.
-        let fill = model.fillsAfterStop
+        let fill = model.fillAfterStop(typedTitle: answer)
         title = ""
         participants = nil
         Task { await model.finishNaming(with: answer, participants: count, fill: fill) }
@@ -380,8 +380,8 @@ private struct ConsentDialog: View {
 }
 
 /// docs/03: the name, and how many people were in the room — the hint `transcribe` trusts over the
-/// workflow's own `speakers` (docs/08). "Unknown" is where it starts and it writes nothing. Under them, the ChatGPT
-/// box of docs/08 "Titles and speaker names".
+/// workflow's own `speakers` (docs/08). "Unknown" is where it starts and it writes nothing. Under them, the two ChatGPT
+/// boxes of docs/08 "Titles and speaker names".
 ///
 /// A sheet rather than the alert the title alone used to be: an alert holds no picker.
 private struct NamingSheet: View {
@@ -390,14 +390,14 @@ private struct NamingSheet: View {
     /// 2026-10-10 (3.5): the count is a hint to the transcription, so it is not asked while transcription is off —
     /// nor is a fill of the transcript.
     let asksPeople: Bool
-    /// The ChatGPT box's state and the permission it asks for; nil until the core is open.
+    /// The ChatGPT boxes' state and the permission they ask for; nil until the core is open.
     let chatGpt: ChatGptSettingsModel?
     let onSave: () -> Void
     let onCancel: () -> Void
 
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
-    /// The sheet is as tall as what it asks, as a dialog's is ([BlueprintDialogSheet]): the ChatGPT box and its
+    /// The sheet is as tall as what it asks, as a dialog's is ([BlueprintDialogSheet]): the ChatGPT boxes and their
     /// note do not fit the half height on every phone.
     @State private var height: CGFloat?
 
@@ -449,7 +449,7 @@ private struct NamingSheet: View {
             }
             // docs/08 "Titles and speaker names": only while transcription is on and ChatGPT is signed in.
             if asksPeople, let chatGpt {
-                FillAfterStopChoice(model: chatGpt)
+                FillAfterStopChoice(model: chatGpt, typedTitle: title)
             }
             // docs/03 "Titles" · 2026-10-08 §5: the second answer throws the recording away, so it
             // says so, in the red of every other irreversible delete. Side by side while both fit;

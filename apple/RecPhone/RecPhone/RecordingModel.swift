@@ -337,6 +337,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             self.storage = storage
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
+            observeFills(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
             // Read once at launch, so a recording's More menu knows the sign-in before Settings is opened.
             let chatGpt = ChatGptSettingsModel(core: bridge.core)
@@ -421,6 +422,23 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         Task { [weak self] in
             for await _ in core.recordings.observe() {
                 guard let self else { return }
+                await self.refreshRecents()
+            }
+        }
+    }
+
+    /// docs/09 screen principle 2: the recordings ChatGPT is filling in now, whose rows say `Filling in` — a fill moves
+    /// neither the queue nor the recordings table until its answer is applied, so the rows are read again as one
+    /// starts and ends.
+    private var filling: Set<String> = []
+
+    private func observeFills(core: ReclyCore_) {
+        Task { [weak self] in
+            for await runs in core.observeFills() {
+                guard let self else { return }
+                let ids = Set(runs.map(\.recordingId))
+                guard ids != self.filling else { continue }
+                self.filling = ids
                 await self.refreshRecents()
             }
         }
@@ -579,11 +597,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// docs/08 "Titles and speaker names": the title sheet shows its ChatGPT box ticked — transcription is on,
-    /// ChatGPT is signed in, and the box was left ticked with the permission still given.
-    var fillsAfterStop: Bool {
-        guard let chatGpt, !(processing?.transcriptionOff ?? false) else { return false }
-        return chatGpt.fillOffered && chatGpt.fillTicked
+    /// docs/08 "Titles and speaker names": what the title sheet's ChatGPT boxes ask for as they show — offered while
+    /// transcription is on and ChatGPT is signed in, each ticked as it was left with the permission still given, the
+    /// title's only while [typedTitle] is empty.
+    func fillAfterStop(typedTitle: String?) -> TitleSheetFill {
+        guard let chatGpt, chatGpt.fillOffered, !(processing?.transcriptionOff ?? false) else { return .none }
+        return TitleSheetFill(titleTicked: chatGpt.fillTitleTicked, namesTicked: chatGpt.fillNamesTicked, typedTitle: typedTitle)
     }
 
     /// Saves the title prompt's answer and queues the recording, including an empty title.
@@ -591,9 +610,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// - Parameters:
     ///   - participants: how many people were in the room, or nil for "unknown" — docs/03's
     ///     `context.participants`, which docs/08 lets override the settings' speaker hint.
-    ///   - fill: the ChatGPT box was ticked: the recording's publication first asks for its title and speaker names
-    ///     (docs/08 "Titles and speaker names") — asked after the title is written and before the job is queued.
-    func finishNaming(with title: String?, participants: Int? = nil, fill: Bool = false) async {
+    ///   - fill: what the ChatGPT boxes ask for: the recording's publication first asks for that — its title, its speaker
+    ///     names or both (docs/08 "Titles and speaker names") — asked after the title is written and before the job is
+    ///     queued.
+    func finishNaming(with title: String?, participants: Int? = nil, fill: TitleSheetFill = .none) async {
         guard let naming else { return }
         self.naming = nil
         let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -607,9 +627,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             )
             titleRefused = saved?.boolValue != true
         }
-        if fill {
+        if fill.any {
             do {
-                try await bridge?.core.requestFill(recordingId: naming.id)
+                try await bridge?.core.requestFill(recordingId: naming.id, title: fill.title, names: fill.names)
             } catch {
                 logger.error("shell.chatgpt.fill.request.failed error=\(String(describing: error), privacy: .private)")
             }
@@ -1139,7 +1159,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         guard let core = bridge?.core else { return }
         defer { recentsLoading = false }
         do {
-            recents = try await Recents.load(core: core, limit: Self.recentsLimit)
+            recents = try await Recents.load(core: core, limit: Self.recentsLimit, filling: filling)
             // The states are the list's whole content and none of them is the user's text — the
             // titles are, and they stay out of the log (as on macOS).
             logger.info("shell.recents states=\(self.recents.map(\.state).joined(separator: ","), privacy: .public)")

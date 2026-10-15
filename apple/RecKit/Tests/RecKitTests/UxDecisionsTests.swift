@@ -25,6 +25,7 @@ final class UxDecisionsTests: XCTestCase {
         (LedgerStatus(code: "RECEIVING", tone: .accent), "Receiving", "받는 중"),
         (LedgerStatus(code: "TRANSCRIBING", tone: .accent), "Transcribing", "전사 중"),
         (LedgerStatus(code: "IMPORTING", tone: .accent), "Importing", "가져오는 중"),
+        (LedgerStatus.filling, "Filling in", "채우는 중"),
         (LedgerStatus(code: "REC", tone: .danger), "Recording", "녹음 중"),
         (LedgerStatus(code: "NEEDS_AUTH", tone: .neutral), "Waiting for Drive", "Drive 연결 대기"),
         (LedgerStatus(code: "NEEDS_CONSENT", tone: .warning), "Needs permission", "허용 필요"),
@@ -61,6 +62,38 @@ final class UxDecisionsTests: XCTestCase {
         AppLanguage.current = .ko
         XCTAssertEqual(RecKitStrings.localized("Sign-in needed"), "Drive 연결 대기")
         XCTAssertEqual(LedgerStatus.forRecent(state: "Sign-in needed").label, "Drive 연결 대기")
+    }
+
+    // MARK: - 2026-10-15: a recording being filled in (docs/09 screen principle 2)
+
+    /// `Filling in` is read after `REC` and `RECEIVING` and ahead of everything else — the other things happening
+    /// elsewhere and the job state mapping — and the row goes back to its job's state when the run ends. The header's
+    /// counts and the row's actions still go by the job's state.
+    func testAFillShowsAheadOfEverythingButRecAndReceiving() {
+        AppLanguage.current = .en
+        func item(_ state: String, filling: Bool = true, waitingMinutes: Int? = nil) -> RecentItem {
+            RecentItem(
+                id: "r", jobId: "j", title: "", startedAt: "2026-10-15T10:00:00Z", state: state, link: nil,
+                lastError: nil, waitingMinutes: waitingMinutes, filling: filling
+            )
+        }
+        XCTAssertEqual(item("Recording").badge.code, "REC")
+        XCTAssertEqual(item("Receiving from the watch").badge.code, "RECEIVING")
+        for state in [
+            "Uploading on another device", "Transcribing on another device", "Uploading", "Waiting", "Retry pending",
+            "Done", "Failed", "Sign-in needed", "Too short",
+        ] {
+            XCTAssertEqual(item(state).badge, LedgerStatus.filling, state)
+        }
+        XCTAssertEqual(item("Retry pending", waitingMinutes: 3).badge, LedgerStatus.filling, "ahead of a provider transcribing")
+        XCTAssertEqual(item("Done", filling: false).badge.code, "DONE")
+        XCTAssertEqual(LedgerStatus.filling.tone, .accent)
+
+        let failed = item("Failed")
+        XCTAssertTrue(failed.canRetry)
+        XCTAssertTrue(failed.canDelete)
+        XCTAssertEqual(failed.stateLabel, "Failed")
+        XCTAssertEqual(Recents.summary([failed, item("Waiting"), item("Done")]), "3 · 1 waiting · 1 failed")
     }
 
     // MARK: - §1b·§1c: the dashboard's nodes
