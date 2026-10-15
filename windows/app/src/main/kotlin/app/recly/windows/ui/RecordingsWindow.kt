@@ -451,14 +451,9 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // The time, and the length the tray's rows have in a column of their own (D11) — one stamp, left to right.
             Text(
-                "${LedgerFormat.date(item.startedAt)} ${LedgerFormat.time(item.startedAt)}",
-                style = mono.small.copy(textDirection = TextDirection.Ltr),
-                color = palette.textMuted,
-            )
-            // The ledger's length column, as the tray's rows have it (D11): time · title · length · status.
-            Text(
-                LedgerFormat.length(item.durationSec),
+                "${LedgerFormat.date(item.startedAt)} ${LedgerFormat.time(item.startedAt)} · ${LedgerFormat.length(item.durationSec)}",
                 style = mono.small.copy(textDirection = TextDirection.Ltr),
                 color = palette.textMuted,
             )
