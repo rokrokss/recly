@@ -567,5 +567,11 @@
   "Filling in speaker names…": "กำลังเติมชื่อผู้พูด…",
   "Filling in": "กำลังเติม",
   "Could not fill in the title": "เติมชื่อไม่ได้",
-  "Could not fill in speaker names": "เติมชื่อผู้พูดไม่ได้"
+  "Could not fill in speaker names": "เติมชื่อผู้พูดไม่ได้",
+  "Recording may have stopped": "การบันทึกเสียงอาจหยุดแล้ว",
+  "Open Recly to check.": "เปิด Recly เพื่อตรวจสอบ",
+  "Recording time: {0}": "เวลาบันทึก: {0}",
+  "Recording stopped: battery low": "หยุดบันทึกเสียงแล้ว: แบตเตอรี่เหลือน้อย",
+  "Recording paused": "หยุดบันทึกเสียงชั่วคราว",
+  "Open Recly to keep recording.": "เปิด Recly เพื่อบันทึกเสียงต่อ"
 }

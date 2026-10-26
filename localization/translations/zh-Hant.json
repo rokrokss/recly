@@ -567,5 +567,11 @@
   "Filling in speaker names…": "正在填寫說話者名稱…",
   "Filling in": "正在填寫",
   "Could not fill in the title": "無法填寫標題",
-  "Could not fill in speaker names": "無法填寫說話者名稱"
+  "Could not fill in speaker names": "無法填寫說話者名稱",
+  "Recording may have stopped": "錄音可能已停止",
+  "Open Recly to check.": "開啟Recly查看。",
+  "Recording time: {0}": "錄音時間：{0}",
+  "Recording stopped: battery low": "電量不足，錄音已停止",
+  "Recording paused": "錄音已暫停",
+  "Open Recly to keep recording.": "開啟Recly繼續錄音。"
 }

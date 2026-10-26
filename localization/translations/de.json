@@ -567,5 +567,11 @@
   "Filling in speaker names…": "Sprechernamen werden ergänzt…",
   "Filling in": "Wird ergänzt",
   "Could not fill in the title": "Titel konnte nicht ergänzt werden",
-  "Could not fill in speaker names": "Sprechernamen konnten nicht ergänzt werden"
+  "Could not fill in speaker names": "Sprechernamen konnten nicht ergänzt werden",
+  "Recording may have stopped": "Aufnahme möglicherweise beendet",
+  "Open Recly to check.": "Zum Prüfen Recly öffnen.",
+  "Recording time: {0}": "Aufnahmedauer: {0}",
+  "Recording stopped: battery low": "Aufnahme beendet: Akku schwach",
+  "Recording paused": "Aufnahme pausiert",
+  "Open Recly to keep recording.": "Zum Weiteraufnehmen Recly öffnen."
 }

@@ -154,6 +154,9 @@ final class MenuModel: ObservableObject {
     /// the one thing on the Lock Screen that is most likely to be opened from a cold launch, and
     /// [act(on:)] needs a recorder that only [load] makes.
     private let meetingRouter = AlertRouter<MeetingNotifier.Action>()
+    /// The dead-man and the reminders of a long recording; their responses come through [notifier]'s
+    /// forward, as the job alerts' do.
+    private let notices = RecordingNotices(stopKey: "Stop recording")
     /// docs/03 "Disconnect" · docs/06: the whole of a disconnect, which is RecKit's and not this
     /// model's — the phone runs the same one. Lazy because every one of its closures reads `self`.
     private lazy var disconnectFlow = DisconnectFlow(
@@ -200,9 +203,14 @@ final class MenuModel: ObservableObject {
         // and a forward installed once the database is open is one installed too late. The tap then
         // waits in [alertRouter] until there is an editor to take it to.
         notifier.forward = { [weak self] response in
-            self?.alertNotifier.handle(response: response) ?? false
+            guard let self else { return false }
+            return alertNotifier.handle(response: response) || notices.handle(response: response)
         }
         alertNotifier.onFix = { [weak self] alert in self?.alertRouter.deliver(alert) }
+        // A reminder's Stop ends the recording the way `⌘Q` does: through the gate, with no title panel.
+        notices.onStop = { [weak self] in
+            self?.quit.finish { [weak self] in await self?.finish(askingForTitle: false) }
+        }
         // The same argument for the meeting offer itself: "Start recording" tapped on a notification
         // that woke the app was dropped, because [onAction] was only wired once the core was open.
         // It waits in [meetingRouter] until there is a recorder to serve it.
@@ -218,6 +226,7 @@ final class MenuModel: ObservableObject {
     /// it in place first. Idempotent.
     func installNotificationDelegate() {
         notifier.adoptDelegate()
+        RecordingNotices.withdrawPending()
     }
 
     /// docs/12 M2: open the core, finish whatever the last run left behind, then offer to record.
@@ -229,6 +238,7 @@ final class MenuModel: ObservableObject {
             let recorder = SegmentedRecorder(core: bridge.core) { [weak self] error in
                 self?.captureFailed(error)
             }
+            recorder.onEvent = { [notices] event in notices.apply(event) }
             self.recorder = recorder
             recorder.preferMicrophone(nil)
             let recovery = RecordingRecovery(core: bridge.core)

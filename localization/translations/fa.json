@@ -567,5 +567,11 @@
   "Filling in speaker names…": "در حال تکمیل نام گویندگان…",
   "Filling in": "در حال تکمیل",
   "Could not fill in the title": "تکمیل عنوان ممکن نشد",
-  "Could not fill in speaker names": "تکمیل نام گویندگان ممکن نشد"
+  "Could not fill in speaker names": "تکمیل نام گویندگان ممکن نشد",
+  "Recording may have stopped": "ممکن است ضبط متوقف شده باشد",
+  "Open Recly to check.": "برای بررسی، Recly را باز کنید.",
+  "Recording time: {0}": "زمان ضبط: {0}",
+  "Recording stopped: battery low": "ضبط متوقف شد: باتری کم است",
+  "Recording paused": "ضبط موقتاً متوقف شد",
+  "Open Recly to keep recording.": "برای ادامهٔ ضبط، Recly را باز کنید."
 }

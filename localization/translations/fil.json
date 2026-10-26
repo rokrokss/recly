@@ -567,5 +567,11 @@
   "Filling in speaker names…": "Pinupunan ang mga pangalan ng nagsasalita…",
   "Filling in": "Pinupunan",
   "Could not fill in the title": "Hindi mapunan ang pamagat",
-  "Could not fill in speaker names": "Hindi mapunan ang mga pangalan ng nagsasalita"
+  "Could not fill in speaker names": "Hindi mapunan ang mga pangalan ng nagsasalita",
+  "Recording may have stopped": "Maaaring huminto ang pagre-record",
+  "Open Recly to check.": "Buksan ang Recly para tingnan.",
+  "Recording time: {0}": "Tagal ng pagre-record: {0}",
+  "Recording stopped: battery low": "Huminto ang pagre-record: mahina ang baterya",
+  "Recording paused": "Naka-pause ang pagre-record",
+  "Open Recly to keep recording.": "Buksan ang Recly para ituloy ang pagre-record."
 }

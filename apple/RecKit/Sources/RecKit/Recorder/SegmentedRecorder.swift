@@ -88,6 +88,12 @@ public final class SegmentedRecorder {
     private let input: AudioInput
     private let systemInput: (any SystemAudioInput)?
     private let driftIntervalSec: Double
+    /// iOS and watchOS: a restart that has run out of attempts leaves the recording open and waits
+    /// for the app to come to the front ([becameActive]) — a backgrounded app cannot take the
+    /// microphone back, and the one in front can. The Mac ends the recording, as it always has.
+    private let awaitsResume: Bool
+    /// Scales the waits between reattach attempts; 1 in the app.
+    private let retryPace: Double
     private let onError: (RecorderError) -> Void
 
     private let lock = NSLock()
@@ -108,6 +114,10 @@ public final class SegmentedRecorder {
     /// device change has nothing to add.
     private var restartPending = false
     private var restarting = false
+    /// The restart a waiting recording ([awaitsResume]) still owes, with the reason and the moment
+    /// the input was lost — so the attempt [becameActive] makes writes one `gaps` entry across the
+    /// whole wait. `restarting` stays set meanwhile: nothing else restarts a recording that waits.
+    private var awaiting: (session: Session, reason: String, lostAt: Date)?
     /// The tap is started once per recording, by the first [attach]; the restarts that follow are
     /// the microphone's business and must not take it down. On [control] only.
     private var systemStarted = false
@@ -116,6 +126,10 @@ public final class SegmentedRecorder {
     /// `nil` in the app: it exists because "the container came back unreadable" is the one state no
     /// fake input can produce from outside — that file is written by the real AAC encoder.
     var afterSegmentClosed: ((URL) -> Void)?
+
+    /// The recording's progress, on the main queue, for the notifications that watch over it
+    /// ([RecordingNotices]). Set once, before the first start.
+    public var onEvent: (@MainActor (RecorderEvent) -> Void)?
 
     /// The correction the system stream is being resampled by. There is no other way to see the
     /// estimator from outside, and what it is doing is the difference between a `sys` track that
@@ -176,6 +190,8 @@ public final class SegmentedRecorder {
         input: AudioInput,
         systemInput: (any SystemAudioInput)? = nil,
         driftIntervalSec: Double = DriftEstimator.intervalSec,
+        awaitsResume: Bool = SegmentedRecorder.awaitsResumeOnThisPlatform,
+        retryPace: Double = 1,
         onError: @escaping (RecorderError) -> Void
     ) {
         self.core = core
@@ -186,6 +202,10 @@ public final class SegmentedRecorder {
         // Overridable for the same reason [segmentSec] is: a test cannot wait sixty seconds to see
         // the estimator move, and every path that moves it is one a recording depends on.
         self.driftIntervalSec = driftIntervalSec
+        // The same for the two below: the waiting state is the phones', and a test on the Mac
+        // cannot sit through the fifteen seconds of attempts that lead to it.
+        self.awaitsResume = awaitsResume
+        self.retryPace = retryPace
         self.onError = onError
         input.onConfigurationChange = { [weak self] reason in self?.requestRestart(reason: reason) }
         // docs/03 `silenced`: the microphone taken away and given back. Not a restart — the input
@@ -196,6 +216,14 @@ public final class SegmentedRecorder {
         input.onDiagnostic = { [weak self] event in self?.recordDiagnostic(event) }
         systemInput?.onDiagnostic = { [weak self] event in self?.recordDiagnostic(event) }
         systemInput?.onOutage = { [weak self] reason, seconds in self?.recordOutage(reason, seconds) }
+    }
+
+    static var awaitsResumeOnThisPlatform: Bool {
+        #if os(iOS) || os(watchOS)
+        return true
+        #else
+        return false
+        #endif
     }
 
     var isRecording: Bool {
@@ -278,6 +306,7 @@ public final class SegmentedRecorder {
                 self.registrations = nil
                 self.restartPending = false
                 self.restarting = false
+                self.awaiting = nil
             }
             try await attachWithRetry(to: session)
         } catch {
@@ -291,6 +320,7 @@ public final class SegmentedRecorder {
             "segmentSec": segmentSec,
             "tracks": Self.tracks(of: mode).count,
         ])
+        emit(.started(recordingId: recordingId, at: Date(), segmentSec: segmentSec))
         return recordingId
     }
 
@@ -316,9 +346,13 @@ public final class SegmentedRecorder {
             closing = open
             restarting = false
             restartPending = false
+            // A recording that waits to resume stops like any other: its input is already down,
+            // and the outage it left open is filed below as the gap it was.
+            awaiting = nil
             return open
         }
         guard let open = taken else { return .notRecording }
+        defer { emit(.ended) }
 
         // The microphone is given back before any of the bookkeeping, so a recording that cannot be
         // filed still stops being a recording — and on the control queue, so it lands *behind* a
@@ -513,6 +547,7 @@ public final class SegmentedRecorder {
                 // `closeSegments` has returned, so the files it closed are released and their
                 // trailing atoms are on disk — only now may anything hash or read them.
                 register(closeSegments(session), in: session.directory, recordingId: session.recordingId)
+                emit(.partFiled)
             }
         }
     }
@@ -582,9 +617,11 @@ public final class SegmentedRecorder {
 
     /// The segment is full on every track: close them all and open the next one on each. Every
     /// writer gets the same duration because they were handed the same number of frames.
-    private func closeSegments(_ session: Session) -> [ClosedSegment] {
+    ///
+    /// [frames] is a segment cut short ([awaitResume]); without it the segment is a full one.
+    private func closeSegments(_ session: Session, frames: AVAudioFrameCount? = nil) -> [ClosedSegment] {
         // A chunk only closes a segment by filling it exactly, so this is the length, to the frame.
-        let durationSec = Double(session.splitter.framesPerSegment) / Double(Self.sampleRateHz)
+        let durationSec = Double(frames ?? session.splitter.framesPerSegment) / Double(Self.sampleRateHz)
         let closed = session.writers.map { $0.closeSegment(durationSec: durationSec) }
         for writer in session.writers {
             do {
@@ -910,18 +947,68 @@ public final class SegmentedRecorder {
                     micFrames: session.totalFrames, atSec: Self.nowSec, outageSec: lostSec
                 )
             }
-            lock.withLock { restarting = false }
+            let resumed: Bool = lock.withLock {
+                restarting = false
+                defer { awaiting = nil }
+                return awaiting != nil
+            }
             log(.warn, "rec.recorder.restarted", ["recordingId": session.recordingId, "reason": reason])
+            if resumed { emit(.resumed) }
         } catch {
             input.stop()
-            if attempt < 10 {
-                control.asyncAfter(deadline: .now() + min(2, 0.5 + Double(attempt) * 0.25)) { [weak self] in
+            if attempt < Self.reattachRetries {
+                let delay = min(2, 0.5 + Double(attempt) * 0.25) * retryPace
+                control.asyncAfter(deadline: .now() + delay) { [weak self] in
                     self?.reattach(session, reason: reason, lostAt: lostAt, attempt: attempt + 1)
                 }
+            } else if awaitsResume {
+                awaitResume(session, reason: reason, lostAt: lostAt, error: error)
             } else {
                 lock.withLock { restarting = false }
                 report(RecorderError("the engine did not come back after \(reason)", underlying: error))
             }
+        }
+    }
+
+    private static let reattachRetries = 10
+
+    /// On the control queue, with the input down. The recording stays open — nothing is reported,
+    /// the shell's state still says recording — and the part that was open is closed where it
+    /// stands, so a process the system kills while it waits loses nothing past it. The
+    /// notifications that promised a running recording come down ([RecorderEvent.awaitingResume]).
+    private func awaitResume(_ session: Session, reason: String, lostAt: Date, error: Error) {
+        let waiting: Bool = lock.withLock {
+            // A stop that landed meanwhile has the session, and files the outage itself.
+            guard self.session === session else { return false }
+            let frames = session.splitter.cut()
+            if frames > 0 {
+                register(closeSegments(session, frames: frames), in: session.directory, recordingId: session.recordingId)
+            }
+            awaiting = (session, reason, lostAt)
+            return true
+        }
+        guard waiting else { return }
+        log(.warn, "rec.recorder.awaitingResume", [
+            "recordingId": session.recordingId,
+            "reason": reason,
+            "error": "\(error)",
+        ])
+        emit(.awaitingResume)
+    }
+
+    /// The app came to the front (iOS, watchOS) — the one moment a recording that waits can take the
+    /// microphone back. One attempt, with the reason and the moment the input was lost, so the gap
+    /// it writes spans the whole wait; a failure waits again for the next time. No timer: a
+    /// suspended app runs none.
+    ///
+    /// Also the `.ended` an interruption never delivered (see [AudioInput.becameActive]).
+    public func becameActive() {
+        control.async { [weak self] in
+            guard let self else { return }
+            input.becameActive()
+            let owed = lock.withLock { self.awaiting.flatMap { self.session === $0.session ? $0 : nil } }
+            guard let owed else { return }
+            reattach(owed.session, reason: owed.reason, lostAt: owed.lostAt, attempt: Self.reattachRetries)
         }
     }
 
@@ -996,6 +1083,12 @@ public final class SegmentedRecorder {
         log(error.fatal ? .error : .warn, "rec.recorder.error", ["fatal": error.fatal, "message": error.description])
         let handler = onError
         DispatchQueue.main.async { handler(error) }
+    }
+
+    /// Queued on the main queue the way [report] is, and so in the order the recording did them.
+    private func emit(_ event: RecorderEvent) {
+        guard let handler = onEvent else { return }
+        DispatchQueue.main.async { MainActor.assumeIsolated { handler(event) } }
     }
 
     private func log(_ level: LoggerLevel, _ event: String, _ fields: [String: Any]) {
