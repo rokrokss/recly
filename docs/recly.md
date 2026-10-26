@@ -1014,6 +1014,14 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   `/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`, `/rec/meta/{recordingId}` — the file name is carried in the path because
   the meta (= `{base}`) arrives last. Apple carries the same values in the `metadata`
   dictionary of `WCSession.transferFile`.
+- **The Apple Watch sends the meta right behind the parts and then wakes the phone** (2026-10-26, GitHub issue #21: recordings stayed
+  `Waiting to send` until the iPhone app was opened). A `WCSession` transfer waits until the receiving app runs, and the only thing that launches
+  the iPhone app in the background is a live message from the watch (`sendMessage`), which works only while the watch app is in front and the phone
+  is in range. A meta that waited for the part acks would need two such launches, with the watch app awake in between to hand it over. So the meta
+  goes in the same pass as the parts, with an empty `sendMessage` behind them. `WCSession` delivers in the order things were sent, the phone accepts
+  deliveries one at a time in arrival order, and `acceptMeta` files the meta only once every part it lists is on disk with its hash — a part that
+  is not comes back as `Incomplete(missing)` and is resent. A part ack is only recorded and sends nothing. The Galaxy Watch still sends the meta once
+  every part is acked: the Data Layer starts the phone's listener service for every delivery.
 - **The channel is closed after `onOutputClosed`** (2026-09-04, found on a real Watch7). The Task of `ChannelClient.sendFile` ends when the
   **request is accepted**, not when the transfer completes, and the official documentation says not to close the channel right after that and to learn of completion through `onOutputClosed`.
   Closing right away put the CLOSE in line behind the data, and the phone received `onInputClosed(CLOSE_REASON_REMOTE_CLOSE)`,
@@ -3557,6 +3565,12 @@ In `WCSessionDelegate.session(_:didReceive:)`, **synchronously**: move the file 
 `transferUserInfo(["ack": …])` (guaranteed delivery) → on meta receipt, register and enqueue. On the receiving side of `transferFile`, a file
 that is not moved inside the callback is deleted. Sending the workflow summary to the watch with `updateApplicationContext` was retired (2026-09-24).
 
+The session is activated in `didFinishLaunching`, before the core is open (2026-10-26): a launch the watch's wake caused has seconds, and
+transfers are delivered only to an active session. Each delivery is staged inside the callback and holds a `beginBackgroundTask` until it has
+been answered; its accept waits for the load to finish (the executor exists by then, so the ack-last order holds) and acks nothing if the core
+failed to open. `session(_:didReceiveMessage:)` takes the wake and holds the app up for 20 seconds of its own: the message goes at once,
+and the transfers it was sent behind may still be on their way.
+
 | # | Scope |
 |---|---|
 | I1 | Targets · RecKit · XCFramework |
@@ -3575,9 +3589,13 @@ that is not moved inside the callback is deleted. Sending the workflow summary t
   `.record`/`.default`; on watchOS 11+, `.allowBluetoothHFP` allows headset input.
   watchOS does not support `setPreferredInput`, so the OS handles the actual input choice (watchOS 10 uses the default recording session).
   Handling of input changes, interruptions, buffer saving and audio service resets is shared with the iPhone.
-- **Transfer**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` per part + the meta last.
-  The `didFinish` callback can be missed, so **the phone's ack (`didReceiveUserInfo`)** is the completion criterion. Acked parts are deleted.
-  Retry: unacked parts are resent when the app becomes active (the phone ignores duplicates by sha256).
+- **Transfer**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` per part, the meta right behind them in the
+  same pass, then a wake — an empty `sendMessage` while `isReachable`, the only thing that launches the iPhone app in the background (§3, 2026-10-26).
+  Every pass that leaves something for the phone sends one: a stop, the app becoming active, the session activating, the phone coming into reach.
+  The `didFinish` callback can be missed, so **the phone's ack (`didReceiveUserInfo`)** is the completion criterion; parts and meta are deleted only
+  on `ack-meta ok:true` (§3). Acks that arrive before the core is open are kept and acted on once the queue opens, and a WatchConnectivity
+  background launch (`.backgroundTask(.watchConnectivity)`) lasts until the session has delivered what it held (at most 3 seconds of waiting) and
+  the queue has acted on it. Retry: unacked parts are resent when the app becomes active (the phone ignores duplicates by sha256).
 - **Entry points**: complication (state + tap to start when idle — while recording a tap only opens the app, never stops, 2026-10-15; the square record glyph when idle, the red filled square and the elapsed time while
   recording — the system's self-updating timer, so it reads `0:12`; 2026-10-11), App Shortcut → Watch Ultra Action button, Double
   Tap (`handGestureShortcut(.primaryAction)`) for stop.
@@ -3953,7 +3971,7 @@ happens independently of both Drive and providers.
 | Direction | What | How |
 |---|---|---|
 | Galaxy Watch → Android phone | Recording part `.m4a` files, and `meta.json` once everything is acked | Wear Data Layer `ChannelClient.openChannel` → `sendFile`. File metadata rides in the channel path, not in a separate payload (`/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}` · `/rec/meta/{recordingId}`). The phone receives with `WearableListenerService.onChannelOpened` → `receiveFile` and acks with `MessageClient` |
-| Apple Watch → iPhone | Same | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId · part · track · sha256 · file name ride in the `metadata` dictionary. The phone receives with `WCSessionDelegate.session(_:didReceive:)` and acks with `transferUserInfo` |
+| Apple Watch → iPhone | Recording part `.m4a` files, `meta.json` right behind them, then an empty wake message | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId · part · track · sha256 · file name ride in the `metadata` dictionary. The phone receives with `WCSessionDelegate.session(_:didReceive:)` and acks with `transferUserInfo`. The wake is `sendMessage` with no recording data in it — it only launches the iPhone app in the background |
 | Android phone → Galaxy Watch | **Retired (2026-09-24)** — ~~workflow summary: only two fields per workflow, `id` · `name`~~. The watch has no workflow list | ~~`DataClient.putDataItem` path `/rec/workflows`~~ |
 | iPhone → Apple Watch | Only the app language (the workflow summary `id` · `name` was retired 2026-09-24), no step contents | `WCSession.updateApplicationContext` |
 | Android phone → Galaxy Watch | Only the app language tag (`ko`, `zh-Hans`, `pt-BR`, …; 2026-10-15), nothing else | `DataClient.putDataItem` path `/rec/language` (urgent), written when the phone app starts or its language changes; the watch ignores anything not shaped like a language tag |
@@ -4239,7 +4257,7 @@ violation prints 400. `--fail-first 1` answers 500 to the first delivery of a gi
 | Item | Why |
 |---|---|
 | Galaxy Watch 3-hour background recording, measured `sendFile` of 30 MB | No real Galaxy Watch. Checked only with the emulator and fakes |
-| Apple Watch background recording of 2–3 hours, `transferFile` 50 MB · ack reliability | No real Apple Watch |
+| Apple Watch background recording of 2–3 hours, `transferFile` 50 MB · ack reliability, the iPhone app launched in the background by the watch's wake and taking the transfers in that launch (issue #21) | No real Apple Watch |
 | The real macOS tap permission prompt, capture from the three apps Zoom/Meet/Teams, clap offset | Needs a human's clicks (automation is blocked). The design · path and the drift *estimator* were verified with a synthetic harness |
 | Real capture (loopback, `IAudioSessionManager2` detection), MSI · SmartScreen, clearing Credential Manager, a real `/revoke` call, system high-contrast detection | **No Windows PC.** CI (`windows-latest`) stands in for compile · unit tests, the release-tag CI (`windows-release.yml`) for MSI creation, and running the package on a macOS host for the UI |
 | Reproducing `NEEDS_SPACE` on a device | Could not create a truly full Google Drive. The core is checked with a fake Transport (`DriveQuotaTest`), the shells only for the banner · badge with unit tests and a dev flag |

@@ -98,6 +98,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // Registering a `BGTaskScheduler` handler any later than this is registering it after the
         // launch that was for it (docs/13 I4).
         RecordingModel.shared.registerBackgroundTasks()
+        // The same argument for the watch: a launch the watch woke this app for is a launch for its
+        // transfers, and they come only to an active session (docs/13 I6).
+        RecordingModel.shared.openWatchSession()
         return true
     }
 

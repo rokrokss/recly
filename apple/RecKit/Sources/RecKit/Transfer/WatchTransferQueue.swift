@@ -12,6 +12,12 @@ public protocol WatchTransferLink: AnyObject {
     var outstandingTransfers: [[String: Any]] { get }
 
     func transfer(_ file: URL, metadata: [String: Any])
+
+    /// Asks the system to start the phone app, which is the only way what was handed over gets
+    /// there before the phone app is next opened: a file transfer waits for the receiving app to run,
+    /// and only a live message from the watch launches the iPhone app in the background (docs/13
+    /// "Apple Watch" Transfer). Possible only while the phone is reachable; otherwise nothing.
+    func wake()
 }
 
 /// The one call the queue makes into the core — the Android `TransferSender.Recordings`, minus the
@@ -47,7 +53,7 @@ public struct WatchTransferPart: Equatable {
 
 /// docs/03 "Watch → phone transfer contract", the sending half on `WCSession`
 /// (docs/13 "Apple Watch" Transfer, M5-L4 deliverable 2): per recording, every part in
-/// `meta.parts` order, then `meta.json` last.
+/// `meta.parts` order, then `meta.json` last — in the same pass, right behind the parts.
 /// **`ack-meta ok:true` is the only thing that deletes audio from this watch.** A part ack is
 /// recorded — it is what stops the part being sent again — but it does not license a delete: until
 /// the phone has filed the meta it has loose parts and a 24-hour purge timer, and a watch that has
@@ -58,6 +64,11 @@ public struct WatchTransferPart: Equatable {
 /// - **`didFinish` is a hint, not a completion.** The system's own callback says the bytes left this
 ///   device, which is not the phone having hashed and filed them — and it can be missed entirely
 ///   (docs/13). The only completion is the phone's ack, which arrives as `didReceiveUserInfo`.
+/// - **The meta does not wait for the part acks.** Every transfer waits for the phone app to run,
+///   so waiting for the acks first would take two launches of it — one for the parts, one for the
+///   meta — with the watch app awake in between to hand the meta over. `WCSession` delivers in the
+///   order things were sent, and the phone files the meta only once every part it lists is on disk
+///   with its hash; a part that is not answers `Incomplete(missing)`, which resends it.
 /// - **No ack timeout.** `WCSession` keeps a queued transfer across launches and retries it itself,
 ///   so there is nothing to time out into: an item stays unacked until an ack arrives or [pump]
 ///   sends it again. What replaces Android's five-minute timer is [outstandingTransfers] — a part
@@ -153,10 +164,10 @@ public actor WatchTransferQueue {
     }
 
     /// Hands `WCSession` everything it is not already carrying: the unacked parts of each recording,
-    /// and the meta once every part of that recording is acked. Called after a stop, when the app
-    /// becomes active and when the session activates (docs/13 "Apple Watch" Transfer: unacked parts
-    /// get resent on activation) — the phone ignores a duplicate part by its sha256, so re-sending
-    /// one is only ever wasted radio, never a wrong file.
+    /// and its meta right behind them. Called after a stop, when the app becomes active and when the
+    /// session activates (docs/13 "Apple Watch" Transfer: unacked parts get resent on activation) —
+    /// the phone ignores a duplicate part by its sha256, so re-sending one is only ever wasted radio,
+    /// never a wrong file. Then, while anything is still the phone's to take, the phone is woken.
     public func pump() {
         let outstanding = Set(link.outstandingTransfers.compactMap { TransferMetadata.parse($0)?.key })
         var changed = false
@@ -172,6 +183,9 @@ public actor WatchTransferQueue {
             changed = true
         }
         if changed { save() }
+        // After the transfers, so the launch it causes finds them queued — including the ones the
+        // system was already carrying, which is what an earlier pass with the phone unreachable left.
+        if waiting > 0 { link.wake() }
     }
 
     /// The phone's answer, and the only thing that finishes anything here.
@@ -187,6 +201,12 @@ public actor WatchTransferQueue {
         switch ack {
         case .part(_, let ref, let ok, let reason):
             guard apply(ref: ref, ok: ok, reason: reason, to: &items[index]) else { return false }
+            // Recorded, and nothing to hand over: the meta went right behind the part. A pump here
+            // would resend every later part the phone has taken and not acked yet.
+            if ok {
+                save()
+                return false
+            }
 
         case .meta(_, let ok, let reason, let missing):
             if ok {
@@ -320,13 +340,12 @@ public actor WatchTransferQueue {
             link.transfer(url, metadata: metadata.dictionary)
         }
 
-        // The meta ends the transfer, so it goes only once every part of this recording is filed.
-        guard item.parts.allSatisfy(\.acked) else { return changed }
+        // The meta ends the transfer, so it goes behind every part of this recording, and the phone
+        // files it only once every one of them is there (see the type's doc).
         let meta = directory.appendingPathComponent(item.metaFile)
         guard FileManager.default.fileExists(atPath: meta.path) else {
-            // Every part is acked and the phone can never be told the recording is complete. Not
-            // recoverable by resending, and the parts are already on the phone as orphans it purges
-            // after 24 hours (docs/03).
+            // The phone can never be told the recording is complete. Not recoverable by resending,
+            // and the parts it has are orphans it purges after 24 hours (docs/03).
             fail(&item, reason: TransferReason.metaMissing)
             return true
         }
