@@ -24,6 +24,11 @@ struct RecWatchApp: App {
                 .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .blueprint()
         }
+        // docs/13 "Apple Watch" Transfer: the phone's acks wake the app in the background, and the
+        // launch ends when this returns.
+        .backgroundTask(.watchConnectivity) {
+            await WatchRecordingModel.shared.settleTransfers()
+        }
     }
 }
 

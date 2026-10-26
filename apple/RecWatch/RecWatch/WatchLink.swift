@@ -8,11 +8,19 @@ import WatchConnectivity
 ///
 /// It is built before the core is — activating the session early is what lets the acks for a
 /// transfer that finished while the app was gone be waiting when the queue opens — so the queue is
-/// handed over afterwards through [adopt]. Anything that arrives before that is dropped: the queue
-/// file still says the item is unacked, and the next [pump] sends it again.
+/// handed over afterwards through [adopt]. An ack that arrives before that is kept and acted on
+/// there: the phone sent it once, and in a background launch for the acks they all arrive the moment
+/// the session activates, long before the core is open.
 final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
-    /// Set once the core is open. Delegate callbacks arrive on `WCSession`'s own queue.
+    /// Set once the core is open. Delegate callbacks arrive on `WCSession`'s own queue — hence the lock,
+    /// which also covers [early] and [previous].
     private var queue: WatchTransferQueue?
+    /// The acks that arrived before [queue], in arrival order.
+    private var early: [TransferAck] = []
+    /// The ack handling that is running or waiting, so the next one goes behind it and [settle] can
+    /// wait for the last.
+    private var previous: Task<Void, Never>?
+    private let lock = NSLock()
     /// docs/07 rule 2: the phone's language setting, which the watch follows.
     var onLanguage: ((AppLanguage.Choice) -> Void)?
     /// Every ack the queue has acted on — true when it finished a recording (`ack-meta ok:true`).
@@ -21,19 +29,43 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
     private let session: WCSession = .default
     private let logger = Logger(subsystem: CoreBridge.appName, category: "transfer")
 
+    /// What the phone is woken with. Its content is never read: the message is the wake.
+    private static let wakeMessage = ["wake": true]
+
     func activate() {
         session.delegate = self
         session.activate()
     }
 
-    /// Hands over the queue and drains whatever the phone has already said, then sends what is
-    /// still owed. Also the launch-time resend of docs/13: `WCSession` keeps a queued transfer
-    /// across a kill, but a part it never got to keeps its place in the queue file instead.
+    /// Hands over the queue, acts on the acks that came before it and whatever the phone has already
+    /// said, then sends what is still owed. Also the launch-time resend of docs/13: `WCSession` keeps
+    /// a queued transfer across a kill, but a part it never got to keeps its place in the queue file
+    /// instead.
     func adopt(_ queue: WatchTransferQueue) {
+        lock.lock()
         self.queue = queue
+        let early = self.early
+        self.early = []
+        lock.unlock()
         // The context is a snapshot, not a message: whatever is standing now is the current one.
         adopt(context: session.receivedApplicationContext)
-        Task { await queue.pump() }
+        for ack in early { receive(ack, into: queue) }
+        // Behind the acks, so a part the phone has already filed is not sent again.
+        serially { await queue.pump() }
+    }
+
+    /// docs/13 "Apple Watch" Transfer: what a WatchConnectivity background launch waits on before the
+    /// watch may be suspended again — whatever the session still has to deliver to this launch, then
+    /// the queue acting on it. Bounded: the launch has a budget, and an ack not acted on is only the
+    /// recording waiting until the app runs next.
+    func settle() async {
+        var waited = 0
+        while session.hasContentPending, waited < 30 {
+            waited += 1
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        let last = lock.withLock { previous }
+        await last?.value
     }
 
     // MARK: - WatchTransferLink
@@ -45,6 +77,20 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
     func transfer(_ file: URL, metadata: [String: Any]) {
         session.transferFile(file, metadata: metadata)
         logger.info("transfer.sent file=\(file.lastPathComponent, privacy: .public)")
+    }
+
+    /// A live message is the only thing that launches the iPhone app in the background, and only
+    /// while this app is in front — or in a high-priority background — with the phone in range
+    /// (`isReachable`). It fails harmlessly: the transfers stay queued for the phone app's next run.
+    func wake() {
+        guard session.activationState == .activated, session.isReachable else {
+            logger.info("transfer.wake.unreachable")
+            return
+        }
+        session.sendMessage(Self.wakeMessage, replyHandler: nil) { [logger] error in
+            logger.info("transfer.wake.failed error=\(String(describing: error), privacy: .public)")
+        }
+        logger.info("transfer.wake")
     }
 
     // MARK: - WCSessionDelegate
@@ -60,8 +106,18 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
         }
         logger.info("transfer.session state=\(activationState.rawValue, privacy: .public)")
         // docs/13: unacked items are resent when the app activates and when `WCSession` does.
+        lock.lock()
+        let queue = self.queue
+        lock.unlock()
         guard let queue else { return }
-        Task { await queue.pump() }
+        serially { await queue.pump() }
+    }
+
+    /// The phone came into reach — or this app far enough into the front for the session to say so,
+    /// which can be after the pass it became active for. Run that pass again: it is what wakes the phone.
+    func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable, let queue = lock.withLock({ self.queue }) else { return }
+        serially { await queue.pump() }
     }
 
     /// The only completion there is (docs/13: `didFinish` is only a hint). Everything the watch decides — a
@@ -71,11 +127,14 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
             logger.error("transfer.ack.unreadable")
             return
         }
-        guard let queue else { return }
-        Task { [weak self] in
-            let completed = await queue.receive(ack)
-            self?.onAck?(completed)
+        lock.lock()
+        guard let queue else {
+            early.append(ack)
+            lock.unlock()
+            return
         }
+        lock.unlock()
+        receive(ack, into: queue)
     }
 
     /// A hint, and logged as one: the bytes left this device, which is not the phone having hashed
@@ -92,6 +151,25 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         adopt(context: applicationContext)
+    }
+
+    private func receive(_ ack: TransferAck, into queue: WatchTransferQueue) {
+        serially { [weak self] in
+            let completed = await queue.receive(ack)
+            self?.onAck?(completed)
+        }
+    }
+
+    /// In arrival order, one at a time: the acks have to reach the queue in the order the phone sent
+    /// them, and [settle] waits for the last one.
+    private func serially(_ work: @escaping @Sendable () async -> Void) {
+        lock.lock()
+        defer { lock.unlock() }
+        let earlier = previous
+        previous = Task {
+            await earlier?.value
+            await work()
+        }
     }
 
     /// A context with no language in it leaves the watch on the language it has (docs/07 rule 2).

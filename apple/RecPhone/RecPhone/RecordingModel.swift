@@ -202,6 +202,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/13 I6 · M5-L4 deliverable 3: the watch's parts arrive here. Held for the life of the
     /// process because it is `WCSession`'s delegate, which the session does not retain.
     private var watchReceiver: WatchReceiver?
+    /// What [watchReceiver] files the parts into — there once the core is open and the executor exists.
+    private var watchTransfer: CoreWatchTransfer?
     private var activeObserver: NSObjectProtocol?
     /// docs/07 rule 3: the two things the picker has to reach that are not SwiftUI bodies — the
     /// watch and the Live Activity's own process.
@@ -378,8 +380,17 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 }
             }
             // After the executor exists: the meta's ack is only sent once the recording is queued
-            // *and* the executor woken, and a part could arrive the instant the session activates.
-            openWatchSession(core: bridge.core)
+            // *and* the executor woken, and the receiver's accepts have been waiting for this.
+            watchTransfer = CoreWatchTransfer(core: bridge.core, received: { [weak self] recordingId in
+                // Received whole from the watch: its waveform, like a recording made here.
+                await MainActor.run { self?.waveforms?.enqueue(recordingId: recordingId) }
+            }) { [weak self] in
+                await MainActor.run {
+                    // The same two triggers a stop of the phone's own recording fires.
+                    self?.runner?.jobsDue()
+                    self?.background.schedule()
+                }
+            }
             observeBecomingActive()
             deviceId = bridge.deps.device.deviceId
             isReady = true
@@ -1010,21 +1021,18 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// The context is published from here and nowhere else on purpose: it is a *replacing* snapshot,
     /// so what the watch follows is whatever this session last set, and a watch that was out of
     /// range simply gets it when it comes back.
-    private func openWatchSession(core: ReclyCore_) {
-        guard WCSession.isSupported() else { return }
+    ///
+    /// From `didFinishLaunching`, before the core is open: the watch wakes this app in the
+    /// background to take its transfers (docs/13 "Apple Watch" Transfer), the launch has seconds,
+    /// and they are delivered only to an active session. The accepts wait for the load.
+    func openWatchSession() {
+        guard WCSession.isSupported(), watchReceiver == nil else { return }
+        let application = UIApplication.shared
         let receiver = WatchReceiver(
-            core: CoreWatchTransfer(core: core, received: { [weak self] recordingId in
-                // Received whole from the watch: its waveform, like a recording made here.
-                await MainActor.run { self?.waveforms?.enqueue(recordingId: recordingId) }
-            }) { [weak self] in
-                await MainActor.run {
-                    // The same two triggers a stop of the phone's own recording fires.
-                    self?.runner?.jobsDue()
-                    self?.background.schedule()
-                }
-            },
+            core: { [weak self] in await self?.openedWatchTransfer() },
             acks: WCSessionAcks(),
-            staging: dataDirectory.appendingPathComponent("watch", isDirectory: true)
+            staging: dataDirectory.appendingPathComponent("watch", isDirectory: true),
+            holdAwake: { BackgroundHold(application, name: "watch-transfer").release }
         )
         // On every activation, not once: a session that was refused the context while it was still
         // activating would leave the watch on its old language until the next launch.
@@ -1034,6 +1042,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         watchReceiver = receiver
         WCSession.default.delegate = receiver
         WCSession.default.activate()
+    }
+
+    /// The receiver's core: there once the load has finished, nil if it failed.
+    private func openedWatchTransfer() async -> CoreWatchTransfer? {
+        await loading?.value
+        return watchTransfer
     }
 
     /// docs/07 rule 2: the app's language, because the watch has no language setting of its own

@@ -142,6 +142,15 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         await loading?.value
     }
 
+    /// docs/13 "Apple Watch" Transfer: a WatchConnectivity background launch — the phone's acks,
+    /// arriving with the app suspended after a stop — lasts until they are acted on, so the recording
+    /// the phone has leaves the watch and the line and the complication stop saying it is waiting.
+    func settleTransfers() async {
+        await loaded()
+        await link.settle()
+        await refreshWaiting()
+    }
+
     var isRecording: Bool {
         if case .recording = state { return true }
         return false

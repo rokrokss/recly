@@ -32,20 +32,80 @@ final class WatchTransferQueueTests: XCTestCase {
 
     // MARK: - Order
 
-    /// The meta is last and nothing else will do: it is what tells the phone the recording is
-    /// complete, and a phone that files it while a part is still in flight has an incomplete
-    /// recording it thinks is whole.
-    func testTheMetaGoesOnlyOnceEveryPartIsAcked() async throws {
+    /// The meta is last, and in the same pass: every transfer waits for the phone app to run, and a
+    /// meta that waited for the part acks would need a second launch of it — with the watch app
+    /// awake in between to hand it over. The phone files it only once every part is there.
+    func testTheMetaGoesRightBehindTheParts() async throws {
         let queue = try await makeQueue(parts: 2)
 
         await queue.pump()
-        XCTAssertEqual(link.sentKeys, ["\(recordingId)/1/mono", "\(recordingId)/2/mono"])
+
+        XCTAssertEqual(
+            link.sentKeys,
+            ["\(recordingId)/1/mono", "\(recordingId)/2/mono", "\(recordingId)/meta"]
+        )
+    }
+
+    /// A part ack is recorded and nothing more. A pass on it would hand over again every later part
+    /// the phone has taken and not acked yet, and a duplicate that lands after the meta is filed
+    /// re-opens the recording.
+    func testAPartAckHandsNothingOver() async throws {
+        let queue = try await makeQueue(parts: 2)
+        await queue.pump()
+        link.clear()
 
         await queue.receive(partAck(1))
-        XCTAssertFalse(link.sentKeys.contains("\(recordingId)/meta"), "one part is still unacked")
 
-        await queue.receive(partAck(2))
-        XCTAssertEqual(link.sentKeys.last, "\(recordingId)/meta")
+        XCTAssertEqual(link.sentKeys, [])
+        let entries = await queue.entries
+        XCTAssertEqual(entries.first?.ackedParts, 1)
+    }
+
+    /// A meta the system is still carrying is not handed over twice either.
+    func testAMetaTheSystemIsStillCarryingIsNotHandedOverTwice() async throws {
+        let queue = try await makeQueue(parts: 1)
+        link.outstandingTransfers = [metadata(part: 1), TransferMetadata.meta(recordingId: recordingId).dictionary]
+
+        await queue.pump()
+
+        XCTAssertEqual(link.sentKeys, [])
+    }
+
+    // MARK: - Waking the phone
+
+    /// A file transfer waits for the phone app to run, and only a live message launches it — sent
+    /// behind the transfers, so the launch finds them queued.
+    func testThePhoneIsWokenBehindWhatWasHandedOver() async throws {
+        let queue = try await makeQueue(parts: 1)
+
+        await queue.pump()
+
+        XCTAssertEqual(link.wakes, 1)
+        XCTAssertEqual(link.calls.last, "wake")
+    }
+
+    /// What an earlier pass handed over while the phone was out of reach is still the system's to
+    /// deliver, and still waits for the phone app: a pass with nothing new to send wakes it too.
+    func testThePhoneIsWokenForWhatTheSystemIsStillCarrying() async throws {
+        let queue = try await makeQueue(parts: 1)
+        link.outstandingTransfers = [metadata(part: 1), TransferMetadata.meta(recordingId: recordingId).dictionary]
+
+        await queue.pump()
+
+        XCTAssertEqual(link.sentKeys, [])
+        XCTAssertEqual(link.wakes, 1)
+    }
+
+    /// Nothing waiting, nobody woken — a refused recording included: nothing will send it again.
+    func testNothingWaitingWakesNothing() async throws {
+        let queue = try await makeQueue(parts: 1)
+        await queue.pump()
+        await queue.receive(partAck(1, ok: false, reason: "SOMETHING_ELSE"))
+        link.clear()
+
+        await queue.pump()
+
+        XCTAssertEqual(link.wakes, 0)
     }
 
     /// `WCSession` keeps a queued transfer across a kill and retries it itself, so a resend while it
@@ -56,7 +116,7 @@ final class WatchTransferQueueTests: XCTestCase {
 
         await queue.pump()
 
-        XCTAssertEqual(link.sentKeys, ["\(recordingId)/2/mono"])
+        XCTAssertEqual(link.sentKeys, ["\(recordingId)/2/mono", "\(recordingId)/meta"])
     }
 
     // MARK: - What may be deleted
@@ -107,7 +167,11 @@ final class WatchTransferQueueTests: XCTestCase {
         link.clear()
 
         await queue.receive(partAck(1, ok: false, reason: TransferReason.shaMismatch))
-        XCTAssertEqual(link.sentKeys, ["\(recordingId)/1/mono"], "the first mismatch buys one resend")
+        XCTAssertEqual(
+            link.sentKeys,
+            ["\(recordingId)/1/mono", "\(recordingId)/meta"],
+            "the first mismatch buys one resend, with the meta behind it: the phone answers the first one Incomplete"
+        )
 
         link.clear()
         await queue.receive(partAck(1, ok: false, reason: TransferReason.shaMismatch))
@@ -139,8 +203,8 @@ final class WatchTransferQueueTests: XCTestCase {
     }
 
     /// `ack-meta ok:false` with a `missing` list is the phone saying it lost exactly those parts.
-    /// They go again — the one the queue still calls acked included — and the meta waits for their
-    /// new acks, because the meta is what says the recording is complete.
+    /// They go again — the one the queue still calls acked included — with the meta behind them,
+    /// because the meta is what says the recording is complete.
     func testAMissingListResendsExactlyThoseParts() async throws {
         let queue = try await makeQueue(parts: 2)
         await queue.pump()
@@ -157,12 +221,12 @@ final class WatchTransferQueueTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(link.sentKeys, ["\(recordingId)/1/mono"], "only the part the phone lost")
+        XCTAssertEqual(
+            link.sentKeys,
+            ["\(recordingId)/1/mono", "\(recordingId)/meta"],
+            "only the part the phone lost, and the meta behind it"
+        )
         XCTAssertEqual(recordings.deleted, [])
-
-        await queue.receive(partAck(1))
-
-        XCTAssertEqual(link.sentKeys.last, "\(recordingId)/meta")
     }
 
     /// A listed part that really is not on disk can only have been deleted from outside this app —
@@ -258,7 +322,7 @@ final class WatchTransferQueueTests: XCTestCase {
         await second.pump()
 
         let entries = await second.entries
-        XCTAssertEqual(link.sentKeys, ["\(recordingId)/2/mono"])
+        XCTAssertEqual(link.sentKeys, ["\(recordingId)/2/mono", "\(recordingId)/meta"])
         XCTAssertEqual(entries.first?.ackedParts, 1)
     }
 

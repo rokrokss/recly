@@ -25,7 +25,7 @@ final class WatchReceiverTests: XCTestCase {
         core = FakeWatchTransferCore(transcript: transcript)
         acks = FakeAckSender(transcript: transcript)
         staging = directory.appendingPathComponent("staging", isDirectory: true)
-        receiver = WatchReceiver(core: core, acks: acks, staging: staging)
+        receiver = WatchReceiver(core: { [core] in core }, acks: acks, staging: staging)
     }
 
     override func tearDownWithError() throws {
@@ -92,11 +92,11 @@ final class WatchReceiverTests: XCTestCase {
         try await untilDiscarded(staged)
     }
 
-    /// The ordering rule itself. The queue sends the meta once every part is acked, so a part whose
-    /// ack was lost is resent and its duplicate can arrive just before the meta — and on independent
-    /// tasks that duplicate's `acceptPart` could land *after* `acceptMeta` had filed and enqueued the
-    /// recording, re-opening it behind a job that is already running. Deliveries are accepted in
-    /// arrival order, one at a time.
+    /// The ordering rule itself. The queue sends the meta right behind the parts, so it arrives while
+    /// the part in front of it is still being verified — and on independent tasks `acceptMeta` could
+    /// answer `Incomplete` for it, or a resent part's `acceptPart` could land *after* `acceptMeta`
+    /// had filed and enqueued the recording, re-opening it behind a job that is already running.
+    /// Deliveries are accepted in arrival order, one at a time.
     func testTheMetaWaitsForAPartThatArrivedBeforeIt() async throws {
         let gate = Gate()
         core.holdPart = { await gate.wait() }
@@ -126,6 +126,102 @@ final class WatchReceiverTests: XCTestCase {
             core.transcript.entries,
             ["acceptPart", "ack", "acceptMeta", "enqueue", "onJobsDue", "ack"]
         )
+    }
+
+    /// docs/13 I6: the session is active from the launch on, long before the core is open — a
+    /// background launch the watch woke this app for has seconds, and the deliveries come at once. The
+    /// file is staged then and there, and the accept waits for the core.
+    func testADeliveryBeforeTheCoreIsOpenIsAcceptedOnceItIs() async throws {
+        let opening = Gate()
+        receiver = WatchReceiver(
+            core: { [core] in
+                await opening.wait()
+                return core
+            },
+            acks: acks,
+            staging: staging
+        )
+        let acked = expectation(description: "acked once the core opened")
+        acks.onAck = { acked.fulfill() }
+
+        let inbox = try write("audio", named: file)
+        receiver.received(inbox, metadata: partMetadata)
+        try? FileManager.default.removeItem(at: inbox)
+        // Nothing to wait on: the assertion is that the core is *not* reached while it is opening.
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(core.transcript.entries, [])
+        XCTAssertEqual(try stagedDeliveries().count, 1, "staged inside the callback all the same")
+
+        await opening.open()
+        await fulfillment(of: [acked], timeout: 2)
+        XCTAssertEqual(core.transcript.entries, ["acceptPart", "ack"])
+        XCTAssertEqual(try String(contentsOf: XCTUnwrap(core.partFile), encoding: .utf8), "audio")
+    }
+
+    /// A core that failed to open files nothing and acks nothing — the watch still holds the audio
+    /// and resends — and the staged copy does not stay behind.
+    func testACoreThatDidNotOpenAcksNothing() async throws {
+        let opening = Gate()
+        receiver = WatchReceiver(
+            core: {
+                await opening.wait()
+                return nil
+            },
+            acks: acks,
+            staging: staging
+        )
+
+        receiver.received(try write("audio", named: file), metadata: partMetadata)
+        let staged = try stagedDeliveries()
+        XCTAssertEqual(staged.count, 1)
+        await opening.open()
+
+        try await untilDiscarded(staged)
+        XCTAssertEqual(acks.sent, [])
+    }
+
+    /// In a background launch nothing else keeps the app from being suspended between the delivery
+    /// and its answer, so each delivery holds it awake until it has been answered.
+    func testEachDeliveryHoldsTheAppAwakeUntilItIsAnswered() async throws {
+        let holds = Transcript()
+        receiver = WatchReceiver(
+            core: { [core] in core },
+            acks: acks,
+            staging: staging,
+            holdAwake: {
+                holds.record("hold")
+                return { holds.record("release") }
+            }
+        )
+        let acked = expectation(description: "acked")
+        acks.onAck = { acked.fulfill() }
+
+        receiver.received(try write("audio", named: file), metadata: partMetadata)
+        XCTAssertEqual(holds.entries, ["hold"], "held from the delivery itself")
+
+        await fulfillment(of: [acked], timeout: 2)
+        try await untilReleased(holds)
+    }
+
+    /// A live message goes at once and the transfers it was sent behind may still be on their way, so
+    /// the wake holds the app up for a window of its own, whether or not anything has come yet.
+    func testTheWakeHoldsTheAppAwakeForTheTransfersBehindIt() async throws {
+        let holds = Transcript()
+        receiver = WatchReceiver(
+            core: { [core] in core },
+            acks: acks,
+            staging: staging,
+            holdAwake: {
+                holds.record("hold")
+                return { holds.record("release") }
+            },
+            wakeWindow: .milliseconds(50)
+        )
+
+        receiver.woken()
+
+        XCTAssertEqual(holds.entries, ["hold"])
+        try await untilReleased(holds)
     }
 
     /// The sha check is the core's — it hashes what actually arrived — and the ack says exactly what
@@ -257,6 +353,15 @@ final class WatchReceiverTests: XCTestCase {
             try await Task.sleep(nanoseconds: 5_000_000)
         }
         XCTFail("each accept takes its own delivery directory away when it is done")
+    }
+
+    /// The release is the last thing a delivery's task does, just after the ack it is waited on by.
+    private func untilReleased(_ holds: Transcript) async throws {
+        for _ in 0 ..< 200 {
+            if holds.entries == ["hold", "release"] { return }
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        XCTFail("the hold is let go once the delivery is answered, and only once: \(holds.entries)")
     }
 
     // MARK: - Fixtures

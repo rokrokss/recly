@@ -2,6 +2,7 @@ import Foundation
 import os
 import ReclyCore
 import RecKit
+import UIKit
 import WatchConnectivity
 
 /// Everything the receiving half of the transfer needs from the core and the executor, and so the
@@ -42,8 +43,18 @@ protocol WatchAckSender: AnyObject {
 ///    woken. Anything that throws before that leaves no ack, and the watch's resend brings the meta
 ///    back; `acceptMeta` and `enqueue` are both idempotent.
 final class WatchReceiver: NSObject, WCSessionDelegate {
-    private let core: any WatchTransferCore
+    /// The core once it is open, or nil if it failed to. The session is activated at launch, long
+    /// before that (docs/13 I6): a background launch for the watch's transfers has seconds, and the
+    /// deliveries come as soon as the session is active — so they are staged at once and their
+    /// accepts wait here.
+    private let core: @Sendable () async -> (any WatchTransferCore)?
     private let acks: any WatchAckSender
+    /// Keeps the app from being suspended while one delivery is accepted and answered, and returns
+    /// what lets go. In a background launch nothing else is holding it up.
+    private let holdAwake: () -> () -> Void
+    /// How long the watch's wake keeps the app up for the transfers it was sent behind. A live message
+    /// goes at once and they may still be on their way; inside a background task's budget (about 30 s).
+    private let wakeWindow: Duration
     /// Where a transfer is put down before the core takes it. Inside the app container rather than
     /// `NSTemporaryDirectory()`: the system may empty that one under us.
     private let staging: URL
@@ -57,10 +68,18 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
     private let chain = NSLock()
     private var previous: Task<Void, Never>?
 
-    init(core: any WatchTransferCore, acks: any WatchAckSender, staging: URL) {
+    init(
+        core: @escaping @Sendable () async -> (any WatchTransferCore)?,
+        acks: any WatchAckSender,
+        staging: URL,
+        holdAwake: @escaping () -> () -> Void = { {} },
+        wakeWindow: Duration = .seconds(20)
+    ) {
         self.core = core
         self.acks = acks
         self.staging = staging
+        self.holdAwake = holdAwake
+        self.wakeWindow = wakeWindow
         // Delivery directories a previous launch left behind: a process that died between the move
         // and the core's own move owns nothing any more. Here rather than anywhere later because
         // nothing can be in flight yet — the delegate is not wired until after this returns.
@@ -77,17 +96,36 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
             return
         }
         guard let staged = stage(file, as: transfer) else { return }
-        serially { await self.accept(transfer, staged: staged) }
+        let release = holdAwake()
+        serially {
+            await self.accept(transfer, staged: staged)
+            release()
+        }
+    }
+
+    /// The watch's wake (docs/13 "Apple Watch" Transfer). It carries nothing: a live message is the
+    /// one thing that launches this app in the background, and what it is for is the transfers it was
+    /// sent behind — which come in through [received] on the session that launch activated, possibly
+    /// after the message. So the app is held up for [wakeWindow] whether or not anything has come yet.
+    func woken() {
+        logger.info("transfer.wake")
+        let release = holdAwake()
+        let window = wakeWindow
+        Task {
+            try? await Task.sleep(for: window)
+            release()
+        }
     }
 
     /// **In arrival order, one at a time.** The staging above is synchronous and so already runs in
     /// the order the deliveries landed; this makes the accepts follow it.
     ///
     /// It has to, because the meta is what finalizes a recording and the two can overlap: the queue
-    /// sends the meta once every part is acked, so a part whose ack was lost is resent and its
-    /// duplicate delivery can arrive just before the meta. On independent tasks that duplicate's
-    /// `acceptPart` could land *after* `acceptMeta` had already filed and enqueued the recording —
-    /// re-opening it with a placeholder part behind a job that is already running.
+    /// sends the meta right behind the parts (docs/13 "Apple Watch" Transfer), so it arrives while the
+    /// accepts of the parts in front of it may still be running. On independent tasks the meta's
+    /// `acceptMeta` could land first and answer `Incomplete` for parts that are on their way in — or
+    /// a resent part's `acceptPart` could land *after* `acceptMeta` had already filed and enqueued
+    /// the recording, re-opening it with a placeholder part behind a job that is already running.
     private func serially(_ work: @escaping @Sendable () async -> Void) {
         chain.lock()
         defer { chain.unlock() }
@@ -136,15 +174,21 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
     }
 
     private func accept(_ transfer: TransferMetadata, staged: URL) async {
+        guard let core = await core() else {
+            // The core did not open. No ack: the watch still holds the audio and resends.
+            discard(staged)
+            logger.error("transfer.core.unavailable")
+            return
+        }
         switch transfer {
-        case .part(let part): await accept(part, staged: staged)
-        case .meta(let recordingId): await acceptMeta(recordingId: recordingId, staged: staged)
+        case .part(let part): await accept(part, staged: staged, core: core)
+        case .meta(let recordingId): await acceptMeta(recordingId: recordingId, staged: staged, core: core)
         }
     }
 
     /// The core hashes it, files it or deletes it, and says which — and the watch records the ack
     /// without acting on it: the part stays on the watch until the meta is acked.
-    private func accept(_ part: PartMetadata, staged: URL) async {
+    private func accept(_ part: PartMetadata, staged: URL, core: any WatchTransferCore) async {
         defer { discard(staged) }
         do {
             let ack = try await core.acceptPart(
@@ -174,7 +218,7 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
         }
     }
 
-    private func acceptMeta(recordingId: String, staged: URL) async {
+    private func acceptMeta(recordingId: String, staged: URL, core: any WatchTransferCore) async {
         defer { discard(staged) }
         guard let json = try? String(contentsOf: staged, encoding: .utf8) else {
             acks.send(.meta(recordingId: recordingId, ok: false, reason: TransferReason.unknown, missing: []))
@@ -200,7 +244,7 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
         do {
             switch onEnum(of: try await core.acceptMeta(json: json)) {
             case .complete:
-                try await complete(recordingId: recordingId)
+                try await complete(recordingId: recordingId, core: core)
 
             case .incomplete(let incomplete):
                 acks.send(
@@ -225,7 +269,7 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
     }
 
     /// The order is the contract: filed, queued, executor woken, and only then acked.
-    private func complete(recordingId: String) async throws {
+    private func complete(recordingId: String, core: any WatchTransferCore) async throws {
         try await core.enqueue(recordingId: recordingId)
         await core.onJobsDue()
         // The ack is the last thing the protocol needs; the log is informational and must never
@@ -246,6 +290,10 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
 
     func session(_ session: WCSession, didReceive file: WCSessionFile) {
         received(file.fileURL, metadata: file.metadata ?? [:])
+    }
+
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        woken()
     }
 
     func session(
@@ -327,5 +375,30 @@ final class CoreWatchTransfer: WatchTransferCore {
 final class WCSessionAcks: WatchAckSender {
     func send(_ ack: TransferAck) {
         WCSession.default.transferUserInfo(ack.userInfo)
+    }
+}
+
+/// `beginBackgroundTask` as [WatchReceiver.holdAwake]: begun the moment a delivery is staged, on the
+/// session's own thread, and ended once — by the accept finishing or by the system's expiry,
+/// whichever comes first. Both calls are safe off the main thread; the application is taken on it.
+final class BackgroundHold: @unchecked Sendable {
+    private let application: UIApplication
+    private let lock = NSLock()
+    private var id = UIBackgroundTaskIdentifier.invalid
+
+    init(_ application: UIApplication, name: String) {
+        self.application = application
+        // Under the lock: the expiry runs on the main thread and must not see the id before it is set.
+        lock.lock()
+        defer { lock.unlock() }
+        id = application.beginBackgroundTask(withName: name) { [weak self] in self?.release() }
+    }
+
+    func release() {
+        lock.lock()
+        defer { lock.unlock() }
+        guard id != .invalid else { return }
+        application.endBackgroundTask(id)
+        id = .invalid
     }
 }

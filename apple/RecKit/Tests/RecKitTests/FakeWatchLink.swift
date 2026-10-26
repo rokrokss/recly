@@ -9,9 +9,18 @@ final class FakeWatchLink: WatchTransferLink {
     var outstandingTransfers: [[String: Any]] = []
 
     private(set) var sent: [(url: URL, metadata: [String: Any])] = []
+    private(set) var wakes = 0
+    /// Every call in order — a transfer as its key, a wake as `wake` — for what came behind what.
+    private(set) var calls: [String] = []
 
     func transfer(_ file: URL, metadata: [String: Any]) {
         sent.append((file, metadata))
+        calls.append(TransferMetadata.parse(metadata)?.key ?? "?")
+    }
+
+    func wake() {
+        wakes += 1
+        calls.append("wake")
     }
 
     /// Everything handed over so far, as `TransferMetadata.key` — `{id}/{part}/{track}` and
@@ -22,6 +31,8 @@ final class FakeWatchLink: WatchTransferLink {
 
     func clear() {
         sent.removeAll()
+        wakes = 0
+        calls.removeAll()
     }
 }
 
