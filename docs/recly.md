@@ -170,6 +170,32 @@ Invariants:
 - A `Job` is unique by `(recordingId, workflowId)`. Running a workflow again on the same recording does not create a new
   Job; it resumes the existing Job from its failed step.
 
+### Long recordings — watchdog · reminders · battery stop · waiting to resume
+
+2026-10-26 (GitHub issue #20). A recording that runs for hours must not stop silently. There is no server to notice, so every
+notice is an alarm or a local notification the recording device schedules for itself. v1 constants, not settings:
+
+| Rule | What happens | Where |
+|---|---|---|
+| **Watchdog** | When the recording starts, a notice is scheduled `2 × segmentSec` ahead (30 min at 900 s) and pushed back at every part boundary; the stop, a fatal failure and the wait below withdraw it. If the process dies, nobody withdraws it, and it fires: `Recording may have stopped` / `Open Recly to check.` Tap → the app | phones · watches · Mac |
+| **Reminder** | At 2 h of recording, then every whole hour: `Still recording` / `Recording time: {0}` (whole hours, the system's short unit format in the app language) with one `Stop` that stops like the ongoing notification's or Live Activity's stop — no title is asked, the recording is handed over as it is. A reminder's Stop only stops the recording it was posted for | phones · watches · Mac |
+| **Battery stop** | Battery ≤ 5 % and not charging → the recording is stopped the same way (the open part is filed, the recording handed over), then `Recording stopped: battery low`. Not for a recording that **started** at ≤ 5 % unplugged: that was the user's choice, and stopping it at once would leave next to nothing. An unreadable level stops nothing | phones · watches |
+| **Waiting to resume** | When a restart after an interruption runs out of its 10 attempts, the recording does not end: the open part is filed where it stands, the watchdog and reminders are withdrawn, `Recording paused` / `Open Recly to keep recording.` is posted. When the app next becomes active it reattaches once; success writes one `gaps` range over the whole wait (reason unchanged) and re-arms the notices, failure keeps waiting. A stop while waiting finalizes normally. No timeout — a suspended iOS app runs no timers | iPhone · Apple Watch |
+
+- **No sound**: a chime would be recorded into the recording it is about. Android posts on its own channel (vibration, no sound);
+  iPhone and Mac post silently. The Apple Watch has no haptic-only notification, so the three notices that fire only when nothing is
+  recorded (watchdog, `Recording paused`, battery) use the default sound — in silent mode a wrist tap; the reminders stay silent.
+- **Notification permission** is asked at the first recording start on iPhone, Apple Watch and Mac (after the consent reminder, §12
+  "Consent reminder · jurisdiction notices"); without it the notices are not shown and the recording is unaffected.
+- **Not covered**: Windows (v1). Mac restarts that run out of attempts still end the recording. Android alarms do not survive a reboot
+  or a force stop (some vendors' swipe-away is one). A notice scheduled before a language change keeps the old language.
+- Log events: `rec.watchdog.fired` (Android; an Apple notice fires in a process that is gone), `rec.recorder.batteryStop`
+  (`recordingId`, `level` in whole percent), `rec.recorder.awaitingResume` (`recordingId`, `reason`, `error`); a resume logs the
+  existing `rec.recorder.restarted`.
+- Not verified on a device yet: delivery after a real process death, the hourly reminder, the battery stop on Apple, and the iOS
+  background-to-foreground resume. Emulators confirmed the Android watchdog alarm (armed, pushed back, withdrawn) and the battery
+  stop on phone and Wear (2026-10-26).
+
 ### Identifiers · time
 
 - `recordingId` · `workflowId` · `jobId` · `stepRunId`: ULID (26 characters, Crockford base32). Generated in the core.
@@ -3099,6 +3125,9 @@ Rules:
 | **iPhone** | `UNUserNotificationCenter` local notifications + a banner at the top of the list. Without permission, **banner only** |
 | Apple Watch | none (same reason as iPhone) |
 | **macOS** | menu bar icon error state + a banner at the top of the popover + `UNUserNotificationCenter` notifications (the same path as meeting detection) |
+
+A long recording's own notices — the watchdog, the reminders, the battery stop, the pause — are not job notices and reach the watches
+too: §1 "Long recordings — watchdog · reminders · battery stop · waiting to resume".
 | Windows | tray icon error state + a `TrayIcon.displayMessage` balloon + a banner at the top of the tray popup |
 
 ### StepRunner
@@ -3234,6 +3263,13 @@ android/
   from a visible activity, tile or notification action (the while-in-use rule). On stop it calls `finalize` (title null) **immediately** → the phone UI then shows the title
   dialog (`updateTitle`) → `jobs.enqueue`; the notification's stop action enqueues directly. On the watch, `TransferQueue.add`. A duplicate
   stop is ignored, and finalize and enqueue run to completion in a scope independent of the service's lifetime.
+- `RecordingAlerts` (§1 "Long recordings — watchdog · reminders · battery stop · waiting to resume"): the watchdog is
+  `AlarmManager.setAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)` — inexact, so no exact-alarm permission, and on Android 12+ it may
+  come up to ~75 % late (30–52 min) — to the non-exported `RecordingWatchdog` receiver, re-armed by `SegmentedRecorder.onBoundary`
+  (a boundary whose part could not be filed still counts as alive). A watchdog that starts a fresh process leaves the finalize to
+  `RecordingRecovery` in `Application.onCreate`. The reminder is a coroutine in the service; the battery check is the sticky
+  `ACTION_BATTERY_CHANGED` (its first delivery is the reading at start). Channel `recording-alerts` (default importance, vibration,
+  no sound), notification ids 2–4, apart from the ongoing one (id 1, `recording`). Phone and watch share it.
 - `RecordingRecovery.reconcile()`: at app start and before a new recording starts, finds rows with `status = recording` (except rows still being
   received from the watch, §3 "Watch → phone transfer contract"), registers and finalizes the unregistered parts on disk, and hands recordings that were finalized but not processed
   to `RecorderHost.onRecordingReady(recordingId, enqueue=true)` (recovery from process death or from termination during the dialog,
@@ -3524,6 +3560,13 @@ macOS.
 - **Interruptions**: when a phone call or Siri takes over the input, it waits and, after the end notification, reconnects with the new input format.
   `silenced` is closed only after a real restart succeeds, and the reconnect interval is recorded in `gaps`. Late notifications for a recording that has ended are ignored.
   Loss or reset of the OS audio service saves the audio so far and ends the recording. Following Apple's guidelines, the next recording starts with a user action.
+  A restart that runs out of attempts waits for the app to become active instead of ending the recording (`SegmentedRecorder.becameActive()`,
+  from the shells' `didBecomeActive` observers), and an interruption whose end notification never came is taken then as ended without
+  `shouldResume` (`interruption_no_resume`) — §1 "Long recordings — watchdog · reminders · battery stop · waiting to resume".
+- **Long-recording notices**: `RecordingNotices` (RecKit) follows the recorder's `onEvent` stream on the iPhone, the watch and the Mac —
+  the watchdog, reminders scheduled at start for 2 h … 12 h (11 requests, under iOS's 64 pending), the battery check every 60 s
+  (`UIDevice` / `WKInterfaceDevice`) and the pause. Pending notices a killed run left are withdrawn at launch; delivered ones stay.
+  On the iPhone and the Mac the responses reach it through the existing delegate's forward; on the watch it is the delegate.
 - **Playback**: before recording starts, playback is blocked and any existing player is stopped; playback is allowed only after the recording input has finished shutting down.
   Play switches the session to `.playback`/`.default` and activates it. The `.playAndRecord` category that remains after recording ends is not
   taken as a sign of whether a recording is in progress.
