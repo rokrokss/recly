@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">रिकॉर्डिंग जारी</string>
     <string name="rec_notification_title">रिकॉर्डिंग जारी</string>
     <string name="rec_notification_stop">बंद करें</string>
+    <string name="rec_alerts_channel">रिकॉर्डिंग अलर्ट</string>
+    <string name="rec_watchdog_title">रिकॉर्डिंग शायद रुक गई है</string>
+    <string name="rec_watchdog_body">जाँचने के लिए Recly खोलें।</string>
+    <string name="rec_reminder_title">अभी रिकॉर्डिंग जारी है</string>
+    <string name="rec_reminder_body">रिकॉर्डिंग का समय: %1$s</string>
+    <string name="rec_battery_stop_title">रिकॉर्डिंग रुकी: बैटरी कम है</string>
 </resources>

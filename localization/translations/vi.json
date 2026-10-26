@@ -567,5 +567,10 @@
   "Filling in speaker names…": "Đang điền tên người nói…",
   "Filling in": "Đang điền",
   "Could not fill in the title": "Không thể điền tiêu đề",
-  "Could not fill in speaker names": "Không thể điền tên người nói"
+  "Could not fill in speaker names": "Không thể điền tên người nói",
+  "Recording may have stopped": "Có thể đã dừng ghi âm",
+  "Open Recly to check.": "Mở Recly để kiểm tra.",
+  "Recording time: {0}": "Thời gian ghi âm: {0}",
+  "Recording stopped: battery low": "Đã dừng ghi âm: pin yếu",
+  "Recording alerts": "Cảnh báo ghi âm"
 }

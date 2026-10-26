@@ -567,5 +567,10 @@
   "Filling in speaker names…": "Konuşmacı adları dolduruluyor…",
   "Filling in": "Dolduruluyor",
   "Could not fill in the title": "Başlık doldurulamadı",
-  "Could not fill in speaker names": "Konuşmacı adları doldurulamadı"
+  "Could not fill in speaker names": "Konuşmacı adları doldurulamadı",
+  "Recording may have stopped": "Kayıt durmuş olabilir",
+  "Open Recly to check.": "Kontrol etmek için Recly'yi açın.",
+  "Recording time: {0}": "Kayıt süresi: {0}",
+  "Recording stopped: battery low": "Kayıt durduruldu: pil zayıf",
+  "Recording alerts": "Kayıt uyarıları"
 }

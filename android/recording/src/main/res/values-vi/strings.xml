@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">Đang ghi âm</string>
     <string name="rec_notification_title">Đang ghi âm</string>
     <string name="rec_notification_stop">Dừng</string>
+    <string name="rec_alerts_channel">Cảnh báo ghi âm</string>
+    <string name="rec_watchdog_title">Có thể đã dừng ghi âm</string>
+    <string name="rec_watchdog_body">Mở Recly để kiểm tra.</string>
+    <string name="rec_reminder_title">Vẫn đang ghi âm</string>
+    <string name="rec_reminder_body">Thời gian ghi âm: %1$s</string>
+    <string name="rec_battery_stop_title">Đã dừng ghi âm: pin yếu</string>
 </resources>

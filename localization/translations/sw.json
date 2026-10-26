@@ -567,5 +567,10 @@
   "Filling in speaker names…": "Inajaza majina ya wazungumzaji…",
   "Filling in": "Inajaza",
   "Could not fill in the title": "Imeshindwa kujaza kichwa",
-  "Could not fill in speaker names": "Imeshindwa kujaza majina ya wazungumzaji"
+  "Could not fill in speaker names": "Imeshindwa kujaza majina ya wazungumzaji",
+  "Recording may have stopped": "Huenda kurekodi kumesimama",
+  "Open Recly to check.": "Fungua Recly ili kuangalia.",
+  "Recording time: {0}": "Muda wa kurekodi: {0}",
+  "Recording stopped: battery low": "Kurekodi kumesimamishwa: betri iko chini",
+  "Recording alerts": "Arifa za kurekodi"
 }

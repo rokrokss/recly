@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">กำลังบันทึกเสียง</string>
     <string name="rec_notification_title">กำลังบันทึกเสียง</string>
     <string name="rec_notification_stop">หยุด</string>
+    <string name="rec_alerts_channel">การแจ้งเตือนการบันทึกเสียง</string>
+    <string name="rec_watchdog_title">การบันทึกเสียงอาจหยุดแล้ว</string>
+    <string name="rec_watchdog_body">เปิด Recly เพื่อตรวจสอบ</string>
+    <string name="rec_reminder_title">ยังบันทึกอยู่</string>
+    <string name="rec_reminder_body">เวลาบันทึก: %1$s</string>
+    <string name="rec_battery_stop_title">หยุดบันทึกเสียงแล้ว: แบตเตอรี่เหลือน้อย</string>
 </resources>

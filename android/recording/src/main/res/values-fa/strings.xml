@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">در حال ضبط</string>
     <string name="rec_notification_title">در حال ضبط</string>
     <string name="rec_notification_stop">توقف</string>
+    <string name="rec_alerts_channel">هشدارهای ضبط</string>
+    <string name="rec_watchdog_title">ممکن است ضبط متوقف شده باشد</string>
+    <string name="rec_watchdog_body">برای بررسی، Recly را باز کنید.</string>
+    <string name="rec_reminder_title">هنوز در حال ضبط</string>
+    <string name="rec_reminder_body">زمان ضبط: %1$s</string>
+    <string name="rec_battery_stop_title">ضبط متوقف شد: باتری کم است</string>
 </resources>

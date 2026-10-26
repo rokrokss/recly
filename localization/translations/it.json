@@ -567,5 +567,10 @@
   "Filling in speaker names…": "Completamento dei nomi degli interlocutori…",
   "Filling in": "Completamento",
   "Could not fill in the title": "Impossibile completare il titolo",
-  "Could not fill in speaker names": "Impossibile completare i nomi degli interlocutori"
+  "Could not fill in speaker names": "Impossibile completare i nomi degli interlocutori",
+  "Recording may have stopped": "La registrazione potrebbe essersi interrotta",
+  "Open Recly to check.": "Apri Recly per controllare.",
+  "Recording time: {0}": "Durata della registrazione: {0}",
+  "Recording stopped: battery low": "Registrazione interrotta: batteria scarica",
+  "Recording alerts": "Avvisi di registrazione"
 }

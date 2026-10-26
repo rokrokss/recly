@@ -567,5 +567,10 @@
   "Filling in speaker names…": "বক্তার নাম পূরণ করা হচ্ছে…",
   "Filling in": "পূরণ হচ্ছে",
   "Could not fill in the title": "শিরোনাম পূরণ করা যায়নি",
-  "Could not fill in speaker names": "বক্তার নাম পূরণ করা যায়নি"
+  "Could not fill in speaker names": "বক্তার নাম পূরণ করা যায়নি",
+  "Recording may have stopped": "রেকর্ডিং হয়তো থেমে গেছে",
+  "Open Recly to check.": "যাচাই করতে Recly খুলুন।",
+  "Recording time: {0}": "রেকর্ডিংয়ের সময়: {0}",
+  "Recording stopped: battery low": "রেকর্ডিং থেমেছে: ব্যাটারি কম",
+  "Recording alerts": "রেকর্ডিং সতর্কতা"
 }

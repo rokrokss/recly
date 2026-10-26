@@ -567,5 +567,10 @@
   "Filling in speaker names…": "A preencher os nomes dos oradores…",
   "Filling in": "A preencher",
   "Could not fill in the title": "Não foi possível preencher o título",
-  "Could not fill in speaker names": "Não foi possível preencher os nomes dos oradores"
+  "Could not fill in speaker names": "Não foi possível preencher os nomes dos oradores",
+  "Recording may have stopped": "A gravação pode ter parado",
+  "Open Recly to check.": "Abra o Recly para verificar.",
+  "Recording time: {0}": "Tempo de gravação: {0}",
+  "Recording stopped: battery low": "Gravação parada: bateria fraca",
+  "Recording alerts": "Alertas de gravação"
 }
