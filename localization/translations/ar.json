@@ -567,5 +567,10 @@
   "Filling in speaker names…": "جارٍ ملء أسماء المتحدثين…",
   "Filling in": "جارٍ الملء",
   "Could not fill in the title": "تعذّر ملء العنوان",
-  "Could not fill in speaker names": "تعذّر ملء أسماء المتحدثين"
+  "Could not fill in speaker names": "تعذّر ملء أسماء المتحدثين",
+  "Recording may have stopped": "ربما توقف التسجيل",
+  "Open Recly to check.": "افتح Recly للتحقق.",
+  "Recording time: {0}": "مدة التسجيل: {0}",
+  "Recording stopped: battery low": "توقف التسجيل: البطارية منخفضة",
+  "Recording alerts": "تنبيهات التسجيل"
 }

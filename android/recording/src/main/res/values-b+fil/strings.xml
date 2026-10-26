@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">Nagre-record</string>
     <string name="rec_notification_title">Nagre-record</string>
     <string name="rec_notification_stop">Ihinto</string>
+    <string name="rec_alerts_channel">Mga alerto sa pagre-record</string>
+    <string name="rec_watchdog_title">Maaaring huminto ang pagre-record</string>
+    <string name="rec_watchdog_body">Buksan ang Recly para tingnan.</string>
+    <string name="rec_reminder_title">Nagre-record pa</string>
+    <string name="rec_reminder_body">Tagal ng pagre-record: %1$s</string>
+    <string name="rec_battery_stop_title">Huminto ang pagre-record: mahina ang baterya</string>
 </resources>

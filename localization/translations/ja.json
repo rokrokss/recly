@@ -567,5 +567,10 @@
   "Filling in speaker names…": "話者の名前を入力しています…",
   "Filling in": "入力中",
   "Could not fill in the title": "タイトルを入力できませんでした",
-  "Could not fill in speaker names": "話者の名前を入力できませんでした"
+  "Could not fill in speaker names": "話者の名前を入力できませんでした",
+  "Recording may have stopped": "録音が停止した可能性があります",
+  "Open Recly to check.": "Reclyを開いて確認してください。",
+  "Recording time: {0}": "録音時間：{0}",
+  "Recording stopped: battery low": "バッテリー残量が少ないため録音を停止しました",
+  "Recording alerts": "録音アラート"
 }

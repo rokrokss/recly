@@ -567,5 +567,10 @@
   "Filling in speaker names…": "بولنے والوں کے نام بھرے جا رہے ہیں…",
   "Filling in": "بھرا جا رہا ہے",
   "Could not fill in the title": "عنوان نہیں بھرا جا سکا",
-  "Could not fill in speaker names": "بولنے والوں کے نام نہیں بھرے جا سکے"
+  "Could not fill in speaker names": "بولنے والوں کے نام نہیں بھرے جا سکے",
+  "Recording may have stopped": "ریکارڈنگ شاید رک گئی ہے",
+  "Open Recly to check.": "چیک کرنے کے لیے Recly کھولیں۔",
+  "Recording time: {0}": "ریکارڈنگ کا وقت: {0}",
+  "Recording stopped: battery low": "ریکارڈنگ رک گئی: بیٹری کم ہے",
+  "Recording alerts": "ریکارڈنگ الرٹس"
 }

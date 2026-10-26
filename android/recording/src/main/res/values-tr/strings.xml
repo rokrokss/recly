@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">Kayıt yapılıyor</string>
     <string name="rec_notification_title">Kayıt yapılıyor</string>
     <string name="rec_notification_stop">Durdur</string>
+    <string name="rec_alerts_channel">Kayıt uyarıları</string>
+    <string name="rec_watchdog_title">Kayıt durmuş olabilir</string>
+    <string name="rec_watchdog_body">Kontrol etmek için Recly\'yi açın.</string>
+    <string name="rec_reminder_title">Kayıt sürüyor</string>
+    <string name="rec_reminder_body">Kayıt süresi: %1$s</string>
+    <string name="rec_battery_stop_title">Kayıt durduruldu: pil zayıf</string>
 </resources>

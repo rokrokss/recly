@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">রেকর্ড হচ্ছে</string>
     <string name="rec_notification_title">রেকর্ড হচ্ছে</string>
     <string name="rec_notification_stop">থামান</string>
+    <string name="rec_alerts_channel">রেকর্ডিং সতর্কতা</string>
+    <string name="rec_watchdog_title">রেকর্ডিং হয়তো থেমে গেছে</string>
+    <string name="rec_watchdog_body">যাচাই করতে Recly খুলুন।</string>
+    <string name="rec_reminder_title">এখনও রেকর্ড হচ্ছে</string>
+    <string name="rec_reminder_body">রেকর্ডিংয়ের সময়: %1$s</string>
+    <string name="rec_battery_stop_title">রেকর্ডিং থেমেছে: ব্যাটারি কম</string>
 </resources>

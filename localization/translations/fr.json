@@ -567,5 +567,10 @@
   "Filling in speaker names…": "Complétion des noms des locuteurs…",
   "Filling in": "Complétion",
   "Could not fill in the title": "Impossible de compléter le titre",
-  "Could not fill in speaker names": "Impossible de compléter les noms des locuteurs"
+  "Could not fill in speaker names": "Impossible de compléter les noms des locuteurs",
+  "Recording may have stopped": "L’enregistrement s’est peut-être arrêté",
+  "Open Recly to check.": "Ouvrez Recly pour vérifier.",
+  "Recording time: {0}": "Durée d’enregistrement : {0}",
+  "Recording stopped: battery low": "Enregistrement arrêté : batterie faible",
+  "Recording alerts": "Alertes d’enregistrement"
 }

@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">Recording</string>
     <string name="rec_notification_title">Recording</string>
     <string name="rec_notification_stop">Stop</string>
+    <string name="rec_alerts_channel">Recording alerts</string>
+    <string name="rec_watchdog_title">Recording may have stopped</string>
+    <string name="rec_watchdog_body">Open Recly to check.</string>
+    <string name="rec_reminder_title">Still recording</string>
+    <string name="rec_reminder_body">Recording time: %1$s</string>
+    <string name="rec_battery_stop_title">Recording stopped: battery low</string>
 </resources>
