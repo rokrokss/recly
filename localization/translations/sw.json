@@ -572,5 +572,7 @@
   "Open Recly to check.": "Fungua Recly ili kuangalia.",
   "Recording time: {0}": "Muda wa kurekodi: {0}",
   "Recording stopped: battery low": "Kurekodi kumesimamishwa: betri iko chini",
-  "Recording alerts": "Arifa za kurekodi"
+  "Recording alerts": "Arifa za kurekodi",
+  "Recording paused": "Kurekodi kumesitishwa",
+  "Open Recly to keep recording.": "Fungua Recly ili kuendelea kurekodi."
 }

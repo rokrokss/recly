@@ -25,6 +25,10 @@ public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate 
     /// docs/10: "A tap goes to the screen that can fix it. It does not end at 'Open app'."
     public var onFix: ((JobAlert) -> Void)?
 
+    /// The phone's one delegate is this, so a response that is not a job alert's is handed on — the
+    /// recording notices ([RecordingNotices.handle]) — as `MeetingNotifier` hands it here on the Mac.
+    public var forward: ((UNNotificationResponse) -> Bool)?
+
     /// The last reading of the queue. Kept because two things repaint from it: a language change,
     /// and a tap — the system takes a notification down when it is opened, and the reason it was
     /// about is still in the queue, so it goes back up.
@@ -204,7 +208,7 @@ public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate 
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         Task { @MainActor in
-            handle(response: response)
+            if !handle(response: response) { _ = forward?(response) }
             completionHandler()
         }
     }
@@ -232,12 +236,28 @@ protocol AlertCenter {
     /// mistaken for one that did.
     func post(_ request: UNNotificationRequest) async throws
     func withdraw(_ identifiers: [String])
+    /// One category with its buttons, beside the ones already registered — a process has a single
+    /// set, and the Mac's meeting offers are in it too ([RecordingNotices]).
+    func register(_ category: UNNotificationCategory) async
+}
+
+extension AlertCenter {
+    func register(_ category: UNNotificationCategory) async {}
 }
 
 struct SystemAlertCenter: AlertCenter {
+    /// The watch's recording notices ask for `.sound` as well: on a wrist, a sound is what taps.
+    var options: UNAuthorizationOptions = [.alert, .badge]
+
     func authorize() async -> Bool {
         (try? await UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .badge])) ?? false
+            .requestAuthorization(options: options)) ?? false
+    }
+
+    func register(_ category: UNNotificationCategory) async {
+        let center = UNUserNotificationCenter.current()
+        let others = await center.notificationCategories().filter { $0.identifier != category.identifier }
+        center.setNotificationCategories(others.union([category]))
     }
 
     func post(_ request: UNNotificationRequest) async throws {

@@ -572,5 +572,7 @@
   "Open Recly to check.": "برای بررسی، Recly را باز کنید.",
   "Recording time: {0}": "زمان ضبط: {0}",
   "Recording stopped: battery low": "ضبط متوقف شد: باتری کم است",
-  "Recording alerts": "هشدارهای ضبط"
+  "Recording alerts": "هشدارهای ضبط",
+  "Recording paused": "ضبط موقتاً متوقف شد",
+  "Open Recly to keep recording.": "برای ادامهٔ ضبط، Recly را باز کنید."
 }

@@ -572,5 +572,7 @@
   "Open Recly to check.": "Abra o Recly para verificar.",
   "Recording time: {0}": "Tempo de gravação: {0}",
   "Recording stopped: battery low": "Gravação parada: bateria fraca",
-  "Recording alerts": "Alertas de gravação"
+  "Recording alerts": "Alertas de gravação",
+  "Recording paused": "Gravação em pausa",
+  "Open Recly to keep recording.": "Abra o Recly para continuar a gravar."
 }

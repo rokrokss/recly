@@ -572,5 +572,7 @@
   "Open Recly to check.": "เปิด Recly เพื่อตรวจสอบ",
   "Recording time: {0}": "เวลาบันทึก: {0}",
   "Recording stopped: battery low": "หยุดบันทึกเสียงแล้ว: แบตเตอรี่เหลือน้อย",
-  "Recording alerts": "การแจ้งเตือนการบันทึกเสียง"
+  "Recording alerts": "การแจ้งเตือนการบันทึกเสียง",
+  "Recording paused": "หยุดบันทึกเสียงชั่วคราว",
+  "Open Recly to keep recording.": "เปิด Recly เพื่อบันทึกเสียงต่อ"
 }

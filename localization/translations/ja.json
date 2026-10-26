@@ -572,5 +572,7 @@
   "Open Recly to check.": "Reclyを開いて確認してください。",
   "Recording time: {0}": "録音時間：{0}",
   "Recording stopped: battery low": "バッテリー残量が少ないため録音を停止しました",
-  "Recording alerts": "録音アラート"
+  "Recording alerts": "録音アラート",
+  "Recording paused": "録音を一時停止しました",
+  "Open Recly to keep recording.": "Reclyを開くと録音を再開します。"
 }

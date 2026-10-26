@@ -99,4 +99,12 @@ struct SegmentSplitter {
         }
         return chunks
     }
+
+    /// Ends the open segment where it stands rather than where it fills: a recording that has to
+    /// wait to resume (iOS, watchOS) closes what it has, so a process killed while it waits loses
+    /// nothing. Returns the frames the segment held; the next one starts empty.
+    mutating func cut() -> AVAudioFrameCount {
+        defer { framesInSegment = 0 }
+        return framesInSegment
+    }
 }

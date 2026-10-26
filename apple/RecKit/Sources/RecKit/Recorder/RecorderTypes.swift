@@ -20,6 +20,25 @@ public struct RecordingOutcome: Sendable {
     public let parts: Int
 }
 
+/// What [SegmentedRecorder.onEvent] reports about the recording that is running — the moments
+/// [RecordingNotices] schedules and withdraws its notifications at.
+public enum RecorderEvent: Equatable, Sendable {
+    case started(recordingId: String, at: Date, segmentSec: Int)
+
+    /// A boundary closed a part: audio is still reaching the files.
+    case partFiled
+
+    /// iOS and watchOS: a restart ran out of attempts, and the recording waits for the app to come
+    /// to the front rather than ending ([SegmentedRecorder.becameActive]).
+    case awaitingResume
+
+    /// The input came back after [awaitingResume].
+    case resumed
+
+    /// The stop took the recording — the user's, an intent's, or the one a fatal error asks for.
+    case ended
+}
+
 /// The result of the core-only half of a stop (the Android `StopResult`, same three cases).
 public enum StopResult: Sendable {
     /// A second stop: the menu item and a fatal capture error can both land.

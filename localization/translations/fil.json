@@ -572,5 +572,7 @@
   "Open Recly to check.": "Buksan ang Recly para tingnan.",
   "Recording time: {0}": "Tagal ng pagre-record: {0}",
   "Recording stopped: battery low": "Huminto ang pagre-record: mahina ang baterya",
-  "Recording alerts": "Mga alerto sa pagre-record"
+  "Recording alerts": "Mga alerto sa pagre-record",
+  "Recording paused": "Naka-pause ang pagre-record",
+  "Open Recly to keep recording.": "Buksan ang Recly para ituloy ang pagre-record."
 }

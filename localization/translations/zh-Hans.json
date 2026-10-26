@@ -572,5 +572,7 @@
   "Open Recly to check.": "打开Recly查看。",
   "Recording time: {0}": "录音时长：{0}",
   "Recording stopped: battery low": "电量不足，录音已停止",
-  "Recording alerts": "录音提醒"
+  "Recording alerts": "录音提醒",
+  "Recording paused": "录音已暂停",
+  "Open Recly to keep recording.": "打开Recly继续录音。"
 }

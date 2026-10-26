@@ -572,5 +572,7 @@
   "Open Recly to check.": "Mở Recly để kiểm tra.",
   "Recording time: {0}": "Thời gian ghi âm: {0}",
   "Recording stopped: battery low": "Đã dừng ghi âm: pin yếu",
-  "Recording alerts": "Cảnh báo ghi âm"
+  "Recording alerts": "Cảnh báo ghi âm",
+  "Recording paused": "Đã tạm dừng ghi âm",
+  "Open Recly to keep recording.": "Mở Recly để tiếp tục ghi âm."
 }

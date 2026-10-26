@@ -49,6 +49,8 @@ final class MeetingNotifier: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([
             Self.category(.start, button: AppStrings.localized("Start recording")),
             Self.category(.stop, button: AppStrings.localized("Stop recording")),
+            // The set is the process's, and a long recording's reminder has its Stop in it too.
+            RecordingNotices.category(stop: AppStrings.localized("Stop recording")),
         ])
     }
 

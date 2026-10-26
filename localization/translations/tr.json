@@ -572,5 +572,7 @@
   "Open Recly to check.": "Kontrol etmek için Recly'yi açın.",
   "Recording time: {0}": "Kayıt süresi: {0}",
   "Recording stopped: battery low": "Kayıt durduruldu: pil zayıf",
-  "Recording alerts": "Kayıt uyarıları"
+  "Recording alerts": "Kayıt uyarıları",
+  "Recording paused": "Kayıt duraklatıldı",
+  "Open Recly to keep recording.": "Kayda devam etmek için Recly'yi açın."
 }

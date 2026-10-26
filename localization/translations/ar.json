@@ -572,5 +572,7 @@
   "Open Recly to check.": "افتح Recly للتحقق.",
   "Recording time: {0}": "مدة التسجيل: {0}",
   "Recording stopped: battery low": "توقف التسجيل: البطارية منخفضة",
-  "Recording alerts": "تنبيهات التسجيل"
+  "Recording alerts": "تنبيهات التسجيل",
+  "Recording paused": "توقف التسجيل مؤقتًا",
+  "Open Recly to keep recording.": "افتح Recly لمتابعة التسجيل."
 }

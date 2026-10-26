@@ -572,5 +572,7 @@
   "Open Recly to check.": "जाँचने के लिए Recly खोलें।",
   "Recording time: {0}": "रिकॉर्डिंग का समय: {0}",
   "Recording stopped: battery low": "रिकॉर्डिंग रुकी: बैटरी कम है",
-  "Recording alerts": "रिकॉर्डिंग अलर्ट"
+  "Recording alerts": "रिकॉर्डिंग अलर्ट",
+  "Recording paused": "रिकॉर्डिंग रुकी हुई है",
+  "Open Recly to keep recording.": "रिकॉर्डिंग जारी रखने के लिए Recly खोलें।"
 }

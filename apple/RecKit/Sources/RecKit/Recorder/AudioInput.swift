@@ -47,6 +47,10 @@ protocol AudioInput: AnyObject {
 
     /// Removes the tap and stops. Doing this when nothing was started is not an error.
     func stop()
+
+    /// The app came to the front. iOS does not promise the `.ended` of an interruption, and an input
+    /// still silenced by one treats this as that `.ended`, without `.shouldResume`.
+    func becameActive()
 }
 
 /// The system-audio half of a meeting recording — `ProcessTapCapture` in the app, a fake in the
@@ -90,6 +94,7 @@ extension AudioInput {
     }
     var deviceName: String? { nil }
     var onDiagnostic: ((CaptureDiagnostic) -> Void)? { get { nil } set {} }
+    func becameActive() {}
 }
 
 extension SystemAudioInput {

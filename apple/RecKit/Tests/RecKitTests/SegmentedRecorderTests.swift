@@ -448,6 +448,128 @@ final class SegmentedRecorderTests: XCTestCase {
         XCTAssertEqual(recorder.livePeaks(), [], "the strip outlived the recording")
     }
 
+    // MARK: - Waiting to resume (iOS, watchOS)
+
+    /// A backgrounded phone cannot take the microphone back, so a restart that runs out of attempts
+    /// leaves the recording open rather than ending it: the open part is closed where it stands, and
+    /// the attempt the app's return makes writes one gap across the whole wait.
+    func testARestartThatRunsOutOfAttemptsWaitsAndResumesWithOneGap() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, source: Source.phone, input: input,
+            awaitsResume: true, retryPace: 0.01
+        ) { failures.record($0) }
+        recorder.onEvent = { events.record($0) }
+        let recordingId = try await recorder.start(title: nil)
+        // Two and a half seconds: the segment is half full when the input goes.
+        XCTAssertTrue(input.push(frames: 40_000) { Self.sample($0) })
+
+        // The first attempt and all ten retries.
+        input.failNextPreparations(11)
+        input.onConfigurationChange?("input_route_change")
+        await waitUntil { events.all.contains(.awaitingResume) }
+        XCTAssertEqual(events.all.filter { $0 == .awaitingResume }.count, 1)
+        XCTAssertTrue(recorder.isRecording, "the recording ended instead of waiting")
+        XCTAssertEqual(failures.fatal.count, 0, "\(failures.all)")
+        // The half-full part is filed already: a process killed while it waits keeps it.
+        var filed = 0
+        for _ in 0 ..< 100 where filed != 1 {
+            filed = try await bridge.core.recordings.get(id: recordingId)?.meta.parts.count ?? 0
+            if filed != 1 { try await Task.sleep(nanoseconds: 20_000_000) }
+        }
+        XCTAssertEqual(filed, 1, "the half-full part was not filed as the recording began to wait")
+
+        let waitedSec = 0.3
+        try await Task.sleep(nanoseconds: UInt64(waitedSec * 1_000_000_000))
+        recorder.becameActive()
+        await waitUntil { events.all.contains(.resumed) }
+        XCTAssertEqual(input.starts, 2, "the app's return did not reattach the input")
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+
+        let result = await recorder.stop(title: nil)
+        guard case .finalized(let outcome) = result else {
+            return XCTFail("expected a finalized stop, got \(result) (errors: \(failures.all))")
+        }
+        let row = try await bridge.core.recordings.get(id: recordingId)
+        let record = try XCTUnwrap(row)
+        XCTAssertEqual(record.meta.gaps.map(\.reason), ["input_route_change"], "one gap for the whole wait")
+        let gap = try XCTUnwrap(record.meta.gaps.first)
+        XCTAssertEqual(gap.startSec, 2.5, accuracy: 0.001)
+        XCTAssertGreaterThanOrEqual(gap.endSec - gap.startSec, waitedSec)
+        XCTAssertEqual(record.meta.parts.count, 2)
+        XCTAssertEqual(record.meta.parts.first?.durationSec ?? 0, 2.5, accuracy: 0.001)
+        XCTAssertEqual(outcome.durationSec, 3.5, accuracy: 0.1)
+        XCTAssertEqual(failures.fatal.count, 0, "\(failures.all)")
+        await waitUntil { events.all.last == .ended }
+        XCTAssertEqual(Array(events.all.dropFirst()), [.awaitingResume, .resumed, .ended])
+        guard case .started(recordingId, _, 5)? = events.all.first else {
+            return XCTFail("the first event was not the start: \(events.all)")
+        }
+    }
+
+    /// An attempt that fails when the app comes back waits again, and a stop while it waits files
+    /// what was recorded, with the outage as the gap it was.
+    func testAStopWhileWaitingFinalizesWhatWasRecordedWithTheGap() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, source: Source.phone, input: input,
+            awaitsResume: true, retryPace: 0.01
+        ) { failures.record($0) }
+        recorder.onEvent = { events.record($0) }
+        let recordingId = try await recorder.start(title: nil)
+        XCTAssertTrue(input.push(frames: 40_000) { Self.sample($0) })
+
+        // Eleven for the restart, one more for the attempt the app's return makes.
+        input.failNextPreparations(12)
+        input.onConfigurationChange?("input_route_change")
+        await waitUntil { events.all.contains(.awaitingResume) }
+        recorder.becameActive()
+        await waitUntil { events.all.filter { $0 == .awaitingResume }.count == 2 }
+        XCTAssertTrue(recorder.isRecording)
+        XCTAssertEqual(input.starts, 1)
+        XCTAssertFalse(events.all.contains(.resumed))
+
+        let result = await recorder.stop(title: nil)
+        guard case .finalized = result else {
+            return XCTFail("expected a finalized stop, got \(result) (errors: \(failures.all))")
+        }
+        let row = try await bridge.core.recordings.get(id: recordingId)
+        let record = try XCTUnwrap(row)
+        XCTAssertEqual(record.meta.gaps.map(\.reason), ["input_route_change"])
+        XCTAssertEqual(record.meta.gaps.first?.startSec ?? 0, 2.5, accuracy: 0.001)
+        // The part opened for the resume never got a frame, and is not a part.
+        XCTAssertEqual(record.meta.parts.map(\.part), [1])
+        XCTAssertEqual(failures.fatal.count, 0, "\(failures.all)")
+        XCTAssertFalse(input.isRunning)
+    }
+
+    /// The Mac keeps what it always did: a restart out of attempts ends the recording.
+    func testOnTheMacARestartThatRunsOutOfAttemptsIsFatal() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, input: input, awaitsResume: false, retryPace: 0.01
+        ) { failures.record($0) }
+        recorder.onEvent = { events.record($0) }
+        _ = try await recorder.start(title: nil)
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+
+        input.failNextPreparations(11)
+        input.onConfigurationChange?("input_route_change")
+        await waitUntil { failures.fatal.count == 1 }
+        XCTAssertEqual(failures.fatal.count, 1)
+        XCTAssertFalse(events.all.contains(.awaitingResume))
+        _ = await recorder.stop(title: nil)
+    }
+
     // MARK: - The signal
 
     /// Seven seconds at 16 kHz, with the five-second boundary inside one of the pushed buffers.
@@ -524,4 +646,16 @@ final class Failures {
 
     var all: [RecorderError] { lock.withLock { errors } }
     var fatal: [RecorderError] { all.filter(\.fatal) }
+}
+
+/// What the recorder reported through `onEvent`, in order.
+final class RecorderEvents {
+    private let lock = NSLock()
+    private var events: [RecorderEvent] = []
+
+    func record(_ event: RecorderEvent) {
+        lock.withLock { events.append(event) }
+    }
+
+    var all: [RecorderEvent] { lock.withLock { events } }
 }

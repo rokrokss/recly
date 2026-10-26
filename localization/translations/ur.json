@@ -572,5 +572,7 @@
   "Open Recly to check.": "چیک کرنے کے لیے Recly کھولیں۔",
   "Recording time: {0}": "ریکارڈنگ کا وقت: {0}",
   "Recording stopped: battery low": "ریکارڈنگ رک گئی: بیٹری کم ہے",
-  "Recording alerts": "ریکارڈنگ الرٹس"
+  "Recording alerts": "ریکارڈنگ الرٹس",
+  "Recording paused": "ریکارڈنگ عارضی طور پر رکی ہوئی ہے",
+  "Open Recly to keep recording.": "ریکارڈنگ جاری رکھنے کے لیے Recly کھولیں۔"
 }

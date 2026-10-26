@@ -572,5 +572,7 @@
   "Open Recly to check.": "Откройте Recly, чтобы проверить.",
   "Recording time: {0}": "Время записи: {0}",
   "Recording stopped: battery low": "Запись остановлена: низкий заряд батареи",
-  "Recording alerts": "Уведомления о записи"
+  "Recording alerts": "Уведомления о записи",
+  "Recording paused": "Запись приостановлена",
+  "Open Recly to keep recording.": "Откройте Recly, чтобы продолжить запись."
 }
