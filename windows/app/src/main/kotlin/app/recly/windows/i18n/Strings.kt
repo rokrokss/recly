@@ -561,6 +561,14 @@ enum class Str {
     FILL_TITLE_FAILED,
     FILL_NAMES_FAILED,
     SPEAKER_ME,
+
+    // docs/08 "Organizing".
+    ORGANIZE_CONSENT_TITLE,
+    ORGANIZE_CONSENT_BODY,
+    ORGANIZE_CONSENT_CONTINUE,
+    NOTES_DECISIONS,
+    NOTES_TODOS,
+    NOTES_QUESTIONS,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

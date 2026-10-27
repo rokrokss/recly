@@ -111,7 +111,6 @@
   "Expanded": "پھیلا ہوا",
   "Export settings": "ترتیبات برآمد کریں",
   "External API": "بیرونی API",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "بیرونی ٹرانسکرپشن پوری ریکارڈنگ {0} کو بھیجتا ہے۔\nوہ اسے کتنی دیر رکھتے ہیں اور کیا اسے تربیت کے لیے استعمال کرتے ہیں، یہ اس فراہم کنندہ کی اپنی پالیسی ہے — Recly اسے کنٹرول نہیں کرتا۔\nاستعمال سے پہلے فراہم کنندہ کی پالیسی پڑھیں۔",
   "Failed": "ناکام",
   "Failed: {0}": "ناکام: {0}",
   "Fetching from Drive…": "Drive سے حاصل کیا جا رہا ہے…",

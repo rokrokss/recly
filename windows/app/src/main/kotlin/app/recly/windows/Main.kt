@@ -59,6 +59,7 @@ import app.recly.windows.ui.DisconnectDialog
 import app.recly.windows.ui.FillHalf
 import app.recly.windows.ui.ByteFormat
 import app.recly.windows.ui.ChatGptWelcomeDialog
+import app.recly.windows.ui.OrganizeConsentDialog
 import app.recly.windows.ui.MeteredDownloadDialog
 import app.recly.windows.ui.MicrophoneDialog
 import app.recly.windows.ui.RecordingsWindow
@@ -260,6 +261,18 @@ fun main(args: Array<String>) {
                 theme = themed,
                 onCancel = model::cancelRetranscribe,
                 onConfirm = model::retranscribe,
+            )
+        }
+
+        // docs/08 "Organizing": the consent after a sign-in, or in front of a start — from here like the rename, since
+        // neither the settings window nor the popup that asked is sure to be up when it is answered.
+        if (model.chatGpt?.organizeConsent == true) {
+            OrganizeConsentDialog(
+                strings = strings,
+                theme = themed,
+                onContinue = { model.answerOrganizeConsent(true) },
+                onSignOut = { model.answerOrganizeConsent(false) },
+                onDismiss = { model.answerOrganizeConsent(null) },
             )
         }
 

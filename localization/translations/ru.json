@@ -318,7 +318,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Обработка приостановится до повторного подключения того же аккаунта. Записи, файлы Drive и ключи сохранятся.",
   "Saved on this device": "Сохранён на этом устройстве",
   "Not saved on this device": "На этом устройстве ключ не сохранён",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись в {0}.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.",
   "The provider is out of quota or is rate-limiting.": "Исчерпана квота провайдера или ограничена частота запросов.",
   "Enter the key as client ID:client secret.": "Введите ключ в формате идентификатор клиента:секрет клиента.",
   "Replace key": "Заменить ключ",

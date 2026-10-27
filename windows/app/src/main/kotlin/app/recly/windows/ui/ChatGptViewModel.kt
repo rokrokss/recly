@@ -41,6 +41,7 @@ import recly.core.chatgpt.SummaryPreferences
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import recly.core.notes.Notes
 import recly.core.platform.Logger
 import recly.core.storage.StorageKind
 
@@ -64,6 +65,8 @@ class ChatGptViewModel(
     private val account: ChatGptAccount,
     /** Settings → ChatGPT's format, My format and About you are the summaries' own (docs/08 "Summaries"). */
     private val summaries: Summaries,
+    /** docs/08 "Organizing": the consent the sign-in asks for, and a recording start while it is missing. */
+    private val notes: Notes,
     private val receiver: LoopbackReceiver,
     private val scope: CoroutineScope,
     private val logger: Logger,
@@ -98,6 +101,20 @@ class ChatGptViewModel(
     var welcome: Boolean by mutableStateOf(false)
         private set
 
+    /**
+     * docs/08 "Organizing": the consent question is up — right after a sign-in, or in front of a recording start
+     * ([askOrganizeConsent]). Continue agrees, Sign out signs out ([answerOrganizeConsent]).
+     */
+    var organizeConsent: Boolean by mutableStateOf(false)
+        private set
+
+    /** Signed in to ChatGPT and not agreed to organizing yet (`Notes.observeNeedsConsent`): a start asks first. */
+    var needsOrganizeConsent: Boolean by mutableStateOf(false)
+        private set
+
+    /** The first sign-in's welcome, held until the consent question it follows is answered. */
+    private var welcomeAfterConsent = false
+
     private var signIn: Job? = null
 
     /** Bumped by every sign-in and every Cancel, so a browser open that arrives late knows it is stale. */
@@ -106,6 +123,7 @@ class ChatGptViewModel(
     /** Follows the core's connection for as long as the app runs, and reads it once now. */
     fun start() {
         scope.launch { account.observe().collect { connection = it } }
+        scope.launch { notes.observeNeedsConsent().collect { needsOrganizeConsent = it } }
         scope.launch {
             try {
                 summaries.observePreferences().collect { preferences = it }
@@ -170,7 +188,14 @@ class ChatGptViewModel(
             when (result) {
                 is ChatGptResult.Done -> {
                     settle(ProcessingState.DONE)
-                    if (result.welcome) welcome = true
+                    // docs/08 "Organizing": the consent first — a sign-in OpenAI had ended may still hold one — then
+                    // the welcome, once it is answered.
+                    if (needsConsentNow()) {
+                        welcomeAfterConsent = result.welcome
+                        organizeConsent = true
+                    } else if (result.welcome) {
+                        welcome = true
+                    }
                 }
                 is ChatGptResult.Failed -> {
                     settle(ProcessingState.FAILED)
@@ -258,6 +283,50 @@ class ChatGptViewModel(
 
     fun dismissWelcome() {
         welcome = false
+    }
+
+    /** docs/08 "Organizing": a recording start from the app while [needsOrganizeConsent] — the same question. */
+    fun askOrganizeConsent() {
+        organizeConsent = true
+    }
+
+    /**
+     * The consent question's answer: Continue ([agree] true) agrees, Sign out (false) is Settings' own sign-out, and a
+     * question closed without either (null) leaves it to be asked at the next start. The welcome a first sign-in
+     * earned follows, unless the answer was to sign out.
+     */
+    fun answerOrganizeConsent(agree: Boolean?) {
+        organizeConsent = false
+        val welcomeNext = welcomeAfterConsent
+        welcomeAfterConsent = false
+        when (agree) {
+            // Only while it is still wanted: a sign-out meanwhile must not leave an agreement for the next sign-in.
+            true -> scope.launch {
+                try {
+                    if (notes.needsConsent()) notes.consent()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.log(Logger.Level.ERROR, "shell.chatgpt.consent.failed", error = e)
+                }
+            }
+            false -> {
+                signOut()
+                return
+            }
+            null -> Unit
+        }
+        if (welcomeNext) welcome = true
+    }
+
+    /** [Notes.needsConsent] now; a store that will not be read asks, as one that says so would. */
+    private suspend fun needsConsentNow(): Boolean = try {
+        notes.needsConsent()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        logger.log(Logger.Level.ERROR, "shell.chatgpt.consent.failed", error = e)
+        true
     }
 
     /** ChatGPT's own usage page — the plan's limits and Recly's share of them. */
@@ -488,11 +557,11 @@ internal fun fillNotice(result: FillResult?, half: FillHalf, busy: Str): FillNot
 }
 
 /**
- * The Transcript | Summary chips: once the recording has a summary, or right after Summarize was chosen —
- * and never while the transcript is being edited.
+ * The Transcript | Summary chips: once the recording has a summary, or right after Summarize was chosen, or once it
+ * has [notes] (docs/08 "Organizing" — they are shown where the summary is) — and never while the transcript is being edited.
  */
-internal fun showsSummaryChips(summary: SummaryState, summaryChosen: Boolean, editing: Boolean): Boolean =
-    !editing && (summary != SummaryState.None || summaryChosen)
+internal fun showsSummaryChips(summary: SummaryState, summaryChosen: Boolean, editing: Boolean, notes: Boolean = false): Boolean =
+    !editing && (summary != SummaryState.None || summaryChosen || notes)
 
 /**
  * The footer's model: the plan's name for it when it was written ([Summary.modelName], kept with it so it reads the

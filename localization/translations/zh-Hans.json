@@ -318,7 +318,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "重新连接同一账号前，待处理任务将暂停。录音、Drive文件和密钥都会保留。",
   "Saved on this device": "已保存在此设备上",
   "Not saved on this device": "此设备上未保存密钥",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部转录会将完整录音发送给{0}。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。",
   "The provider is out of quota or is rate-limiting.": "提供商配额用尽或触发速率限制。",
   "Enter the key as client ID:client secret.": "请按“客户端 ID:客户端密钥”的格式输入密钥。",
   "Replace key": "替换密钥",

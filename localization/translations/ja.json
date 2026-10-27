@@ -318,7 +318,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "同じアカウントに再接続するまで処理を一時停止します。録音、Driveのファイル、キーは残ります。",
   "Saved on this device": "このデバイスに保存済み",
   "Not saved on this device": "このデバイスに保存されたキーはありません",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、録音全体を{0}に送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。",
   "The provider is out of quota or is rate-limiting.": "提供者の利用枠またはリクエスト数の制限に達しました。",
   "Enter the key as client ID:client secret.": "キーは「クライアントID:クライアントシークレット」の形式で入力してください。",
   "Replace key": "キーを置き換え",

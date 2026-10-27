@@ -111,7 +111,6 @@
   "Expanded": "گسترش‌یافته",
   "Export settings": "صادر کردن تنظیمات",
   "External API": "API خارجی",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "رونویسی خارجی کل ضبط را به {0} می‌فرستد.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید.",
   "Failed": "ناموفق",
   "Failed: {0}": "ناموفق: {0}",
   "Fetching from Drive…": "در حال دریافت از Drive…",

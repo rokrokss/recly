@@ -162,7 +162,7 @@ class FillTest {
     fun `each of the dialog's boxes starts as it was left last, on its own`() = runBlocking {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val graph = AppModule.build(dataDir = Files.createTempDirectory("recly-fill").toString().toPath())
-        fun viewModel() = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.loopback, scope, SilentLogger).also { it.start() }
+        fun viewModel() = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.core.notes, graph.loopback, scope, SilentLogger).also { it.start() }
         suspend fun until(condition: suspend () -> Boolean) = withTimeout(10_000) { while (!condition()) delay(20) }
         try {
             val stored = graph.core.summaries.preferences()

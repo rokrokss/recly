@@ -111,7 +111,6 @@
   "Expanded": "Expandido",
   "Export settings": "Exportar definições",
   "External API": "API externa",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "A transcrição externa envia a gravação completa para {0}.\nO tempo de conservação e o eventual uso para treino dependem da política desse fornecedor — o Recly não os controla.\nLeia a política do fornecedor antes de o utilizar.",
   "Failed": "Falhou",
   "Failed: {0}": "Falhou: {0}",
   "Fetching from Drive…": "A obter do Drive…",

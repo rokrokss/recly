@@ -401,6 +401,36 @@ class RecentsTest {
         assertNull(Recents.item(record(status = RecordingStatus.RECORDING), null, emptyList()).durationSec)
     }
 
+    /**
+     * docs/08 "Organizing": the notes are not the recording's processing. A job with only `notes.organize` left —
+     * waiting out a usage limit here — reads as done, offers no Retry and says nothing of the notes' wait; one with
+     * its upload still to do is not that.
+     */
+    @Test
+    fun `a job with only its notes left reads as done, with nothing to retry or say`() {
+        val organizing = job("j", JobStatus.WAITING).let {
+            it.copy(workflow = it.workflow!!.copy(steps = listOf(Step.DriveUpload("upload"), Step.TranscriptPublish("publish"), Step.OrganizeNotes("notes"))))
+        }
+        val limit = CoreMessage.CHATGPT_USAGE_LIMIT.code()
+        val waiting = listOf(step("upload"), step("publish"), step("notes", status = StepStatus.PENDING, lastError = limit))
+
+        val item = Recents.item(record(), organizing, waiting)
+
+        assertEquals(Str.STATE_DONE.message(), item.state)
+        assertEquals("DONE", item.state.ledgerStatus().code)
+        assertEquals(JobStatus.DONE, item.jobStatus)
+        assertNull(item.lastError, "the notes' wait said under a done row")
+        assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending))
+        // Running its notes now is the same.
+        assertEquals(Str.STATE_DONE.message(), Recents.item(record(), organizing.copy(status = JobStatus.RUNNING), waiting).state)
+        // A notes step that failed for good leaves the job done without notes — and without a reason under it.
+        val gaveUp = waiting.dropLast(1) + step("notes", status = StepStatus.FAILED, lastError = limit)
+        assertNull(Recents.item(record(), organizing.copy(status = JobStatus.DONE), gaveUp).lastError)
+        // The upload still to do: the recording's own processing, which the row goes on saying.
+        val uploading = listOf(step("upload", status = StepStatus.PENDING), step("publish", status = StepStatus.PENDING), step("notes", status = StepStatus.PENDING))
+        assertEquals(Str.STATE_RETRY_WAIT.message(), Recents.item(record(), organizing, uploading).state)
+    }
+
     private fun step(
         id: String,
         output: JsonObject? = null,

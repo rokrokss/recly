@@ -82,8 +82,11 @@ import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
 import recly.core.job.Job
 import recly.core.job.JobStatus
+import recly.core.job.StepReport
 import recly.core.model.Highlight
 import recly.core.model.RecordingStatus
+import recly.core.notes.NoteLine
+import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
 import recly.core.processing.ProcessingSaveResult
 import recly.core.recording.DeleteResult
@@ -224,6 +227,8 @@ data class RecordingDetail(
     val showingSummary: Boolean = false,
     /** docs/08 "Ask": the question asked about it in this run of the app, and where it has got to. */
     val ask: AskState = AskState.None,
+    /** docs/08 "Organizing": its decisions, to-dos and questions as the core has them; null until read. */
+    val notes: RecordingNotes? = null,
     /**
      * The recording as its list row has it ([Recents.one]), null until it has been read: More → Delete's rule and
      * what the delete dialog asks with (2026-10-15), the same as the list's own Delete had.
@@ -584,6 +589,16 @@ class ShellModel(
         private set
 
     /**
+     * docs/08 "Organizing": a recording start waiting for the organizing consent question ([ChatGptViewModel.organizeConsent])
+     * — it starts whatever the answer ([answerOrganizeConsent]).
+     */
+    var organizeConsentStart: RecordingMode? by mutableStateOf(null)
+        private set
+
+    /** Whether a start asks that question first; a test, which has no ChatGPT sign-in, answers it itself. */
+    internal var asksOrganizeConsent: () -> Boolean = { chatGpt?.needsOrganizeConsent == true }
+
+    /**
      * The detection offer that is outstanding. An AWT balloon has no buttons (`TrayNotifier`), so
      * the tray carries the offer as a menu item for as long as it stands.
      */
@@ -786,7 +801,7 @@ class ShellModel(
         consentReminder = settings.consentReminder
         microphone = microphoneAccess(logger)
         micAccess = microphone.state()
-        chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.loopback, scope, logger).also { it.start() }
+        chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.core.notes, graph.loopback, scope, logger).also { it.start() }
 
         val command = helperCommand
         this.helperCommand = command
@@ -952,7 +967,7 @@ class ShellModel(
     fun start() {
         val mode = RecordingMode.MEETING
         // Nor while one is still coming up or being saved: the record control is off for both (STARTING, STOPPING).
-        if (recorder == null || titlePrompt != null || consentRequest != null || transition != null) return
+        if (recorder == null || titlePrompt != null || consentRequest != null || organizeConsentStart != null || transition != null) return
         // docs/03: the clean-up half of a disconnect walks the recording directory, so a capture
         // started inside it would be one its own delete pass is writing over. Say what is in the
         // way rather than starting something that is about to be taken away.
@@ -968,11 +983,34 @@ class ShellModel(
             micPrompt = true
             return
         }
+        // docs/08 "Organizing": signed in to ChatGPT and not agreed to organizing (signed in before it existed) — asked
+        // here, before the reminder, and the recording starts whatever the answer.
+        if (asksOrganizeConsent()) {
+            organizeConsentStart = mode
+            chatGpt?.askOrganizeConsent()
+            return
+        }
+        remindThenBegin(mode)
+    }
+
+    /** docs/12 M8: the consent reminder in front of a meeting recording while it is on; then the capture. */
+    private fun remindThenBegin(mode: RecordingMode) {
         if (mode.remindsConsent && consentReminder) {
             consentRequest = ConsentRequest(mode)
             return
         }
         begin(mode)
+    }
+
+    /**
+     * docs/08 "Organizing": the organizing consent question's answer — Continue (true), Sign out (false), or closed
+     * without either (null). A recording start that was waiting for it goes on, whatever the answer.
+     */
+    fun answerOrganizeConsent(agree: Boolean?) {
+        chatGpt?.answerOrganizeConsent(agree)
+        val mode = organizeConsentStart ?: return
+        organizeConsentStart = null
+        remindThenBegin(mode)
     }
 
     /**
@@ -1382,6 +1420,16 @@ class ShellModel(
         launch {
             graph.core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
         }
+        launch {
+            graph.core.notes.observe(recordingId).collect { notes ->
+                updateDetail(recordingId) {
+                    // The last note deleted with no summary to show: back to the transcript rather than a loader for ever,
+                    // as a summary that never ran goes back.
+                    val emptied = notes.isEmpty && it.notes?.isEmpty == false && it.summary == SummaryState.None
+                    it.copy(notes = notes, showingSummary = it.showingSummary && !emptied)
+                }
+            }
+        }
         graph.core.recordings.observeAudio(recordingId).collectLatest { record ->
             val local = record?.let { rec ->
                 RecordingPlaylist.select(rec.meta.parts, rec.dir) { graph.core.deps.fileSystem.exists(it) }
@@ -1420,7 +1468,13 @@ class ShellModel(
                 }
         }
         graph.core.jobs.observe()
-            .map { jobs -> jobs.filter { it.recordingId == recordingId && it.status !in SETTLED } }
+            .map { jobs ->
+                jobs.filter { job ->
+                    // docs/08 "Organizing": a job with only its notes left is in the way of nothing (StepReport.notesOnly).
+                    job.recordingId == recordingId && job.status !in SETTLED &&
+                        !runCatching { StepReport.notesOnly(job.workflow, graph.core.jobs.steps(job.id)) }.getOrDefault(false)
+                }
+            }
             .distinctUntilChanged()
             .collect { open ->
                 val again = open.firstOrNull { it.retranscription }
@@ -1719,6 +1773,23 @@ class ShellModel(
     fun showSummary(show: Boolean) {
         val recordingId = detail?.recordingId ?: return
         updateDetail(recordingId) { it.copy(showingSummary = show) }
+    }
+
+    /** docs/08 "Organizing": the transcript's lines around a note, for its row to open on; none when they cannot be read. */
+    suspend fun noteLines(recordingId: String, atSec: Double): List<NoteLine> {
+        val graph = graph ?: return emptyList()
+        return runCatching { graph.core.notes.linesAround(recordingId, atSec) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.lines.failed", error = it) }
+            .getOrDefault(emptyList())
+    }
+
+    /** A note's Delete: gone for good, without asking (docs/08 "Organizing"); the detail follows the core's notes. */
+    fun deleteNote(recordingId: String, itemId: String) {
+        val graph = graph ?: return
+        scope.launch {
+            runCatching { graph.core.notes.deleteItem(recordingId, itemId) }
+                .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.delete.failed", error = it) }
+        }
     }
 
     fun changePlaybackSpeed(speed: Float) {
@@ -2558,7 +2629,7 @@ class ShellModel(
          * so the capture opens inside [DisconnectGate.ifOpen] like every other start on this PC.
          */
         override fun canStart(): Boolean =
-            ready && !helperMissing && titlePrompt == null && consentRequest == null &&
+            ready && !helperMissing && titlePrompt == null && consentRequest == null && organizeConsentStart == null &&
                 // A microphone-only recording is not one [isRecording] reports, so this is what
                 // keeps the offer off a PC that is already recording (the Mac's `isIdle` guard).
                 !recording && !DisconnectGate.busy

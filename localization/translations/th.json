@@ -111,7 +111,6 @@
   "Expanded": "ขยายอยู่",
   "Export settings": "ส่งออกการตั้งค่า",
   "External API": "API ภายนอก",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง {0}\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน",
   "Failed": "ล้มเหลว",
   "Failed: {0}": "ล้มเหลว: {0}",
   "Fetching from Drive…": "กำลังดึงข้อมูลจาก Drive…",

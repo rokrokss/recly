@@ -124,7 +124,13 @@ object Recents {
         return item(record, job, steps, core.deps.clock.now(), core.localTranscription.isRunning(recordingId))
     }
 
-    /** Pure, so the mapping the menu shows can be pinned down without a database. */
+    /**
+     * Pure, so the mapping the menu shows can be pinned down without a database.
+     *
+     * docs/08 "Organizing": the notes are not the recording's processing. A job with only its `notes.organize` left
+     * ([StepReport.notesOnly]) — running, or waiting out a usage limit — reads as done, and what that step last said
+     * is not the row's to say.
+     */
     fun item(
         record: RecordingRecord,
         job: Job?,
@@ -132,31 +138,33 @@ object Recents {
         now: Instant = Instant.DISTANT_PAST,
         localRunning: Boolean = false,
     ): RecentItem {
+        val shown = job?.let { if (StepReport.notesOnly(it.workflow, steps)) it.copy(status = JobStatus.DONE) else it }
+        val organizing = job?.workflow?.steps.orEmpty().filterIsInstance<Step.OrganizeNotes>().map { it.id }.toSet()
         // docs/08 "Polling · status": while a provider is transcribing there is no "when" to give, only
         // how long it has been — and "waiting to retry" would be a different thing to say.
         val waiting = StepReport.waitingMinutes(steps, now)
-            ?.takeIf { job?.status == JobStatus.WAITING }
-        val local = job?.status in setOf(JobStatus.WAITING, JobStatus.RUNNING, JobStatus.PENDING) && StepReport.localPending(job?.workflow, steps)
+            ?.takeIf { shown?.status == JobStatus.WAITING }
+        val local = shown?.status in setOf(JobStatus.WAITING, JobStatus.RUNNING, JobStatus.PENDING) && StepReport.localPending(shown?.workflow, steps)
         // A snapshot this build cannot read is the whole reason the job stopped, and the steps it
         // left behind say nothing about it (docs/10 "job snapshot").
-        val lastError = job?.snapshotError ?: blockingError(steps)
+        val lastError = shown?.snapshotError ?: blockingError(steps.filterNot { it.stepId in organizing })
         return RecentItem(
             id = record.id,
-            jobId = job?.id,
-            jobStatus = job?.status,
+            jobId = shown?.id,
+            jobStatus = shown?.status,
             title = record.meta.title?.takeIf { it.isNotBlank() }?.let { UiMessage.Text(it) }
                 ?: Str.UNTITLED.message(),
             startedAt = record.meta.startedAt,
             durationSec = record.meta.durationSec,
             state = if (local) (if (localRunning) Str.PROCESSING_LOCAL_RUNNING else Str.PROCESSING_LOCAL_PENDING).message()
-                else waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, job, lastError),
+                else waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, shown, lastError),
             link = driveLink(steps) ?: record.driveFolderUrl,
             localFolderPath = record.localFolderPath,
             lastError = lastError,
             waitingMinutes = waiting,
             remote = record.remote,
             localPending = local,
-            modelLanguage = if (job?.status == JobStatus.NEEDS_MODEL) modelLanguage(job, steps) else null,
+            modelLanguage = if (shown?.status == JobStatus.NEEDS_MODEL) modelLanguage(shown, steps) else null,
         )
     }
 

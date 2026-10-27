@@ -111,7 +111,6 @@
   "Expanded": "Naka-expand",
   "Export settings": "I-export ang mga setting",
   "External API": "External na API",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Ipinapadala ng external na pag-transcribe ang buong recording sa {0}.\nKung gaano katagal nila ito itatago, at kung gagamitin nila ito sa training, ay nakasalalay sa sariling patakaran ng provider — hindi ito kontrolado ng Recly.\nBasahin ang patakaran ng provider bago ito gamitin.",
   "Failed": "Nabigo",
   "Failed: {0}": "Nabigo: {0}",
   "Fetching from Drive…": "Kinukuha mula sa Drive…",

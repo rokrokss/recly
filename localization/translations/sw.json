@@ -111,7 +111,6 @@
   "Expanded": "Imepanuliwa",
   "Export settings": "Hamisha mipangilio",
   "External API": "API ya nje",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Unukuzi wa nje hutuma rekodi nzima kwa {0}.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia.",
   "Failed": "Imeshindwa",
   "Failed: {0}": "Imeshindwa: {0}",
   "Fetching from Drive…": "Inaleta kutoka kwenye Drive…",

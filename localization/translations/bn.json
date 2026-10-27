@@ -111,7 +111,6 @@
   "Expanded": "প্রসারিত",
   "Export settings": "সেটিংস এক্সপোর্ট করুন",
   "External API": "বাহ্যিক API",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "বাহ্যিক ট্রান্সক্রিপশন পুরো রেকর্ডিং {0}-এর কাছে পাঠায়।\nতারা কতদিন এটি রাখবে এবং প্রশিক্ষণে ব্যবহার করবে কিনা, তা সেই প্রদানকারীর নিজস্ব নীতি; Recly এটি নিয়ন্ত্রণ করে না।\nব্যবহারের আগে প্রদানকারীর নীতি পড়ুন।",
   "Failed": "ব্যর্থ",
   "Failed: {0}": "ব্যর্থ: {0}",
   "Fetching from Drive…": "Drive থেকে আনা হচ্ছে…",
