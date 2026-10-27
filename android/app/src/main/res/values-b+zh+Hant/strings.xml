@@ -191,7 +191,7 @@
     <string name="alert_quota">供應商配額用盡，請檢查限額和帳單</string>
     <string name="alert_uploads_waiting">等待Drive：%1$d</string>
     <string name="alert_waiting">%1$d筆錄音正在等待。</string>
-    <string name="provider_disclosure_transcribe">外部轉錄會將完整錄音傳送給%1$s。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。</string>
+    <string name="provider_disclosure_transcribe">外部轉錄會將完整錄音傳送給%1$s。登入 ChatGPT 期間，錄音時也會逐段傳送，因此供應商會收到兩次。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。</string>
     <string name="settings_consent_reminder">同意提醒</string>
     <string name="settings_consent_reminder_note">僅在第一次錄音前詢問一次。</string>
     <string name="consent_question">您已告知參與者將進行錄音嗎？</string>

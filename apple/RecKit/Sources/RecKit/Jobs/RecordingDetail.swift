@@ -99,6 +99,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// What the last Fill in title or Fill in speaker names came to when it changed nothing, under the header for a
     /// few seconds.
     @Published public private(set) var fillNotice: FillNotice?
+    /// docs/08 "Organizing": the recording's decisions, to-dos and open questions as the core has them; nil until read.
+    @Published public private(set) var notes: RecordingNotes?
     /// docs/10 "Search": the page opens on the summary — a search hit whose only match is in it.
     public var opensOnSummary = false
 
@@ -651,8 +653,40 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// docs/09 "Summary view": `Summarize again` over a summary the user edited asks first.
     public var summaryEdited: Bool { Self.savedSummary(summary)?.editedAt != nil }
 
-    /// The Transcript | Summary chips stand while there is a summary, or one is on its way.
-    public var hasSummaryView: Bool { summarizing || !(summary is SummaryState.None) }
+    /// The Transcript | Summary chips stand while there is a summary, or one is on its way — or notes, which are
+    /// shown above it (docs/08 "Organizing").
+    public var hasSummaryView: Bool { summarizing || !(summary is SummaryState.None) || hasNotes }
+
+    // MARK: - Notes (docs/08 "Organizing")
+
+    /// There is something of the notes block to show: an overview or an item.
+    public var hasNotes: Bool { !NoteGroups.isEmpty(notes, showsOverview: true) }
+
+    public func followNotes() async {
+        for await next in core.notes.observe(recordingId: recordingId) {
+            guard !Task.isCancelled else { return }
+            notes = next
+        }
+    }
+
+    /// The transcript's lines around a note's moment, for the row opened under it; none when they cannot be read.
+    public func noteLines(atSec sec: Double) async -> [NoteLine] {
+        (try? await core.notes.linesAround(recordingId: recordingId, atSec: sec)) ?? []
+    }
+
+    /// A row's delete: gone for good, with no question — the change arrives through [followNotes].
+    public func deleteNote(_ item: NoteItem) {
+        let core = core
+        let recordingId = recordingId
+        let logger = logger
+        Task {
+            do {
+                _ = try await core.notes.deleteItem(recordingId: recordingId, itemId: item.id)
+            } catch {
+                logger.error("shell.notes.delete.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
 
     public func followSummary() async {
         for await state in core.summaries.observe(recordingId: recordingId) {
@@ -870,7 +904,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             // An upload finishing is a job settling, so the answer is asked again with every change.
             uploaded = (try? await core.uploaded(recordingId: recordingId))?.boolValue ?? uploaded
             let mine = all.filter { $0.recordingId == recordingId }
-            let running = mine.filter { !Self.settled.contains($0.status) }
+            // docs/08 "Organizing": a job with only its notes left writes no transcript, and is in nobody's way.
+            var running: [ReclyCore.Job] = []
+            for job in mine where !Self.settled.contains(job.status) {
+                let steps = (try? await core.jobs.steps(jobId: job.id)) ?? []
+                if !StepReport.shared.notesOnly(workflow: job.workflow, steps: steps) { running.append(job) }
+            }
             transcriptionBusy = !running.isEmpty
             waitingForDrive = Self.waitsForDrive(mine)
             retranscribing = running.first { $0.retranscription }.map { job in
@@ -1485,6 +1524,7 @@ public struct RecordingDetailView: View {
         .task(id: ObjectIdentifier(model)) { await model.followSummaryPreferences() }
         .task(id: ObjectIdentifier(model)) { await model.followAsk() }
         .task(id: ObjectIdentifier(model)) { await model.followFills() }
+        .task(id: ObjectIdentifier(model)) { await model.followNotes() }
         .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
         // docs/09 "Editing and speakers": what a shell about to put another recording here has to ask about first.
         .onChange(of: unsavedEdits, initial: true) { _, edits in model.unsavedEdits = edits }

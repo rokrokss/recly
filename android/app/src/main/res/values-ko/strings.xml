@@ -221,7 +221,7 @@
     <string name="alert_waiting">녹음 %1$d건이 기다리는 중입니다.</string>
 
     <!-- docs/15 §3 -->
-    <string name="provider_disclosure_transcribe">외부 전사는 녹음 오디오 전체를 %1$s에 보냅니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요.</string>
+    <string name="provider_disclosure_transcribe">외부 전사는 녹음 오디오 전체를 %1$s에 보냅니다. ChatGPT에 로그인해 있으면 녹음하는 동안 파트도 하나씩 보내므로 업체는 같은 오디오를 두 번 받습니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요.</string>
 
     <!-- docs/12 M8 · ADR-011: the wording is the Mac's, word for word (ConsentTextTest). -->
     <string name="settings_consent_reminder">동의 리마인더</string>

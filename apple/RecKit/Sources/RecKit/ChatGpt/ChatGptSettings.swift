@@ -44,6 +44,12 @@ public final class ChatGptSettingsModel: ObservableObject {
     @Published public private(set) var failure: Failure?
     /// The first sign-in on this device, confirmed once (docs/09 "Summary view").
     @Published public var welcome = false
+    /// docs/08 "Organizing": the consent question after a sign-in, while the core says it is unanswered. Asked before
+    /// the welcome.
+    @Published public var organizeConsent = false
+    /// docs/08 "Organizing": signed in and not agreed (`notes.observeNeedsConsent()`) — a start from the app's own
+    /// screen asks first.
+    @Published public private(set) var needsOrganizeConsent = false
     /// docs/08 "Summaries": this device's summary format, My format, About you and how the title sheet's two ChatGPT
     /// boxes were left ("Titles and speaker names"), as saved — shown and editable signed in or out.
     @Published public private(set) var preferences = SummaryPreferences(
@@ -69,6 +75,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     private var observer: Task<Void, Never>?
     private var preferencesObserver: Task<Void, Never>?
     private var consentObserver: Task<Void, Never>?
+    private var organizeObserver: Task<Void, Never>?
     private let logger = Logger(subsystem: CoreBridge.appName, category: "chatgpt")
 
     public convenience init(core: ReclyCore_) {
@@ -102,12 +109,18 @@ public final class ChatGptSettingsModel: ObservableObject {
                 self?.adopt(preferences)
             }
         }
+        organizeObserver = Task { [weak self] in
+            for await needs in core.notes.observeNeedsConsent() {
+                self?.needsOrganizeConsent = needs.boolValue
+            }
+        }
     }
 
     deinit {
         observer?.cancel()
         preferencesObserver?.cancel()
         consentObserver?.cancel()
+        organizeObserver?.cancel()
     }
 
     /// docs/15 "China mainland App Store": the whole section goes where ChatGPT is not offered.
@@ -150,6 +163,27 @@ public final class ChatGptSettingsModel: ObservableObject {
                 logger.error("shell.chatgpt.signout.failed error=\(String(describing: error), privacy: .private)")
             }
         }
+    }
+
+    /// docs/08 "Organizing": the consent sheet's answer — after a sign-in, or at a start. Continue agrees and, on the
+    /// iPhone, allows the plan as a destination in the same action; Sign out is the section's own sign-out. Signed out,
+    /// there is no welcome to show either.
+    public func answerOrganizeConsent(_ answer: OrganizeConsent.Answer) async {
+        organizeConsent = false
+        if answer == .signOut { welcome = false }
+        let core = core
+        // Only where the core asks for the permission at all: it refuses a grant anywhere else.
+        var allowDestination: (() async throws -> Void)?
+        if core.transferConsents.enabled {
+            allowDestination = { try await core.transferConsents.grant(targets: [TransferTargets.shared.chatGptSummary()]) }
+        }
+        let agreed = await OrganizeConsent.apply(
+            answer,
+            consent: { try await core.notes.consent() },
+            allowDestination: allowDestination,
+            signOut: { signOut() }
+        )
+        if !agreed { logger.error("shell.chatgpt.organize.consent.failed") }
     }
 
     public func selectModel(_ id: String) {
@@ -333,6 +367,9 @@ public final class ChatGptSettingsModel: ObservableObject {
             }
             switch onEnum(of: try await core.chatGpt.finishSignIn(callbackUrl: callback)) {
             case .done(let done):
+                // docs/08 "Organizing": the sign-in shows the consent — unless it was given before and not withdrawn
+                // since (a sign-in OpenAI ended keeps it). A store that cannot be read asks.
+                organizeConsent = (try? await core.notes.needsConsent())?.boolValue ?? true
                 welcome = done.welcome
                 signInState = .done
             case .failed(let failed):

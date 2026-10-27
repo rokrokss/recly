@@ -191,7 +191,7 @@
     <string name="alert_quota">Anbieterkontingent erschöpft. Limits und Abrechnung prüfen</string>
     <string name="alert_uploads_waiting">Wartet auf Drive: %1$d</string>
     <string name="alert_waiting">Wartende Aufnahmen: %1$d.</string>
-    <string name="provider_disclosure_transcribe">Die externe Transkription sendet die gesamte Aufnahme an %1$s.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
+    <string name="provider_disclosure_transcribe">Die externe Transkription sendet die gesamte Aufnahme an %1$s. Solange du bei ChatGPT angemeldet bist, wird jeder Teil zusätzlich schon während der Aufnahme gesendet, sodass der Anbieter sie zweimal erhält.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
     <string name="settings_consent_reminder">Einwilligungserinnerung</string>
     <string name="settings_consent_reminder_note">Wird einmal vor der ersten Aufnahme gefragt.</string>
     <string name="consent_question">Haben Sie die Teilnehmenden über die Aufnahme informiert?</string>

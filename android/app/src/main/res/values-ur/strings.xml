@@ -191,7 +191,7 @@
     <string name="alert_quota">فراہم کنندہ کا کوٹا ختم ہو گیا ہے — اس کی حدود اور بلنگ چیک کریں</string>
     <string name="alert_uploads_waiting">Drive کا انتظار: %1$d</string>
     <string name="alert_waiting">منتظر ریکارڈنگز: %1$d</string>
-    <string name="provider_disclosure_transcribe">بیرونی ٹرانسکرپشن پوری ریکارڈنگ %1$s کو بھیجتا ہے۔\nوہ اسے کتنی دیر رکھتے ہیں اور کیا اسے تربیت کے لیے استعمال کرتے ہیں، یہ اس فراہم کنندہ کی اپنی پالیسی ہے — Recly اسے کنٹرول نہیں کرتا۔\nاستعمال سے پہلے فراہم کنندہ کی پالیسی پڑھیں۔</string>
+    <string name="provider_disclosure_transcribe">بیرونی ٹرانسکرپشن پوری ریکارڈنگ %1$s کو بھیجتا ہے۔ جب تک آپ ChatGPT میں سائن اِن ہیں، ریکارڈ کرتے وقت ہر حصہ بھی بھیجا جاتا ہے، اس لیے فراہم کنندہ کو یہ دو بار ملتی ہے۔\nوہ اسے کتنی دیر رکھتے ہیں اور کیا اسے تربیت کے لیے استعمال کرتے ہیں، یہ اس فراہم کنندہ کی اپنی پالیسی ہے — Recly اسے کنٹرول نہیں کرتا۔\nاستعمال سے پہلے فراہم کنندہ کی پالیسی پڑھیں۔</string>
     <string name="settings_consent_reminder">رضامندی کی یاد دہانی</string>
     <string name="settings_consent_reminder_note">پہلی ریکارڈنگ سے پہلے ایک بار پوچھا جاتا ہے۔</string>
     <string name="consent_question">کیا آپ نے شرکاء کو ریکارڈنگ کے بارے میں بتایا؟</string>

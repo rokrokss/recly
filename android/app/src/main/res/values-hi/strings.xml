@@ -191,7 +191,7 @@
     <string name="alert_quota">प्रदाता का कोटा खत्म है। सीमा और बिलिंग जाँचें</string>
     <string name="alert_uploads_waiting">Drive की प्रतीक्षा: %1$d</string>
     <string name="alert_waiting">प्रतीक्षारत रिकॉर्डिंग: %1$d।</string>
-    <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग %1$s को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
+    <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग %1$s को भेजता है। जब तक आप ChatGPT में साइन इन हैं, रिकॉर्ड करते समय हर हिस्सा भी भेजा जाता है, इसलिए प्रदाता को यह दो बार मिलती है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
     <string name="settings_consent_reminder">सहमति की याद दिलाएँ</string>
     <string name="settings_consent_reminder_note">पहली रिकॉर्डिंग से पहले एक बार पूछा जाता है।</string>
     <string name="consent_question">क्या आपने प्रतिभागियों को रिकॉर्डिंग के बारे में बताया है?</string>

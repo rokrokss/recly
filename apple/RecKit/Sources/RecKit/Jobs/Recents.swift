@@ -260,14 +260,17 @@ public enum Recents {
                 .max { $0.createdAt.toEpochMilliseconds() < $1.createdAt.toEpochMilliseconds() }
             var steps: [StepRun] = []
             if let job { steps = (try? await core.jobs.steps(jobId: job.id)) ?? [] }
+            // docs/08 "Organizing": a job with only its notes left reads as done — the recording is uploaded and
+            // transcribed, and the notes' waits (a usage limit, a sign-in) are not the recording's.
+            let notesOnly = job.map { StepReport.shared.notesOnly(workflow: $0.workflow, steps: steps) } ?? false
             // docs/08 "Polling · status": while a provider is transcribing there is no "when" to give,
             // only how long it has been — and "Retry pending" would be a different thing to say.
-            let waiting = job?.status == .waiting
+            let waiting = job?.status == .waiting && !notesOnly
                 ? StepReport.shared.waitingMinutes(steps: steps, now: now)?.intValue
                 : nil
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
             // it left behind say nothing about it (docs/10 "job snapshot").
-            let error = job?.snapshotError ?? lastError(steps)
+            let error = notesOnly ? nil : job?.snapshotError ?? lastError(steps)
             let localPending = (job?.status == .waiting || job?.status == .running || job?.status == .pending)
                 && StepReport.shared.localPending(workflow: job?.workflow, steps: steps)
             let localRunning = localPending ? (try await core.localTranscription.isRunning(recordingId: record.id)).boolValue : false
@@ -279,18 +282,18 @@ public enum Recents {
                     startedAt: record.meta.startedAt,
                     state: localPending
                         ? localState(running: localRunning, core: core)
-                        : stateLabel(record: record, job: job, lastError: error),
+                        : stateLabel(record: record, job: job, lastError: error, notesOnly: notesOnly),
                     link: driveLink(steps) ?? record.driveFolderUrl.flatMap(URL.init(string:)),
                     storage: record.storage,
                     cloudFolder: await cloudFolder(record: record, core: core),
                     lastError: error,
                     waitingMinutes: waiting,
-                    nextRunAt: job?.nextRunAt.map {
+                    nextRunAt: notesOnly ? nil : job?.nextRunAt.map {
                         Date(timeIntervalSince1970: Double($0.toEpochMilliseconds()) / 1000)
                     },
                     durationSec: record.meta.durationSec?.doubleValue,
                     remote: record.remote,
-                    alert: job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) },
+                    alert: notesOnly ? nil : job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) },
                     localLanguage: job.flatMap { $0.status == .needsModel ? localLanguage(job: $0, steps: steps) : nil },
                     preview: previews[record.id],
                     filling: filling.contains(record.id)
@@ -334,7 +337,9 @@ public enum Recents {
         #endif
     }
 
-    static func stateLabel(record: RecordingRecord, job: ReclyCore.Job?, lastError: String? = nil) -> String {
+    /// - Parameter notesOnly: all that is left of [job] is its notes (`StepReport.notesOnly`, docs/08 "Organizing"):
+    ///   the row reads as done.
+    static func stateLabel(record: RecordingRecord, job: ReclyCore.Job?, lastError: String? = nil, notesOnly: Bool = false) -> String {
         // docs/03 "Watch → phone transfer contract": the placeholder row this phone opened for a transfer that is
         // still arriving. It carries the recording's own `RECORDING` status, so it has to be asked
         // about before that — otherwise the row reads as this phone recording, which it is not.
@@ -359,7 +364,7 @@ public enum Recents {
                 : "Done"
         }
         // A finalized recording stays done when disconnect clears its local job history.
-        guard let job else { return "Done" }
+        guard let job, !notesOnly else { return "Done" }
         // docs/03 "Storage location": an iCloud upload waits on the system, not on a retry timer — while it
         // uploads, and while iCloud cannot be used from here. A local folder that cannot be reached
         // waits the same way, for the user to pick it again.

@@ -50,9 +50,9 @@ struct RecordingView: View {
             // and collapses, so the order is kept and the node is the end of the scroll.
             GeometryReader { geometry in
                 if dynamicTypeSize.isAccessibilitySize || geometry.size.height < 520 {
-                    ScrollView { dashboard }
+                    ScrollView { dashboard(inScroll: true) }
                 } else {
-                    dashboard
+                    dashboard(inScroll: false)
                 }
             }
             // docs/12 M8 · ADR-011: once, before the first recording. The wording is the Mac's, word
@@ -66,9 +66,16 @@ struct RecordingView: View {
                     model.consentAnswered(confirmed: confirmed, suppress: suppress)
                 }
             }
+            // docs/08 "Organizing": asked once, before a start from this screen, of someone signed in to ChatGPT who
+            // never answered it. In the screen for the same reason as the reminder above.
+            .blueprintDialogOverlay(isPresented: $model.organizeConsentPrompt) {
+                OrganizeConsentDialog { model.organizeConsentAnswered($0) }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dotGridBackground()
+        // docs/08 "Organizing": the notes of the recording being made, followed while it is.
+        .task(id: model.recordingId) { await model.followLiveNotes() }
         // docs/03: the title is asked for after the recording has ended, and the job is queued once
         // the answer — or the refusal — is in. A sheet rather than an alert, because the same
         // prompt also asks how many people were in the room and an alert holds no picker.
@@ -85,8 +92,9 @@ struct RecordingView: View {
     }
 
     /// Everything under the header: the three nodes, the timer, and the record control with the
-    /// status line and the permission recovery under it.
-    private var dashboard: some View {
+    /// status line and the permission recovery under it. [inScroll]: the whole of it scrolls (large text, a short
+    /// screen), so the notes do not scroll on their own.
+    private func dashboard(inScroll: Bool) -> some View {
         VStack(spacing: 0) {
             nodes.padding(.horizontal, Space.m)
 
@@ -101,6 +109,11 @@ struct RecordingView: View {
                     LiveWaveformView(peaks: model.livePeaks)
                         .padding(.horizontal, Space.m)
                         .accessibilityIdentifier("live-waveform")
+                }
+                // docs/08 "Organizing": beneath the waveform, the decisions, to-dos and questions of the recording
+                // being made, as each part brings them — nothing while there are none.
+                if model.isRecording, !NoteGroups.isEmpty(model.liveNotes, showsOverview: false) {
+                    liveNotes(inScroll: inScroll)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -148,6 +161,29 @@ struct RecordingView: View {
                 }
             }
             .padding(.bottom, Space.l)
+        }
+    }
+
+    /// The notes block as the recording screen has it: no overview, and the time a plain label — there is no playback
+    /// while recording. A swipe deletes a row.
+    @ViewBuilder
+    private func liveNotes(inScroll: Bool) -> some View {
+        let block = NotesBlock(
+            notes: model.liveNotes,
+            showsOverview: false,
+            stamp: { LedgerFormat.stamp(Int($0), total: nil) },
+            playable: false,
+            seekableSec: 0,
+            onSeek: nil,
+            lines: model.liveNoteLines(atSec:),
+            delete: model.deleteLiveNote
+        )
+        .padding(.horizontal, Space.m)
+        if inScroll {
+            block
+        } else {
+            ScrollView { block }
+                .scrollBounceBehavior(.basedOnSize)
         }
     }
 

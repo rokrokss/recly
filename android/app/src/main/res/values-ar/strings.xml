@@ -191,7 +191,7 @@
     <string name="alert_quota">نفدت حصة المزوّد. تحقق من الحدود والفوترة</string>
     <string name="alert_uploads_waiting">في انتظار Drive: %1$d</string>
     <string name="alert_waiting">التسجيلات المنتظرة: %1$d.</string>
-    <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى %1$s.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
+    <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى %1$s. وما دمت مسجّلًا الدخول إلى ChatGPT، يُرسل كل جزء أيضًا أثناء التسجيل، فيتلقى المزوّد التسجيل مرتين.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
     <string name="settings_consent_reminder">تذكير بالموافقة</string>
     <string name="settings_consent_reminder_note">يُطرح السؤال مرة واحدة قبل أول تسجيل.</string>
     <string name="consent_question">هل أخبرت المشاركين بالتسجيل؟</string>

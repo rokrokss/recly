@@ -567,5 +567,11 @@
   "Filling in speaker names…": "Konuşmacı adları dolduruluyor…",
   "Filling in": "Dolduruluyor",
   "Could not fill in the title": "Başlık doldurulamadı",
-  "Could not fill in speaker names": "Konuşmacı adları doldurulamadı"
+  "Could not fill in speaker names": "Konuşmacı adları doldurulamadı",
+  "Decisions": "Kararlar",
+  "To-dos": "Yapılacaklar",
+  "Questions": "Sorular",
+  "Recly organizes while you record": "Recly siz kaydederken düzenler",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "ChatGPT'de oturumunuz açık olduğu sürece Recly, her kaydın döküm metnini kayıt sırasında ve durdurduktan sonra ChatGPT planınıza gönderir ve kararları, yapılacakları ve soruları listeler. Ses asla gönderilmez. Bu, planınızın kullanımına sayılır.",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Harici transkripsiyon, kaydın tamamını {0} sağlayıcısına gönderir. ChatGPT'de oturumunuz açık olduğu sürece her bölüm kayıt sırasında da gönderilir, bu nedenle sağlayıcı kaydı iki kez alır.\nKaydın ne kadar süre saklanacağı ve model eğitiminde kullanılıp kullanılmayacağı o sağlayıcının kendi politikasına bağlıdır — Recly bunu denetlemez.\nKullanmadan önce sağlayıcının politikasını okuyun."
 }

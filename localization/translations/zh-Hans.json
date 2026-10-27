@@ -567,5 +567,11 @@
   "Filling in speaker names…": "正在填写说话人名称…",
   "Filling in": "正在填写",
   "Could not fill in the title": "无法填写标题",
-  "Could not fill in speaker names": "无法填写说话人名称"
+  "Could not fill in speaker names": "无法填写说话人名称",
+  "Decisions": "决定",
+  "To-dos": "待办事项",
+  "Questions": "问题",
+  "Recly organizes while you record": "Recly 边录音边整理",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "登录 ChatGPT 期间，Recly 会在录音时和停止录音后把每段录音的转写文本发送到你的 ChatGPT 套餐，并列出其中的决定、待办事项和问题。绝不发送音频。这会计入你的套餐用量。",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部转录会将完整录音发送给{0}。登录 ChatGPT 期间，录音时也会逐段发送，因此提供商会收到两次。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。"
 }

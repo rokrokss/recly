@@ -191,7 +191,7 @@
     <string name="alert_quota">Quota du fournisseur épuisé. Vérifiez les limites et la facturation</string>
     <string name="alert_uploads_waiting">En attente de Drive : %1$d</string>
     <string name="alert_waiting">Enregistrements en attente : %1$d.</string>
-    <string name="provider_disclosure_transcribe">La transcription externe envoie l’enregistrement complet à %1$s.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.</string>
+    <string name="provider_disclosure_transcribe">La transcription externe envoie l’enregistrement complet à %1$s. Tant que vous êtes connecté à ChatGPT, chaque partie est aussi envoyée pendant l’enregistrement : le fournisseur le reçoit donc deux fois.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.</string>
     <string name="settings_consent_reminder">Rappel de consentement</string>
     <string name="settings_consent_reminder_note">Demandé une seule fois, avant le premier enregistrement.</string>
     <string name="consent_question">Avez-vous prévenu les participants de l’enregistrement ?</string>
