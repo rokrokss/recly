@@ -94,6 +94,7 @@ helper leaves real audio files behind, while those tests expect the directory to
 |---|---|
 | `--fake-source sine` | A synthetic sine wave instead of WASAPI. The default on non-Windows builds |
 | `--segment-sec 1.5` | Overrides the `segmentSec` of `start` (fractions allowed) |
+| `--linger-sec 1` | Overrides how long the watchdog's notice is kept before the helper exits (12 hours) |
 | `--parts N` | End capture after N parts. A segment left open is not reported |
 | `--die` | After `--parts`, exit 9 without waiting for `stop` — the app's helper-death path |
 | `--noise` / `--hang` | Print non-protocol lines / do not answer `stop` |

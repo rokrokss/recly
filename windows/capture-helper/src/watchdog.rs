@@ -49,19 +49,20 @@ pub fn wide<const N: usize>(text: &str) -> [u16; N] {
     out
 }
 
-/// Raises [notice] and waits for it to be dismissed (Windows). On the development host there is no tray
-/// to raise it in, and the stderr line the caller wrote is all there is.
-pub fn raise(notice: &Notice) {
+/// Raises [notice] and waits for it to be dismissed, or for [linger] — [`LINGER`] outside tests — to pass
+/// (Windows). On the development host there is no tray to raise it in, and the stderr line the caller
+/// wrote is all there is.
+pub fn raise(notice: &Notice, linger: Duration) {
     #[cfg(windows)]
     {
-        if let Err(error) = tray::show(notice, LINGER) {
+        if let Err(error) = tray::show(notice, linger) {
             use std::io::Write;
             let _ = writeln!(std::io::stderr(), "recly-capture-helper: rec.watchdog.unshown {error}");
         }
     }
     #[cfg(not(windows))]
     {
-        let _ = notice;
+        let _ = (notice, linger);
     }
 }
 

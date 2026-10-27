@@ -12,17 +12,24 @@ const FIRED: &str = "rec.watchdog.fired";
 /// A helper recording into a directory of its own, past its first `level` line — so a recording is running.
 fn recording() -> (Child, BufReader<ChildStdout>) {
     let dir = scratch();
+    // On Windows the balloon is real, and kept a second rather than twelve hours.
     let mut child = Command::new(env!("CARGO_BIN_EXE_recly-capture-helper"))
-        .args(["--fake-source", "sine", "--encoder", "pcm", "--segment-sec", "1"])
+        .args(["--fake-source", "sine", "--encoder", "pcm", "--segment-sec", "1", "--linger-sec", "1"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
         .expect("spawn the helper");
-    let start = format!(
-        r#"{{"command":"start","dir":"{}","base":"watchdog","segmentSec":900,"tracks":["mic","sys","mix"],"watchdog":{{"title":"Recording may have stopped","body":"Open Recly to check."}}}}"#,
-        dir.display()
-    );
+    // Serialised, not formatted: a Windows path's backslashes are escapes in JSON, and a `start` that does
+    // not parse never starts the recording this waits for.
+    let start = serde_json::json!({
+        "command": "start",
+        "dir": dir,
+        "base": "watchdog",
+        "segmentSec": 900,
+        "tracks": ["mic", "sys", "mix"],
+        "watchdog": {"title": "Recording may have stopped", "body": "Open Recly to check."},
+    });
     let stdin = child.stdin.as_mut().expect("stdin");
     writeln!(stdin, "{start}").expect("send start");
     stdin.flush().expect("flush");

@@ -88,6 +88,9 @@ struct Options {
     /// Overrides the `segmentSec` of the `start` command, and takes a fraction of a second — a test
     /// cannot wait fifteen minutes for a boundary.
     segment_sec: Option<f64>,
+    /// Overrides how long the watchdog's notice is kept ([`watchdog::LINGER`]), in seconds — a test
+    /// cannot wait twelve hours for the helper to exit.
+    linger_sec: Option<f64>,
     /// Stop capturing after this many parts, leaving the segment that was open unannounced.
     parts: Option<u32>,
     /// Exit without answering the `stop`, which is the helper-death path from the app's side.
@@ -110,6 +113,7 @@ impl Options {
             version: false,
             network_cost: false,
             segment_sec: None,
+            linger_sec: None,
             parts: None,
             die: false,
             noise: false,
@@ -147,6 +151,13 @@ impl Options {
                             .map_err(|_| "--segment-sec needs a number".to_string())?,
                     )
                 }
+                "--linger-sec" => {
+                    options.linger_sec = Some(
+                        value()?
+                            .parse()
+                            .map_err(|_| "--linger-sec needs a number".to_string())?,
+                    )
+                }
                 "--parts" => {
                     options.parts = Some(
                         value()?
@@ -172,6 +183,9 @@ fn run(options: Options) -> i32 {
     let mut session: Option<Session> = None;
     // docs/01 "Long recordings — watchdog": what to say if the app dies under this recording.
     let mut notice: Option<Notice> = None;
+    let linger = options
+        .linger_sec
+        .map_or(watchdog::LINGER, Duration::from_secs_f64);
 
     loop {
         // Commands first: a `stop` that arrived while the last buffer was being written is the end
@@ -217,7 +231,7 @@ fn run(options: Options) -> i32 {
                 Ok(None) => {}
                 Err(TryRecvError::Empty) => break,
                 // The app closed stdin, which is `HelperClient.close` — or it died, which closes it too.
-                Err(TryRecvError::Disconnected) => return ended(session, notice),
+                Err(TryRecvError::Disconnected) => return ended(session, notice, linger),
             }
         }
 
@@ -240,7 +254,7 @@ fn run(options: Options) -> i32 {
                 }
                 // Nobody is reading what this recording reports: the app is gone.
                 if OUTPUT_CLOSED.load(Ordering::SeqCst) {
-                    return ended(session, notice);
+                    return ended(session, notice, linger);
                 }
                 // A `--parts` limit was reached. `--die` is the app's helper-death path.
                 if !more && options.die {
@@ -267,7 +281,7 @@ fn finish(session: Option<Session>) -> i32 {
 /// segment is closed either way — announced if the app still reads, filed by its next launch's recovery
 /// if not — and if the app is gone rather than merely done with this helper, the watchdog's notice goes
 /// up (docs/01 "Long recordings — watchdog").
-fn ended(session: Option<Session>, notice: Option<Notice>) -> i32 {
+fn ended(session: Option<Session>, notice: Option<Notice>, linger: Duration) -> i32 {
     let recording = session.is_some();
     let code = finish(session);
     // A blank line, which the app's reader skips while it reads — and which cannot be written once its
@@ -276,7 +290,7 @@ fn ended(session: Option<Session>, notice: Option<Notice>) -> i32 {
     if watchdog::app_gone(recording, OUTPUT_CLOSED.load(Ordering::SeqCst)) {
         log!("recly-capture-helper: rec.watchdog.fired notice={}", notice.is_some());
         if let Some(notice) = notice {
-            watchdog::raise(&notice);
+            watchdog::raise(&notice, linger);
         }
     }
     code
