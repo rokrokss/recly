@@ -4,10 +4,11 @@ import recly.core.model.Track
 
 /**
  * The Data Layer channel paths of docs/11 A8, as a grammar rather than string surgery at the call
- * site. Two shapes and nothing else:
+ * site. Three shapes and nothing else:
  *
  * ```
  * /rec/part/{recordingId}/{part}/{track}/{sha256}/{file}
+ * /rec/progress/{recordingId}
  * /rec/meta/{recordingId}
  * ```
  *
@@ -45,6 +46,14 @@ sealed interface TransferPath {
             "$PART_PREFIX$recordingId/$part/${track.wire}/$sha256/$file"
     }
 
+    /**
+     * docs/03 "Watch → phone transfer contract": the recording's `meta.json` while it is still recording, sent
+     * ahead of each part. Never acked, and it finalizes nothing — [Meta] does.
+     */
+    data class Progress(override val recordingId: String) : TransferPath {
+        override fun serialize(): String = "$PROGRESS_PREFIX$recordingId"
+    }
+
     data class Meta(override val recordingId: String) : TransferPath {
         override fun serialize(): String = "$META_PREFIX$recordingId"
     }
@@ -53,11 +62,13 @@ sealed interface TransferPath {
         /** Everything this app listens for lives under here — also the manifest's path prefix. */
         const val ROOT: String = "/rec/"
         const val PART_PREFIX: String = "/rec/part/"
+        const val PROGRESS_PREFIX: String = "/rec/progress/"
         const val META_PREFIX: String = "/rec/meta/"
 
-        /** Null for anything that is not exactly one of the two shapes. */
+        /** Null for anything that is not exactly one of the three shapes. */
         fun parse(path: String): TransferPath? = when {
             path.startsWith(PART_PREFIX) -> parsePart(path.removePrefix(PART_PREFIX))
+            path.startsWith(PROGRESS_PREFIX) -> path.removePrefix(PROGRESS_PREFIX).takeIf(::isId)?.let(::Progress)
             path.startsWith(META_PREFIX) -> parseMeta(path.removePrefix(META_PREFIX))
             else -> null
         }

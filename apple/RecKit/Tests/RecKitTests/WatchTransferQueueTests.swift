@@ -338,7 +338,105 @@ final class WatchTransferQueueTests: XCTestCase {
         XCTAssertEqual(entries, [])
     }
 
+    // MARK: - While recording (docs/03: each part as soon as it is filed)
+
+    /// A recording still being made hands each new part over with its in-progress meta ahead of it — the
+    /// phone files the part knowing where it sits — and never the final meta, which waits for the stop.
+    func testWhileRecordingEachPartGoesBehindTheInProgressMetaAndTheFinalMetaWaits() async throws {
+        let queue = try await makeQueue(parts: 1, recording: true)
+
+        await queue.pump()
+
+        XCTAssertEqual(link.sentKeys, ["\(recordingId)/progress/1", "\(recordingId)/1/mono"])
+        XCTAssertEqual(link.calls.last, "wake", "the phone app is woken for them, as for a finished recording")
+        XCTAssertEqual(
+            link.sent.first?.url.lastPathComponent, "\(base).meta.json",
+            "the in-progress meta is the recording's own meta.json as it stands"
+        )
+    }
+
+    /// The next boundary: a fresher in-progress meta and only the new part. A part ack is recorded, and
+    /// nothing is deleted until the final meta is acked.
+    func testTheNextPartGoesOnItsOwnAndNothingIsDeletedBeforeTheFinalMeta() async throws {
+        let queue = try await makeQueue(parts: 1, recording: true)
+        await queue.pump()
+        await queue.receive(partAck(1))
+        link.clear()
+
+        try await file(part: 2)
+        await queue.add(recordingId: recordingId, directory: recordingDirectory, metaFile: "\(base).meta.json", parts: parts(1 ... 2), recording: true)
+        await queue.pump()
+
+        XCTAssertEqual(link.sentKeys, ["\(recordingId)/progress/2", "\(recordingId)/2/mono"])
+        await queue.receive(partAck(2))
+        XCTAssertEqual(recordings.deleted, [])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: partURL(1).path))
+
+        // Stopped: the last part, then the final meta; its ok is what deletes the recording.
+        link.clear()
+        try await file(part: 3)
+        await queue.add(recordingId: recordingId, directory: recordingDirectory, metaFile: "\(base).meta.json", parts: parts(1 ... 3))
+        await queue.pump()
+        XCTAssertEqual(link.sentKeys, ["\(recordingId)/3/mono", "\(recordingId)/meta"])
+        let entries = await queue.entries
+        XCTAssertEqual(entries.first?.ackedParts, 2, "the parts acked while recording stay acked")
+        XCTAssertEqual(recordings.deleted, [])
+
+        await queue.receive(.meta(recordingId: recordingId, ok: true, reason: nil, missing: []))
+        XCTAssertEqual(recordings.deleted, [recordingId])
+    }
+
+    /// Nothing new filed: no transfer and no wake — the phone has every part there is, and the final meta
+    /// is not due. The app becoming active in the middle of a recording costs the phone nothing.
+    func testARecordingWhosePartsAreAllAckedOwesThePhoneNothingYet() async throws {
+        let queue = try await makeQueue(parts: 1, recording: true)
+        await queue.pump()
+        await queue.receive(partAck(1))
+        link.clear()
+
+        await queue.pump()
+
+        XCTAssertEqual(link.sentKeys, [])
+        XCTAssertEqual(link.wakes, 0)
+    }
+
+    /// Two boundaries' calls can read the row out of order, and a stop can overtake a boundary's: a call
+    /// that still says recording only ever adds parts, and after the stop's it changes nothing.
+    func testALateCallFromABoundaryNeitherDropsAPartNorReopensAFinishedRecording() async throws {
+        let queue = try await makeQueue(parts: 2, recording: true)
+        await queue.add(recordingId: recordingId, directory: recordingDirectory, metaFile: "\(base).meta.json", parts: parts(1 ... 1), recording: true)
+        var entries = await queue.entries
+        XCTAssertEqual(entries.first?.parts, 2)
+
+        await queue.add(recordingId: recordingId, directory: recordingDirectory, metaFile: "\(base).meta.json", parts: parts(1 ... 2))
+        await queue.add(recordingId: recordingId, directory: recordingDirectory, metaFile: "\(base).meta.json", parts: parts(1 ... 1), recording: true)
+        entries = await queue.entries
+        XCTAssertEqual(entries.first?.parts, 2)
+        await queue.pump()
+        XCTAssertEqual(link.sentKeys.last, "\(recordingId)/meta", "finished: the final meta goes")
+    }
+
+    /// An in-progress meta the system is still carrying is not handed over twice; the one for a new part is
+    /// a transfer of its own.
+    func testAnInProgressMetaTheSystemIsStillCarryingIsNotHandedOverTwice() async throws {
+        let queue = try await makeQueue(parts: 1, recording: true)
+        link.outstandingTransfers = [TransferMetadata.progress(recordingId: recordingId, part: 1).dictionary]
+
+        await queue.pump()
+
+        XCTAssertEqual(link.sentKeys, ["\(recordingId)/1/mono"])
+    }
+
     // MARK: - Fixtures
+
+    private func parts(_ range: ClosedRange<Int>) -> [WatchTransferPart] {
+        range.map { WatchTransferPart(part: $0, track: Track.mono, file: fileName($0), sha256: sha256($0)) }
+    }
+
+    /// A boundary has written part [part] next to the others.
+    private func file(part: Int) async throws {
+        try Data("part \(part)".utf8).write(to: partURL(part))
+    }
 
     private var recordingDirectory: URL {
         directory.appendingPathComponent(base, isDirectory: true)
@@ -376,7 +474,7 @@ final class WatchTransferQueueTests: XCTestCase {
     }
 
     /// A recording on disk — parts and `meta.json` — and a queue that has been handed it.
-    private func makeQueue(parts: Int, file: URL? = nil) async throws -> WatchTransferQueue {
+    private func makeQueue(parts: Int, file: URL? = nil, recording: Bool = false) async throws -> WatchTransferQueue {
         try FileManager.default.createDirectory(at: recordingDirectory, withIntermediateDirectories: true)
         for part in 1 ... parts {
             try Data("part \(part)".utf8).write(to: partURL(part))
@@ -394,7 +492,8 @@ final class WatchTransferQueueTests: XCTestCase {
             metaFile: "\(base).meta.json",
             parts: (1 ... parts).map {
                 WatchTransferPart(part: $0, track: Track.mono, file: fileName($0), sha256: sha256($0))
-            }
+            },
+            recording: recording
         )
         return queue
     }

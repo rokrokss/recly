@@ -2,6 +2,7 @@
 
 package recly.core.transfer
 
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -56,6 +57,12 @@ sealed interface AcceptMetaResult {
  * the watch computed, and only declare the recording finalized once the meta agrees with what is
  * on disk.
  *
+ * A watch sends each part as soon as its boundary closes it, with an **in-progress meta** ahead of it
+ * ([acceptProgress]): the recording as it stands, still `recording`. That meta opens and updates the row
+ * and lists each part's place on the recording's axis, and every part that is both here and listed goes
+ * to the provisional pass of docs/08 "Organizing" ([partReceived]) — the phone organizes a watch recording
+ * while it is still being made, as it does its own. The final meta is still the only thing that files it.
+ *
  * The directory is named after the recordingId, not the docs/03 `{base}`: the base is derived from
  * the meta, and the meta is the last thing to arrive.
  */
@@ -66,6 +73,19 @@ class TransferReceiver(
 ) {
     private val queries get() = db.recQueries
     private val mutex = Mutex()
+
+    /**
+     * docs/08 "Organizing": a part of a watch recording still being made is here and its in-progress meta
+     * lists it — with that meta's offset and length. Must not block.
+     */
+    internal var partReceived: (recordingId: String, part: Part) -> Unit = { _, _ -> }
+
+    /**
+     * The first in-progress meta of a watch recording: what the phone pins its processing settings at
+     * (docs/05 "Fixed processing settings"), so the parts organized while recording and the job after the
+     * final meta run the same ones.
+     */
+    internal var recordingOpened: suspend (recordingId: String) -> Unit = {}
 
     /**
      * Verifies and files one part. [tmpPath] is wherever the platform transfer API dropped the
@@ -95,20 +115,25 @@ class TransferReceiver(
 
         val now = deps.clock.now()
         val existing = recordings.get(recordingId)
+        val opened = existing == null || pending(recordingId)
         val dir = existing?.dir ?: (deps.dataDir / RECORDINGS / recordingId)
         fs.createDirectories(dir)
         val name = tmpPath.name
         fs.atomicMove(tmpPath, dir / name)
 
         val bytes = fs.metadata(dir / name).size ?: 0L
+        // Where the in-progress meta put it on the recording's axis — or, for a part sent again, where the
+        // row already has the same bytes; nothing until one of them lists it.
+        val listed = if (opened) progress(recordingId)?.let { listed(it, part, track, actual) } else null
+        val known = listed ?: existing?.meta?.let { listed(it, part, track, actual) }
         val received = Part(
             part = part,
             track = track,
             file = name,
             bytes = bytes,
             sha256 = actual,
-            startOffsetSec = 0.0,
-            durationSec = 0.0,
+            startOffsetSec = known?.startOffsetSec ?: 0.0,
+            durationSec = known?.durationSec ?: 0.0,
         )
         val meta = existing?.meta ?: placeholder(recordingId, now)
         val parts = meta.parts.filterNot { it.part == part && it.track == track } + received
@@ -116,15 +141,69 @@ class TransferReceiver(
             meta.copy(parts = parts.sortedWith(compareBy({ it.part }, { it.track.ordinal }))),
             dir,
         )
-        // The 24 h orphan clock starts at the first part and is also what marks this row as one the
-        // receiver opened, so the purge can never touch a recording this device is making itself.
-        if (existing == null) queries.kvSet(pendingKey(recordingId), now.isoUtc())
+        // The 24 h orphan clock runs from the last part to arrive, and the key is also what marks this row
+        // as one the receiver opened, so the purge can never touch a recording this device is making itself
+        // — nor one whose meta has already filed it.
+        if (opened) queries.kvSet(pendingKey(recordingId), now.isoUtc())
         deps.logger.log(
             Logger.Level.INFO,
             "transfer.ack",
             mapOf("recordingId" to recordingId, "part" to part, "track" to track.name),
         )
+        if (listed != null) hook(recordingId) { partReceived(recordingId, received) }
         Ack(ok = true)
+    }
+
+    /**
+     * docs/03 "Watch → phone transfer contract": the recording as the watch has it while it is still recording —
+     * start, time zone, segment length, tracks, the highlights so far and every part filed so far — sent
+     * with each part. It is never acked and never finalizes anything: it opens the row the parts are filed
+     * into (or updates it), keeps it `recording` and the receiver's, and gives the parts that are here
+     * their offsets and lengths. A part that is here and newly listed goes to [partReceived].
+     *
+     * False — and nothing changed — for a body that does not read, names another recording or is not a
+     * watch's, and for a recording that is not a transfer in flight here: its final meta filed it already,
+     * or it is one this device made. A late in-progress meta must never re-open a recording behind its job.
+     */
+    suspend fun acceptProgress(recordingId: String, json: String): Boolean = locked {
+        val meta = try {
+            recJson.decodeFromString<RecordingMeta>(json)
+        } catch (e: SerializationException) {
+            null
+        }
+        if (meta == null || meta.recordingId != recordingId || meta.source != Source.WATCH) {
+            deps.logger.log(Logger.Level.WARN, "transfer.progress.rejected", mapOf("recordingId" to recordingId))
+            return@locked false
+        }
+        val existing = recordings.get(recordingId)
+        val opened = pending(recordingId)
+        if (existing != null && !opened) {
+            deps.logger.log(Logger.Level.INFO, "transfer.progress.ignored", mapOf("recordingId" to recordingId))
+            return@locked false
+        }
+        val previous = progress(recordingId)
+        val dir = existing?.dir ?: (deps.dataDir / RECORDINGS / recordingId)
+        deps.fileSystem.createDirectories(dir)
+        val parts = existing?.meta?.parts.orEmpty().map { received ->
+            listed(meta, received.part, received.track, received.sha256)
+                ?.let { received.copy(startOffsetSec = it.startOffsetSec, durationSec = it.durationSec) }
+                ?: received
+        }
+        // What is on disk here, not what the watch has: a part it lists that has not arrived is not one.
+        recordings.receive(meta.copy(parts = parts, status = RecordingStatus.RECORDING), dir)
+        queries.kvSet(progressKey(recordingId), recJson.encodeToString(meta))
+        if (!opened) queries.kvSet(pendingKey(recordingId), deps.clock.now().isoUtc())
+        deps.logger.log(
+            Logger.Level.INFO,
+            "transfer.progress",
+            mapOf("recordingId" to recordingId, "listed" to meta.parts.size, "received" to parts.size),
+        )
+        if (previous == null) hook(recordingId) { recordingOpened(recordingId) }
+        parts.filter { part ->
+            listed(meta, part.part, part.track, part.sha256) != null &&
+                previous?.let { listed(it, part.part, part.track, part.sha256) } == null
+        }.forEach { part -> hook(recordingId) { partReceived(recordingId, part) } }
+        true
     }
 
     /**
@@ -154,6 +233,7 @@ class TransferReceiver(
         recordings.receive(finalized, dir)
         MetaWriter.write(deps.fileSystem, dir, finalized)
         queries.kvDelete(pendingKey(meta.recordingId))
+        queries.kvDelete(progressKey(meta.recordingId))
         deps.logger.log(
             Logger.Level.INFO,
             "transfer.complete",
@@ -174,13 +254,11 @@ class TransferReceiver(
      * a watch is also the watch's own recording in progress — and the watches run the same recovery.
      * This is the receiver's own marker, so it is true only on the device a transfer is landing on.
      */
-    suspend fun receiving(recordingId: String): Boolean = locked {
-        queries.kvGet(pendingKey(recordingId)).executeAsOneOrNull() != null
-    }
+    suspend fun receiving(recordingId: String): Boolean = locked { pending(recordingId) }
 
     /**
-     * docs/03: parts without a meta after 24 hours are rubbish — the watch gave up, or was reset.
-     * Only rows this receiver opened and that never got their meta are candidates.
+     * docs/03: parts without a meta 24 hours after the last of them arrived are rubbish — the watch gave up,
+     * or was reset. Only rows this receiver opened and that never got their meta are candidates.
      */
     suspend fun purgeOrphans(now: Instant): List<String> = locked {
         val purged = mutableListOf<String>()
@@ -195,8 +273,32 @@ class TransferReceiver(
                 deps.logger.log(Logger.Level.INFO, "transfer.orphan", mapOf("recordingId" to recordingId))
             }
             queries.kvDelete(row.key)
+            queries.kvDelete(progressKey(recordingId))
         }
         purged
+    }
+
+    private fun pending(recordingId: String): Boolean =
+        queries.kvGet(pendingKey(recordingId)).executeAsOneOrNull() != null
+
+    /** The last in-progress meta of a transfer in flight, as the watch sent it. */
+    private fun progress(recordingId: String): RecordingMeta? =
+        queries.kvGet(progressKey(recordingId)).executeAsOneOrNull()
+            ?.let { runCatching { recJson.decodeFromString<RecordingMeta>(it) }.getOrNull() }
+
+    /** The entry [meta] has for this part — the same bytes, by their hash — or null. */
+    private fun listed(meta: RecordingMeta, part: Int, track: Track, sha256: String): Part? =
+        meta.parts.firstOrNull { it.part == part && it.track == track && it.sha256.equals(sha256, ignoreCase = true) }
+
+    /** What a transfer sets off here is never the transfer's failure: logged, and the part is filed all the same. */
+    private suspend fun hook(recordingId: String, body: suspend () -> Unit) {
+        try {
+            body()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            deps.logger.log(Logger.Level.WARN, "transfer.progress.hook.failed", mapOf("recordingId" to recordingId), e)
+        }
     }
 
     /**
@@ -238,6 +340,8 @@ class TransferReceiver(
 
     private fun pendingKey(recordingId: String): String = "$PENDING_PREFIX$recordingId"
 
+    private fun progressKey(recordingId: String): String = "$PROGRESS_PREFIX$recordingId"
+
     /** The repository takes its own lock; this one only orders whole transfer operations. */
     private suspend fun <T> locked(body: suspend () -> T): T =
         withContext(deps.io) { mutex.withLock { body() } }
@@ -245,6 +349,7 @@ class TransferReceiver(
     private companion object {
         const val RECORDINGS = "recordings"
         const val PENDING_PREFIX = "transfer.pending."
+        const val PROGRESS_PREFIX = "transfer.progress."
         const val SHA_MISMATCH = "SHA256_MISMATCH"
         val ORPHAN_AFTER = 24.hours
     }

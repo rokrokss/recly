@@ -129,7 +129,7 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
     fun observe(): Flow<ProcessingSettingsState> = queries.syncGet(KEY).asFlow().mapToOneOrNull(deps.io)
         .map(::decode).distinctUntilChanged()
 
-    /** Freeze preferences at capture start, or at verified watch receipt. Never replace a snapshot. */
+    /** Freeze preferences at capture start — a watch recording's first in-progress meta — or at verified watch receipt. Never replace a snapshot. */
     @Throws(Throwable::class)
     suspend fun capture(recordingId: String) {
         val document = initialize().document

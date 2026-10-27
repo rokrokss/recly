@@ -139,6 +139,17 @@ class RecWearApp : Application(), RecorderHost {
         TransferScheduler.runNow(this)
     }
 
+    /**
+     * docs/03 "Watch → phone transfer contract": each part goes to the phone as soon as its boundary closes it,
+     * so the phone organizes the recording while it is still being made. One pass per part, on the same
+     * queue and the same Data Layer as the finished recording: the row is the recording's own, and the
+     * sender sends what it has filed — with the in-progress meta ahead of it — and holds the final meta back.
+     */
+    override suspend fun onPartFiled(recordingId: String) {
+        queue.add(recordingId)
+        TransferScheduler.runNow(this)
+    }
+
     /** docs/11 W5: the two surfaces that cannot notice anything for themselves. */
     fun refreshEntryPoints() {
         runCatching { TileService.getUpdater(this).requestUpdate(RecTileService::class.java) }

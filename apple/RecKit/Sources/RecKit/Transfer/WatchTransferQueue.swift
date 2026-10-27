@@ -53,7 +53,10 @@ public struct WatchTransferPart: Equatable {
 
 /// docs/03 "Watch → phone transfer contract", the sending half on `WCSession`
 /// (docs/13 "Apple Watch" Transfer, M5-L4 deliverable 2): per recording, every part in
-/// `meta.parts` order, then `meta.json` last — in the same pass, right behind the parts.
+/// `meta.parts` order, then `meta.json` last — in the same pass, right behind the parts. A recording
+/// still being made goes part by part as its boundaries close them: each pass that hands a new part
+/// over puts the in-progress `meta.json` (`TransferMetadata.progress`, never acked) ahead of it, and no
+/// final meta — that one goes once the recording is finalized.
 /// **`ack-meta ok:true` is the only thing that deletes audio from this watch.** A part ack is
 /// recorded — it is what stops the part being sent again — but it does not license a delete: until
 /// the phone has filed the meta it has loose parts and a 24-hour purge timer, and a watch that has
@@ -121,31 +124,68 @@ public actor WatchTransferQueue {
     /// complication, ahead of the waiting ones (Wear's order): nothing will send them again.
     public var failed: Int { items.filter { $0.failure != nil }.count }
 
-    /// Idempotent: a recording already queued keeps the acks it has. Called when a recording is
-    /// finalized, and again at launch for everything the core still holds — a recording finalized by
-    /// `RecordingRecovery` after a crash was never queued by the stop that never ran.
-    public func add(recordingId: String, directory: URL, metaFile: String, parts: [WatchTransferPart]) {
-        guard !items.contains(where: { $0.recordingId == recordingId }) else { return }
-        items.append(
-            Item(
-                recordingId: recordingId,
-                directory: directory.path,
-                metaFile: metaFile,
-                parts: parts.map {
-                    QueuedPart(part: $0.part, track: $0.track.wire, file: $0.file, sha256: $0.sha256)
-                }
+    /// Idempotent: a recording already queued keeps the acks it has. Called when a boundary files a part
+    /// of a recording still being made ([recording], docs/03), when a recording is finalized, and again at
+    /// launch for everything the core still holds — a recording finalized by `RecordingRecovery` after a
+    /// crash was never queued by the stop that never ran.
+    ///
+    /// A recording queued while it is still being made only gains parts from a call that says it still is —
+    /// two boundaries' calls can read the row out of order — and takes the finished part list from the one
+    /// that says it is done, keeping the acks of the parts it already had. Once it is queued as finished,
+    /// nothing changes it here: a late call that still says it is recording is older news.
+    public func add(
+        recordingId: String,
+        directory: URL,
+        metaFile: String,
+        parts: [WatchTransferPart],
+        recording: Bool = false
+    ) {
+        let incoming = parts.map {
+            QueuedPart(part: $0.part, track: $0.track.wire, file: $0.file, sha256: $0.sha256)
+        }
+        guard let index = items.firstIndex(where: { $0.recordingId == recordingId }) else {
+            items.append(
+                Item(
+                    recordingId: recordingId,
+                    directory: directory.path,
+                    metaFile: metaFile,
+                    parts: incoming,
+                    recording: recording ? true : nil
+                )
             )
-        )
+            save()
+            logger.info(
+                """
+                transfer.queued recordingId=\(recordingId, privacy: .public) \
+                parts=\(parts.count, privacy: .public) recording=\(recording, privacy: .public)
+                """
+            )
+            return
+        }
+        guard items[index].recording == true else { return }
+        let queued = items[index].parts
+        var next = items[index]
+        if recording {
+            let added = incoming.filter { part in !queued.contains { $0.part == part.part && $0.track == part.track } }
+            next.parts = (queued + added).sorted { ($0.part, $0.track) < ($1.part, $1.track) }
+        } else {
+            next.parts = incoming.map { part in
+                queued.first { $0.part == part.part && $0.track == part.track && $0.sha256 == part.sha256 } ?? part
+            }
+            next.recording = nil
+        }
+        guard next != items[index] else { return }
+        items[index] = next
         save()
         logger.info(
             """
             transfer.queued recordingId=\(recordingId, privacy: .public) \
-            parts=\(parts.count, privacy: .public)
+            parts=\(next.parts.count, privacy: .public) recording=\(recording, privacy: .public)
             """
         )
     }
 
-    /// The same, from the row the core holds.
+    /// The same, from the row the core holds — still being made while its status says `recording`.
     public func add(_ record: RecordingRecord) {
         let base = MetaWriter.shared.baseName(meta: record.meta)
         add(
@@ -159,7 +199,8 @@ public actor WatchTransferQueue {
                     file: $0.file,
                     sha256: $0.sha256
                 )
-            }
+            },
+            recording: record.meta.status == RecordingStatus.recording
         )
     }
 
@@ -185,7 +226,8 @@ public actor WatchTransferQueue {
         if changed { save() }
         // After the transfers, so the launch it causes finds them queued — including the ones the
         // system was already carrying, which is what an earlier pass with the phone unreachable left.
-        if waiting > 0 { link.wake() }
+        // A recording still being made whose filed parts the phone has all acked owes it nothing yet.
+        if items.contains(where: \.owesPhone) { link.wake() }
     }
 
     /// The phone's answer, and the only thing that finishes anything here.
@@ -312,6 +354,7 @@ public actor WatchTransferQueue {
     private func send(_ item: inout Item, outstanding: Set<String>) -> Bool {
         var changed = false
         let directory = URL(fileURLWithPath: item.directory, isDirectory: true)
+        var handing: [(url: URL, metadata: TransferMetadata)] = []
         for index in item.parts.indices where !item.parts[index].acked {
             let queued = item.parts[index]
             let url = directory.appendingPathComponent(queued.file)
@@ -337,12 +380,26 @@ public actor WatchTransferQueue {
                 )
             )
             guard !outstanding.contains(metadata.key) else { continue }
-            link.transfer(url, metadata: metadata.dictionary)
+            handing.append((url, metadata))
         }
+
+        let meta = directory.appendingPathComponent(item.metaFile)
+        if item.recording == true {
+            // docs/03: the recording as it stands — start, time zone, segment length, highlights so far and every
+            // part filed so far — ahead of the parts it lists, so the phone knows each part's place when it lands.
+            // Not acked; the next part brings a fresher one, and the final meta waits for the recording to end.
+            if !handing.isEmpty, let newest = item.parts.map(\.part).max(),
+               FileManager.default.fileExists(atPath: meta.path) {
+                let progress = TransferMetadata.progress(recordingId: item.recordingId, part: newest)
+                if !outstanding.contains(progress.key) { link.transfer(meta, metadata: progress.dictionary) }
+            }
+            for handed in handing { link.transfer(handed.url, metadata: handed.metadata.dictionary) }
+            return changed
+        }
+        for handed in handing { link.transfer(handed.url, metadata: handed.metadata.dictionary) }
 
         // The meta ends the transfer, so it goes behind every part of this recording, and the phone
         // files it only once every one of them is there (see the type's doc).
-        let meta = directory.appendingPathComponent(item.metaFile)
         guard FileManager.default.fileExists(atPath: meta.path) else {
             // The phone can never be told the recording is complete. Not recoverable by resending,
             // and the parts it has are orphans it purges after 24 hours (docs/03).
@@ -368,6 +425,15 @@ public actor WatchTransferQueue {
         /// How many times a phone's `missing` list has sent this recording round again.
         var resends = 0
         var failure: String?
+        /// `true` while the recording is still being made — its parts go as they are filed, and its final
+        /// meta waits — and nil once it is finished.
+        var recording: Bool?
+
+        /// Something here is still the phone's to take: a finished recording — its meta at least — or a
+        /// part of one still being made that the phone has not acked.
+        var owesPhone: Bool {
+            failure == nil && (recording != true || parts.contains { !$0.acked })
+        }
     }
 
     private struct QueuedPart: Codable, Equatable {

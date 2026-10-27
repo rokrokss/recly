@@ -305,11 +305,15 @@ class Notes internal constructor(
 
     // --- While recording ---
 
-    /** [RecordingRepository.addPart] filed [part]: organized in the background, never in the recorder's way. */
-    internal fun partFiled(recordingId: String, part: Part) {
+    /**
+     * [RecordingRepository.addPart] filed [part]: organized in the background, never in the recorder's way.
+     * [received] is a part of a watch recording still being made, which the transfer filed here and its
+     * in-progress meta lists (`TransferReceiver.partReceived`, docs/03 "Watch → phone transfer contract").
+     */
+    internal fun partFiled(recordingId: String, part: Part, received: Boolean = false) {
         scope.launch {
             try {
-                partLock.withLock { provisional(recordingId, part) }
+                partLock.withLock { provisional(recordingId, part, received) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
@@ -323,11 +327,13 @@ class Notes internal constructor(
         scope.coroutineContext[kotlinx.coroutines.Job]?.children?.toList()?.forEach { it.join() }
     }
 
-    private suspend fun provisional(recordingId: String, part: Part) {
+    private suspend fun provisional(recordingId: String, part: Part, received: Boolean) {
         val record = recordings.get(recordingId) ?: return
         val meta = record.meta
-        // A recording in progress on this device: not a watch's (its parts arrive after it stopped), not an import.
-        if (record.remote || meta.status != RecordingStatus.RECORDING || meta.source == Source.WATCH || meta.source == Source.IMPORT) return
+        // A recording in progress: this device's own, or a watch's coming in part by part — never a watch's
+        // own recording on the watch itself, and not an import.
+        if (record.remote || meta.status != RecordingStatus.RECORDING || meta.source == Source.IMPORT) return
+        if ((meta.source == Source.WATCH) != received) return
         if (part.track != track(meta.tracks)) return
         // A keychain that will not be read now is a part left out, like any other failure while recording.
         val open = try {

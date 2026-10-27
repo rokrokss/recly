@@ -17,6 +17,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
 import okio.FileSystem
 import recly.core.model.Part
+import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
@@ -50,8 +51,10 @@ enum class TransferOutcome {
 
 /**
  * docs/03 "Watch → phone transfer contract", the sending half: per recording, every part in `meta.parts` order,
- * then `meta.json` last. **`ack-meta ok:true` is the only thing that deletes audio from this
- * watch.** A part ack is recorded in the row — it is what stops the part being sent again — but it
+ * then `meta.json` last. A recording still being made goes part by part as its boundaries close them —
+ * each pass that has a new part for the phone sends the in-progress `meta.json` (`/rec/progress/…`, never
+ * acked) ahead of it, and no final meta: that one goes once the recording is finalized.
+ * **`ack-meta ok:true` is the only thing that deletes audio from this watch.** A part ack is recorded in the row — it is what stops the part being sent again — but it
  * does not license a delete: until the phone has filed the meta it has loose parts and a purge
  * timer, and a watch that has already deleted its copy has nothing to answer a `missing` list with.
  *
@@ -95,7 +98,9 @@ class TransferSender(
     }
 
     private suspend fun pass(): TransferOutcome {
-        val waiting = store.all().filter { it.waiting }
+        // A recording still being made whose filed parts the phone has all acked owes it nothing yet: no
+        // channel for it, so a pass a trigger brings in the middle of a recording wakes no radio for it.
+        val waiting = store.all().filter { it.waiting && owes(it) }
         if (waiting.isEmpty()) return TransferOutcome.IDLE
         val channel = link.open() ?: return TransferOutcome.NO_PHONE
         // docs/09 principle 7 · docs/11 W2: the badge says "sending" from here, not from the top of the
@@ -134,8 +139,17 @@ class TransferSender(
         /** Parts a `SHA256_MISMATCH` has already bought one resend. */
         val retried = mutableSetOf<PartRef>()
         var resends = 0
+        val meta = record.dir / MetaWriter.metaFileName(MetaWriter.baseName(record.meta))
+        val recording = record.meta.status == RecordingStatus.RECORDING
 
         resend@ while (true) {
+            if (recording) {
+                // docs/03: the recording as it stands — start, time zone, segment length, highlights so far and
+                // every part filed so far — ahead of the parts it lists, so the phone knows each part's place
+                // when it lands. Not acked: the next part brings a fresher one, and the final meta is the record.
+                if (record.meta.parts.none { PartRef(it.part, it.track) !in acked }) return Step.NEXT
+                if (fs.exists(meta)) channel.send(TransferPath.Progress(id).serialize(), meta)
+            }
             for (part in record.meta.parts) {
                 val ref = PartRef(part.part, part.track)
                 if (ref in acked) continue
@@ -172,7 +186,8 @@ class TransferSender(
                 acked += ref
             }
 
-            val meta = record.dir / MetaWriter.metaFileName(MetaWriter.baseName(record.meta))
+            // Still recording: the final meta goes once the recording is finalized, in the pass that brings.
+            if (recording) return Step.NEXT
             if (!fs.exists(meta)) {
                 // Every part is acked and the phone can never be told the recording is complete.
                 // Not recoverable by re-sending, and the parts are already on the phone as orphans
@@ -238,6 +253,17 @@ class TransferSender(
         store.remove(recordingId)
         logger.log(Logger.Level.INFO, "transfer.complete", mapOf("recordingId" to recordingId))
         _delivered.tryEmit(recordingId)
+    }
+
+    /**
+     * Whether [row] has anything for the phone now: a finalized recording always does — its meta at least —
+     * and so does a row whose recording is gone (it is dropped); a recording still being made only when a
+     * part it has filed is not acked yet.
+     */
+    private suspend fun owes(row: TransferRow): Boolean {
+        val record = recordings.get(row.recordingId) ?: return true
+        if (record.meta.status != RecordingStatus.RECORDING) return true
+        return record.meta.parts.any { PartRef(it.part, it.track) !in row.acked }
     }
 
     private fun stalled(recordingId: String, what: String): Step {

@@ -147,7 +147,7 @@ Reversing these rules does not end with editing this document. Reversing ADR-022
    │        parts written: p001, p002 … (sha256 and bytes recorded per segment)
    │        meta.json updated (at every segment boundary)
    │        each part filed → transcribed on its own and its new notes added, for a user signed in to
-   │        ChatGPT who agreed (provisional notes, §8 "Organizing"; not a watch's recording)
+   │        ChatGPT who agreed (provisional notes, §8 "Organizing"; a watch's on the phone, as its parts arrive)
  stop ───► finalize: endedAt, durationSec, status=finalized
    │
    ├─ phone·desktop ─► Job created {recordingId, workflowId, steps[] state=PENDING}
@@ -162,9 +162,11 @@ Reversing these rules does not end with editing this document. Reversing ADR-022
    │                     the DB row are always kept). Playback in the detail screen downloads a deleted part
    │                     again from Drive and caches it for 7 days
    │
-   └─ watch ──────► Transfer queue {recordingId, parts[]}
-                    when the phone connects, transfer per part → the phone verifies sha256, then acks
-                    all acked → the watch deletes, the phone creates the Job (same as above)
+   └─ watch ──────► Transfer queue {recordingId, parts[]} — each part queued as soon as it is filed, while recording
+                    when the phone connects, transfer per part (the in-progress meta ahead of it) → the phone
+                    verifies sha256, then acks, and organizes the part while the watch still records
+                    after stop: the last part and meta.json → the phone creates the Job (same as above)
+                    → ack-meta → the watch deletes
 ```
 
 Invariants:
@@ -1019,9 +1021,26 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
 ### Watch → phone transfer contract
 
 - Unit: one part file at a time + `meta.json` last. Android Data Layer paths:
-  `/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`, `/rec/meta/{recordingId}` — the file name is carried in the path because
-  the meta (= `{base}`) arrives last. Apple carries the same values in the `metadata`
-  dictionary of `WCSession.transferFile`.
+  `/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`, `/rec/progress/{recordingId}`, `/rec/meta/{recordingId}` — the file name is
+  carried in the path because the meta (= `{base}`) arrives last. Apple carries the same values in the `metadata`
+  dictionary of `WCSession.transferFile` (`{recordingId, part, track, sha256, file}`, `{recordingId, progress}`, `{recordingId}`).
+- **Parts go while the watch is still recording** (2026-10-27, both watches alike). Each part is queued **as soon as its boundary
+  files it**, and the pass that sends it puts an **in-progress meta** ahead of it: the recording's `meta.json` as it stands —
+  `status: recording`, start time, time zone, segment length, tracks, the highlights so far and every part filed so far with its offset
+  and length. It is refreshed with each part, never acked, and finalizes nothing; a pass with no new part sends none. Galaxy Watch:
+  `/rec/progress/{recordingId}`, one `RecorderHost.onPartFiled` → one WorkManager pass per part. Apple Watch: `{recordingId, progress: n}`
+  with `n` the newest part it lists — the key that tells the one for the next part from a resend of this one while `WCSession` still
+  carries it — and the pass's usual wake behind it. **The final meta stays last**: the last part and the final meta go once the
+  recording is finalized, exactly as before, and registering the recording and creating its Job still happen only on the final meta.
+  A phone out of reach changes nothing: the parts wait in the queue and go when it is back, the in-progress meta with them.
+- **The phone files what arrives while recording** into its receiving row: the in-progress meta opens the row (or updates it) with
+  the watch's fields, keeps it `recording` and the receiver's (`transfer.pending.*`), and its part list gives each part that is here its
+  offset and length — a part listed but not here is not added. Each part that is both here and listed — whichever arrived second — goes
+  to the provisional pass of §8 "Organizing" (`TransferReceiver.partReceived` → `Notes.partFiled(received = true)`), so the phone
+  transcribes that part with its own processing settings, pinned when the first in-progress meta arrived (§5), and adds its items, as
+  for its own recordings. Consent, the quote check and placeholders are the core's, unchanged. An in-progress meta for a recording the
+  final meta has already filed — or one this device made, or whose body names another recording or is not a watch's — changes
+  nothing. The last part, which only the final meta lists, is left to the final pass, as a phone's own last part is.
 - **The Apple Watch sends the meta right behind the parts and then wakes the phone** (2026-10-26, GitHub issue #21: recordings stayed
   `Waiting to send` until the iPhone app was opened). A `WCSession` transfer waits until the receiving app runs, and the only thing that launches
   the iPhone app in the background is a live message from the watch (`sendMessage`), which works only while the watch app is in front and the phone
@@ -1050,9 +1069,10 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   registers the recording in `recordings` and creates the Job when it receives the meta. The `recordingId` in the meta body must match the one in the path
   (mismatch → `RECORDING_ID_MISMATCH` nack, no core call), and **`ack-meta ok:true` is sent only after enqueue and waking the runner
   have finished** — if something fails before that, it does not ack and leaves it to the watch's resend (`acceptMeta` · `enqueue` are idempotent).
-  If 24 hours pass with only parts and no meta, the orphan parts are deleted.
+  If 24 hours pass after the **last** part arrived with no final meta, the orphan parts are deleted (2026-10-27: counted from the last part,
+  not the first — a three-hour recording sends its first part three hours before its meta).
 - The temporary row before the meta **belongs to the receiver**: the phone's `RecordingRecovery` skips `recording` rows for which `TransferReceiver.receiving(recordingId)`
-  is true (rows with the `transfer.pending.*` mark the receiver left on the first part), and such a row is closed only by the meta arriving or by the
+  is true (rows with the `transfer.pending.*` mark the receiver left on the first part or in-progress meta, refreshed by every part), and such a row is closed only by the meta arriving or by the
   24-hour orphan cleanup. A temporary row has empty `tracks` and zero-length parts, so finalizing it the way crash recovery does would freeze those empty values into the
   meta, and the Job would fail with `NO_INPUT_TRACK` (2026-10-01, found on a real iPhone that restarted between the parts and the meta).
   `RecordingRecord.receiving` (judging by the row's shape) is not used instead because the watch also revives its **own** `source = watch`
@@ -1062,7 +1082,7 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   converge (the phone's `acceptPart` overwrites, `enqueue` returns `AlreadyDone`). There is no case in which the watch treats `ack-meta ok:false` as
   completion; if a requested part is missing locally (deleted externally), it is marked failed with `PART_MISSING_LOCALLY` and the rest is kept.
 - During the transfer, the recording start time · `recordingId` are the values the watch created, used as they are (the phone does not regenerate them). The temporary row
-  before the meta arrives (`TransferReceiver.placeholder`) likewise reads its start time from **the ULID timestamp of `recordingId`**
+  before any meta arrives (`TransferReceiver.placeholder`, parts without an in-progress meta) likewise reads its start time from **the ULID timestamp of `recordingId`**
   — using the arrival time would make just that recording jump to the top of the list on a phone that received a 20-minute recording after it ended. What the shell uses to recognize this row
   is `RecordingRecord.receiving` (the table at the end of §3 "Recordings from other devices").
 
@@ -1293,6 +1313,8 @@ The overall direction and the conditions for a real-device release follow the [f
 - Export offers only the current recording settings. There is no export of earlier settings and no internal backup for recovery.
 - Starting from Siri/Shortcuts (`StartRecordingIntent`, no parameters) also uses the fixed settings.
 - **A recording pins the settings in force when it starts, and a retry the user presses does the remaining work with the current settings** (2026-09-25).
+  A watch recording pins the phone's settings when its first in-progress meta arrives (2026-10-27, §3 "Watch → phone transfer contract"),
+  so the parts organized while it records and its job run the same ones — or, if none arrived, when its final meta is filed.
   Automatic runs and automatic retries follow the job snapshot — saving settings alone never sends a waiting recording to a different provider.
   A manual retry (`JobService.retry`, failed or waiting state) rebuilds the plan with the current settings and merges it: succeeded steps keep
   their row and their definition from that time (the upload is not repeated), and the remaining steps start over with the new definition — a step whose definition
@@ -2134,8 +2156,10 @@ for anyone else nothing in this section happens.
   eight digits or more become `[phone#1]`, `[email#1]` and `[number#1]` — the same value the same placeholder within a request — and
   are put back into the answer on the device, before the quote check. No title, no highlights, never audio.
 - **While recording (provisional).** Each part of the transcription track (`mono`, else `mix`) that the recorder files while a
-  recording of this device is in progress (`RecordingRepository.addPart`) — not a watch's recording, whose parts the phone sees only
-  after it stopped, and not an import — is transcribed **on its own** with the settings the recording froze when it started (§5):
+  recording of this device is in progress (`RecordingRepository.addPart`) — and, on the phone, each part of a watch's recording that
+  arrives while the watch still records (2026-10-27, §3 "Watch → phone transfer contract": filed and listed by its in-progress meta,
+  `TransferReceiver.partReceived`), but not an import, and never on the watch itself — is transcribed **on its own** with the settings
+  the recording froze when it started (§5; a watch's, when its first in-progress meta arrived):
   the external provider through the same adapter, submission and polls as the job (every 15 seconds, for at most 30 minutes), or
   the on-device engine, one run at a time with the job's own (`LocalTranscriptionService.transcribePart`) and without speaker
   separation. There is no overlap between parts and no linking of their speakers: each part's labels are its own. Its transcript is
@@ -3369,7 +3393,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | SecretSync | real PBKDF2·AES-GCM operations, forged AAD, tombstones and the deletion watermark, extra files, fail-closed |
 | **Schema migrations** (`MigrationTest`) | DB built with the version 1 DDL → after migrate, existing rows preserved + new tables used |
 | Job snapshot (`JobSnapshotTest`) | an unknown step type isolates only that job as FAILED; no effect on the list, `selectDue` or `claimPurge` |
-| TransferReceiver | sha256 mismatch → nack; orphan parts without meta deleted after 24h |
+| TransferReceiver | sha256 mismatch → nack; orphan parts without meta deleted 24h after the last part; the in-progress meta opens the receiving row, gives the parts their offsets, hands each part both here and listed to the provisional pass and pins the settings once; a late one never re-opens a filed recording |
 | Drive out of space (`DriveQuotaTest`) | 403 `storageQuotaExceeded` → `NEEDS_SPACE` (attempts unchanged, `next_run_at` null, `state_json` cleared), afterwards `runDueJobs` does not pick it again, completes after `retry()`; other 403s take the existing path |
 | Delete (`RecordingDeleteTest`, `DeleteDuringRunTest`) | the four tables deleted, `RUNNING` → `Busy` without an executor, local data is deleted even if `deleteDrive` fails and `driveError` is set, delete vs `claimRunning` race, cancellation at commit time; with the executor: an upload hanging in the transport is cancelled and its recording deleted while the same pass runs the next job, a run cancelling cannot reach is let go of and its late write refused, a Job left `RUNNING` by a killed run goes with its recording |
 | Recordings from other devices (`RemoteRecordingsTest`) | list folders → adopt (parts `deleted=1`+`drive_file_id`, `meta.json` written), sorted by start time, the second fetch makes 1 request, folders without meta are held back, own rows are not overwritten, only adopted rows whose folder vanished are deleted, two folders with the same id · move to a rerun folder (both the old folder vanishing and the new folder completing), rejects id mismatch · non-ULID · forged part file names, no account · throttle · fetch failure, "Delete local only" does not come back (+ the record is cleaned up when the folder vanishes, re-adoption after `clearIgnored`, via `drive_folder_id` even after the queue is emptied, `adopt` rejects inside the transaction), `uploaded` true · `enqueue`=`PartsPurged`, playback fetches by file id, sweep after 7 days, Drive deletion uses `drive_folder_id`, titles: rename→description+meta push, adopted rows too, pending on failure then the next fetch, description→applied to the row (pending wins), empty description ignored |
@@ -3378,7 +3402,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Import (`AudioImportTest`) | the importing row, staging, parts named and finalized at once, the plan queued; unreadable · unsupported · cancelled leave nothing; recovery leaves an import in progress alone and drops an abandoned one |
 | Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next, no retry on the old plan with transcription off, a failed folder stamp fails and is retried, `Started` after a cancellation once queued |
 | Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
-| Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; append-only items across parts, repeats and deletions; quote check; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again, which waiting notes do not hold up and which closes them |
+| Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; a watch's recording organized part by part as it arrives, whichever of a part and its in-progress meta comes first, then filed by its final meta with one job, and a watch's own recording never organized on the watch; append-only items across parts, repeats and deletions; quote check; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again, which waiting notes do not hold up and which closes them |
 | Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
 | Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT |
 
@@ -3448,7 +3472,7 @@ android/
 | A5 | `WorkflowWorker`: `OneTimeWorkRequest` (unique `rec-jobs`, `NetworkType.CONNECTED`), calls `runDueJobs()`, `Result.retry` on failure (the periodic instance returns success after the cap — so the 6h safety net does not die); **after every pass, the follow-up run is recomputed**: the minimum of WAITING's `nextRunAt` and PENDING (immediate) arms a single `rec-jobs-next` (REPLACE, delay 0 if in the past); if `alreadyRunning`, the timer is left alone and a follow-up comes 60 seconds later; enqueue also arms `rec-jobs-next` at 0 seconds; the core `retry` (WAITING included) + `setExpedited` that the old "Upload now" used is used unchanged by "Retry"; changing the "Upload on Wi-Fi only" setting re-arms `rec-jobs-next` and `rec-jobs-periodic` with the new constraint (`rec-jobs` is KEEP — cancelling a running pass uses up retry budget; one pass already in the queue may run under the old constraint) |
 | A6 | **Retired (2026-09-24)** — workflow editing UI: list ("Edit" · "Use" · delete on each row, a badge on the row in use), name/minimum length, step order editing (drag), `drive.upload` folder template, `webhook` URL/secret, `transcribe` form and provider notice, a warning for secrets missing on this device, key management (values are per device, §5). Write rules: every document change re-reads `current()` inside the mutex, then applies and saves (prevents races between whole-document saves); the editor remembers the `updatedAt` from when it was opened, and if a save from another window changed it, it refuses to save and offers "Reopen"; copying a secret sets the clipboard sensitive flag |
 | A7 | **Retired (2026-09-24)** — workflow export/import in settings (§5): SAF `CREATE_DOCUMENT` (default name `recly-workflows.json`) · `OPEN_DOCUMENT`, import applies after a replace confirmation, a note that keys are not included in the file |
-| A8 | Data Layer receiving: `WearableListenerService` (`ChannelClient.onChannelOpened` → `receiveFile`, paths `/rec/part/…` · `/rec/meta/…`), sha256 verification, `MessageClient` ack `/rec/ack` · `/rec/ack-meta`, on meta receipt register + enqueue + `onJobsDue`; ~~publish the workflow summary on `DataClient` `/rec/workflows` (urgent)~~ (retired 2026-09-24); declares the `rec_phone` capability |
+| A8 | Data Layer receiving: `WearableListenerService` (`ChannelClient.onChannelOpened` → `receiveFile`, paths `/rec/part/…` · `/rec/progress/…` · `/rec/meta/…`), sha256 verification, `MessageClient` ack `/rec/ack` · `/rec/ack-meta`, the in-progress meta filed with no ack (`TransferReceiver.acceptProgress`, the parts it lists organized while the watch records, §3 · §8 "Organizing"), on meta receipt register + enqueue + `onJobsDue`; ~~publish the workflow summary on `DataClient` `/rec/workflows` (urgent)~~ (retired 2026-09-24); declares the `rec_phone` capability |
 | A9 | Entry points: Quick Settings tile, home widget (start/stop), app shortcuts. When starting from a tile or widget, the FGS background-start exception is either **used or given up** — it never fails silently |
 | A10 | Settings: Google Drive connection state and disconnect action, language, Wi-Fi only, consent reminder, **log export** |
 | A11 | Play listing: Wear OS form factor included, screenshots, Data safety form ("No data collected") |
@@ -3461,7 +3485,7 @@ android/
 | W1 | Skeleton: Wear Compose M3, `standalone=false` (phone app required), reuses `RecorderService` |
 | W2 | Main screen: large start/stop button, ~~workflow picker (summaries received over `DataClient`; if none was picked on the watch, **"Phone's workflow"** — both watches say the same thing)~~ (retired 2026-09-24), elapsed time, recordings waiting to transfer (`Sending` while it is finding the phone and handing them over — only while a pass has the channel open, 2026-09-04; in the status line without a count, §9 screen principle 7). The record screen fills the first screen, and Help sits below it, reached by touch or bezel scroll (2026-10-05). There are only two screens and no navigation library — the only journey on the watch is "record" |
 | W3 | `OngoingActivity` (Wear OS 6) / Live Updates (7): watch face chip, tapping opens the app |
-| W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
+| W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. While recording (2026-10-27, §3): each part filed (`RecorderHost.onPartFiled`) queues the recording and runs one pass, which sends `/rec/progress/{recordingId}` (the in-progress `meta.json`, not acked) and then the new part; a pass finds no work in a recording whose filed parts are all acked and opens no channel for it; the final meta goes after the stop. A trigger that finds a pass already sending also arms the 60-second follow-up, so a stop during a part's pass does not wait for the next trigger. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
 | W5 | Entry points: tile (`launchAction`), complication (state — the app's square record glyph; while recording the filled square and the elapsed time the face counts itself, where the slot has room, instead of `REC`; 2026-10-11), **a second launcher item "Recly Quick Rec"** with its own icon (§9 "App icon"; 2026-10-14) (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
 | W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, TICK on a kept highlight, and the transfer-complete haptic when the phone acks a recording's meta (2026-10-15, as the Apple Watch) |
 | W7 | Battery: no Wi-Fi request while recording, no keep-screen-on; transfer prefers charging (optional) |
@@ -3756,7 +3780,11 @@ still uses `uploadNow` from the old "Upload now") keeps running with progress UI
 #### Receiving from the watch
 
 In `WCSessionDelegate.session(_:didReceive:)`, **synchronously**: move the file → verify sha256 →
-`transferUserInfo(["ack": …])` (guaranteed delivery) → on meta receipt, register and enqueue. On the receiving side of `transferFile`, a file
+`transferUserInfo(["ack": …])` (guaranteed delivery) → on meta receipt, register and enqueue. An in-progress meta
+(`{recordingId, progress}`, 2026-10-27, §3) is filed with no answer (`TransferReceiver.acceptProgress`), and the parts it lists are
+organized while the watch records (§8 "Organizing"). Unlike the Android phone, whose process lives on after its listener service, the
+iPhone app runs for such a part only as long as iOS keeps it up after the watch's wake (the delivery's background task, the 20-second
+window): organizing that is cut short leaves that part out — there are no retries while recording — and the final pass covers it. On the receiving side of `transferFile`, a file
 that is not moved inside the callback is deleted. Sending the workflow summary to the watch with `updateApplicationContext` was retired (2026-09-24).
 
 The session is activated in `didFinishLaunching`, before the core is open (2026-10-26): a launch the watch's wake caused has seconds, and
@@ -3785,7 +3813,10 @@ and the transfers it was sent behind may still be on their way.
   Handling of input changes, interruptions, buffer saving and audio service resets is shared with the iPhone.
 - **Transfer**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` per part, the meta right behind them in the
   same pass, then a wake — an empty `sendMessage` while `isReachable`, the only thing that launches the iPhone app in the background (§3, 2026-10-26).
-  Every pass that leaves something for the phone sends one: a stop, the app becoming active, the session activating, the phone coming into reach.
+  Every pass that leaves something for the phone sends one: a part filed while recording, a stop, the app becoming active, the session
+  activating, the phone coming into reach. While recording (2026-10-27, §3), each part the recorder files (`SegmentedRecorder.onPartFiled`)
+  is queued at once and handed over behind the in-progress `meta.json` (`{recordingId, progress: n}`, not acked); the final meta waits for the
+  stop. A recording whose filed parts the phone has all acked owes it nothing yet: that pass hands nothing over and wakes nobody.
   The `didFinish` callback can be missed, so **the phone's ack (`didReceiveUserInfo`)** is the completion criterion; parts and meta are deleted only
   on `ack-meta ok:true` (§3). Acks that arrive before the core is open are kept and acted on once the queue opens, and a WatchConnectivity
   background launch (`.backgroundTask(.watchConnectivity)`) lasts until the session has delivered what it held (at most 3 seconds of waiting) and
@@ -4170,8 +4201,8 @@ happens independently of both Drive and providers.
 
 | Direction | What | How |
 |---|---|---|
-| Galaxy Watch → Android phone | Recording part `.m4a` files, and `meta.json` once everything is acked | Wear Data Layer `ChannelClient.openChannel` → `sendFile`. File metadata rides in the channel path, not in a separate payload (`/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}` · `/rec/meta/{recordingId}`). The phone receives with `WearableListenerService.onChannelOpened` → `receiveFile` and acks with `MessageClient` |
-| Apple Watch → iPhone | Recording part `.m4a` files, `meta.json` right behind them, then an empty wake message | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId · part · track · sha256 · file name ride in the `metadata` dictionary. The phone receives with `WCSessionDelegate.session(_:didReceive:)` and acks with `transferUserInfo`. The wake is `sendMessage` with no recording data in it — it only launches the iPhone app in the background |
+| Galaxy Watch → Android phone | Recording part `.m4a` files, each as soon as it is filed, with the in-progress `meta.json` ahead of each while recording (2026-10-27), and the final `meta.json` once everything is acked | Wear Data Layer `ChannelClient.openChannel` → `sendFile`. File metadata rides in the channel path, not in a separate payload (`/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}` · `/rec/progress/{recordingId}` · `/rec/meta/{recordingId}`). The phone receives with `WearableListenerService.onChannelOpened` → `receiveFile` and acks with `MessageClient` |
+| Apple Watch → iPhone | Recording part `.m4a` files, each as soon as it is filed, with the in-progress `meta.json` ahead of each while recording (2026-10-27), the final `meta.json` right behind the last ones, then an empty wake message | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId · part · track · sha256 · file name ride in the `metadata` dictionary (`recordingId` · `progress` for the in-progress meta). The phone receives with `WCSessionDelegate.session(_:didReceive:)` and acks with `transferUserInfo`. The wake is `sendMessage` with no recording data in it — it only launches the iPhone app in the background |
 | Android phone → Galaxy Watch | **Retired (2026-09-24)** — ~~workflow summary: only two fields per workflow, `id` · `name`~~. The watch has no workflow list | ~~`DataClient.putDataItem` path `/rec/workflows`~~ |
 | iPhone → Apple Watch | Only the app language (the workflow summary `id` · `name` was retired 2026-09-24), no step contents | `WCSession.updateApplicationContext` |
 | Android phone → Galaxy Watch | Only the app language tag (`ko`, `zh-Hans`, `pt-BR`, …; 2026-10-15), nothing else | `DataClient.putDataItem` path `/rec/language` (urgent), written when the phone app starts or its language changes; the watch ignores anything not shaped like a language tag |
@@ -4303,7 +4334,7 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
   and only for what is ticked — the user's express consent, which OpenAI's terms require — when this device publishes its transcript.
   The other is organizing (2026-10-27, §8 "Organizing"): for a user who agreed — under the sign-in, or asked once at the first recording
   of a user signed in before — every recording this device makes, part by part while it is recorded and from its transcript after
-  Stop (a watch's recording after its transfer). The consent is kept until the user signs out of ChatGPT; there is no other switch.
+  Stop (a watch's recording part by part as its parts arrive while the watch records, and after its transfer). The consent is kept until the user signs out of ChatGPT; there is no other switch.
 - The tokens stay in the device's secure storage (§5, namespace `chatgpt`); the ID token's claims are checked (issuer, audience = the
   client id, expiry, `nonce`, the same `sub` on a later sign-in) without its signature, which OpenID Connect allows for a token received
   directly from the token endpoint over TLS. Requests that carry a code or token are never logged.

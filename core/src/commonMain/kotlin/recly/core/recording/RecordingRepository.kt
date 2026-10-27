@@ -89,7 +89,7 @@ data class RecordingRecord(
 
     /**
      * A watch transfer in flight (docs/03 "Watch → phone transfer contract"): the phone opens the row when the
-     * first part arrives and replaces it wholesale when `meta.json` lands. A phone never *records*
+     * first part or in-progress meta arrives and replaces it wholesale when the final `meta.json` lands. A phone never *records*
      * with source `watch` — it only ever receives one — so a local row of this shape can only be
      * that transfer, still coming in.
      */

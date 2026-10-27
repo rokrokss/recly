@@ -190,6 +190,11 @@ class ReclyCore(
         recordings.afterCapture = { localTranscription.captureEnded(it) }
         // docs/08 "Organizing": read when a part is filed, long after construction.
         recordings.partFiled = { recordingId, part -> notes.partFiled(recordingId, part) }
+        // docs/03 "Watch → phone transfer contract": a watch recording is organized while it is still being made —
+        // on the settings pinned when its first in-progress meta arrived, as a recording of this device is on
+        // the ones pinned at its start (docs/05).
+        transfer.recordingOpened = { recordingId -> processingSettings.capture(recordingId) }
+        transfer.partReceived = { recordingId, part -> notes.partFiled(recordingId, part, received = true) }
     }
 
     private val driveJobAccess = recly.core.drive.DriveJobAccess(deps, jobStore)
@@ -615,9 +620,10 @@ class ReclyCore(
         .mapNotNull { it.output }
 
     /**
-     * The fixed plan (docs/05), compiled from the settings the recording froze when it started. A
-     * finished recording that froze none — a watch recording, at its verified receipt — freezes
-     * the current ones here. [RecordingMeta.workflowId][recly.core.model.RecordingMeta.workflowId]
+     * The fixed plan (docs/05), compiled from the settings the recording froze when it started — a
+     * watch recording when its first in-progress meta arrived (docs/03 "Watch → phone transfer contract"). A
+     * finished recording that froze none — a watch recording whose in-progress meta never came, at its
+     * verified receipt — freezes the current ones here. [RecordingMeta.workflowId][recly.core.model.RecordingMeta.workflowId]
      * is not read.
      */
     @Throws(Throwable::class)

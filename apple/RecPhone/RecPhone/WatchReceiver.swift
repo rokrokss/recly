@@ -12,6 +12,10 @@ protocol WatchTransferCore: AnyObject {
     /// Hashes what arrived against what the watch claimed, and files it under the name it came with.
     func acceptPart(recordingId: String, part: Int, track: Track, sha256: String, file: URL) async throws -> Ack
 
+    /// docs/03: the recording as the watch has it while it is still recording — the row the parts go into,
+    /// and the parts it lists organized while it is being made (docs/08 "Organizing"). Never acked.
+    func acceptProgress(recordingId: String, json: String) async throws -> Bool
+
     func acceptMeta(json: String) async throws -> AcceptMetaResult
 
     /// Queues the fixed plan compiled from the recording processing settings (docs/05).
@@ -29,7 +33,8 @@ protocol WatchAckSender: AnyObject {
 
 /// docs/13 I6 · docs/03 "Watch → phone transfer contract", the receiving half. Parts arrive one at a time and
 /// `meta.json` last; the meta ends the transfer and starts the work, and `ack-meta ok:true` is the
-/// watch's licence to delete its only copy of the audio.
+/// watch's licence to delete its only copy of the audio. While the watch is still recording, each part
+/// comes behind an in-progress meta, which is filed and never answered.
 ///
 /// Three rules, and this class exists to keep all three testable off a pair of devices.
 ///
@@ -153,6 +158,7 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
         let name: String
         switch transfer {
         case .part(let part): name = part.file
+        case .progress: name = "progress.json"
         case .meta: name = "meta.json"
         }
         let staged = directory.appendingPathComponent(name)
@@ -182,7 +188,26 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
         }
         switch transfer {
         case .part(let part): await accept(part, staged: staged, core: core)
+        case .progress(let recordingId, _): await acceptProgress(recordingId: recordingId, staged: staged, core: core)
         case .meta(let recordingId): await acceptMeta(recordingId: recordingId, staged: staged, core: core)
+        }
+    }
+
+    /// The core files it — it refuses a body that names another recording, and one whose recording its final
+    /// meta has filed already — and nothing goes back: the watch does not wait for it.
+    private func acceptProgress(recordingId: String, staged: URL, core: any WatchTransferCore) async {
+        defer { discard(staged) }
+        guard let json = try? String(contentsOf: staged, encoding: .utf8) else { return }
+        do {
+            let taken = try await core.acceptProgress(recordingId: recordingId, json: json)
+            logger.info(
+                """
+                transfer.progress recordingId=\(recordingId, privacy: .public) \
+                taken=\(taken, privacy: .public)
+                """
+            )
+        } catch {
+            logger.error("transfer.progress.failed error=\(String(describing: error), privacy: .public)")
         }
     }
 
@@ -354,6 +379,10 @@ final class CoreWatchTransfer: WatchTransferCore {
             // RecKit's own `URL.okioPath` is internal to it; this is the same call.
             tmpPath: OkioPath.companion.toPath(file.path, normalize: true)
         )
+    }
+
+    func acceptProgress(recordingId: String, json: String) async throws -> Bool {
+        try await core.transfer.acceptProgress(recordingId: recordingId, json: json).boolValue
     }
 
     func acceptMeta(json: String) async throws -> AcceptMetaResult {

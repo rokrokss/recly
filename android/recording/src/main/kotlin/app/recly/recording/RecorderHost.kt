@@ -40,6 +40,13 @@ interface RecorderHost {
     suspend fun onRecordingReady(recordingId: String, enqueue: Boolean)
 
     /**
+     * A segment boundary filed a part of the recording in progress (docs/03 "Watch → phone transfer contract").
+     * The watch queues it for the phone at once, so the phone can organize the recording while it is still
+     * being made; the phone has nothing to hand on and takes the default.
+     */
+    suspend fun onPartFiled(recordingId: String) {}
+
+    /**
      * The foreground-service notification, when the shell wants a different one. Null — the phone's
      * answer — keeps [RecorderService]'s own.
      *

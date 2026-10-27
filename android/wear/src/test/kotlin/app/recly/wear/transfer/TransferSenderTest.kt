@@ -161,7 +161,7 @@ class TransferSenderTest {
     private fun partFile(number: Int) = dir / MetaWriter.partFileName(base, number, Track.MONO)
 
     /** Two parts on disk, a `meta.json` next to them, and a row waiting for all three. */
-    private suspend fun recording(parts: Int = 2) {
+    private suspend fun recording(parts: Int = 2, status: RecordingStatus = RecordingStatus.FINALIZED) {
         val list = (1..parts).map { number ->
             Part(
                 part = number,
@@ -176,11 +176,11 @@ class TransferSenderTest {
         fs.createDirectories(dir)
         list.forEach { fs.write(dir / it.file) { writeUtf8("part") } }
         fs.write(dir / MetaWriter.metaFileName(base)) { writeUtf8("{}") }
-        recordings.records[ID] = RecordingRecord(ID, meta(list), dir)
+        recordings.records[ID] = RecordingRecord(ID, meta(list, status), dir)
         queue.add(ID)
     }
 
-    private fun meta(parts: List<Part>) = RecordingMeta(
+    private fun meta(parts: List<Part>, status: RecordingStatus = RecordingStatus.FINALIZED) = RecordingMeta(
         schema = 1,
         recordingId = ID,
         source = Source.WATCH,
@@ -192,7 +192,7 @@ class TransferSenderTest {
         audio = AudioSettings(Codec.AAC_LC, Container.M4A, 16_000, 1, 32, 900),
         tracks = listOf(Track.MONO),
         parts = parts,
-        status = RecordingStatus.FINALIZED,
+        status = status,
     )
 
     private fun partPath(number: Int) = TransferPath.PartFile(
@@ -686,9 +686,85 @@ class TransferSenderTest {
         assertEquals(emptyList(), heard)
     }
 
+    // --- docs/03: a recording still being made goes part by part ---
+
+    private val progressPath = "/rec/progress/$ID"
+
+    /** What the phone answers: every part and the meta, and nothing to an in-progress meta. */
+    private fun phone(path: String): List<AckMessage> =
+        if (path.startsWith(TransferPath.PROGRESS_PREFIX)) emptyList() else listOf(ackFor(path))
+
+    /**
+     * While recording, each pass with a new part sends the in-progress meta ahead of it and does not wait
+     * for an answer to it — the phone gives none — and never sends the final meta. Nothing is deleted.
+     */
+    @Test
+    fun `while recording, the in-progress meta goes ahead of each new part and the final meta waits`() = runTest {
+        recording(parts = 1, status = RecordingStatus.RECORDING)
+        val link = GatedLink()
+        val pass = async { sender(link).run() }
+
+        val (first, _) = link.channel.inFlight()
+        assertEquals(progressPath, first, "the in-progress meta first, and the sender does not wait on it")
+        val (second, ackPart1) = link.channel.inFlight()
+        assertEquals(partPath(1), second)
+        ackPart1.complete(ackFor(second))
+
+        assertEquals(TransferOutcome.DONE, pass.await())
+        assertEquals(listOf(progressPath, partPath(1)), link.sent)
+        assertEquals(setOf(PartRef(1, Track.MONO)), queue.all().single().acked)
+        assertEquals(emptyList(), watched.deletes)
+        assertEquals(emptyList(), recordings.deleted)
+    }
+
+    @Test
+    fun `a recording goes part by part while it is made, then its last part and the meta once it stops`() = runTest {
+        recording(parts = 1, status = RecordingStatus.RECORDING)
+        val first = FakeLink(::phone)
+        assertEquals(TransferOutcome.DONE, sender(first).run())
+        assertEquals(listOf(progressPath, partPath(1)), first.sent)
+
+        // A trigger with nothing new filed opens no channel: the row owes the phone nothing yet.
+        val idle = FakeLink(::phone)
+        assertEquals(TransferOutcome.IDLE, sender(idle).run())
+        assertNull(idle.channel)
+
+        // The next boundary: the meta again, fresher, and only the new part.
+        recording(parts = 2, status = RecordingStatus.RECORDING)
+        val second = FakeLink(::phone)
+        assertEquals(TransferOutcome.DONE, sender(second).run())
+        assertEquals(listOf(progressPath, partPath(2)), second.sent)
+        assertTrue(fs.exists(partFile(1)), "an acked part stays until the final meta is acked")
+        assertEquals(emptyList(), watched.deletes)
+
+        // Stopped: the last part, then the final meta, and only its ok deletes anything.
+        recording(parts = 3, status = RecordingStatus.FINALIZED)
+        val last = FakeLink(::phone)
+        assertEquals(TransferOutcome.DONE, sender(last).run())
+        assertEquals(listOf(partPath(3), "/rec/meta/$ID"), last.sent)
+        assertEquals(listOf(ID), recordings.deleted)
+        assertFalse(fs.exists(dir))
+        assertEquals(emptyList(), queue.all())
+    }
+
+    /** No phone while recording: the parts wait on the watch, as a finished recording's do. */
+    @Test
+    fun `parts filed while the phone is away wait and go together when it is back`() = runTest {
+        recording(parts = 1, status = RecordingStatus.RECORDING)
+        assertEquals(TransferOutcome.NO_PHONE, sender(FakeLink(::phone).apply { phone = false }).run())
+        recording(parts = 2, status = RecordingStatus.RECORDING)
+
+        val link = FakeLink(::phone)
+        assertEquals(TransferOutcome.DONE, sender(link).run())
+
+        assertEquals(listOf(progressPath, partPath(1), partPath(2)), link.sent)
+        assertEquals(emptyList(), watched.deletes)
+    }
+
     private fun ackFor(path: String): AckMessage = when (val parsed = TransferPath.parse(path)) {
         is TransferPath.PartFile -> AckMessage.Part(ID, PartRef(parsed.part, parsed.track), ok = true)
         is TransferPath.Meta -> AckMessage.Meta(ID, ok = true)
+        is TransferPath.Progress -> error("an in-progress meta is never acked: $path")
         null -> error("the sender opened a channel the phone would reject: $path")
     }
 }

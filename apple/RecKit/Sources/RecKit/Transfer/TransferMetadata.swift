@@ -1,11 +1,12 @@
 import Foundation
 import ReclyCore
 
-/// docs/11 A8's two Data Layer paths, as the `WCSession.transferFile` metadata dictionary the Apple
+/// docs/11 A8's three Data Layer paths, as the `WCSession.transferFile` metadata dictionary the Apple
 /// link carries instead (docs/13 "Apple Watch" Transfer): the same five fields for a part, the recording
-/// id alone for the meta. The Android `TransferPath` is the same grammar and the same checks, and
-/// both sides of this one link this file for the same reason it named itself a grammar there — a
-/// format two builds could disagree about is not a format.
+/// id alone for the meta, and the id with `progress` for the in-progress meta of a recording still being
+/// made (docs/03 "Watch → phone transfer contract"). The Android `TransferPath` is the same grammar and the
+/// same checks, and both sides of this one link this file for the same reason it named itself a grammar
+/// there — a format two builds could disagree about is not a format.
 ///
 /// Everything here arrives from another device, so [parse] is a whitelist rather than a read: the
 /// `recordingId` becomes a directory name under `dataDir/recordings` and a `..` in it would be a
@@ -13,15 +14,25 @@ import ReclyCore
 /// partial understanding of a metadata dictionary.
 public enum TransferMetadata: Equatable {
     case part(PartMetadata)
+    /// The recording's `meta.json` while it is still recording, sent ahead of a part — [part] is the newest
+    /// part it lists, the one it goes ahead of. Never acked, and it finalizes nothing; `.meta` does.
+    case progress(recordingId: String, part: Int)
     case meta(recordingId: String)
 
-    /// `nil` for anything that is not exactly one of the two shapes.
+    /// `nil` for anything that is not exactly one of the three shapes.
     public static func parse(_ metadata: [String: Any]) -> TransferMetadata? {
         guard let recordingId = metadata[Key.recordingId] as? String, isId(recordingId) else {
             return nil
         }
-        // The meta carries the id and nothing else, so the presence of a part number is what tells
-        // the two apart — as the `/rec/part/` and `/rec/meta/` prefixes do on Android.
+        // The meta carries the id and nothing else, so the presence of a part number — or of `progress` —
+        // is what tells the three apart, as the `/rec/part/`, `/rec/progress/` and `/rec/meta/` prefixes do
+        // on Android.
+        if let progress = metadata[Key.progress] {
+            guard metadata[Key.part] == nil, let part = (progress as? NSNumber)?.intValue, part > 0 else {
+                return nil
+            }
+            return .progress(recordingId: recordingId, part: part)
+        }
         guard metadata[Key.part] != nil else { return .meta(recordingId: recordingId) }
         guard let part = PartMetadata(recordingId: recordingId, metadata: metadata) else {
             return nil
@@ -32,6 +43,7 @@ public enum TransferMetadata: Equatable {
     public var dictionary: [String: Any] {
         switch self {
         case .part(let part): return part.dictionary
+        case .progress(let recordingId, let part): return [Key.recordingId: recordingId, Key.progress: part]
         case .meta(let recordingId): return [Key.recordingId: recordingId]
         }
     }
@@ -39,15 +51,18 @@ public enum TransferMetadata: Equatable {
     public var recordingId: String {
         switch self {
         case .part(let part): return part.recordingId
+        case .progress(let recordingId, _): return recordingId
         case .meta(let recordingId): return recordingId
         }
     }
 
     /// What two transfers of the same thing share, so a resend can tell whether `WCSession` is
-    /// already carrying this file (see `WatchTransferQueue.pump`).
+    /// already carrying this file (see `WatchTransferQueue.pump`). An in-progress meta is told apart by
+    /// the part it goes ahead of: the one for the next part is a new transfer, not a resend of the last.
     public var key: String {
         switch self {
         case .part(let part): return "\(part.recordingId)/\(part.part)/\(part.track.wire)"
+        case .progress(let recordingId, let part): return "\(recordingId)/progress/\(part)"
         case .meta(let recordingId): return "\(recordingId)/meta"
         }
     }
@@ -58,6 +73,7 @@ public enum TransferMetadata: Equatable {
         public static let track = "track"
         public static let sha256 = "sha256"
         public static let file = "file"
+        public static let progress = "progress"
     }
 
     /// A ULID is 26 Crockford base32 characters, but the id is the watch's and this is a safety

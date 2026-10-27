@@ -33,6 +33,27 @@ final class TransferMetadataTests: XCTestCase {
         XCTAssertEqual(meta.key, "\(recordingId)/meta")
     }
 
+    /// docs/03: the in-progress meta a recording still being made sends ahead of each part — the id and
+    /// the part it goes ahead of, which makes the one for the next part a transfer of its own.
+    func testTheInProgressMetaIsTheIdAndThePartItGoesAheadOf() {
+        let progress = TransferMetadata.progress(recordingId: recordingId, part: 3)
+
+        XCTAssertEqual(TransferMetadata.parse(progress.dictionary), progress)
+        XCTAssertEqual(progress.key, "\(recordingId)/progress/3")
+        XCTAssertNotEqual(progress.key, TransferMetadata.progress(recordingId: recordingId, part: 4).key)
+        XCTAssertNotEqual(progress, TransferMetadata.meta(recordingId: recordingId), "it is never the final meta")
+    }
+
+    func testAnInProgressMetaThatIsNotOneIsRefused() {
+        for value in [0, -1] {
+            XCTAssertNil(TransferMetadata.parse([TransferMetadata.Key.recordingId: recordingId, TransferMetadata.Key.progress: value]))
+        }
+        XCTAssertNil(TransferMetadata.parse([TransferMetadata.Key.recordingId: recordingId, TransferMetadata.Key.progress: "3"]))
+        var both = base
+        both[TransferMetadata.Key.progress] = 7
+        XCTAssertNil(TransferMetadata.parse(both), "a part and an in-progress meta at once is neither")
+    }
+
     /// The id becomes a directory name under `dataDir/recordings`; anything that could escape it is
     /// not a recording id.
     func testAnIdThatCouldEscapeTheRecordingsDirectoryIsRefused() {

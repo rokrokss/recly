@@ -121,6 +121,7 @@ class RecorderService : Service() {
                 // docs/03 Naming rules: a watch recording is `_watch_` and says `"source": "watch"`.
                 // The shell already declares what it is running on, so nothing has to be passed in.
                 source = if (core.deps.device.platform == Platform.WEAROS) Source.WATCH else Source.PHONE,
+                onPartFiled = { host().onPartFiled(it) },
                 onError = { fail(it) },
             )
             try {

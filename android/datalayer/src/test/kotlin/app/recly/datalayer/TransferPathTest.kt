@@ -27,6 +27,16 @@ class TransferPathTest {
         assertEquals(path, TransferPath.parse(path.serialize()))
     }
 
+    /** docs/03: the in-progress meta a watch sends ahead of each part while it is still recording. */
+    @Test
+    fun `an in-progress meta path round-trips and is not the meta`() {
+        val path = TransferPath.Progress(ID)
+
+        assertEquals("/rec/progress/$ID", path.serialize())
+        assertEquals(path, TransferPath.parse(path.serialize()))
+        assertEquals(TransferPath.Meta(ID), TransferPath.parse("/rec/meta/$ID"), "only the meta path is the final meta")
+    }
+
     @Test
     fun `every track the desktop can send is understood`() {
         Track.entries.forEach { track ->
@@ -42,6 +52,9 @@ class TransferPathTest {
         assertNull(TransferPath.parse("/rec/meta/.."))
         assertNull(TransferPath.parse("/rec/meta/a b"))
         assertNull(TransferPath.parse("/rec/meta/"))
+        assertNull(TransferPath.parse("/rec/progress/.."))
+        assertNull(TransferPath.parse("/rec/progress/$ID/1"))
+        assertNull(TransferPath.parse("/rec/progress/"))
     }
 
     @Test

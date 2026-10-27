@@ -91,6 +91,11 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             ) { [weak self] error in
                 self?.captureFailed(error)
             }
+            // docs/03 "Watch → phone transfer contract": each part goes to the phone as soon as its boundary
+            // files it, so the phone organizes the recording while it is still being made.
+            recorder.onPartFiled = { [weak self] recordingId in
+                Task { @MainActor in await self?.hand(over: recordingId) }
+            }
             self.recorder = recorder
             let recovery = RecordingRecovery(core: bridge.core)
             let session = RecorderSession(
@@ -258,8 +263,9 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         }
     }
 
-    /// The recording goes on the queue and the queue goes to the phone. Nothing is deleted here —
-    /// `ack-meta ok:true` is the only thing that deletes audio from this watch (docs/03).
+    /// The recording goes on the queue and the queue goes to the phone — at each part filed while it is
+    /// still being made, and at its stop. Nothing is deleted here — `ack-meta ok:true` is the only thing
+    /// that deletes audio from this watch (docs/03).
     private func hand(over recordingId: String) async {
         guard let core = bridge?.core, let queue else { return }
         guard let record = try? await core.recordings.get(id: recordingId) else { return }

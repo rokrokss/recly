@@ -58,6 +58,8 @@ class SegmentedRecorder(
     private val scope: CoroutineScope,
     private val segmentSec: Int = DEFAULT_SEGMENT_SEC,
     private val source: Source = Source.PHONE,
+    /** A boundary filed a part ([RecorderHost.onPartFiled]); launched, so it never holds the boundary up. */
+    private val onPartFiled: suspend (recordingId: String) -> Unit = {},
     private val onError: (RecorderError) -> Unit,
 ) : Capture {
     private class Session(
@@ -342,6 +344,7 @@ class SegmentedRecorder(
     private suspend fun registerPart(open: Session, part: Part) {
         try {
             core.recordings.addPart(open.recordingId, part)
+            scope.launch { runCatching { onPartFiled(open.recordingId) } }
         } catch (e: Exception) {
             runCatching {
                 withContext(core.deps.io) {

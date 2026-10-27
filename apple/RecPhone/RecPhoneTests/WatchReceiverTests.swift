@@ -323,6 +323,41 @@ final class WatchReceiverTests: XCTestCase {
         XCTAssertFalse(core.transcript.entries.contains("enqueue"), "nothing is queued yet")
     }
 
+    /// docs/03: while the watch is still recording, each part comes behind an in-progress meta. The core
+    /// files it — the row the parts go into, and the parts it lists organized — and nothing goes back: the
+    /// watch does not wait for it, and an ack-meta here is the one thing that may delete its audio.
+    func testAnInProgressMetaIsFiledAndNeverAnswered() async throws {
+        let filed = expectation(description: "the core was handed the in-progress meta")
+        core.onProgress = { filed.fulfill() }
+
+        receiver.received(try writeMeta(recordingId), metadata: progressMetadata)
+
+        await fulfillment(of: [filed], timeout: 2)
+        XCTAssertEqual(core.progressJson, "{\"recordingId\":\"\(recordingId)\"}")
+        XCTAssertEqual(core.progressRecordingId, recordingId)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(core.transcript.entries, ["acceptProgress"])
+        XCTAssertEqual(acks.sent, [], "never acked")
+        try await untilDiscarded(try stagedDeliveries())
+    }
+
+    /// The meta goes ahead of the part it lists, and the accepts keep the order they arrived in — so the
+    /// part lands on a row that already knows where it sits in the recording.
+    func testThePartBehindAnInProgressMetaIsAcceptedAfterIt() async throws {
+        let acked = expectation(description: "the part was acked")
+        acks.onAck = { acked.fulfill() }
+
+        receiver.received(try writeMeta(recordingId), metadata: progressMetadata)
+        receiver.received(try write("audio", named: file), metadata: partMetadata)
+
+        await fulfillment(of: [acked], timeout: 2)
+        XCTAssertEqual(core.transcript.entries, ["acceptProgress", "acceptPart", "ack"])
+        XCTAssertEqual(
+            acks.sent,
+            [.part(recordingId: recordingId, ref: PartRef(part: 1, track: Track.mono), ok: true, reason: nil)]
+        )
+    }
+
     /// Metadata this side cannot read names no recording, so there is nothing to ack and nothing to
     /// file. The watch's resend is the answer.
     func testUnreadableMetadataIsNeitherFiledNorAcked() throws {
@@ -374,6 +409,10 @@ final class WatchReceiverTests: XCTestCase {
 
     private var metaMetadata: [String: Any] {
         TransferMetadata.meta(recordingId: recordingId).dictionary
+    }
+
+    private var progressMetadata: [String: Any] {
+        TransferMetadata.progress(recordingId: recordingId, part: 1).dictionary
     }
 
     /// [folder] so two deliveries of the same part can be waiting under the same name, which is
@@ -438,6 +477,21 @@ final class FakeWatchTransferCore: WatchTransferCore, @unchecked Sendable {
         onPart?()
         await holdPart?()
         return partAck
+    }
+
+    /// The in-progress meta the core was last handed.
+    private(set) var progressRecordingId: String?
+    private(set) var progressJson: String?
+    var onProgress: (() -> Void)?
+
+    func acceptProgress(recordingId: String, json: String) async throws -> Bool {
+        transcript.record("acceptProgress")
+        lock.withLock {
+            progressRecordingId = recordingId
+            progressJson = json
+        }
+        onProgress?()
+        return true
     }
 
     func acceptMeta(json: String) async throws -> AcceptMetaResult {

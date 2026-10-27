@@ -9,6 +9,8 @@ const root = dirname(fileURLToPath(import.meta.url));
 const load = (p) => JSON.parse(readFileSync(join(root, p), "utf8"));
 const pairs = [
   ["recording.meta.schema.json", "examples/recording.meta.json"],
+  // docs/03 "Watch → phone transfer contract": the in-progress meta a watch sends ahead of each part while it records.
+  ["recording.meta.schema.json", "examples/recording.meta.in-progress.json"],
   ["transcript.schema.json", "examples/transcript.json"],
   ["transcript.schema.json", "examples/transcript-local.json"],
   ["transcript.schema.json", "examples/transcript-edited.json"],

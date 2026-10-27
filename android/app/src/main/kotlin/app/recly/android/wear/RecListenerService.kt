@@ -25,7 +25,8 @@ import recly.core.platform.Logger
 /**
  * The phone half of docs/03 "Watch → phone transfer contract" (docs/11 A8). One file per channel, parts first
  * and `meta.json` last; every file is verified against the sha256 in its own path and acked, and
- * only a meta whose parts are all present turns into a Job.
+ * only a meta whose parts are all present turns into a Job. While the watch is still recording, each
+ * part comes behind an in-progress meta (`/rec/progress/…`), which is filed and never acked.
  *
  * Play Services dispatches these callbacks on its own background thread and keeps the service
  * bound for as long as one is running, so the work is done inline with [runBlocking] rather than
@@ -89,6 +90,7 @@ class RecListenerService : WearableListenerService() {
             withContext(core.deps.io) {
                 when (parsed) {
                     is TransferPath.PartFile -> acceptPart(core, channel.nodeId, parsed, file)
+                    is TransferPath.Progress -> acceptProgress(core, parsed, file)
                     is TransferPath.Meta -> acceptMeta(core, channel.nodeId, parsed, file)
                 }
             }
@@ -127,6 +129,17 @@ class RecListenerService : WearableListenerService() {
             tmpPath = file.absolutePath.toPath(),
         )
         send(core, nodeId, WearJson.ACK_PART, WearJson.partAck(path, ack))
+    }
+
+    /**
+     * docs/03: the recording as the watch has it while it is still recording. The core opens or updates the
+     * row the parts go into and organizes the parts it lists (docs/08 "Organizing"); nothing is acked — the
+     * watch does not wait for it, and the next part brings a fresher one.
+     */
+    private suspend fun acceptProgress(core: ReclyCore, path: TransferPath.Progress, file: File) {
+        val text = file.readText()
+        file.delete()
+        core.transfer.acceptProgress(path.recordingId, text)
     }
 
     /**
@@ -169,6 +182,7 @@ class RecListenerService : WearableListenerService() {
         val dir = File(cacheDir, "$STAGING/${path.recordingId}")
         return when (path) {
             is TransferPath.PartFile -> File(dir, path.file)
+            is TransferPath.Progress -> File(dir, "progress.json")
             is TransferPath.Meta -> File(dir, "meta.json")
         }
     }

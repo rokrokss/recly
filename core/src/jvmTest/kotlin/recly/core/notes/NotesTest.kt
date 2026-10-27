@@ -24,6 +24,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
+import okio.Path.Companion.toPath
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptHarness
 import recly.core.db.RecDatabase
@@ -35,6 +36,10 @@ import recly.core.job.StepStatus
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import recly.core.model.RecordingMeta
+import recly.core.model.RecordingStatus
+import recly.core.model.Source
+import recly.core.model.Track
+import recly.core.model.recJson
 import recly.core.platform.SecureStore
 import recly.core.processing.ExternalTranscription
 import recly.core.processing.ProcessingSaveResult
@@ -56,6 +61,7 @@ import recly.core.transcribe.SttResult
 import recly.core.transcribe.SttSegment
 import recly.core.transcribe.Submitted
 import recly.core.transcribe.TranscriptEdit
+import recly.core.transfer.AcceptMetaResult
 
 /** docs/08 "Organizing" through the whole core: consent, the parts while recording, and the final pass after Stop. */
 class NotesTest {
@@ -210,6 +216,79 @@ class NotesTest {
         val lines = notes.linesAround(meta.recordingId, 0.0)
         assertEquals(listOf(0.0, 20.0), lines.map { it.atSec }, "there is no playback while recording: the part's lines")
         assertTrue(lines.all { it.provisional && it.speakerId == null })
+    }
+
+    // --- A watch recording, as it arrives (docs/03 "Watch → phone transfer contract") ---
+
+    private val watch = testMeta(recordingId = "01J9WATCHABCDEFGHJKMNPQRST", source = Source.WATCH)
+
+    private fun watchPart(n: Int) = testPart(watch, n).copy(bytes = SEEDED_AUDIO.length.toLong(), sha256 = SEEDED_AUDIO_SHA256)
+
+    /** The watch's in-progress meta, listing [parts]. */
+    private suspend fun progressOf(vararg parts: Int): Boolean =
+        f.core.transfer.acceptProgress(watch.recordingId, recJson.encodeToString(watch.copy(parts = parts.map(::watchPart))))
+
+    /** Part [n] as the transfer API hands it over: a file in a staging directory. */
+    private suspend fun send(n: Int): Boolean {
+        val staged = "/incoming/${watchPart(n).file}".toPath()
+        f.fs.createDirectories(staged.parent!!)
+        f.fs.write(staged) { writeUtf8(SEEDED_AUDIO) }
+        return f.core.transfer.acceptPart(watch.recordingId, n, Track.MONO, SEEDED_AUDIO_SHA256, staged).ok
+    }
+
+    @Test
+    fun `a watch recording is organized part by part as it arrives, and its final meta files it with one job`() = runBlocking {
+        ready()
+        engine.answer = { listOf(SttSegment(0.0, 20.0, null, speech("alpha"))) }
+        answer(items(item("decision", "Use alpha", "00:00:00", "alpha3 alpha4 alpha5 alpha6")))
+
+        assertTrue(progressOf(1))
+        assertTrue(send(1))
+        notes.awaitWork()
+
+        assertEquals("/data/recordings/${watch.recordingId}/${watchPart(1).file}", engine.requests.single().path, "the part as it was filed here")
+        val first = notes.get(watch.recordingId)
+        assertEquals(NotesStage.PROVISIONAL, first.stage)
+        assertEquals(listOf("Use alpha"), first.decisions.map { it.text })
+
+        // A part ahead of the meta that lists it is organized once that meta comes, at its place on the recording.
+        engine.answer = { listOf(SttSegment(0.0, 20.0, null, speech("bravo"))) }
+        answer(items(item("todo", "Send bravo", "00:15:05", "bravo3 bravo4 bravo5 bravo6")))
+        assertTrue(send(2))
+        notes.awaitWork()
+        assertEquals(1, engine.requests.size)
+        assertTrue(progressOf(1, 2))
+        notes.awaitWork()
+        assertEquals(2, engine.requests.size)
+        assertEquals(905.0, notes.get(watch.recordingId).todos.single().atSec)
+
+        // The final meta still files it, and the job is made once.
+        val final = watch.copy(
+            parts = listOf(watchPart(1), watchPart(2)),
+            endedAt = "2026-08-26T01:30:00.000Z",
+            durationSec = 1800.0,
+            status = RecordingStatus.FINALIZED,
+        )
+        assertIs<AcceptMetaResult.Complete>(f.core.transfer.acceptMeta(recJson.encodeToString(final)))
+        val job = assertIs<EnqueueResult.Enqueued>(f.core.enqueue(watch.recordingId))
+        assertEquals(job, f.core.enqueue(watch.recordingId), "a meta sent again lands on the same job")
+        assertEquals(listOf(job.jobId), f.core.jobs.list().filter { it.recordingId == watch.recordingId }.map { it.id })
+        assertFalse(progressOf(1, 2), "a late in-progress meta does not re-open it")
+        assertEquals(2, engine.requests.size)
+        assertEquals(2, responses().size)
+    }
+
+    @Test
+    fun `a watch's own recording is not organized on the watch`() = runBlocking {
+        ready()
+        engine.answer = { listOf(SttSegment(0.0, 20.0, null, speech("alpha"))) }
+        val own = testMeta(recordingId = "01J9WATCHABCDEFGHJKMNPQRST", source = Source.WATCH)
+        f.core.recordings.create(own, f.dirOf(own))
+
+        file(own, 1)
+
+        assertTrue(engine.requests.isEmpty())
+        assertEquals(0, responses().size)
     }
 
     private class FakeProvider(private val result: SttResult) : SttProvider {

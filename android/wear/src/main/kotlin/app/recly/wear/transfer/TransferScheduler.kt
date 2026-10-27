@@ -36,8 +36,8 @@ object TransferScheduler {
     const val UNIQUE_PERIODIC: String = "rec-transfer-periodic"
 
     /**
-     * Every trigger in docs/11 W4 lands here — the finalize that queued a recording, the phone
-     * appearing, and the app coming to the foreground.
+     * Every trigger in docs/11 W4 lands here — a part filed while recording (docs/03), the finalize that
+     * queued a recording, the phone appearing, and the app coming to the foreground.
      *
      * KEEP while a pass is *sending*: it sends the same files this one would, and REPLACE would
      * cancel it mid-file. But a pass that is only *waiting* — the exponential backoff a stalled
@@ -55,10 +55,9 @@ object TransferScheduler {
         val infos = manager.getWorkInfosForUniqueWork(UNIQUE)
         infos.addListener({
             val soon = System.currentTimeMillis() + IMMINENT.inWholeMilliseconds
-            val keep = runCatching { infos.get() }.getOrDefault(emptyList()).any {
-                it.state == WorkInfo.State.RUNNING ||
-                    (it.state == WorkInfo.State.ENQUEUED && it.nextScheduleTimeMillis <= soon)
-            }
+            val current = runCatching { infos.get() }.getOrDefault(emptyList())
+            val running = current.any { it.state == WorkInfo.State.RUNNING }
+            val keep = running || current.any { it.state == WorkInfo.State.ENQUEUED && it.nextScheduleTimeMillis <= soon }
             manager.enqueueUniqueWork(
                 UNIQUE,
                 if (keep) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
@@ -66,6 +65,10 @@ object TransferScheduler {
                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
                     .build(),
             )
+            // The pass that is sending read the queue before this trigger: a recording stopped, or a part
+            // filed, while it was on the wire would otherwise wait for the next trigger — at worst the
+            // six-hour periodic. A follow-up that finds nothing owed opens no channel.
+            if (running) runLater(context)
         }, Dispatchers.IO.asExecutor())
     }
 

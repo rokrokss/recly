@@ -112,6 +112,11 @@ public final class SegmentedRecorder {
     /// the microphone's business and must not take it down. On [control] only.
     private var systemStarted = false
 
+    /// A boundary has filed its parts (`addPart`), with the recording's id — off the audio thread, after the
+    /// last track of the boundary. The watch hands them to the phone at once (docs/03 "Watch → phone transfer
+    /// contract"); `nil` everywhere else. Set before the recording starts.
+    public var onPartFiled: ((String) -> Void)?
+
     /// Called with the file a boundary has just closed and released, before anything reads it.
     /// `nil` in the app: it exists because "the container came back unreadable" is the one state no
     /// fake input can produce from outside — that file is written by the real AAC encoder.
@@ -611,6 +616,7 @@ public final class SegmentedRecorder {
             for segment in closed {
                 await self.register(segment, in: directory, recordingId: recordingId, core: core)
             }
+            self.onPartFiled?(recordingId)
         }
     }
 
