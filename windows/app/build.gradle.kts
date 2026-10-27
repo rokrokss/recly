@@ -109,6 +109,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // The Windows runner is the only place the Windows fonts are measured: a layout assertion that fails
+    // there has to say its numbers in the job log, which is all CI keeps.
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        events("failed")
+        showStandardStreams = false
+    }
     // M6-L2: forwarded to the test JVM so the protocol tests can be pointed at the real Rust capture
     // helper instead of `dev/FakeHelper.java` (see `FakeHelperCommand`). Gradle's `-D` reaches the
     // daemon, not the workers.
