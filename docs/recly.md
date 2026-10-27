@@ -3125,10 +3125,10 @@ Rules:
 | **iPhone** | `UNUserNotificationCenter` local notifications + a banner at the top of the list. Without permission, **banner only** |
 | Apple Watch | none (same reason as iPhone) |
 | **macOS** | menu bar icon error state + a banner at the top of the popover + `UNUserNotificationCenter` notifications (the same path as meeting detection) |
+| Windows | tray icon error state + a `TrayIcon.displayMessage` balloon + a banner at the top of the tray popup |
 
 A long recording's own notices — the watchdog, the reminders, the battery stop, the pause — are not job notices and reach the watches
 too: §1 "Long recordings — watchdog · reminders · battery stop · waiting to resume".
-| Windows | tray icon error state + a `TrayIcon.displayMessage` balloon + a banner at the top of the tray popup |
 
 ### StepRunner
 
