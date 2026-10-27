@@ -307,8 +307,11 @@ class Summaries internal constructor(
         "[${TranscriptNormalizer.clock(highlight.atSec)}]" + (words?.let { " $it" } ?: "")
     }
 
-    /** One request to the plan's Responses API; its text, trimmed and never empty. */
-    private suspend fun complete(model: String, instructions: String, input: String, timeoutSec: Int = 600, effort: String? = null): String {
+    /**
+     * One request to the plan's Responses API; its text, trimmed and never empty. Also the notes' request (docs/08
+     * "Organizing"): the same endpoint, `store: false`, the same error mapping.
+     */
+    internal suspend fun complete(model: String, instructions: String, input: String, timeoutSec: Int = 600, effort: String? = null): String {
         val body = buildJsonObject {
             put("model", model)
             effort?.let { putJsonObject("reasoning") { put("effort", it) } }
@@ -346,6 +349,9 @@ class Summaries internal constructor(
         if (text.isEmpty()) throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "empty answer"))
         return text
     }
+
+    /** The language a summary of a transcript in [transcriptLanguage] is written in, named for the model ([SummaryLanguage]). */
+    internal fun language(transcriptLanguage: String): String = SummaryLanguage.of(transcriptLanguage, locale.value)
 
     // --- Titles and speaker names (docs/08 "Titles and speaker names") ---
 

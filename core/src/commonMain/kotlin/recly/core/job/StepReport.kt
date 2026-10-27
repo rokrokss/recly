@@ -29,6 +29,18 @@ object StepReport {
     }
 
     /**
+     * docs/08 "Organizing": whether all that is left of the job is its notes — the recording is uploaded and its
+     * transcript published, and `notes.organize` is running or waiting (a usage limit, a sign-in OpenAI ended). The
+     * shells show such a recording as done: the notes are not the recording's processing, and edits and fills go on.
+     */
+    fun notesOnly(workflow: recly.core.model.Workflow?, steps: List<StepRun>): Boolean {
+        val left = steps.filter { it.status != StepStatus.SUCCEEDED && it.status != StepStatus.SKIPPED }
+        if (left.isEmpty()) return false
+        val defined = workflow?.steps?.associateBy { it.id } ?: return false
+        return left.all { defined[it.stepId] is recly.core.model.Step.OrganizeNotes }
+    }
+
+    /**
      * Whether the thing to do about [lastError] is to look at the key: this device holds no value
      * for the secret, or the provider refused the one it holds (docs/08 "Errors"). Every other
      * failure — and a message older than the keys — has nothing to check.

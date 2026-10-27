@@ -164,6 +164,9 @@ class RecordingRepository(
     private val directories = RecordingDirectory(deps.dataDir, deps.device.platform)
     internal var beforeCapture: suspend (RecordingMeta) -> Unit = {}
     internal var afterCapture: suspend (String) -> Unit = {}
+
+    /** A part was filed ([addPart]) — what organizing while recording starts from (docs/08 "Organizing"). Must not block. */
+    internal var partFiled: (recordingId: String, part: Part) -> Unit = { _, _ -> }
     internal var localTranscription: recly.core.transcribe.LocalTranscriptionService? = null
 
     /** The queue that runs this device's jobs, which [delete] stops for the recording it deletes. */
@@ -819,18 +822,21 @@ class RecordingRepository(
                         .folderId
             }
 
-    suspend fun addPart(recordingId: String, part: Part): Unit = locked {
-        val record = requireRecord(recordingId)
-        val parts = record.meta.parts
-            .filterNot { it.part == part.part && it.track == part.track }
-            .plus(part)
-            .sortedWith(compareBy({ it.part }, { it.track }))
-        val meta = record.meta.copy(parts = parts)
-        db.transaction {
-            insertPart(recordingId, part)
-            writeMeta(meta)
+    suspend fun addPart(recordingId: String, part: Part) {
+        locked {
+            val record = requireRecord(recordingId)
+            val parts = record.meta.parts
+                .filterNot { it.part == part.part && it.track == part.track }
+                .plus(part)
+                .sortedWith(compareBy({ it.part }, { it.track }))
+            val meta = record.meta.copy(parts = parts)
+            db.transaction {
+                insertPart(recordingId, part)
+                writeMeta(meta)
+            }
+            MetaWriter.write(deps.fileSystem, record.dir, meta)
         }
-        MetaWriter.write(deps.fileSystem, record.dir, meta)
+        partFiled(recordingId, part)
     }
 
     /**
@@ -1052,6 +1058,32 @@ class RecordingRepository(
         deps.fileSystem.createDirectories(record.dir)
         deps.fileSystem.write(temp) { writeUtf8(json) }
         deps.fileSystem.atomicMove(temp, file)
+    }
+
+    /**
+     * A file of the core's own beside the parts — the notes and the transcripts made while recording (docs/08
+     * "Organizing") — as text, or null when it, or the recording, is not there. Read under the lock [delete] takes.
+     */
+    internal suspend fun readFile(recordingId: String, name: String): String? = locked {
+        val record = record(recordingId) ?: return@locked null
+        val file = record.dir / name
+        if (!deps.fileSystem.exists(file)) return@locked null
+        deps.fileSystem.read(file) { readUtf8() }
+    }
+
+    /** Written whole and moved into place, as [saveSummary] is; false when the recording is gone and nothing was written. */
+    internal suspend fun writeFile(recordingId: String, name: String, text: String): Boolean = locked {
+        val record = record(recordingId) ?: return@locked false
+        val temp = record.dir / "$name.tmp"
+        deps.fileSystem.createDirectories(record.dir)
+        deps.fileSystem.write(temp) { writeUtf8(text) }
+        deps.fileSystem.atomicMove(temp, record.dir / name)
+        true
+    }
+
+    internal suspend fun deleteFile(recordingId: String, name: String): Unit = locked {
+        val record = record(recordingId) ?: return@locked
+        deps.fileSystem.delete(record.dir / name, mustExist = false)
     }
 
     private suspend fun <T> locked(body: () -> T): T = withContext(deps.io) { mutex.withLock { body() } }

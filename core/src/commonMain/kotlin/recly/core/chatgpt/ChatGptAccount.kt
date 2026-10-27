@@ -66,6 +66,12 @@ sealed class ChatGptConnection {
  */
 data class ChatGptSignIn(val authorizationUrl: String, val state: String)
 
+/**
+ * What this device holds, read from its secure store without asking OpenAI — so it is right in a process that has
+ * not called [ChatGptAccount.refresh] yet, a scheduler's background pass (docs/08 "Organizing").
+ */
+internal enum class ChatGptStanding { UNAVAILABLE, SIGNED_OUT, SIGNED_IN, EXPIRED }
+
 /** A call that either worked or says why, as a [CoreMessage] wire code the shell renders (docs/07 §5). */
 sealed class ChatGptResult {
     /** [welcome]: the first sign-in on this device, which the shells confirm once (docs/09 "Summary view"). */
@@ -109,7 +115,26 @@ class ChatGptAccount internal constructor(
 
     private var pending: Pending? = null
 
+    /** A sign-in finished here: the notes waiting for one go again (docs/08 "Organizing"). Never fails the sign-in. */
+    internal var signedIn: suspend () -> Unit = {}
+
+    /** The user signed out: the consent to organize goes with the sign-in it was given for (docs/08 "Organizing"). */
+    internal var signedOut: suspend () -> Unit = {}
+
     fun observe(): StateFlow<ChatGptConnection> = state.asStateFlow()
+
+    /** [ChatGptStanding] from what is saved here; no request is made. */
+    internal suspend fun standing(): ChatGptStanding {
+        if (!available()) return ChatGptStanding.UNAVAILABLE
+        return mutex.withLock {
+            val registration = registration() ?: return@withLock ChatGptStanding.SIGNED_OUT
+            when {
+                session() != null -> ChatGptStanding.SIGNED_IN
+                registration.ended -> ChatGptStanding.EXPIRED
+                else -> ChatGptStanding.SIGNED_OUT
+            }
+        }
+    }
 
     /**
      * Reads what this device holds and, when signed in, the plan's models. A secure store that will not
@@ -237,6 +262,7 @@ class ChatGptAccount internal constructor(
         }
         deps.logger.log(Logger.Level.INFO, "chatgpt.signin", mapOf("registered" to (started.clientId == null)))
         refresh()
+        quietly("signedIn") { signedIn() }
         ChatGptResult.Done(welcome = started.clientId == null)
     }
 
@@ -258,6 +284,7 @@ class ChatGptAccount internal constructor(
         }
         publish(if (available()) ChatGptConnection.SignedOut else ChatGptConnection.Unavailable)
         deps.logger.log(Logger.Level.INFO, "chatgpt.signout", emptyMap())
+        quietly("signedOut") { signedOut() }
         if (clientId == null || refresh == null) return ChatGptResult.Done()
         return result {
             revoke(clientId, refresh)
@@ -568,6 +595,17 @@ class ChatGptAccount internal constructor(
     private suspend fun delete(key: String) = deps.secureStore.delete(NAMESPACE, key)
 
     private fun publish(connection: ChatGptConnection): ChatGptConnection = connection.also { state.value = it }
+
+    /** A hook of [signedIn] or [signedOut]: what it does is not the sign-in's outcome. */
+    private suspend fun quietly(hook: String, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            deps.logger.log(Logger.Level.WARN, "chatgpt.hook.failed", mapOf("hook" to hook), e)
+        }
+    }
 
     private suspend fun result(block: suspend () -> ChatGptResult): ChatGptResult = try {
         block()

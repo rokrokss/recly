@@ -18,8 +18,8 @@ object ProcessingPlan {
 
     /**
      * Transcription and publication again, with the current [document] — its mode, provider, language
-     * and vocabulary — into [folderId], the recording's folder, which already holds its audio. Null with
-     * transcription off.
+     * and vocabulary — into [folderId], the recording's folder, which already holds its audio, and the notes
+     * made again from the new transcript (docs/08 "Organizing"). Null with transcription off.
      */
     fun retranscription(document: ProcessingSettingsDocument, folderId: String): Workflow? {
         val steps = compile(document).steps.filter { it !is Step.DriveUpload }
@@ -53,6 +53,9 @@ object ProcessingPlan {
                     }
                     TranscriptionMode.OFF -> Unit
                 }
+                // docs/08 "Organizing": the notes of what was said, after it is published — a no-op for a user who
+                // has not signed in to ChatGPT and agreed.
+                if (transcription.mode != TranscriptionMode.OFF) add(Step.OrganizeNotes("organize"))
             },
         )
     }

@@ -30,6 +30,7 @@ class SchemaConformanceTest {
     private val recordingMetaSchema: JsonSchema get() = schema("../spec/recording.meta.schema.json")
     private val settingsSchema: JsonSchema get() = schema("../spec/recording-settings.schema.json")
     private val transcriptSchema: JsonSchema get() = schema("../spec/transcript.schema.json")
+    private val notesSchema: JsonSchema get() = schema("../spec/notes.schema.json")
 
     private fun schema(path: String) = factory.getSchema(File(path).readText(), config)
 
@@ -128,6 +129,24 @@ class SchemaConformanceTest {
             transcriptSchema,
             transcriptExample().replaceFirst("\"id\": \"S1\"", "\"id\": \"A\""),
         )
+    }
+
+    /** docs/08 "Organizing": the notes file the core writes is the document the spec describes, provisional or final. */
+    @Test
+    fun `the notes example reads back and serialized notes match the notes schema`() {
+        val example = File("../spec/examples/notes.json").readText()
+        assertValid("notes example", notesSchema, example)
+        val notes = recJson.decodeFromString(recly.core.notes.NotesFile.serializer(), example)
+        assertValid("serialized notes", notesSchema, recJson.encodeToString(recly.core.notes.NotesFile.serializer(), notes))
+        val provisional = recly.core.notes.NotesFile(
+            recordingId = notes.recordingId,
+            items = notes.items.map { it.copy(provisional = true, conversation = null) },
+            parts = listOf(1),
+            createdAt = notes.createdAt,
+            updatedAt = notes.updatedAt,
+        )
+        assertValid("serialized provisional notes", notesSchema, recJson.encodeToString(recly.core.notes.NotesFile.serializer(), provisional))
+        assertFlagged("notes with a name for an owner", notesSchema, example.replaceFirst("\"owner\": \"S2\"", "\"owner\": \"Mina\""))
     }
 
     @Test

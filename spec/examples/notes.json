@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "recordingId": "01J9ABCDEF0123456789ABCDEF",
+  "stage": "final",
+  "overview": "A product review that settled the Friday launch, then a call with the vendor about the contract renewal.",
+  "items": [
+    {
+      "id": "01J9ABCDEG0000000000000001",
+      "kind": "decision",
+      "text": "The launch moves to Friday.",
+      "evidence": {
+        "atSec": 312.0,
+        "quote": "let's move the launch to Friday then"
+      },
+      "provisional": false,
+      "conversation": 0,
+      "createdAt": "2026-08-26T01:20:00.000Z"
+    },
+    {
+      "id": "01J9ABCDEG0000000000000002",
+      "kind": "todo",
+      "text": "Send the release notes to the support team.",
+      "owner": "S2",
+      "due": "Thursday",
+      "evidence": {
+        "atSec": 498.5,
+        "quote": "I'll send the release notes to support by Thursday"
+      },
+      "provisional": false,
+      "conversation": 0,
+      "createdAt": "2026-08-26T01:20:00.000Z"
+    },
+    {
+      "id": "01J9ABCDEG0000000000000003",
+      "kind": "question",
+      "text": "Does the renewal include the new seats?",
+      "evidence": {
+        "atSec": 2405.2,
+        "quote": "does the renewal already include the new seats"
+      },
+      "provisional": false,
+      "conversation": 1,
+      "createdAt": "2026-08-26T02:10:00.000Z"
+    }
+  ],
+  "tombstones": [
+    {
+      "kind": "todo",
+      "text": "Book a room for the retro.",
+      "atSec": 640.0,
+      "deletedAt": "2026-08-26T01:25:00.000Z"
+    }
+  ],
+  "conversations": [
+    {
+      "startSec": 0.0,
+      "endSec": 1520.4,
+      "summary": "The team reviewed the release and moved the launch to Friday."
+    },
+    {
+      "startSec": 2240.0,
+      "endSec": 3010.8,
+      "summary": "A call with the vendor about renewing the contract; the seat count is still open."
+    }
+  ],
+  "parts": [
+    1,
+    2,
+    3
+  ],
+  "model": "gpt-5.6-terra",
+  "createdAt": "2026-08-26T01:15:30.000Z",
+  "updatedAt": "2026-08-26T02:12:00.000Z",
+  "finalizedAt": "2026-08-26T02:12:00.000Z"
+}

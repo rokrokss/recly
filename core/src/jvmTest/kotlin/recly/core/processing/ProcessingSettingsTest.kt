@@ -60,7 +60,7 @@ class ProcessingSettingsTest {
                     speakers = Speakers(4, 4), external = ExternalTranscription(provider, "key")),
             ))
             val plan = ProcessingPlan.compile(old)
-            assertEquals(listOf("drive.upload", "transcribe", "transcript.publish"), plan.steps.map { it.type })
+            assertEquals(listOf("drive.upload", "transcribe", "transcript.publish", "notes.organize"), plan.steps.map { it.type })
             val speech = assertIs<Step.Transcribe>(plan.steps[1])
             assertEquals(expected, speech.diarize, provider)
             assertEquals(Speakers(), speech.speakers, "infer speakers instead of imposing a hidden old count")

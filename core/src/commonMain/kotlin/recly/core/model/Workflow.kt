@@ -100,6 +100,21 @@ sealed class Step {
         override val retry: Retry = Retry(),
         val folderId: String? = null,
     ) : Step()
+
+    /**
+     * docs/08 "Organizing": the final notes of a transcribed recording — its conversations, their decisions,
+     * to-dos and open questions, and an overview — through the user's ChatGPT plan. After `transcript.publish`,
+     * never in its way: a no-op unless the user signed in to ChatGPT and agreed, and with `continue` a failure for
+     * good still leaves the job done. A usage limit, a plan that stopped covering it or a sign-in OpenAI ended
+     * waits up to a day between tries ([Retry.maxDelaySec]).
+     */
+    @Serializable
+    @SerialName("notes.organize")
+    data class OrganizeNotes(
+        override val id: String,
+        override val onError: OnError = OnError.CONTINUE,
+        override val retry: Retry = Retry(maxAttempts = 8, initialDelaySec = 60, maxDelaySec = 86_400),
+    ) : Step()
 }
 
 /** Speaker-count hint. `context.participants` overrides both when the recording carries one. */

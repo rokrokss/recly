@@ -148,12 +148,14 @@ class CoreFixture(
 
 /**
  * An on-device engine that is always ready and says [text] once per request, from [speaker] when it
- * diarizes. [requests] is what the core asked of it.
+ * diarizes. [requests] is what the core asked of it. [answer], when set, is what it says instead — the
+ * segments of a request, on its input's own axis, their speakers kept only when it diarizes.
  */
 class FakeLocalEngine(
     var supportsDiarization: Boolean = false,
     var text: String = "hello",
     var speakers: List<String> = listOf("spk-a", "spk-b"),
+    var answer: ((LocalTranscriptionRequest) -> List<SttSegment>)? = null,
 ) : LocalTranscriptionEngine {
     val requests = mutableListOf<LocalTranscriptionRequest>()
 
@@ -164,6 +166,10 @@ class FakeLocalEngine(
 
     override suspend fun transcribe(request: LocalTranscriptionRequest, progress: LocalTranscriptionProgress): LocalTranscriptionResult {
         requests += request
+        answer?.let { scripted ->
+            scripted(request).forEach { progress.checkpoint(it.copy(speaker = it.speaker.takeIf { request.diarize }), it.end) }
+            return LocalTranscriptionResult(emptyList())
+        }
         speakers.forEachIndexed { index, speaker ->
             progress.checkpoint(
                 SttSegment(index.toDouble(), index + 1.0, speaker.takeIf { request.diarize }, "$text ${index + 1}"),

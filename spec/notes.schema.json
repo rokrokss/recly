@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rec.app/spec/notes.schema.json",
+  "title": "rec notes",
+  "description": "{base}.notes.v1.json beside the recording's parts, on the device that made them. Not uploaded or synced. See docs/recly.md §8 \"Organizing\".",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "recordingId",
+    "stage",
+    "items",
+    "tombstones",
+    "conversations",
+    "parts",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "recordingId": {
+      "$ref": "#/$defs/ulid"
+    },
+    "stage": {
+      "description": "provisional: made while recording, part by part; final: made after Stop from the recording's transcript.",
+      "enum": [
+        "provisional",
+        "final"
+      ]
+    },
+    "overview": {
+      "description": "Two or three lines over the whole recording; final notes only.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 600
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    },
+    "tombstones": {
+      "description": "Items the user deleted; an item that matches one is never shown again.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "text",
+          "atSec",
+          "deletedAt"
+        ],
+        "properties": {
+          "kind": {
+            "$ref": "#/$defs/kind"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "atSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "conversations": {
+      "description": "The final pass's conversations in order, each with its summary when it had enough words to be asked about.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "startSec",
+          "endSec"
+        ],
+        "properties": {
+          "startSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "endSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          }
+        }
+      }
+    },
+    "parts": {
+      "description": "The part numbers the provisional pass is done with, notes or not.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "model": {
+      "description": "The ChatGPT model the notes were last made with.",
+      "type": "string",
+      "minLength": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalizedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "const": "final"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "required": [
+          "finalizedAt"
+        ],
+        "properties": {
+          "finalizedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "finalizedAt": false,
+          "overview": false
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "kind": {
+      "enum": [
+        "decision",
+        "todo",
+        "question"
+      ]
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "text",
+        "evidence",
+        "provisional",
+        "createdAt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ulid"
+        },
+        "kind": {
+          "$ref": "#/$defs/kind"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "owner": {
+          "description": "The speaker id of the transcript the item was made from, for a to-do: the recording's for a final item, the part's own for a provisional one. Never a name.",
+          "type": "string",
+          "pattern": "^S[0-9]{1,3}$"
+        },
+        "due": {
+          "description": "The deadline as it was said.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "atSec",
+            "quote"
+          ],
+          "properties": {
+            "atSec": {
+              "type": "number",
+              "minimum": 0
+            },
+            "quote": {
+              "description": "Words of the transcript near atSec, verbatim (checked on the device).",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "provisional": {
+          "type": "boolean"
+        },
+        "conversation": {
+          "description": "The index of a final item's conversation.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

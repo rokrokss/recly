@@ -188,6 +188,8 @@ class ReclyCore(
             }
         }
         recordings.afterCapture = { localTranscription.captureEnded(it) }
+        // docs/08 "Organizing": read when a part is filed, long after construction.
+        recordings.partFiled = { recordingId, part -> notes.partFiled(recordingId, part) }
     }
 
     private val driveJobAccess = recly.core.drive.DriveJobAccess(deps, jobStore)
@@ -204,11 +206,16 @@ class ReclyCore(
                 jobStore,
                 recordings,
                 // Read when a transcript is published, long after construction (docs/08 "Titles and speaker names").
-                defaultRunners(db, deps, localTranscription, recly.core.transcribe.TranscriptFill { record, transcript -> autoFill.fill(record, transcript) }),
+                defaultRunners(
+                    db, deps, localTranscription,
+                    recly.core.transcribe.TranscriptFill { record, transcript -> autoFill.fill(record, transcript) },
+                    organize = recly.core.notes.OrganizeRunner { ctx -> notes.organize(ctx) },
+                ),
                 marker = folderMarker,
                 transferConsents = transferConsents,
                 prepare = { driveJobAccess.prepare() },
                 requireAccess = { driveJobAccess.requireAccess(it) },
+                notesOffline = { notes.off() },
             ).also { recordings.executor = it },
             planForRerun = { job ->
                 if (job.retranscription) retranscription.plan(job.recordingId)
@@ -250,6 +257,42 @@ class ReclyCore(
         },
         fetch = { recordingId -> summaryInFolder(recordingId) },
     )
+
+    /**
+     * docs/08 "Organizing": a recording's decisions, to-dos and open questions, organized through the user's ChatGPT
+     * plan while it is recorded and again after Stop — for a user signed in to ChatGPT who agreed ([recly.core.notes.Notes.consent]).
+     */
+    val notes: recly.core.notes.Notes = recly.core.notes.Notes(
+        db, deps, chatGpt, summaries, recordings, processingSettings, localTranscription, transferConsents,
+        transcript = { results(it).transcript },
+        transcriptChanges = { recordingId -> observeResults(recordingId) },
+    )
+
+    init {
+        chatGpt.signedOut = { notes.signedOut() }
+        chatGpt.signedIn = { resumeNotesWaits() }
+    }
+
+    /**
+     * docs/08 "Organizing": a sign-in lets the notes that waited for one — or for a plan that covers them — go at
+     * the next pass instead of hours later. Nothing else about the jobs changes.
+     */
+    private suspend fun resumeNotesWaits() {
+        val now = deps.clock.now()
+        var resumed = 0
+        for (job in jobs.list().filter { it.status == JobStatus.WAITING }) {
+            val steps = jobs.steps(job.id)
+            if (!recly.core.job.StepReport.notesOnly(job.workflow, steps)) continue
+            val waiting = steps.any {
+                it.status == StepStatus.PENDING &&
+                    it.lastError?.let(CoreMessageRef::parse)?.message in setOf(CoreMessage.CHATGPT_SIGN_IN_REQUIRED, CoreMessage.CHATGPT_PLAN_REQUIRED)
+            }
+            if (!waiting) continue
+            jobStore.clearBackoff(job.id, now)
+            resumed++
+        }
+        if (resumed > 0) deps.logger.log(Logger.Level.INFO, "organize.resumed", mapOf("jobs" to resumed))
+    }
 
     /** docs/08 "Summaries": the copy in the recording's Drive or iCloud folder, for a recording opened before a pull. */
     private suspend fun summaryInFolder(recordingId: String): String? {
@@ -452,10 +495,15 @@ class ReclyCore(
         return recly.core.transcribe.EditResult.Edited(edited)
     }
 
-    /** A job of the recording has not settled, or it is being transcribed here: it may write over the transcript. */
+    /**
+     * A job of the recording has not settled, or it is being transcribed here: it may write over the transcript. A job
+     * with only its notes left (docs/08 "Organizing") writes no transcript, and is not in the way.
+     */
     private suspend fun transcriptBusy(recordingId: String): Boolean =
-        jobs.list().any { it.recordingId == recordingId && it.status !in setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT) } ||
-            localTranscription.isRunning(recordingId)
+        jobs.list().any {
+            it.recordingId == recordingId && it.status !in setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT) &&
+                !recly.core.job.StepReport.notesOnly(it.workflow, jobs.steps(it.id))
+        } || localTranscription.isRunning(recordingId)
 
     /** Where an edit's push to storage runs, so the screen that saved it does not wait for the network. */
     private val pushes = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)

@@ -61,6 +61,11 @@ class Executor(
     private val transferConsents: TransferConsents? = null,
     private val prepare: suspend () -> Unit = {},
     private val requireAccess: suspend (Job) -> Unit = {},
+    /**
+     * docs/08 "Organizing": whether a `notes.organize` step would send nothing now — organizing is off on this
+     * device — so the offline pass can finish it rather than leave the job for a network pass.
+     */
+    private val notesOffline: suspend () -> Boolean = { false },
 ) {
     private val mutex = Mutex()
 
@@ -215,10 +220,11 @@ class Executor(
     /**
      * What the offline pass may run: on-device transcription, and the copies into a local folder
      * (docs/03 "Storage location") — writing to a folder on the device is no network request, so it
-     * does not wait for a connection, or for Wi-Fi.
+     * does not wait for a connection, or for Wi-Fi — and the notes when organizing is off, which send nothing.
      */
-    private fun offline(step: Step, workflow: Workflow): Boolean = when (step) {
+    private suspend fun offline(step: Step, workflow: Workflow): Boolean = when (step) {
         is Step.LocalTranscribe -> true
+        is Step.OrganizeNotes -> notesOffline()
         is Step.DriveUpload -> step.store == StorageKind.FOLDER
         is Step.TranscriptPublish -> (step.folderId?.let(StorageKind::ofId) ?: workflow.steps.firstNotNullOfOrNull {
             (it as? Step.DriveUpload)?.store
@@ -337,7 +343,8 @@ class Executor(
         }
         val folderId = workflow.priorOutput(prior, DriveUploadRunner.TYPE)?.string("folderId")
             ?: namedFolder(workflow) ?: return
-        send(folderId, workflow.steps.dropWhile { it.id != after }.drop(1).map {
+        // The notes (docs/08 "Organizing") stay on this device: nothing another device waits for.
+        send(folderId, workflow.steps.dropWhile { it.id != after }.drop(1).filter { it !is Step.OrganizeNotes }.map {
             if (it is Step.LocalTranscribe || it is Step.TranscriptPublish) "transcribe" else it.type
         }.distinct())
     }
@@ -386,7 +393,8 @@ class Executor(
             deps = deps.transcriptionPolicy.guardedDeps(step, transferConsents?.guardedDeps(step) ?: deps),
         )
         val outcome = try {
-            if (step !is Step.LocalTranscribe) requireAccess(job)
+            // Neither the on-device engine nor the notes (docs/08 "Organizing") touch the Drive account.
+            if (step !is Step.LocalTranscribe && step !is Step.OrganizeNotes) requireAccess(job)
             deps.transcriptionPolicy.requireAllowed(step)
             transferConsents?.requireAllowed(step)
             runner.run(ctx)

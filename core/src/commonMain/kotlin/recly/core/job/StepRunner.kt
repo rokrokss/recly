@@ -13,6 +13,7 @@ val Step.type: String
         is Step.Transcribe -> "transcribe"
         is Step.LocalTranscribe -> "local.transcribe"
         is Step.TranscriptPublish -> "transcript.publish"
+        is Step.OrganizeNotes -> recly.core.notes.OrganizeRunner.TYPE
     }
 
 interface StepRunner {

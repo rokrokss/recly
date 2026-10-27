@@ -154,6 +154,30 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
         }
     }
 
+    /**
+     * docs/08 "Organizing": one part of a recording in progress, transcribed on its own — its final segments, on the
+     * part's own axis. One native run at a time, like every other: it waits for [compute]. Nothing is kept here;
+     * the caller keeps what it needs. Throws when the engine stops short.
+     */
+    internal suspend fun transcribePart(request: LocalTranscriptionRequest): List<SttSegment> = compute.withLock {
+        val segments = mutableListOf<SttSegment>()
+        var through = 0.0
+        val result = deps.localTranscription.transcribe(
+            request,
+            object : LocalTranscriptionProgress {
+                override suspend fun checkpoint(segment: SttSegment, completedThroughSec: Double) {
+                    currentCoroutineContext().ensureActive()
+                    if (segment.end <= through) return
+                    segments += segment
+                    through = maxOf(through, completedThroughSec)
+                }
+            },
+        )
+        currentCoroutineContext().ensureActive()
+        check(result.completed) { "the engine stopped before the end of the part" }
+        segments + result.segments.filter { it.end > through }
+    }
+
     /** Generation identity and row existence are checked under the same gate deletion acquires. */
     private suspend fun publishCheckpoint(ctx: StepContext, entry: Entry, value: LocalCheckpoint, transcript: Transcript? = null) {
         gate.withLock {

@@ -119,7 +119,7 @@ object WorkflowParser {
 
     private fun validateStep(step: Step, where: String, errors: MutableList<String>) {
         when (step) {
-            is Step.LocalTranscribe, is Step.TranscriptPublish -> Unit
+            is Step.LocalTranscribe, is Step.TranscriptPublish, is Step.OrganizeNotes -> Unit
             is Step.DriveUpload -> {
                 if (step.folder.isEmpty() || step.folder.length > MAX_FOLDER) {
                     errors += "$where: step '${step.id}' folder must be 1..$MAX_FOLDER characters, " +

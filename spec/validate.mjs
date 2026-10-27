@@ -15,6 +15,7 @@ const pairs = [
   ["transcript.schema.json", "examples/transcript-desktop-me.json"],
   ["recording-settings.schema.json", "examples/recording-settings.json"],
   ["recording-settings.schema.json", "examples/recording-settings-external.json"],
+  ["notes.schema.json", "examples/notes.json"],
 ];
 let failed = 0;
 for (const [s, d] of pairs) {
@@ -105,5 +106,25 @@ for (const [label, expected, change] of [
   const valid = metaSchema(change(structuredClone(metaBase)));
   if (valid !== expected) { console.error(`FAIL meta: ${label}`); failed++; }
   else console.log(`OK   meta: ${label} -> valid=${valid}`);
+}
+const notesAjv = new Ajv2020({ allErrors: true, strict: true });
+addFormats(notesAjv);
+const notesSchema = notesAjv.compile(load("notes.schema.json"));
+const notesBase = load("examples/notes.json");
+for (const [label, expected, change] of [
+  ["provisional notes", true, c => { c.stage = "provisional"; delete c.overview; delete c.finalizedAt; c.conversations = []; c.items.forEach(i => { i.provisional = true; delete i.conversation; }); return c; }],
+  ["empty final notes", true, c => { delete c.overview; c.items = []; c.conversations = []; return c; }],
+  ["final without finalizedAt", false, c => { delete c.finalizedAt; return c; }],
+  ["provisional with an overview", false, c => { c.stage = "provisional"; delete c.finalizedAt; return c; }],
+  ["unknown kind", false, c => { c.items[0].kind = "commitment"; return c; }],
+  ["owner as a name", false, c => { c.items[1].owner = "Mina"; return c; }],
+  ["item without evidence", false, c => { delete c.items[0].evidence; return c; }],
+  ["empty quote", false, c => { c.items[0].evidence.quote = ""; return c; }],
+  ["unknown field", false, c => { c.items[0].speakerName = "Mina"; return c; }],
+  ["future schema", false, c => { c.schema = 2; return c; }],
+]) {
+  const valid = notesSchema(change(structuredClone(notesBase)));
+  if (valid !== expected) { console.error(`FAIL notes: ${label}`); failed++; }
+  else console.log(`OK   notes: ${label} -> valid=${valid}`);
 }
 process.exit(failed ? 1 : 0);

@@ -47,7 +47,8 @@ object TransferTargets {
         workflow.steps.mapNotNull(::forStep).distinctBy { it.id }
 
     fun forStep(step: Step): TransferTarget? = when (step) {
-        is Step.DriveUpload, is Step.LocalTranscribe, is Step.TranscriptPublish -> null
+        // docs/15 §10: the notes go to the ChatGPT plan, whose grant [chatGptSummary] is checked where they are made.
+        is Step.DriveUpload, is Step.LocalTranscribe, is Step.TranscriptPublish, is Step.OrganizeNotes -> null
         is Step.Transcribe -> endpoint(step)
             ?.let(::canonical)
             ?.let { TransferTarget("transcribe", step.provider, it) }
@@ -154,7 +155,7 @@ class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) 
 
     internal suspend fun requireAllowed(step: Step) {
         if (!enabled) return
-        if (step is Step.DriveUpload || step is Step.LocalTranscribe || step is Step.TranscriptPublish) return
+        if (step is Step.DriveUpload || step is Step.LocalTranscribe || step is Step.TranscriptPublish || step is Step.OrganizeNotes) return
         val target = TransferTargets.forStep(step) ?: throw StepFailure(
             retryable = false, reason = CoreMessage.PROVIDER_ERROR.code("Invalid transfer destination"),
         )
@@ -172,7 +173,7 @@ class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) 
 
     /** Recheck before every provider request, including polling and multi-request submissions. */
     internal fun guardedDeps(step: Step): CoreDeps {
-        if (!enabled || step is Step.DriveUpload || step is Step.LocalTranscribe || step is Step.TranscriptPublish) return deps
+        if (!enabled || step is Step.DriveUpload || step is Step.LocalTranscribe || step is Step.TranscriptPublish || step is Step.OrganizeNotes) return deps
         val transport = object : Transport {
             override suspend fun execute(plan: HttpPlan): HttpResult {
                 requireAllowed(step)

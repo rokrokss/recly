@@ -50,6 +50,8 @@ class FolderStorageTest {
     private val deps = testDeps(
         clock = clock,
         fileSystem = fs,
+        // Read for the ChatGPT sign-in the notes step asks after (docs/08 "Organizing"): none here.
+        secureStore = recly.core.testing.MapSecureStore(),
         locale = "ko",
         localTranscription = Engine(),
         localFolder = PathFolder(fs) { root },

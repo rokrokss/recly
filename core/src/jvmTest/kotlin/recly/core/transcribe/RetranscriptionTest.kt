@@ -53,7 +53,7 @@ class RetranscriptionTest {
         val job = f.core.jobs.list().single { it.id == started.jobId }
         assertTrue(job.retranscription)
         assertEquals(ProcessingPlan.RETRANSCRIBE_ID, job.workflowId)
-        assertEquals(listOf("transcribe", "publish"), job.workflow!!.steps.map { it.id }, "nothing is uploaded again")
+        assertEquals(listOf("transcribe", "publish", "organize"), job.workflow!!.steps.map { it.id }, "nothing is uploaded again; the notes are made again")
         assertEquals(first, f.core.results(meta.recordingId).transcript, "the old transcript stays until the new one is in")
         assertEquals("transcribe", f.drive.byName(base)!!.appProperties["pending"], "other devices are told at once")
 

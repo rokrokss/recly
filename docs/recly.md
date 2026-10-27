@@ -37,7 +37,7 @@ that subsection heading. Section numbers and subsection headings do not change w
 ## 0. Product definition · rules (formerly docs/00)
 
 **Applied 2026-09-24:** A recording runs only the fixed processing plan (§5 "Fixed processing settings") — `drive.upload` →
-`transcribe` or `local.transcribe` → `transcript.publish`. User-editable workflows (the document, the editor, the picker, the
+`transcribe` or `local.transcribe` → `transcript.publish` (→ `notes.organize` since 2026-10-27, §8 "Organizing"). User-editable workflows (the document, the editor, the picker, the
 per-device default pointer, export/import, schema 1/2 migration, the watch workflow list) and webhooks are **retired**, and
 there is no compatibility layer that reads earlier settings. In the rules table below, entries that decision invalidated are
 marked "retired". The phone screen has three tabs: Record, List, Settings.
@@ -60,7 +60,8 @@ post-processing.
 3. **The original is not deleted before the ack.**
 4. **The files in Drive are the interface.** Transcription is a choice of local, external API or OFF; from summarization on,
    the work belongs to the user's agent (§16, `skills/recly-notes/`) — except a summary the user asks for, one recording at a
-   time, through the user's own ChatGPT plan (§8 "Summaries", 2026-10-09). The default is "my Drive + my automation". Drive is the
+   time, through the user's own ChatGPT plan (§8 "Summaries", 2026-10-09), and the notes the same plan organizes for a user who
+   signed in and agreed (§8 "Organizing", 2026-10-27). The default is "my Drive + my automation". Drive is the
    source archive the app writes, so agents only read it. The repository's two skills are **examples** — one way to write
    minutes and keep those notes and later edits in the user's Notion (`skills/recly-notion/`) — and they assume the user
    adapts them to their own format and note app or builds their own (2026-10-01).
@@ -74,7 +75,7 @@ the current rule.
 
 | Number | Rule |
 |---|---|
-| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) (Revised 2026-10-09: one exception — a summary of one recording, asked for in its detail, through the user's own ChatGPT plan with Sign in with ChatGPT. The subscription comes into the app rather than the app holding a key, so the rule "use what the user already pays for, no server" holds. It is never a step of the processing plan and never automatic, and there is no summarization with an API key; §8 "Summaries", §15 §10) (Revised 2026-10-15: a second exception — a recording's title and its speakers' names from the same plan, asked for one recording at a time: ticked in the title sheet after Stop, the publication of its transcript first asks for them, so they go up with it, and the recording's More menu asks for them later (§8 "Titles and speaker names"). Never for a recording nobody asked for: the ticked box is the user's express consent to that background use) |
+| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) (Revised 2026-10-09: one exception — a summary of one recording, asked for in its detail, through the user's own ChatGPT plan with Sign in with ChatGPT. The subscription comes into the app rather than the app holding a key, so the rule "use what the user already pays for, no server" holds. It is never a step of the processing plan and never automatic, and there is no summarization with an API key; §8 "Summaries", §15 §10) (Revised 2026-10-15: a second exception — a recording's title and its speakers' names from the same plan, asked for one recording at a time: ticked in the title sheet after Stop, the publication of its transcript first asks for them, so they go up with it, and the recording's More menu asks for them later (§8 "Titles and speaker names"). Never for a recording nobody asked for: the ticked box is the user's express consent to that background use) (Revised 2026-10-27: a third exception — a recording's notes, its decisions, to-dos and open questions, organized in the background through the same plan for a user who signed in and agreed once: each part while it is recorded, and its transcript after Stop as the processing plan's last step, `notes.organize`, a no-op for anyone else. The consent the sign-in shows — or the question at the first recording of a user signed in before — is the user's express consent to that background use, which OpenAI's terms require; there is no switch beyond it but signing out (§8 "Organizing", §15 §10)) |
 | ADR-002 | The Android phone, iPhone, macOS and Windows run workflows. Galaxy Watch hands files to the phone over the Data Layer, Apple Watch over WatchConnectivity. **The watches have no authentication or network code.** Standalone upload from a cellular watch is out of scope |
 | ADR-003 | When the phone and the watch record at the same time, there are two files and they are not linked. `recordingId` is an independent per-device ULID, and there is no session linking (session id) |
 | ADR-004 | The workflow engine, Drive client, webhooks, sync and job queue live in a single Kotlin Multiplatform `core/`. Workflow logic is not written twice. (Webhooks retired 2026-09-24) |
@@ -85,7 +86,7 @@ the current rule.
 | ADR-009 | The only OAuth scope is `drive.file`, and the consent screen is in Production. The full `drive` scope is never requested |
 | ADR-010 | Webhook signatures follow Standard Webhooks as is (retired 2026-09-24) |
 | ADR-011 | **No bot joins the meeting.** Detection uses microphone use and meeting apps, and the user records with one tap. There is no automatic recording. There are no per-participant streams; two tracks, "me vs. the other side", are the limit |
-| ADR-012 | There are three step types: `drive.upload` · `webhook` · `transcribe` (`schema: 3`). There is no `deliver.*` (Notion · Telegram). (2026-09-24: `webhook` retired. The user picks no steps; the fixed plan builds `drive.upload` · `transcribe` or `local.transcribe` · `transcript.publish`) |
+| ADR-012 | There are three step types: `drive.upload` · `webhook` · `transcribe` (`schema: 3`). There is no `deliver.*` (Notion · Telegram). (2026-09-24: `webhook` retired. The user picks no steps; the fixed plan builds `drive.upload` · `transcribe` or `local.transcribe` · `transcript.publish`, and since 2026-10-27 `notes.organize` after them, §8 "Organizing") |
 | ADR-013 | There are no per-step conditions (`if`). There is only the one workflow-level `minDurationSec` |
 | ADR-014 | The Drive layout is one folder per recording — the part files and `meta.json` under `{folder}/{base}/` |
 | ADR-015 | Resumable upload **separates the protocol (pure functions in the core) from the transport (the platform)**. Apple replaces the transport with a background `URLSession` |
@@ -145,11 +146,15 @@ Reversing these rules does not end with editing this document. Reversing ADR-022
  start ──► Recording{id, source, workflowId, startedAt}   (local DB, status=recording)
    │        parts written: p001, p002 … (sha256 and bytes recorded per segment)
    │        meta.json updated (at every segment boundary)
+   │        each part filed → transcribed on its own and its new notes added, for a user signed in to
+   │        ChatGPT who agreed (provisional notes, §8 "Organizing"; not a watch's recording)
  stop ───► finalize: endedAt, durationSec, status=finalized
    │
    ├─ phone·desktop ─► Job created {recordingId, workflowId, steps[] state=PENDING}
    │                   Scheduler adapter calls runDueJobs()
    │                   steps run in order · each step's state persisted · on failure, retry after backoff
+   │                   (the fixed plan: upload → transcribe → publish → notes.organize — the final notes, after
+   │                   the transcript is out, a no-op unless organizing is on; §5, §8 "Organizing")
    │                   all steps finished → Job DONE
    │                   → retention rule (ADR-017): once all of this recording's Jobs are DONE and one of them
    │                     has SUCCEEDED every drive.upload, **after 7 days** the retention sweep on each pass
@@ -235,6 +240,8 @@ in):
 - (2026-10-07) `recordings.addHighlight` · `setHighlights` (§3 "Metadata"), `importAudio` · `dropAbandonedImport` (§3 "Naming rules"),
   `retranscribe` (§10 "Re-transcription"), `editTranscript` (§8 "Editing"), `exportFile` (§8 "Exports"), `search` (§10 "Search"), and the
   pure rules every shell applies the same way — `SpeakerTurns`, `SilenceRanges` (§10 "Shared rules for the shells")
+- (2026-10-27) `notes` — a recording's organized notes: `observe`, `get`, `deleteItem`, `linesAround`, and the consent
+  (`needsConsent`, `observeNeedsConsent`, `consent`) (§8 "Organizing"); `StepReport.notesOnly` for a job with only its notes left
 
 The shells have only audio capture, transfer APIs, the scheduler and the UI. **Workflow semantics never live in a shell.**
 
@@ -306,7 +313,7 @@ Common fields:
 | Field | Default | Meaning |
 |---|---|---|
 | `id` | required | `^[a-z][a-z0-9_]{0,31}$`, unique within the workflow |
-| `type` | required | `drive.upload` \| `transcribe` \| `local.transcribe` \| `transcript.publish` (`webhook` retired 2026-09-24) |
+| `type` | required | `drive.upload` \| `transcribe` \| `local.transcribe` \| `transcript.publish` \| `notes.organize` (2026-10-27, §8 "Organizing"; `webhook` retired 2026-09-24) |
 | `onError` | `abort` | `abort`: later steps do not run, Job FAILED. `continue`: only this step is left FAILED and the next step proceeds |
 | `retry.maxAttempts` | 8 | 1–20 |
 | `retry.initialDelaySec` | 30 | Starting value of the exponential backoff |
@@ -779,7 +786,8 @@ It does not matter that the folder template differs per workflow, because no pat
    `meta.json` in that folder, it **swaps the provisional row for the real meta** (`finalized` · parts · `drive_file_id`) — this is the exception
    in step 1.
 4. **The folder's `pending` marker**: a device that still has work left after the upload writes that onto the folder — `appProperties.pending` is
-   the `type`s of the steps after the upload, joined with commas (`transcribe,transcript.publish`, `local.transcribe,transcript.publish`, or an empty string if there are none),
+   the `type`s of the steps after the upload, joined with commas (`transcribe,transcript.publish`, `local.transcribe,transcript.publish`, or an empty string if there are none;
+   `notes.organize` is never in it — the notes stay on this device, and no other device waits for them, §8 "Organizing"),
    and `appProperties.pendingAt` is the time it was written. It is written right after `drive.upload` creates or finds the folder (before the first
    byte), every time the runner finishes a step (what remains), and when the job becomes `DONE` · terminal `FAILED` (an empty value). The `appProperties` of `files.update`
    is a merge, so the folder's `recordingId` stays. The marker is **advisory**, so a failure is logged as
@@ -1271,7 +1279,8 @@ writing the file is the shell's job (Android SAF, iPhone share sheet, Mac save p
 ### Fixed processing settings
 
 2026-09-24: recording is fixed to **record → upload the original → transcribe → upload the transcript** (`ProcessingPlan`:
-`drive.upload` → `transcribe` or `local.transcribe` → `transcript.publish`; with transcription OFF, only `drive.upload`).
+`drive.upload` → `transcribe` or `local.transcribe` → `transcript.publish` → `notes.organize` (2026-10-27, §8 "Organizing" — a no-op
+unless the user signed in to ChatGPT and agreed, `onError: continue`); with transcription OFF, only `drive.upload`).
 The phone offers three tabs (Record, List, Settings), the desktop its existing menu/tray plus processing settings, and the watch only recording and transfer.
 There are no user-editable workflows and no webhooks, and no compatibility layer that reads or migrates earlier workflow documents or settings.
 The overall direction and the conditions for a real-device release follow the [fixed processing flow plan](research/2026-09-24-fixed-recording-flow-plan.md).
@@ -1383,7 +1392,8 @@ The overall direction and the conditions for a real-device release follow the [f
   progress callback's return value — so a cancellation waits for the block in progress (up to 20 minutes of audio, a few minutes of CPU) and takes
   effect at the next block boundary or PCM chunk.
   The local-only pass does not run Drive authentication, network requests or result publishing — except the upload and transcript steps bound for a
-  local folder (§3 "Storage location"), which write to the device and make no request, so they need no connection and ignore Wi-Fi only. The Wi-Fi
+  local folder (§3 "Storage location"), which write to the device and make no request, so they need no connection and ignore Wi-Fi only, and
+  `notes.organize` while organizing is off on the device, which then sends nothing (2026-10-27, §8 "Organizing"). The Wi-Fi
   constraint on network uploads stays as is.
 - The local engine on Android · Windows is Qwen3-ASR 0.6B INT8 (`Qwen3Asr`) on sherpa-onnx 1.13.8 (2026-09-26).
   The model (about 1 GB, 7 files) is not bundled in the app and is downloaded only through the user's download action (settings, a waiting recording or the banner, the first-run card) — it is pinned by commit, size and SHA-256, downloaded in 8 MB range
@@ -2063,7 +2073,8 @@ transcription languages; an unknown tag falls back to English. "The app's langua
 system's per-app language screen included (2026-10-11).
 
 - **On request only.** It is not a step, never runs on its own, and a recording never waits for it. OpenAI's terms ask for express
-  consent before any background use; the only one is §8 "Titles and speaker names", for a recording whose title sheet asked for it.
+  consent before any background use; there are two: §8 "Titles and speaker names", for a recording whose title sheet asked for it,
+  and §8 "Organizing", for a user who agreed to it.
 - **Formats and About you** (2026-10-10, user decision). `SummaryFormat` is `AUTO` (`General`: Summary, Key points, Decisions, Action
   items), `ONE_ON_ONE` (Summary, Updates by person, Feedback, Decisions, Action items), `LECTURE` (Summary, Key ideas, Examples,
   Questions, To review), `INTERVIEW` (Summary, Questions and answers, Notable quotes, Follow-ups) and `CUSTOM` — `My format`, the user's
@@ -2092,6 +2103,97 @@ system's per-app language screen included (2026-10-11).
   code or admission `detail` as its detail. A stream that ends without `response.completed` is a failure, not a short summary.
 - **Search and share** (2026-10-10): `search` finds summary lines too (§10 "Search"), and the share sheet gets the summary as text and inside
   the `.md` (§8 "Exports").
+
+### Organizing
+
+2026-10-27 (user decision; ADR-001's third exception). A recording's **decisions, to-dos and open questions** are organized into notes
+through the user's ChatGPT plan — part by part while it is recorded, and again from its transcript after Stop (`ReclyCore.notes`,
+`Notes`). Always on, with no switch and no setting to turn it off, for a user signed in with ChatGPT (§15 §10) who agreed once;
+for anyone else nothing in this section happens.
+
+- **Consent.** OpenAI's Sign in with ChatGPT terms ask for express consent before background use of the plan. The sign-in shows it,
+  and the shell calls `notes.consent()` when the user signs in under it; a user who was signed in before this existed is asked once,
+  at their first recording start — `Continue` (`consent()`) or `Sign out` — for as long as `notes.needsConsent()` (and
+  `observeNeedsConsent()`) say so: signed in, or with a sign-in OpenAI ended, and not agreed. The answer is this device's, in `kv`
+  (`notes/consent`), until the user signs out of ChatGPT: `chatGpt.signOut` clears it, so the next sign-in asks again. On iPhone the
+  same action also allows the plan as a destination (`TransferTargets.chatGptSummary()`, §15 "iPhone providers"); without it nothing
+  is sent.
+- **Items.** `decision` (something the people settled), `todo` (something someone will do — a spoken commitment is a to-do with an
+  owner) and `question` (raised and not answered). Each has its text, in the summary's language (§8 "Summaries" — `SummaryLanguage`),
+  an owner for a to-do — the transcript's speaker label, never a name — a deadline only when one was said, and its evidence: the time
+  of the line it is on (`[HH:MM:SS]`, read back as seconds) and a quote copied from that line verbatim.
+- **Quote check.** An item is kept only when its quote, normalized (case and full-width Latin folded, everything but letters and
+  digits dropped), matches at least 0.8 (difflib's partial ratio) the transcript's text whose words overlap ±10 s of its time —
+  running on past the window by as many words as the quote has; a segment without word timings counts whole. The rule is the
+  long-recording evaluation's `quote_check` (`scripts/long-recording-eval`), ported as it was measured. An item that fails it is
+  dropped.
+- **What is sent.** The transcript's lines, `[00:12:03] S1: …` — the speaker's label, never a name the user gave — at most about
+  20 seconds each (a longer segment with word timings is split, as in the evaluation). Phone numbers, e-mail addresses and runs of
+  eight digits or more become `[phone#1]`, `[email#1]` and `[number#1]` — the same value the same placeholder within a request — and
+  are put back into the answer on the device, before the quote check. No title, no highlights, never audio.
+- **While recording (provisional).** Each part of the transcription track (`mono`, else `mix`) that the recorder files while a
+  recording of this device is in progress (`RecordingRepository.addPart`) — not a watch's recording, whose parts the phone sees only
+  after it stopped, and not an import — is transcribed **on its own** with the settings the recording froze when it started (§5):
+  the external provider through the same adapter, submission and polls as the job (every 15 seconds, for at most 30 minutes), or
+  the on-device engine, one run at a time with the job's own (`LocalTranscriptionService.transcribePart`) and without speaker
+  separation. There is no overlap between parts and no linking of their speakers: each part's labels are its own. Its transcript is
+  kept beside the recording (`.provisional-p001.json`). A part of fewer than 40 words stops there. Otherwise one request asks for
+  that part's **new** items: the fixed instructions, the items already shown (`NOTES SO FAR`, a deleted item not among them), the end
+  of the part before (`PREVIOUS PART`, at most 2,400 characters of its lines, for context) and this part's lines. The notes are
+  append-only: an item shown is never changed or removed while recording, and a reversal is a new item; an item the model merely
+  repeats — the same words, or the same moment in the same words — is not shown twice, and its time must lie in this part.
+  Parts go one at a time, in the order filed. **No retries**: a part that cannot be transcribed, a provider error or a ChatGPT
+  error is logged and the part left out; the final pass covers it.
+- **After Stop (final).** The processing plan's last step, `notes.organize`, after `transcript.publish` (§5). With organizing off —
+  not signed in, not agreed, or on iPhone the destination not allowed — it succeeds at once and sends nothing (output
+  `{"notes":"skipped"}`; the offline pass may run it then, §5). Otherwise it reads the recording's transcript and splits it into
+  **conversations**: mechanically at every silence of more than 10 minutes between speech segments; then a stretch longer than
+  45 minutes is asked, in one request with its lines, where its conversations change (`{"boundaries": ["HH:MM:SS", …]}` — a change of
+  the people, the place or the occasion, not of subject; a boundary within a minute of the stretch's ends or of the one before is
+  ignored). Each conversation of 40 words or more gets one request with its lines, answered with its items and a one- or two-line
+  summary. The **overview**, two or three lines over the whole recording, is that summary when there is one conversation, else one
+  small request over the conversations' summaries. Each conversation finished is kept in the step's state, so a try after a wait
+  asks only what is left — unless the words sent would differ (a speaker named meanwhile changes nothing sent).
+- **Reconciliation.** The final items replace the provisional ones: a provisional item the final pass did not make again
+  disappears without notice, and one it did keeps its id. An item the user deleted (`deleteItem`) never comes back — not from a
+  later part, the final pass or a transcription again — by the evaluation's matching rule: the same kind, and texts at least 0.6
+  alike (difflib's ratio after normalizing) or the same moment within 15 seconds.
+- **Errors after Stop** go through the job's own retries and `CoreMessage`s, and never hold up the upload or the publication, which
+  come before: `CHATGPT_USAGE_LIMIT` waits five hours (the plan's shorter usage window), `CHATGPT_PLAN_REQUIRED` a day and
+  `CHATGPT_SIGN_IN_REQUIRED` — OpenAI ended the sign-in — six hours between tries (the step's `retry.maxDelaySec` is a day);
+  anything else takes the usual backoff. Signing in again lets a step waiting for a sign-in or a plan go at the next pass. After 8
+  tries the step fails with `onError: continue` and the job is done without notes. A job with only its notes left
+  (`StepReport.notesOnly`) is shown as done, is no transcription in the way of an edit or a fill (§8 "Editing"), and is not in the
+  folder's `pending` marker (§3).
+- **A transcription again** (§10 "Re-transcription") makes the notes again; deleted items stay deleted.
+- **Model and request.** The model Settings → ChatGPT picked for summaries, for both passes. The request is a summary's
+  (`POST /v1/responses`, `store: false`, streamed, the same errors; §15 §10); every answer is one JSON object, read leniently, as a
+  fill's (§8 "Titles and speaker names").
+- **What the shells read** (`ReclyCore.notes`). `observe(recordingId)` — never failing — gives a `RecordingNotes` that changes as
+  items arrive, after the final pass and when a speaker is named: `stage` (`NONE`, `PROVISIONAL`, `FINAL`), `overview`, `decisions`,
+  `todos` and `questions`, each newest first (latest time first), and `organizing` while a part or the final pass of it is being
+  worked on here; `get(recordingId)` is the same now. A `NoteItem` has `id`, `kind`, `text`, `owner`, `due`, `atSec`, `quote` and
+  `provisional`; `owner` comes resolved — the name the user gave that speaker in the transcript, or null when the speaker has none or
+  the item is provisional, never `S1`. `deleteItem(recordingId, itemId)` removes an item for good (false when there is none).
+  `linesAround(recordingId, atSec)` gives the transcript's lines from 20 seconds before to 40 seconds after (at most 12), for "show
+  the transcript here" under an item — the recording's transcript once there is one, before that the parts' made while recording,
+  since there is no playback while recording (`NoteLine`: `atSec`, `endSec`, `speakerId`, `speakerName`, `me`, `text`,
+  `provisional`).
+- **Storage.** `{base}.notes.v1.json` beside the parts (`spec/notes.schema.json`): the stage, the overview, the items — each with
+  its provisional flag, owner label, evidence and conversation — the tombstones of deleted items, the conversations' spans and
+  summaries, the parts the provisional pass is done with, the model and the times. On this device only: not uploaded or synced yet.
+  It survives the 7-day audio cleanup and goes with the recording. The parts' transcripts made while recording are deleted once the
+  final notes are written.
+- **Cost.** With an external provider each part is transcribed twice — once on its own while recording, once in the whole after
+  Stop — and the provider bills both; every part and conversation is a request that counts toward the ChatGPT plan's usage.
+- **Log events**: `organize.consent` and `organize.consent.cleared`; while recording `organize.part.transcribed` (part, provider,
+  segments), `organize.part.start` (part, model, how many values became placeholders), `organize.part.done` (items, and how many were
+  dropped, matched a deletion or repeated), `organize.part.skipped` (`reason`: `short`, `not_offered`, `consent`, `provider`,
+  `no_key`, `engine`) and `organize.part.failed` (`stage` `transcribe`, `extract` or `internal`, and `reason`); after Stop
+  `organize.final.start` (conversations, model), `organize.final.boundaries` (block, answered, kept), `organize.final.done`
+  (conversations, items, tombstoned, dropped, overview), `organize.final.skipped` (`off`, `no_transcript`) and
+  `organize.final.failed` (`reason`); `organize.item.deleted`; `organize.resumed` (jobs) after a sign-in. A sign-in hook that fails
+  is `chatgpt.hook.failed`. Ids, counts and codes only — never a word of the transcript or of an item.
 
 ### Ask
 
@@ -3074,6 +3176,8 @@ and here. It works for this device's own recordings, uploaded and done, and for 
   transcription off it answers false and the job stays as it is: it is never rerun on its old plan, which would send the audio to a
   provider the user has turned off.
 - Publishing marks the files `transcribed` (§8 "Result files"), so recly-events announces a re-transcription and not an edit.
+- The plan ends with `notes.organize` like the recording's own (2026-10-27): the notes are made again from the new transcript, and the
+  items the user deleted stay deleted (§8 "Organizing").
 
 ### Search
 
@@ -3164,6 +3268,8 @@ A failure throws `StepFailure`.
 - `TranscribeRunner`: remux the input tracks with `deps.audio.concat` → `SttProvider.submit` → repeat `Waiting(30)` →
   when `poll` completes, normalize to `transcript.json/.txt` → local copy + Drive write (the `drive.upload` folder from
   `prior`).
+- `OrganizeRunner` (`notes.organize`, 2026-10-27): the recording's final notes (§8 "Organizing") — a no-op with organizing off; the
+  plan's own refusals are retryable failures with the waits they ask for; finished conversations are kept in `state_json`.
 - **`StepOutcome.Waiting(retryAfterSec, state)`** — when `run` returns this, the Executor does not increment `attempts`,
   leaves the step `PENDING`, moves the Job to `WAITING(next_run_at = now + retryAfterSec)` and saves `state`.
 
@@ -3226,6 +3332,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Import (`AudioImportTest`) | the importing row, staging, parts named and finalized at once, the plan queued; unreadable · unsupported · cancelled leave nothing; recovery leaves an import in progress alone and drops an abandoned one |
 | Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next, no retry on the old plan with transcription off, a failed folder stamp fails and is retried, `Started` after a cancellation once queued |
 | Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
+| Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; append-only items across parts, repeats and deletions; quote check; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again |
 | Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
 | Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT |
 
@@ -3769,7 +3876,7 @@ Recly **has no server.** Data goes to (1) the user's Google Drive (§1, includin
 (§1b) if iCloud was chosen on iPhone · Mac, (2) the STT provider (§3), **only when the user chose external API
 transcription** in the recording processing settings, and (3) **the user's own other paired device** (watch ↔ phone,
 §4) — the first two go with the user's account and the user's keys, and the third stays between two of the user's own
-devices. (4) OpenAI receives a recording's transcript text — with its highlighted moments and the user's `My format` and `About you` — only when the user signed in with ChatGPT and asks for its summary or a question about it (§10). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
+devices. (4) OpenAI receives a recording's transcript text — with its highlighted moments and the user's `My format` and `About you` — only when the user signed in with ChatGPT and asks for its summary or a question about it (§10), and — for a user who signed in and agreed to organizing — the text of each recording made on the device, part by part while it is recorded and again after Stop, with numbers and addresses left out, to organize its notes (§10, 2026-10-27). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
 links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
@@ -3868,6 +3975,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | App settings such as language and Wi-Fi only | Platform settings store | Does not leave (not a sync target) |
 | Summaries (`summary.v1.json`) and the chosen ChatGPT model | The recording's folder; the local database | The summary arrives from OpenAI (§10) and, with the user's edits, goes to the recording's Drive or iCloud folder as `{base}.summary.json` (§1, §1b); with a local folder it stays here. The chosen model does not leave |
 | Summary format, My format, About you (`summary/prefs/…`) and Ask answers | The local database; Ask answers in memory only | My format and About you go to OpenAI with each summary and question (§10); nothing else leaves |
+| Notes (`{base}.notes.v1.json`), the parts' transcripts made while recording (`.provisional-p001.json`) and the consent to organizing (`notes/consent`) (2026-10-27) | The recording's folder; the local database | The text they are made from goes to OpenAI (§10). The notes are not uploaded or synced; the parts' transcripts are deleted once the final notes are written; the consent does not leave |
 
 ### §1 Google Drive — the user's own Drive
 
@@ -3953,6 +4061,7 @@ processing settings and enters their own API key (§5 "Fixed processing settings
 | **The whole audio** (one file of the `mono` or `mix` track with the parts concatenated) | The STT service the user chose as `provider` | When the `transcribe` step runs |
 | Speaker count hint, language setting | The same request | Same |
 | **Vocabulary** — the words and names in the processing settings (2026-10-07) | The same request, in the field that provider documents, filtered per provider (§8 "Vocabulary"); nothing where it is not documented | Same, when the list is not empty |
+| **Each part on its own, while recording** (2026-10-27) — one part file of the track, as the recorder files it | The same provider, through the same requests (submit and polls) with the same key, settings and vocabulary | Only for a user signed in with ChatGPT who agreed to organizing (§8 "Organizing", §10 below). The whole recording still goes after Stop, so the provider receives — and bills — the audio twice |
 
 A recording over the provider's declared limit is sent as a few overlapping pieces of the same track, one after another, through the same requests to the same provider — no new endpoint (§8 "Length · size limits", 2026-10-27).
 
@@ -4123,7 +4232,8 @@ chosen by the user, as with the skills (`skills/`). `--print-config` prints the 
 ### §10 Sign in with ChatGPT — the user's own ChatGPT plan (2026-10-09)
 
 The Android phone, iPhone, Mac and Windows apps can sign in to the user's ChatGPT account and use its plan for summaries (§8
-"Summaries") and, when the user asks for one recording, for its title and speaker names (§8 "Titles and speaker names"). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
+"Summaries"), when the user asks for one recording, for its title and speaker names (§8 "Titles and speaker names"), and — once the
+user agreed — to organize every recording's notes (§8 "Organizing", 2026-10-27). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
 the device registers as a public client the first time (`client_id=dynamic_agent_client`, no secret, no API key, and
 `agent_name_hint` `Recly Android`, `Recly iPhone`, `Recly macOS` or `Recly Windows`, so ChatGPT's connected apps tell the devices apart;
 recly-events never signs in to ChatGPT, so it has no entry there) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
@@ -4138,18 +4248,22 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `My format` and `About you` when set — and **the recording's transcript text with its times and the speakers' names**, plus each highlight's time and the words said then — no title, never audio | the summary as a stream (`store: false`) |
 | Ask | the same | the same, plus the preset's question or the user's own | the answer as a stream (`store: false`); kept in memory only |
 | Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, no highlights, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu |
+| Organizing (2026-10-27) | the same | the access token, the model Settings picked, the instructions and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop, each conversation's lines, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device, no title, no highlights, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the notes kept there only |
 
 - Only when the user asks: signing in, and choosing `Summarize`, `Summarize as…`, a question in `Ask about this recording…`, `Fill in
-  title` or `Fill in speaker names` on one recording. The one background use is a recording's title or speaker names: only for a
+  title` or `Fill in speaker names` on one recording. There are two background uses. One is a recording's title or speaker names: only for a
   recording whose title sheet after Stop was saved with `Fill in the title with ChatGPT` or `Fill in speaker names with ChatGPT` ticked,
   and only for what is ticked — the user's express consent, which OpenAI's terms require — when this device publishes its transcript.
+  The other is organizing (2026-10-27, §8 "Organizing"): for a user who agreed — under the sign-in, or asked once at the first recording
+  of a user signed in before — every recording this device makes, part by part while it is recorded and from its transcript after
+  Stop (a watch's recording after its transfer). The consent is kept until the user signs out of ChatGPT; there is no other switch.
 - The tokens stay in the device's secure storage (§5, namespace `chatgpt`); the ID token's claims are checked (issuer, audience = the
   client id, expiry, `nonce`, the same `sub` on a later sign-in) without its signature, which OpenID Connect allows for a token received
   directly from the token endpoint over TLS. Requests that carry a code or token are never logged.
 - Requests count toward the user's ChatGPT plan; OpenAI's terms and the user's ChatGPT data controls govern what OpenAI does with them
   (iPhone: "iPhone providers" above). The app offers `Manage usage` (<https://chatgpt.com/settings/usage>).
 - Removing it: Settings → ChatGPT → `Sign out`, or remove Recly in ChatGPT's settings; summaries stay with their recordings (§7), in
-  Drive or iCloud too.
+  Drive or iCloud too, and so do the notes, on the device. Signing out also withdraws the consent to organizing.
 
 ---
 
