@@ -248,18 +248,33 @@ class TranscribeRunnerTest {
     }
 
     @Test
-    fun `audio longer than the provider takes fails before anything is uploaded`() = runBlocking {
-        // Nine 900-second parts: 2h 15m of audio for a sync call that stops at two hours.
+    fun `audio longer than the provider takes goes as overlapping pieces`() = runBlocking {
+        // Nine 900-second parts: 2h 15m of audio for a sync call that stops at two hours — so parts 1–5
+        // and 5–9, each within 90% of it (docs/08 "Length · size limits").
         val h = TranscribeHarness(partCount = 9, extraSttHost = CLOVA_HOST)
+        h.other.reply(CLOVA_COMPLETED).reply(CLOVA_COMPLETED)
         val step = h.transcribeStep(provider = ClovaProvider.NAME, invokeUrl = "$CLOVA_HOST/external/v1/1/a")
 
-        val failure = assertFailsWith<StepFailure> { h.run(step) }
+        assertIs<StepOutcome.Done>(h.run(step))
+
+        assertEquals(2, h.other.requests.size)
+        assertContains(h.other.request(0).text, (1..5).joinToString("") { "audio-$it-MONO" })
+        assertFalse("audio-6-MONO" in h.other.request(0).text)
+        assertContains(h.other.request(1).text, (5..9).joinToString("") { "audio-$it-MONO" })
+        assertFalse("audio-4-MONO" in h.other.request(1).text)
+        assertFalse(h.fs.list(h.dir).any { it.name.endsWith(".concat.m4a") }, "the joined files are still deleted")
+    }
+
+    @Test
+    fun `audio no piece can hold fails before anything is uploaded`() = runBlocking {
+        val h = TranscribeHarness(partCount = 9, providers = { ShortProvider() })
+
+        val failure = assertFailsWith<StepFailure> { h.run(h.transcribeStep(provider = ShortProvider.NAME)) }
 
         assertContains(failure.reason, "UNSUPPORTED_AUDIO")
-        assertContains(failure.reason, "2h 15m exceeds clova's 2h")
+        assertContains(failure.reason, "2h 15m exceeds short's 25m; parts 1 and 2 together are 30m, over 90% of 25m")
         assertFalse(failure.retryable)
-        assertEquals(emptyList(), h.other.requests, "the bytes never left the device")
-        assertFalse(h.fs.list(h.dir).any { it.name.endsWith(".concat.m4a") }, "the joined file is still deleted")
+        assertEquals(emptyList(), h.audio.calls, "nothing was even joined")
     }
 
     @Test
@@ -430,6 +445,20 @@ private class CapturingProvider : SttProvider {
 
     companion object {
         const val NAME = "capture"
+    }
+}
+
+/** A provider that takes 25 minutes, less than two parts: nothing long can go to it, whole or in pieces. */
+private class ShortProvider : SttProvider {
+    override val name: String = NAME
+    override val limits: SttLimits = SttLimits(maxDurationSec = 25 * 60.0)
+
+    override suspend fun submit(ctx: SttContext, file: Path): Submitted = error("never submitted")
+
+    override suspend fun poll(ctx: SttContext, ref: String): PollResult = error("never polled")
+
+    companion object {
+        const val NAME = "short"
     }
 }
 

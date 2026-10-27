@@ -1709,7 +1709,8 @@ job** (phone · Mac · Windows), and there is no server. The device calls the ST
   there, §3 "Storage location"). Other devices, agents and the user only need to
   look at those files. There is no separate device-to-device communication.
 - **One track, one file** — one file, joined from the parts of one track (`mono` or `mix`) by remux, is uploaded. Per-part transcription
-  is not used, because the speaker labels would differ from part to part.
+  is not used, because the speaker labels would differ from part to part. The one exception is a recording over the provider's declared
+  limit: it goes as a few overlapping pieces of that track, whose labels are matched up again (§8 "Length · size limits").
 
 ### Step definition
 
@@ -1791,10 +1792,39 @@ A one-hour meeting is roughly 14 MB at 32 kbps AAC. Still, every provider has a 
 (`UNSUPPORTED_AUDIO`, not retried).
 
 **Only the limits a 32 kbps recording can realistically reach** are declared by the provider in `SttProvider.limits` (`SttLimits(maxBytes,
-maxDurationSec)`). The runner checks those limits right after joining the parts and just before uploading, and if they are exceeded it fails with `UNSUPPORTED_AUDIO` before
-sending any bytes (not retried). The detail states the actual value together with the limit, like `30 MB exceeds openai's 25 MB` /
-`2h 15m exceeds clova's 2h` — the shell shows it as is under the `UNSUPPORTED_AUDIO` sentence. **Limits that vary by tier or plan are not declared** — we would then
-reject first a recording that a higher plan would accept. Such limits, and the limits 32 kbps cannot reach, are still learned only from the provider's 4xx, as before.
+maxDurationSec)`). **Limits that vary by tier or plan are not declared** — we would then reject, or split, a recording that a higher plan would
+take whole. Such limits, and the limits 32 kbps cannot reach, are still learned only from the provider's 4xx, as before. What the declared
+limits decide (2026-10-27, `TranscribeChunks`):
+
+- **Within them** — the track's parts in the meta, `bytes` and `durationSec` summed — the recording goes as one file, as it always has. The
+  runner checks the joined file right before uploading and, if it is over after all, fails with `UNSUPPORTED_AUDIO` before sending any bytes
+  (not retried). The detail states the actual value together with the limit, like `30 MB exceeds openai's 25 MB` — the shell shows it as is
+  under the `UNSUPPORTED_AUDIO` sentence.
+- **Over them**, it goes as **overlapping pieces of the same track**, planned from the meta's part list. A piece is consecutive whole parts
+  within **90%** of every declared limit (the margin covers the joined file's container), and every piece after the first starts with
+  **the last part of the one before** — a whole part, 15 minutes, of overlap — then new parts. The plan has the fewest pieces that fit, as
+  even as they can be: `clova`'s 2 hours hold seven parts, so 3 hours (12 parts) go as parts 1–6 and 6–12. Only when no plan can — one
+  part alone, or two parts in a row, over 90% of a limit — does it fail with `UNSUPPORTED_AUDIO` before sending any bytes, the detail naming
+  both; for a provider that took 25 minutes, `45m exceeds {provider}'s 25m; parts 1 and 2 together are 30m, over 90% of 25m`.
+- The pieces go **one after another**, each joined, checked and submitted like a whole recording; a synchronous provider answers each in
+  turn, an asynchronous one is polled piece by piece. `state_json` carries the plan, the piece in flight and its ref; a finished piece's
+  result goes to `.chunk-{stepRunId}-{n}.json` in the local recording directory (it can run to megabytes, too much for a row every poll
+  rewrites) before the state moves past it, and these files are deleted once the result files are written. So a process that dies never
+  pays for a finished piece again and goes on polling the one in flight, and a timeout or a provider failure drops only that piece's ref
+  ("Polling · status").
+- **Putting them back together**: each piece's times move by the length of the parts before its first one, onto the joined file's axis,
+  so normalization is the same as for one file. The **seam** lies inside the shared part, where the longest run of words both pieces heard
+  — the same text lowercase and without punctuation, starting within 1 second of each other — is cut at the middle of its widest pause
+  between consecutive words, the quietest moment both agree on. A run shorter than 3 words takes the earlier piece's widest pause in the
+  middle half of the shared part instead; results without words take the middle of the part. The earlier piece keeps what starts before
+  the seam and the later one what starts from it; a segment across the seam is split at its words (its text rebuilt from them), and one
+  without words goes by its start. **Speakers**: inside the shared part, every pair of labels is scored by how long both speak at the same
+  moment, and the largest scores of at least 3 seconds pair up one to one; a label left over is someone new, under a label no one else
+  has — unless the expected speaker count (§8 `speakers`, `context.participants`) is already reached, when it joins the label it shares
+  the most with. Labels stay empty where the provider gave none. Model and language come from the first piece, and `transcript.json` has
+  no `jobRef` — no single job made it.
+- With `language: auto`, the later pieces are **not** told the language the first one found: providers report it in their own forms (a
+  locale, an ISO code, a name), and for `rtzr` the language also picks the model, which would change between pieces.
 
 | provider | Limit | Checked before upload |
 |---|---|---|
@@ -3911,6 +3941,8 @@ processing settings and enters their own API key (§5 "Fixed processing settings
 | **The whole audio** (one file of the `mono` or `mix` track with the parts concatenated) | The STT service the user chose as `provider` | When the `transcribe` step runs |
 | Speaker count hint, language setting | The same request | Same |
 | **Vocabulary** — the words and names in the processing settings (2026-10-07) | The same request, in the field that provider documents, filtered per provider (§8 "Vocabulary"); nothing where it is not documented | Same, when the list is not empty |
+
+A recording over the provider's declared limit is sent as a few overlapping pieces of the same track, one after another, through the same requests to the same provider — no new endpoint (§8 "Length · size limits", 2026-10-27).
 
 - The call goes **directly from the device to the provider**. There is no intermediate server, relay or callback URL. Recly cannot see the contents of this request.
 - Authentication is **the user's key**. Billing also goes to the user's account.

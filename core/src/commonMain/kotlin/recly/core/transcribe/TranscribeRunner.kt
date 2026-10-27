@@ -4,6 +4,7 @@ package recly.core.transcribe
 
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
@@ -42,6 +43,8 @@ import recly.core.recording.MetaWriter
  *
  * The submission ref lives in `state_json`, so a process that dies while a 40-minute job is
  * running comes back and polls the same job instead of paying to transcribe the audio twice.
+ * A recording over the provider's declared limit goes as overlapping pieces, one after another
+ * ([chunked], docs/08 "Length · size limits").
  */
 class TranscribeRunner(
     private val api: CloudFiles,
@@ -73,7 +76,11 @@ class TranscribeRunner(
             deps = deps.transcriptionPolicy.guardedDeps(step, ctx.deps),
             providerState = state.providerState,
         )
-        return if (state.ref == null) submit(ctx, step, provider, sttCtx) else poll(ctx, step, provider, sttCtx, state)
+        return when {
+            state.chunks != null -> chunked(ctx, step, provider, sttCtx, state)
+            state.ref == null -> submit(ctx, step, provider, sttCtx)
+            else -> poll(ctx, step, provider, sttCtx, state)
+        }
     }
 
     private suspend fun submit(
@@ -84,6 +91,10 @@ class TranscribeRunner(
     ): StepOutcome {
         val track = track(ctx.recording.meta)
         val parts = partsOf(ctx.recording.meta, track)
+        TranscribeChunks.plan(parts, provider.limits, provider.name)?.let { chunks ->
+            val state = TranscribeState(track = track, providerState = sttCtx.providerState, chunks = chunks, chunk = 0)
+            return chunked(ctx, step, provider, sttCtx, state)
+        }
         val file = joined(ctx, step, parts)
         val submitted = try {
             checkLimits(provider, sttCtx, file)
@@ -157,12 +168,149 @@ class TranscribeRunner(
      * executor's failure path never touches `state_json`, so it survives the parked attempt.
      *
      * The provider's own scratch stays: a cached access token outlives the submission it was
-     * bought for, and the retry can spend it instead of asking for another.
+     * bought for, and the retry can spend it instead of asking for another. So does whatever of
+     * [keep] is not the submission — a recording sent in pieces keeps its plan and the pieces
+     * already finished, and loses only the one in flight.
      */
-    private suspend fun dead(ctx: StepContext, sttCtx: SttContext, reason: String): StepFailure {
-        ctx.saveState(TranscribeState(providerState = sttCtx.providerState).toJson())
+    private suspend fun dead(
+        ctx: StepContext,
+        sttCtx: SttContext,
+        reason: String,
+        keep: TranscribeState = TranscribeState(),
+    ): StepFailure {
+        ctx.saveState(keep.copy(ref = null, submittedAt = null, providerState = sttCtx.providerState).toJson())
         return StepFailure(retryable = true, reason = reason)
     }
+
+    /**
+     * docs/08 "Length · size limits": the pieces of [start]'s plan, one after another, each joined and
+     * submitted like a whole recording, then put back together and finished as one result. The plan, the
+     * piece in flight and its ref live in `state_json`; a finished piece's result goes to a file in the
+     * recording's directory — it can run to megabytes, too much for a row every poll rewrites — before the
+     * state moves past it. So a process that dies never pays for a finished piece again and goes on polling
+     * the one in flight. The files go once the result is written.
+     */
+    private suspend fun chunked(
+        ctx: StepContext,
+        step: Step.Transcribe,
+        provider: SttProvider,
+        sttCtx: SttContext,
+        start: TranscribeState,
+    ): StepOutcome {
+        val track = start.track ?: track(ctx.recording.meta)
+        val parts = partsOf(ctx.recording.meta, track)
+        val plan = start.chunks!!
+        var state = start
+        while (true) {
+            val index = state.chunk ?: 0
+            if (index == plan.size) break
+            val pieceParts = plan[index].map { number -> parts.first { it.part == number } }
+            val pieceCtx = SttContext(
+                step = step,
+                apiKey = sttCtx.apiKey,
+                speakersExpected = sttCtx.speakersExpected,
+                audioDurationSec = pieceParts.sumOf { it.durationSec },
+                deps = sttCtx.deps,
+                providerState = state.providerState,
+            )
+            val result = if (state.ref == null) {
+                val file = joined(ctx, step, pieceParts)
+                val submitted = try {
+                    checkLimits(provider, pieceCtx, file)
+                    provider.submit(pieceCtx, file)
+                } finally {
+                    if (pieceParts.size > 1) deps.fileSystem.delete(file, mustExist = false)
+                }
+                deps.logger.log(
+                    Logger.Level.INFO,
+                    "transcribe.submit",
+                    mapOf(
+                        "stepId" to step.id,
+                        "provider" to provider.name,
+                        "track" to track.wire,
+                        "ref" to (submitted as? Submitted.Polling)?.ref,
+                        "chunk" to index + 1,
+                        "chunks" to plan.size,
+                    ),
+                )
+                when (submitted) {
+                    is Submitted.Finished -> submitted.result
+                    is Submitted.Polling -> {
+                        state = state.copy(
+                            ref = submitted.ref,
+                            submittedAt = deps.clock.now().isoUtc(),
+                            providerState = pieceCtx.providerState,
+                        )
+                        ctx.saveState(state.toJson())
+                        return StepOutcome.Waiting(POLL_SEC, state.toJson())
+                    }
+                }
+            } else {
+                // The same rules as [poll], for the piece in flight.
+                val submittedAt = state.submittedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+                if (submittedAt == null || deps.clock.now() - submittedAt > provider.resultTimeout) {
+                    throw dead(
+                        ctx,
+                        pieceCtx,
+                        CoreMessage.RESULT_TIMEOUT.code(
+                            detail = "'${state.ref}' did not finish within ${provider.resultTimeout}",
+                        ),
+                        keep = state,
+                    )
+                }
+                when (val polled = provider.poll(pieceCtx, state.ref!!)) {
+                    PollResult.Pending ->
+                        return StepOutcome.Waiting(POLL_SEC, state.copy(providerState = pieceCtx.providerState).toJson())
+
+                    is PollResult.Done -> polled.result
+
+                    is PollResult.Failed -> throw dead(
+                        ctx,
+                        pieceCtx,
+                        CoreMessage.PROVIDER_ERROR.code(detail = "${provider.name} ${polled.reason}"),
+                        keep = state,
+                    )
+                }
+            }
+            savePiece(ctx, index, result)
+            state = state.copy(ref = null, submittedAt = null, providerState = pieceCtx.providerState, chunk = index + 1)
+            ctx.saveState(state.toJson())
+        }
+        val results = plan.indices.map { loadPiece(ctx, it) }
+        val missing = results.indexOf(null)
+        if (missing >= 0) {
+            // Only something outside the app takes a finished piece's file; the retry transcribes it again.
+            ctx.saveState(state.copy(chunk = missing).toJson())
+            throw StepFailure(
+                retryable = true,
+                reason = CoreMessage.STEP_FAILED.code("the result of piece ${missing + 1} of ${plan.size} is gone"),
+            )
+        }
+        val merged = TranscribeChunks.merge(parts, plan, results.map { it!! }, sttCtx.speakersExpected)
+        val output = finish(ctx, step, provider, state, merged, chunks = plan.size)
+        plan.indices.forEach { deps.fileSystem.delete(pieceFile(ctx, it), mustExist = false) }
+        return StepOutcome.Done(output)
+    }
+
+    /** Written whole or not at all, so a process that dies mid-write leaves the piece unfinished, not broken. */
+    private suspend fun savePiece(ctx: StepContext, index: Int, result: SttResult) = withContext(deps.io) {
+        val path = pieceFile(ctx, index)
+        val temporary = path.parent!! / "${path.name}.tmp"
+        val piece = TranscribePiece(result.segments, result.language, result.model)
+        deps.fileSystem.write(temporary) { writeUtf8(recJson.encodeToString(TranscribePiece.serializer(), piece)) }
+        deps.fileSystem.atomicMove(temporary, path)
+    }
+
+    private suspend fun loadPiece(ctx: StepContext, index: Int): SttResult? = withContext(deps.io) {
+        val path = pieceFile(ctx, index)
+        if (!deps.fileSystem.exists(path)) return@withContext null
+        val piece = recJson.decodeFromString(TranscribePiece.serializer(), deps.fileSystem.read(path) { readUtf8() })
+        SttResult(piece.segments, piece.language, durationSec = null, model = piece.model)
+    }
+
+    /** Named by the step run, like the local engine's checkpoint, so no other job's run ever reads it. */
+    private fun pieceFile(ctx: StepContext, index: Int): Path =
+        ctx.recording.dir / ".chunk-${ctx.stepRunId}-${index + 1}.json"
 
     private suspend fun finish(
         ctx: StepContext,
@@ -170,6 +318,7 @@ class TranscribeRunner(
         provider: SttProvider,
         state: TranscribeState,
         result: SttResult,
+        chunks: Int? = null,
     ): StepOutput {
         val meta = ctx.recording.meta
         val track = state.track ?: track(meta)
@@ -214,7 +363,7 @@ class TranscribeRunner(
                 "provider" to provider.name,
                 "segments" to transcript.segments.size,
                 "speakers" to transcript.speakers.size,
-            ),
+            ) + chunks?.let { mapOf("chunks" to it) }.orEmpty(),
         )
         return StepOutput(
             buildJsonObject {
@@ -348,13 +497,13 @@ class TranscribeRunner(
         private const val MIB = 1024L * 1024L
 
         /** One decimal at most, so a limit written as a round number reads as one: "25 MB". */
-        private fun megabytes(bytes: Long): String {
+        internal fun megabytes(bytes: Long): String {
             val tenths = (bytes * 10 + MIB / 2) / MIB
             return if (tenths % 10 == 0L) "${tenths / 10} MB" else "${tenths / 10}.${tenths % 10} MB"
         }
 
         /** Same idea as [megabytes]: a limit written as whole hours reads as "2h", not "2h 0m". */
-        private fun hoursMinutes(sec: Double): String {
+        internal fun hoursMinutes(sec: Double): String {
             val minutes = (sec / 60).toLong()
             return when {
                 minutes < 60 -> "${minutes}m"
@@ -377,6 +526,13 @@ internal data class TranscribeState(
      * `transcript.json` publishes as `provider.jobRef`.
      */
     val providerState: JsonObject? = null,
+    /**
+     * docs/08 "Length · size limits": the part numbers of each piece of a recording over the
+     * provider's limit — null for one that goes as one file — and the piece [ref] belongs to. The
+     * pieces before it are finished, their results in [TranscribePiece] files.
+     */
+    val chunks: List<List<Int>>? = null,
+    val chunk: Int? = null,
 ) {
     fun toJson(): JsonObject = recJson.encodeToJsonElement(serializer(), this).jsonObject
 
@@ -385,3 +541,11 @@ internal data class TranscribeState(
             if (json == null) TranscribeState() else recJson.decodeFromJsonElement(serializer(), json)
     }
 }
+
+/** A finished piece's result, kept in the recording's directory until the pieces are put together. */
+@Serializable
+internal class TranscribePiece(
+    val segments: List<SttSegment>,
+    val language: String? = null,
+    val model: String? = null,
+)
