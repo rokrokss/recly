@@ -49,7 +49,7 @@ final class RecordingNoticesTests: XCTestCase {
         XCTAssertEqual(center.posted, [RecordingNotices.deadManId], "the reminder is never scheduled ahead")
         XCTAssertEqual(try delay(of: center.requests[0]), 1_800, accuracy: 1)
 
-        notices.apply(.partFiled)
+        notices.apply(.boundary)
         await notices.settled()
         XCTAssertEqual(center.posted, [RecordingNotices.deadManId, RecordingNotices.deadManId])
 
@@ -60,7 +60,7 @@ final class RecordingNoticesTests: XCTestCase {
         XCTAssertFalse(RecordingNotices.scheduledIds.contains(RecordingNotices.batteryId))
 
         // A boundary the stop's own drain crossed lands after the end, and arms nothing.
-        notices.apply(.partFiled)
+        notices.apply(.boundary)
         await notices.settled()
         XCTAssertEqual(center.posted.count, 2)
     }
@@ -112,7 +112,7 @@ final class RecordingNoticesTests: XCTestCase {
         // Nothing reaches a file while it waits: a stray boundary must not re-arm the dead-man, nor
         // a stray silence remind.
         let before = center.posted.count
-        notices.apply(.partFiled)
+        notices.apply(.boundary)
         notices.apply(.nobodySpeaking)
         await notices.settled()
         XCTAssertEqual(center.posted.count, before)

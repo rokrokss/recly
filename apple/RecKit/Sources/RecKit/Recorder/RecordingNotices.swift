@@ -102,7 +102,7 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
             post(deadMan(segmentSec: segmentSec))
             startBatteryChecks()
 
-        case .partFiled:
+        case .boundary:
             guard let recording, !waiting else { return }
             post(deadMan(segmentSec: recording.segmentSec))
 

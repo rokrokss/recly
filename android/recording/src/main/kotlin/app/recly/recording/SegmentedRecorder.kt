@@ -61,7 +61,10 @@ class SegmentedRecorder(
     /** A boundary filed a part ([RecorderHost.onPartFiled]); launched, so it never holds the boundary up. */
     private val onPartFiled: suspend (recordingId: String) -> Unit = {},
     private val onError: (RecorderError) -> Unit,
-    /** A boundary of this recording was reached: the encoder is alive (the watchdog, docs/11 ":android:recording"). */
+    /**
+     * A boundary of this recording was reached: the encoder is alive (the watchdog, docs/11 ":android:recording").
+     * Before the filing and whether or not it succeeds — [onPartFiled] is the filing itself.
+     */
     private val onBoundary: () -> Unit = {},
 ) : Capture {
     private class Session(

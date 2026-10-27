@@ -127,7 +127,8 @@ public final class SegmentedRecorder {
 
     /// A boundary has filed its parts (`addPart`), with the recording's id — off the audio thread, after the
     /// last track of the boundary. The watch hands them to the phone at once (docs/03 "Watch → phone transfer
-    /// contract"); `nil` everywhere else. Set before the recording starts.
+    /// contract"); `nil` everywhere else. Set before the recording starts. Also for the part a wait to resume
+    /// cuts short; the notices' liveness signal is [RecorderEvent.boundary], at the boundary itself.
     public var onPartFiled: ((String) -> Void)?
 
     /// Called with the file a boundary has just closed and released, before anything reads it.
@@ -555,7 +556,7 @@ public final class SegmentedRecorder {
                 // `closeSegments` has returned, so the files it closed are released and their
                 // trailing atoms are on disk — only now may anything hash or read them.
                 register(closeSegments(session), in: session.directory, recordingId: session.recordingId)
-                emit(.partFiled)
+                emit(.boundary)
             }
         }
     }

@@ -25,8 +25,9 @@ public struct RecordingOutcome: Sendable {
 public enum RecorderEvent: Equatable, Sendable {
     case started(recordingId: String, segmentSec: Int)
 
-    /// A boundary closed a part: audio is still reaching the files.
-    case partFiled
+    /// A boundary closed a part: audio is still reaching the files. Filed or not, and before the filing —
+    /// the Android `onBoundary`; [SegmentedRecorder.onPartFiled] is the filing itself.
+    case boundary
 
     /// Ten minutes of the recording have gone by with nobody speaking (the core's [SilenceReminder]). Once per
     /// silence: the next one needs speech first.
