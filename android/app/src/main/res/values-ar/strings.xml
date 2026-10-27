@@ -191,7 +191,7 @@
     <string name="alert_quota">نفدت حصة المزوّد. تحقق من الحدود والفوترة</string>
     <string name="alert_uploads_waiting">في انتظار Drive: %1$d</string>
     <string name="alert_waiting">التسجيلات المنتظرة: %1$d.</string>
-    <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى %1$s.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
+    <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى %1$s. وأثناء تسجيل دخولك إلى ChatGPT يُرسَل كل جزء أيضًا أثناء التسجيل، فيتلقاه المزوّد مرتين.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
     <string name="settings_consent_reminder">تذكير بالموافقة</string>
     <string name="settings_consent_reminder_note">يُطرح السؤال مرة واحدة قبل أول تسجيل.</string>
     <string name="consent_question">هل أخبرت المشاركين بالتسجيل؟</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">أنت تستخدم خطة ChatGPT الخاصة بك</string>
     <string name="chatgpt_welcome_body">تستخدم الملخصات في Recly خطة ChatGPT الخاصة بك. يمكنك إدارة الاستخدام من إعدادات ChatGPT.</string>
     <string name="chatgpt_got_it">حسنًا</string>
+    <string name="notes_consent_title">يرتّب Recly الملاحظات أثناء التسجيل</string>
+    <string name="notes_consent_body">أثناء تسجيل دخولك إلى ChatGPT، يرسل Recly نص نسخ كل تسجيل إلى خطة ChatGPT الخاصة بك أثناء التسجيل وبعد إيقافه، ويُدرج ما فيه من قرارات ومهام وأسئلة. لا يُرسَل الصوت أبدًا. يُحتسب ذلك ضمن استخدام خطتك.</string>
+    <string name="notes_consent_continue">متابعة</string>
+    <string name="notes_decisions">القرارات</string>
+    <string name="notes_todos">المهام</string>
+    <string name="notes_questions">الأسئلة</string>
     <string name="summary_summarize">تلخيص</string>
     <string name="summary_again">التلخيص مرة أخرى</string>
     <string name="summary_tab">الملخص</string>

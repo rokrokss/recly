@@ -567,5 +567,11 @@
   "Filling in speaker names…": "Sprechernamen werden ergänzt…",
   "Filling in": "Wird ergänzt",
   "Could not fill in the title": "Titel konnte nicht ergänzt werden",
-  "Could not fill in speaker names": "Sprechernamen konnten nicht ergänzt werden"
+  "Could not fill in speaker names": "Sprechernamen konnten nicht ergänzt werden",
+  "Recly organizes while you record": "Recly ordnet schon während der Aufnahme",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Solange du bei ChatGPT angemeldet bist, sendet Recly den Transkripttext jeder Aufnahme während der Aufnahme und nach dem Stoppen an dein ChatGPT-Abo und listet Entscheidungen, Aufgaben und Fragen auf. Audio wird nie gesendet. Das zählt zur Nutzung deines Abos.",
+  "Decisions": "Entscheidungen",
+  "To-dos": "Aufgaben",
+  "Questions": "Fragen",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Die externe Transkription sendet die gesamte Aufnahme an {0}. Während Sie bei ChatGPT angemeldet sind, wird außerdem jeder Teil schon während der Aufnahme gesendet, sodass der Anbieter sie zweimal erhält.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung."
 }

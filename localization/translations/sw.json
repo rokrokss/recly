@@ -567,5 +567,11 @@
   "Filling in speaker names…": "Inajaza majina ya wazungumzaji…",
   "Filling in": "Inajaza",
   "Could not fill in the title": "Imeshindwa kujaza kichwa",
-  "Could not fill in speaker names": "Imeshindwa kujaza majina ya wazungumzaji"
+  "Could not fill in speaker names": "Imeshindwa kujaza majina ya wazungumzaji",
+  "Recly organizes while you record": "Recly hupanga unaporekodi",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Ukiwa umeingia kwenye ChatGPT, Recly hutuma maandishi ya unukuzi wa kila rekodi kwenye mpango wako wa ChatGPT unaporekodi na baada ya kusimamisha, na huorodhesha maamuzi, majukumu na maswali yake. Sauti haitumwi kamwe. Hii huhesabiwa katika matumizi ya mpango wako.",
+  "Decisions": "Maamuzi",
+  "To-dos": "Majukumu",
+  "Questions": "Maswali",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Unukuzi wa nje hutuma rekodi nzima kwa {0}. Ukiwa umeingia kwenye ChatGPT, kila sehemu pia hutumwa unaporekodi, hivyo mtoa huduma huipokea mara mbili.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia."
 }

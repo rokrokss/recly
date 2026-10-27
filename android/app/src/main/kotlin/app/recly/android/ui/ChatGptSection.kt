@@ -71,7 +71,9 @@ fun ChatGptSection() {
         CoreModule.get(context).core.chatGpt.observe().collect { value = it }
     }
     LaunchedEffect(Unit) { signIn.refresh() }
-    if (ui.welcome) WelcomeDialog(onManageUsage = { signIn.dismissWelcome(); context.openUrl(CHATGPT_USAGE_URL) }, onDone = signIn::dismissWelcome)
+    // docs/08 "Organizing": the question first, then — still signed in — the welcome.
+    if (ui.notesConsent) NotesConsentDialog(onContinue = signIn::agreeToNotes, onSignOut = signIn::signOut)
+    else if (ui.welcome) WelcomeDialog(onManageUsage = { signIn.dismissWelcome(); context.openUrl(CHATGPT_USAGE_URL) }, onDone = signIn::dismissWelcome)
     val current = connection
     if (current is ChatGptConnection.Unavailable) return
 
@@ -277,6 +279,25 @@ private fun PreferenceField(
 private const val CUSTOM_LINES = 2
 private const val CUSTOM_MAX_LINES = 8
 private const val ABOUT_MAX_LINES = 3
+
+/**
+ * docs/08 "Organizing": the express consent OpenAI's terms ask for before the plan is used in the background — after a
+ * sign-in, and at a recording start from the record screen while the core says it is still to ask. Only its two
+ * answers close it: Continue agrees, Sign out is the account row's own sign-out.
+ */
+@Composable
+internal fun NotesConsentDialog(onContinue: () -> Unit, onSignOut: () -> Unit) {
+    BlueprintDialog(
+        title = stringResource(R.string.notes_consent_title),
+        onDismissRequest = {},
+        actions = {
+            BlueprintButton(stringResource(R.string.chatgpt_sign_out), onSignOut, tone = ButtonTone.QUIET,
+                modifier = Modifier.testTag("notes-consent-sign-out"))
+            BlueprintButton(stringResource(R.string.notes_consent_continue), onContinue, tone = ButtonTone.PRIMARY,
+                modifier = Modifier.testTag("notes-consent-continue"))
+        },
+    ) { BlueprintDialogText(stringResource(R.string.notes_consent_body)) }
+}
 
 /** docs/09 "Summary view": once, after the first sign-in on this device. */
 @Composable

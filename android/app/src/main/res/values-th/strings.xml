@@ -191,7 +191,7 @@
     <string name="alert_quota">ผู้ให้บริการใช้โควตาหมดแล้ว ตรวจสอบขีดจำกัดและการเรียกเก็บเงิน</string>
     <string name="alert_uploads_waiting">กำลังรอ Drive: %1$d</string>
     <string name="alert_waiting">การบันทึกเสียงที่รออยู่: %1$d</string>
-    <string name="provider_disclosure_transcribe">การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง %1$s\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน</string>
+    <string name="provider_disclosure_transcribe">การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง %1$s ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ ระบบจะส่งแต่ละส่วนระหว่างบันทึกด้วย ผู้ให้บริการจึงได้รับเสียงสองครั้ง\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน</string>
     <string name="settings_consent_reminder">การเตือนเรื่องความยินยอม</string>
     <string name="settings_consent_reminder_note">ถามครั้งเดียวก่อนการบันทึกครั้งแรก</string>
     <string name="consent_question">คุณแจ้งผู้เข้าร่วมเรื่องการบันทึกเสียงแล้วหรือยัง?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">คุณกำลังใช้แพ็กเกจ ChatGPT ของคุณ</string>
     <string name="chatgpt_welcome_body">การสรุปใน Recly ใช้แพ็กเกจ ChatGPT ของคุณ คุณจัดการการใช้งานได้ในการตั้งค่า ChatGPT</string>
     <string name="chatgpt_got_it">รับทราบ</string>
+    <string name="notes_consent_title">Recly จัดระเบียบระหว่างที่คุณบันทึก</string>
+    <string name="notes_consent_body">ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ Recly จะส่งข้อความถอดเสียงของแต่ละการบันทึกไปยังแพ็กเกจ ChatGPT ของคุณระหว่างบันทึกและหลังจากหยุด แล้วแสดงรายการการตัดสินใจ สิ่งที่ต้องทำ และคำถาม ไม่มีการส่งเสียงไปเลย ส่วนนี้นับรวมในการใช้งานแพ็กเกจของคุณ</string>
+    <string name="notes_consent_continue">ดำเนินการต่อ</string>
+    <string name="notes_decisions">การตัดสินใจ</string>
+    <string name="notes_todos">สิ่งที่ต้องทำ</string>
+    <string name="notes_questions">คำถาม</string>
     <string name="summary_summarize">สรุป</string>
     <string name="summary_again">สรุปอีกครั้ง</string>
     <string name="summary_tab">สรุป</string>

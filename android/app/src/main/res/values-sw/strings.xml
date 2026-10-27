@@ -191,7 +191,7 @@
     <string name="alert_quota">Mtoa huduma amefikia kikomo cha mgao — kagua vikomo na malipo yake</string>
     <string name="alert_uploads_waiting">Inasubiri Drive: %1$d</string>
     <string name="alert_waiting">Rekodi zinazosubiri: %1$d</string>
-    <string name="provider_disclosure_transcribe">Unukuzi wa nje hutuma rekodi nzima kwa %1$s.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia.</string>
+    <string name="provider_disclosure_transcribe">Unukuzi wa nje hutuma rekodi nzima kwa %1$s. Ukiwa umeingia kwenye ChatGPT, kila sehemu pia hutumwa unaporekodi, hivyo mtoa huduma huipokea mara mbili.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia.</string>
     <string name="settings_consent_reminder">Kikumbusho cha ridhaa</string>
     <string name="settings_consent_reminder_note">Huulizwa mara moja, kabla ya rekodi ya kwanza.</string>
     <string name="consent_question">Je, umewaambia washiriki kwamba unarekodi?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Unatumia mpango wako wa ChatGPT</string>
     <string name="chatgpt_welcome_body">Muhtasari katika Recly hutumia mpango wako wa ChatGPT. Unaweza kudhibiti matumizi kwenye mipangilio ya ChatGPT.</string>
     <string name="chatgpt_got_it">Nimeelewa</string>
+    <string name="notes_consent_title">Recly hupanga unaporekodi</string>
+    <string name="notes_consent_body">Ukiwa umeingia kwenye ChatGPT, Recly hutuma maandishi ya unukuzi wa kila rekodi kwenye mpango wako wa ChatGPT unaporekodi na baada ya kusimamisha, na huorodhesha maamuzi, majukumu na maswali yake. Sauti haitumwi kamwe. Hii huhesabiwa katika matumizi ya mpango wako.</string>
+    <string name="notes_consent_continue">Endelea</string>
+    <string name="notes_decisions">Maamuzi</string>
+    <string name="notes_todos">Majukumu</string>
+    <string name="notes_questions">Maswali</string>
     <string name="summary_summarize">Fupisha</string>
     <string name="summary_again">Fupisha tena</string>
     <string name="summary_tab">Muhtasari</string>

@@ -191,7 +191,7 @@
     <string name="alert_quota">प्रदाता का कोटा खत्म है। सीमा और बिलिंग जाँचें</string>
     <string name="alert_uploads_waiting">Drive की प्रतीक्षा: %1$d</string>
     <string name="alert_waiting">प्रतीक्षारत रिकॉर्डिंग: %1$d।</string>
-    <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग %1$s को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
+    <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग %1$s को भेजता है। ChatGPT में साइन इन रहने पर रिकॉर्ड करते समय हर हिस्सा भी भेजा जाता है, इसलिए प्रदाता को यह दो बार मिलती है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
     <string name="settings_consent_reminder">सहमति की याद दिलाएँ</string>
     <string name="settings_consent_reminder_note">पहली रिकॉर्डिंग से पहले एक बार पूछा जाता है।</string>
     <string name="consent_question">क्या आपने प्रतिभागियों को रिकॉर्डिंग के बारे में बताया है?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">आप अपना ChatGPT प्लान इस्तेमाल कर रहे हैं</string>
     <string name="chatgpt_welcome_body">Recly में सारांश आपके ChatGPT प्लान का इस्तेमाल करते हैं। आप ChatGPT सेटिंग में उपयोग प्रबंधित कर सकते हैं।</string>
     <string name="chatgpt_got_it">समझ गया</string>
+    <string name="notes_consent_title">Recly रिकॉर्ड करते समय ही व्यवस्थित करता है</string>
+    <string name="notes_consent_body">जब तक आप ChatGPT में साइन इन हैं, Recly हर रिकॉर्डिंग के ट्रांसक्रिप्ट का टेक्स्ट रिकॉर्ड करते समय और रोकने के बाद आपके ChatGPT प्लान को भेजता है, और उसके फ़ैसलों, करने के कामों और सवालों की सूची बनाता है। ऑडियो कभी नहीं भेजा जाता। यह आपके प्लान के उपयोग में गिना जाता है।</string>
+    <string name="notes_consent_continue">जारी रखें</string>
+    <string name="notes_decisions">फ़ैसले</string>
+    <string name="notes_todos">करने के काम</string>
+    <string name="notes_questions">सवाल</string>
     <string name="summary_summarize">सारांश बनाएं</string>
     <string name="summary_again">फिर से सारांश बनाएं</string>
     <string name="summary_tab">सारांश</string>

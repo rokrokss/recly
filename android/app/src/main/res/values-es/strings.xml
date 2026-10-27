@@ -191,7 +191,7 @@
     <string name="alert_quota">El proveedor agotó la cuota. Revisa los límites y la facturación</string>
     <string name="alert_uploads_waiting">Esperando a Drive: %1$d</string>
     <string name="alert_waiting">Grabaciones en espera: %1$d.</string>
-    <string name="provider_disclosure_transcribe">La transcripción externa envía la grabación completa a %1$s.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.</string>
+    <string name="provider_disclosure_transcribe">La transcripción externa envía la grabación completa a %1$s. Mientras tengas la sesión iniciada en ChatGPT, también se envía cada parte mientras grabas, así que el proveedor la recibe dos veces.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.</string>
     <string name="settings_consent_reminder">Recordatorio de consentimiento</string>
     <string name="settings_consent_reminder_note">Se pregunta una vez, antes de la primera grabación.</string>
     <string name="consent_question">¿Has avisado a los participantes de la grabación?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Estás usando tu plan de ChatGPT</string>
     <string name="chatgpt_welcome_body">Los resúmenes de Recly usan tu plan de ChatGPT. Puedes gestionar el uso en los ajustes de ChatGPT.</string>
     <string name="chatgpt_got_it">Entendido</string>
+    <string name="notes_consent_title">Recly organiza mientras grabas</string>
+    <string name="notes_consent_body">Mientras tengas la sesión iniciada en ChatGPT, Recly envía el texto de la transcripción de cada grabación a tu plan de ChatGPT mientras grabas y después de detenerla, y enumera sus decisiones, tareas y preguntas. El audio nunca se envía. Esto cuenta para el uso de tu plan.</string>
+    <string name="notes_consent_continue">Continuar</string>
+    <string name="notes_decisions">Decisiones</string>
+    <string name="notes_todos">Tareas</string>
+    <string name="notes_questions">Preguntas</string>
     <string name="summary_summarize">Resumir</string>
     <string name="summary_again">Resumir de nuevo</string>
     <string name="summary_tab">Resumen</string>

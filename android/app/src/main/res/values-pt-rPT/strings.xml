@@ -191,7 +191,7 @@
     <string name="alert_quota">O fornecedor esgotou a quota — verifique os limites e a faturação</string>
     <string name="alert_uploads_waiting">À espera do Drive: %1$d</string>
     <string name="alert_waiting">Gravações em espera: %1$d</string>
-    <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação completa para %1$s.\nO tempo de conservação e o eventual uso para treino dependem da política desse fornecedor — o Recly não os controla.\nLeia a política do fornecedor antes de o utilizar.</string>
+    <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação completa para %1$s. Enquanto tiver sessão iniciada no ChatGPT, cada parte também é enviada durante a gravação, pelo que o fornecedor a recebe duas vezes.\nO tempo de conservação e o eventual uso para treino dependem da política desse fornecedor — o Recly não os controla.\nLeia a política do fornecedor antes de o utilizar.</string>
     <string name="settings_consent_reminder">Lembrete de consentimento</string>
     <string name="settings_consent_reminder_note">Perguntado uma vez, antes da primeira gravação.</string>
     <string name="consent_question">Informou os participantes sobre a gravação?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Está a utilizar o seu plano do ChatGPT</string>
     <string name="chatgpt_welcome_body">Os resumos no Recly utilizam o seu plano do ChatGPT. Pode gerir a utilização nas definições do ChatGPT.</string>
     <string name="chatgpt_got_it">Entendi</string>
+    <string name="notes_consent_title">O Recly organiza enquanto grava</string>
+    <string name="notes_consent_body">Enquanto tiver sessão iniciada no ChatGPT, o Recly envia o texto da transcrição de cada gravação para o seu plano do ChatGPT durante a gravação e depois de parar, e lista as decisões, tarefas e perguntas. O áudio nunca é enviado. Isto conta para a utilização do seu plano.</string>
+    <string name="notes_consent_continue">Continuar</string>
+    <string name="notes_decisions">Decisões</string>
+    <string name="notes_todos">Tarefas</string>
+    <string name="notes_questions">Perguntas</string>
     <string name="summary_summarize">Resumir</string>
     <string name="summary_again">Resumir novamente</string>
     <string name="summary_tab">Resumo</string>

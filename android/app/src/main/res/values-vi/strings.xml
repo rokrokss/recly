@@ -191,7 +191,7 @@
     <string name="alert_quota">Nhà cung cấp đã hết hạn mức — hãy kiểm tra giới hạn và thanh toán</string>
     <string name="alert_uploads_waiting">Đang chờ Drive: %1$d</string>
     <string name="alert_waiting">Bản ghi âm đang chờ: %1$d</string>
-    <string name="provider_disclosure_transcribe">Chép lời bên ngoài sẽ gửi toàn bộ bản ghi âm đến %1$s.\nThời gian lưu giữ và việc có dùng để huấn luyện hay không là do chính sách riêng của nhà cung cấp đó — Recly không kiểm soát.\nHãy đọc chính sách của nhà cung cấp trước khi sử dụng.</string>
+    <string name="provider_disclosure_transcribe">Chép lời bên ngoài sẽ gửi toàn bộ bản ghi âm đến %1$s. Khi bạn đăng nhập ChatGPT, từng phần cũng được gửi trong lúc ghi âm, nên nhà cung cấp nhận bản ghi hai lần.\nThời gian lưu giữ và việc có dùng để huấn luyện hay không là do chính sách riêng của nhà cung cấp đó — Recly không kiểm soát.\nHãy đọc chính sách của nhà cung cấp trước khi sử dụng.</string>
     <string name="settings_consent_reminder">Nhắc về sự đồng ý</string>
     <string name="settings_consent_reminder_note">Hỏi một lần, trước bản ghi đầu tiên.</string>
     <string name="consent_question">Bạn đã báo cho người tham gia về việc ghi âm chưa?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Bạn đang dùng gói ChatGPT của mình</string>
     <string name="chatgpt_welcome_body">Bản tóm tắt trong Recly dùng gói ChatGPT của bạn. Bạn có thể quản lý mức sử dụng trong cài đặt ChatGPT.</string>
     <string name="chatgpt_got_it">Đã hiểu</string>
+    <string name="notes_consent_title">Recly sắp xếp ngay khi bạn ghi âm</string>
+    <string name="notes_consent_body">Khi bạn đăng nhập ChatGPT, Recly gửi văn bản chép lời của từng bản ghi âm đến gói ChatGPT của bạn trong khi ghi và sau khi dừng, rồi liệt kê các quyết định, việc cần làm và câu hỏi. Âm thanh không bao giờ được gửi. Việc này được tính vào mức sử dụng gói của bạn.</string>
+    <string name="notes_consent_continue">Tiếp tục</string>
+    <string name="notes_decisions">Quyết định</string>
+    <string name="notes_todos">Việc cần làm</string>
+    <string name="notes_questions">Câu hỏi</string>
     <string name="summary_summarize">Tóm tắt</string>
     <string name="summary_again">Tóm tắt lại</string>
     <string name="summary_tab">Tóm tắt</string>

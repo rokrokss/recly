@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -174,13 +175,7 @@ internal fun TranscriptReader(
                         .padding(horizontal = Space.m)
                         // docs/09 "Transcript reader": the group under the playhead, by a bar on its start edge — the
                         // right one in Arabic, Persian and Urdu.
-                        .drawBehind {
-                            if (!now) return@drawBehind
-                            val bar = ACTIVE_BAR.toPx()
-                            val gap = Space.s.toPx()
-                            val x = if (layoutDirection == LayoutDirection.Ltr) -gap else size.width + gap - bar
-                            drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(bar, size.height))
-                        },
+                        .activeBar(palette.accent, now),
                 ) {
                     val stamp = clock(group.start.toLong(), scaleSec)
                     // Spoken text keeps its one format (UX decisions of 2026-10-08).
@@ -229,6 +224,19 @@ private const val CURRENT_MATCH_TINT = 0.4f
 
 /** The active group's bar on its start edge (docs/09 "Accessibility": 2px). */
 private val ACTIVE_BAR = 2.dp
+
+/**
+ * The reader's emphasis of one passage: a [ACTIVE_BAR] bar in [color], [Space.s] out from its start edge — the right one
+ * in Arabic, Persian and Urdu — drawn only while [on]. The passage under the playhead, and a note's own line (docs/08
+ * "Organizing").
+ */
+internal fun Modifier.activeBar(color: Color, on: Boolean): Modifier = drawBehind {
+    if (!on) return@drawBehind
+    val bar = ACTIVE_BAR.toPx()
+    val gap = Space.s.toPx()
+    val x = if (layoutDirection == LayoutDirection.Ltr) -gap else size.width + gap - bar
+    drawRect(color, topLeft = Offset(x, 0f), size = Size(bar, size.height))
+}
 
 /**
  * docs/09 "Transcript reader": who speaks, as a quiet badge — the name in the body face, an id like `S1` in
