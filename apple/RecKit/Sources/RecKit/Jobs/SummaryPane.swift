@@ -4,7 +4,8 @@ import SwiftUI
 
 /// docs/09 "Summary view": the meeting notes ChatGPT wrote from this recording's transcript, as plain text —
 /// no shell renders Markdown — with the model that wrote them and Copy all under them. While a new one is
-/// written, or after one failed, the last one stays readable under the line that says so.
+/// written, or after one failed, the last one stays readable under the line that says so. The notes organized on
+/// their own (docs/08 "Organizing") come first.
 struct SummaryPane: View {
     @ObservedObject var model: RecordingDetailModel
     /// Summarize again, from the failure notice.
@@ -20,6 +21,20 @@ struct SummaryPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.m) {
+                // docs/08 "Organizing": the notes, above a summary the user asked for — absent when there are none.
+                if model.hasNotes {
+                    NotesBlock(
+                        notes: model.notes,
+                        showsOverview: true,
+                        stamp: model.stamp,
+                        playable: true,
+                        seekableSec: seekableSec,
+                        onSeek: onSeek,
+                        lines: model.noteLines(atSec:),
+                        delete: model.deleteNote
+                    )
+                    .id(model.recordingId)
+                }
                 switch onEnum(of: model.summary) {
                 case .none:
                     if model.summarizing { running }

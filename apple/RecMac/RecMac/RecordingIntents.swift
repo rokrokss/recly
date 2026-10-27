@@ -11,7 +11,8 @@ struct StartRecordingIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         await MenuModel.shared.whenReady()
-        MenuModel.shared.start()
+        // docs/08 "Organizing": no screen of its own, so the consent to organize is not asked here.
+        MenuModel.shared.start(fromScreen: false)
         return .result()
     }
 }

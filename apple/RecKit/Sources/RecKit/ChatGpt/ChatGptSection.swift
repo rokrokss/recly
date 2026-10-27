@@ -288,7 +288,8 @@ public struct ChatGptWelcomeDialog: View {
 }
 
 extension View {
-    /// The welcome over this view, once [model] says so. [inline] draws it in the view, for a surface with no
+    /// The welcome over this view, once [model] says so — after the consent to organize when the sign-in asks for it
+    /// (docs/08 "Organizing"), which goes first. [inline] draws it in the view, for a surface with no
     /// window to present a sheet from (the Mac's popover, see `blueprintDialogOverlay`); [shown] keeps a
     /// question drawn on one surface off the other.
     public func chatGptWelcome(_ model: ChatGptSettingsModel?, inline: Bool = false, shown: Bool = true) -> some View {
@@ -310,14 +311,28 @@ private struct ChatGptWelcomeHost: View {
 
     var body: some View {
         if inline {
-            if shown, model.welcome {
+            if shown, model.organizeConsent {
+                BlueprintDialogScrim { consent }
+            } else if shown, model.welcome {
                 BlueprintDialogScrim { ChatGptWelcomeDialog { model.welcome = false } }
             }
         } else {
-            Color.clear.blueprintDialog(isPresented: Binding(get: { shown && model.welcome }, set: { if !$0 { model.welcome = false } })) {
-                ChatGptWelcomeDialog { model.welcome = false }
+            Color.clear.blueprintDialog(isPresented: Binding(
+                get: { shown && (model.organizeConsent || model.welcome) },
+                set: { if !$0 { model.organizeConsent = false; model.welcome = false } }
+            )) {
+                // One sheet: the consent, then the welcome in its place.
+                if model.organizeConsent {
+                    consent
+                } else {
+                    ChatGptWelcomeDialog { model.welcome = false }
+                }
             }
         }
+    }
+
+    private var consent: some View {
+        OrganizeConsentDialog { answer in Task { await model.answerOrganizeConsent(answer) } }
     }
 }
 #endif

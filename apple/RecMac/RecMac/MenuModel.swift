@@ -437,7 +437,10 @@ final class MenuModel: ObservableObject {
 
     /// Every desktop start captures the microphone and system audio with automatic routing, with
     /// the fixed recording processing settings (docs/05).
-    func start() {
+    ///
+    /// - Parameter fromScreen: started from the app's own surfaces — the popover, the Transcripts window, a meeting
+    ///   notification's button — rather than by Shortcuts or Siri, which have none to ask the consent to organize on.
+    func start(fromScreen: Bool = true) {
         guard let session, isReady else { return }
         let mode = RecordingMode.meeting
         // docs/03: before the question, not after it — a disconnect's clean-up walks the recording
@@ -446,6 +449,15 @@ final class MenuModel: ObservableObject {
             message = blocker
             logger.info("shell.recording.start.refused reason=disconnecting")
             return
+        }
+        // docs/08 "Organizing": someone signed in to ChatGPT before the question existed is asked once, at a start —
+        // and the recording starts whatever the answer.
+        if OrganizeConsent.asksAtStart(fromScreen: fromScreen, needsConsent: chatGpt?.needsOrganizeConsent == true),
+           let answer = BlueprintPanel.run(content: { (finish: @escaping (OrganizeConsent.Answer?) -> Void) in
+               OrganizeConsentDialog { finish($0) }
+           }) {
+            let chatGpt = chatGpt
+            Task { await chatGpt?.answerOrganizeConsent(answer) }
         }
         // docs/12 M8: before the recording — telling the participants after the fact is not
         // telling them, and this is the one prompt the user can answer "no" to.

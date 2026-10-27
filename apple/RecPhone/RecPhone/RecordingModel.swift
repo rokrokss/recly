@@ -137,6 +137,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published private(set) var revokeDebt = DisconnectDefaults.revokeDebt
     /// docs/12 M8: true while the consent reminder is up and the recording is waiting on it.
     @Published var consentPrompt = false
+    /// docs/08 "Organizing": true while the consent to organize is up, before a start from this screen. The recording
+    /// starts whatever the answer.
+    @Published var organizeConsentPrompt = false
+    /// docs/08 "Organizing": the notes of the recording being made, as they arrive — under the waveform.
+    @Published private(set) var liveNotes: RecordingNotes?
     /// docs/12 M8 · ADR-011: on until the user turns it off. Switching it back on means "ask me
     /// again", so it clears the answer too — a switch that could never make the reminder appear
     /// again would be a dead one.
@@ -219,8 +224,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// Where that tap waits while there is no screen to take it to (docs/10).
     private let alertRouter = AlertRouter<JobAlert>()
     private var ticker: Timer?
-    /// The recording being made, for the marks the Highlight node puts on it.
-    private var recordingId: String?
+    /// The recording being made, for the marks the Highlight node puts on it and the notes the screen follows.
+    @Published private(set) var recordingId: String?
     /// When the recording on screen began — the Live Activity counts up from it.
     private var startedAt: Date?
     /// The one load. Everything an intent can reach waits for it: the app may have been launched
@@ -498,11 +503,32 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             logger.info("shell.recording.start.refused reason=disconnecting")
             return
         }
+        // docs/08 "Organizing": someone signed in to ChatGPT before the question existed is asked once, here — never
+        // from an intent, which has no screen to ask on.
+        if OrganizeConsent.asksAtStart(fromScreen: true, needsConsent: chatGpt?.needsOrganizeConsent == true) {
+            organizeConsentPrompt = true
+            return
+        }
+        remindThenStart()
+    }
+
+    /// The consent reminder a first recording owes, then the recording.
+    private func remindThenStart() {
         guard !Defaults.askConsent else {
             consentPrompt = true
             return
         }
         Task { _ = await startRecording() }
+    }
+
+    /// The consent sheet's answer: Continue agrees (and allows ChatGPT as a destination), Sign out signs out — and the
+    /// recording goes on to start either way.
+    func organizeConsentAnswered(_ answer: OrganizeConsent.Answer) {
+        organizeConsentPrompt = false
+        Task {
+            await chatGpt?.answerOrganizeConsent(answer)
+            remindThenStart()
+        }
     }
 
     /// The reminder's answer. [suppress] is the "do not ask again" box, which — as on the Mac —
@@ -699,6 +725,33 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         return detail
     }
 
+    /// docs/08 "Organizing": the recording's notes while it is being made, for as long as the screen shows them.
+    func followLiveNotes() async {
+        guard let id = recordingId, let core = bridge?.core else { return }
+        for await notes in core.notes.observe(recordingId: id) {
+            guard !Task.isCancelled, recordingId == id else { return }
+            liveNotes = notes
+        }
+    }
+
+    /// The parts' lines around a note, transcribed while recording.
+    func liveNoteLines(atSec sec: Double) async -> [NoteLine] {
+        guard let id = recordingId, let core = bridge?.core else { return [] }
+        return (try? await core.notes.linesAround(recordingId: id, atSec: sec)) ?? []
+    }
+
+    /// A swipe's delete: gone for good — no later part brings it back.
+    func deleteLiveNote(_ item: NoteItem) {
+        guard let id = recordingId, let core = bridge?.core else { return }
+        Task {
+            do {
+                _ = try await core.notes.deleteItem(recordingId: id, itemId: item.id)
+            } catch {
+                logger.error("shell.notes.delete.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
+
     /// docs/09 "Highlights": a mark at the recorder's own clock — what has been written, not the wall clock.
     func highlight() {
         guard isRecording, let id = recordingId, let core = bridge?.core, let recorder else { return }
@@ -874,6 +927,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             stopTicking()
             startedAt = nil
             recordingId = nil
+            liveNotes = nil
             highlightedAtSec = nil
         }
         // 2026-10-08 §4: the timer keeps the recording's length while it is saved, and goes back to
