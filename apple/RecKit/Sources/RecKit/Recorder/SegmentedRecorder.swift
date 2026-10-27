@@ -62,8 +62,9 @@ public final class SegmentedRecorder {
         /// docs/09 screen principle 6: the levels the shells draw while this recording runs. On the session,
         /// so the strip starts empty with every recording and is gone the moment one ends.
         var live = LiveWaveform()
-        /// docs/01 "Long recordings": ten minutes of the same windows without speech.
-        var quiet = SilenceReminder()
+        /// docs/01 "Long recordings": ten minutes of the same windows without speech — the core's rule, the
+        /// one every shell calls.
+        let quiet = SilenceReminder()
 
         init(
             recordingId: String,
@@ -598,7 +599,7 @@ public final class SegmentedRecorder {
         guard let samples = heard.floatChannelData else { return }
         var remind = false
         session.live.add(UnsafeBufferPointer(start: samples[0], count: Int(heard.frameLength))) { peak in
-            if session.quiet.add(peak) { remind = true }
+            if session.quiet.add(peak: peak) { remind = true }
         }
         if remind { emit(.nobodySpeaking) }
     }

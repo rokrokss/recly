@@ -22,6 +22,7 @@ import app.recly.windows.detect.NoDetection
 import app.recly.windows.detect.RunningApps
 import app.recly.windows.helper.CaptureHelper
 import app.recly.windows.helper.HelperClient
+import app.recly.windows.helper.HelperNotice
 import app.recly.windows.helper.NetworkCost
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
@@ -36,6 +37,7 @@ import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
 import app.recly.windows.record.Completion
 import app.recly.windows.record.FillAsk
+import app.recly.windows.record.PowerSources
 import app.recly.windows.record.RecordingOutcome
 import app.recly.windows.record.RecordingRecovery
 import app.recly.windows.record.StopResult
@@ -659,6 +661,12 @@ class ShellModel(
      */
     @Volatile private var askTitle: Boolean = true
 
+    /**
+     * docs/01 "Long recordings — battery stop": the recording a stop that asks nothing ended. It is queued untitled,
+     * as a quit's is, and only that one — a recording started after it is asked as usual.
+     */
+    @Volatile private var untitledStop: String? = null
+
     private var graph: AppGraph? = null
 
     /**
@@ -740,6 +748,7 @@ class ShellModel(
     private var detector: MeetingDetector? = null
     private var helperCommand: List<String>? = null
     private var balloon: AlertBalloon? = null
+    private var recordingBalloon: RecordingBalloon? = null
     private lateinit var launcher: LaunchAtLogin
 
     /** The same store [localization] keeps the language in — one `java.util.prefs` node, docs/14. */
@@ -781,6 +790,7 @@ class ShellModel(
         deviceId = graph.core.deps.device.deviceId
         val logger = graph.core.deps.logger
         balloon = TrayAlertBalloon(logger, localization::current)
+        recordingBalloon = TrayRecordingBalloon(logger, localization::current)
         launcher = LaunchAtLogins.create(logger)
         launchAtLogin = launcher.isEnabled()
         consentReminder = settings.consentReminder
@@ -821,7 +831,7 @@ class ShellModel(
                 // ended: the user did not stop it, so it is queued untitled and the line says it failed.
                 // A second recording finishing while the first is still unnamed does not take the
                 // prompt from it: that one is queued as it stands rather than losing its job.
-                if (askTitle && !outcome.failed && titles.publish(outcome)) {
+                if (askTitle && outcome.recordingId != untitledStop && !outcome.failed && titles.publish(outcome)) {
                     status = TITLE_PROMPT.message()
                 } else {
                     complete(outcome, title = null)
@@ -856,6 +866,17 @@ class ShellModel(
             detection = detector ?: NoDetection,
             // Said here as well as when the finalize queues it: a stop deferred to the next launch never gets there.
             onHelperDied = { status = Str.RECORDING_FAILED.message() },
+            // docs/01 "Long recordings": the watchdog is the helper's to raise, in the language the app is in now.
+            watchdog = {
+                localization.current.let { HelperNotice(it[Str.NOTIFY_WATCHDOG_TITLE], it[Str.NOTIFY_WATCHDOG_BODY]) }
+            },
+            onNobodySpeaking = { recordingBalloon?.show(Str.NOTIFY_REMINDER_TITLE, Str.NOTIFY_REMINDER_BODY) },
+            power = PowerSources.create(),
+            // The stop that asks nothing, then the balloon that says why — as the phones and the Mac do.
+            onBatteryLow = {
+                stop(askTitle = false)
+                recordingBalloon?.show(Str.NOTIFY_BATTERY_STOP, null)
+            },
         )
 
         waveforms = WaveformPrecompute(
@@ -1107,8 +1128,13 @@ class ShellModel(
         }
     }
 
-    fun stop() {
+    /**
+     * [askTitle] false is the stop that asks nothing (docs/01 "Long recordings — battery stop"): the recording is
+     * queued untitled, as a quit's is, and can be named from the list later.
+     */
+    fun stop(askTitle: Boolean = true) {
         val recorder = recorder ?: return
+        if (!askTitle) untitledStop = recorder.recordingId
         // docs/09 screen principle 1: `STOPPING` until the last segment is closed and the parts are filed —
         // the recorder publishes `onState(false)` at the top of that, and the wait is the rest of it.
         transition = Transition.STOPPING

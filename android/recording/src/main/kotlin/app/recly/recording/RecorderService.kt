@@ -32,6 +32,8 @@ import kotlinx.coroutines.launch
 import recly.core.model.Platform
 import recly.core.model.Source
 import recly.core.platform.Logger
+import recly.core.recording.BatteryStop
+import recly.core.recording.SilenceReminder
 
 /**
  * The microphone foreground service (docs/11): recording outlives the screen, the app being
@@ -193,15 +195,16 @@ class RecorderService : Service() {
         RecordingAlerts.armWatchdog(this, segmentSec)
         // A sticky broadcast: the level as it is now arrives at once, then every change after it.
         battery = object : BroadcastReceiver() {
-            /** From that first delivery: the battery as the recording started. */
-            private var startedLow: Boolean? = null
+            /** Fed every delivery; the first is the battery as the recording started. */
+            private val rule = BatteryStop()
 
             override fun onReceive(context: Context, intent: Intent) {
-                val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-                val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
-                val low = startedLow ?: RecordingAlerts.batteryTooLow(level, scale, plugged).also { startedLow = it }
-                if (RecordingAlerts.batteryStops(low, level, scale, plugged)) batteryStop(level * 100 / scale)
+                val percent = RecordingAlerts.batteryPercent(
+                    intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1),
+                    intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1),
+                )
+                val unplugged = RecordingAlerts.unplugged(intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1))
+                if (rule.check(percent, unplugged)) batteryStop(percent)
             }
         }.also { registerReceiver(it, IntentFilter(Intent.ACTION_BATTERY_CHANGED), RECEIVER_NOT_EXPORTED) }
     }
@@ -213,7 +216,7 @@ class RecorderService : Service() {
         battery = null
     }
 
-    /** Ten minutes without speech ([SilenceReminder]): posted at once, with the ongoing notification's stop. */
+    /** Ten minutes without speech (the core's [SilenceReminder]): posted at once, with the ongoing notification's stop. */
     private fun postReminder() {
         RecordingAlerts.post(
             this,

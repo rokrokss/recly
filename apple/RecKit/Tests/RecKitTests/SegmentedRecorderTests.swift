@@ -460,7 +460,7 @@ final class SegmentedRecorderTests: XCTestCase {
         _ = try await recorder.start(title: nil)
         // A low hum at the same level window after window: a room with nobody in it.
         let hum: (Int) -> Float = { Float(0.003 * sin(2 * .pi * 100 * Double($0) / Double(SegmentedRecorder.sampleRateHz))) }
-        let tenMinutes = SilenceReminder.remindAfterWindows * LiveWaveform.windowFrames
+        let tenMinutes = Int(SilenceReminder.companion.REMIND_AFTER_WINDOWS) * LiveWaveform.windowFrames
 
         XCTAssertTrue(input.push(frames: tenMinutes - LiveWaveform.windowFrames, sample: hum))
         try await Task.sleep(nanoseconds: 200_000_000)

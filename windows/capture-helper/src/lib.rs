@@ -14,3 +14,4 @@ pub mod pipeline;
 pub mod protocol;
 pub mod recorder;
 pub mod selftest;
+pub mod watchdog;

@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import ReclyCore
 import XCTest
 @testable import RecKit
 
@@ -16,23 +17,24 @@ final class RecordingNoticesTests: XCTestCase {
         XCTAssertEqual(RecordingNotices.deadManDelaySec(segmentSec: 5), 10)
     }
 
-    func testTheBatteryStopsARecordingThatFallsToFivePercentUnplugged() {
-        func stops(_ level: Float, unplugged: Bool) -> Bool {
-            RecordingNotices.batteryStops(level: level, unplugged: unplugged, startLevel: 0.6, startUnplugged: true)
-        }
-        XCTAssertTrue(stops(0.05, unplugged: true))
-        XCTAssertTrue(stops(0.01, unplugged: true))
-        XCTAssertFalse(stops(0.06, unplugged: true))
-        XCTAssertFalse(stops(0.05, unplugged: false), "on the charger the level only goes up")
-        XCTAssertFalse(stops(-1, unplugged: true), "a level the platform cannot read stops nothing")
+    /// The rule itself is the core's `BatteryStop` (`BatteryStopTest`); here is only how Apple's
+    /// readings are handed to it — as a whole percent, −1 for one the platform cannot read.
+    func testTheBatteryReadingIsAWholePercent() {
+        XCTAssertEqual(RecordingNotices.percent(level: 0.05), 5)
+        XCTAssertEqual(RecordingNotices.percent(level: 0.06), 6)
+        XCTAssertEqual(RecordingNotices.percent(level: 1), 100)
+        XCTAssertEqual(RecordingNotices.percent(level: -1), -1, "a level the platform cannot read stops nothing")
+        XCTAssertEqual(RecordingNotices.percent(current: 5, max: 100), 5)
+        XCTAssertEqual(RecordingNotices.percent(current: 10, max: 200), 5, "a Mac's capacity is a share of its maximum")
+        XCTAssertEqual(RecordingNotices.percent(current: 3, max: 0), -1)
+        XCTAssertEqual(RecordingNotices.percent(current: -1, max: 100), -1)
     }
 
-    /// A recording started this low is the person's choice: stopping it within the minute would leave
-    /// next to nothing. Started on the charger, it is stopped once it is unplugged that low.
-    func testARecordingThatStartedThatLowRunsOn() {
-        XCTAssertFalse(RecordingNotices.batteryStops(level: 0.02, unplugged: true, startLevel: 0.05, startUnplugged: true))
-        XCTAssertTrue(RecordingNotices.batteryStops(level: 0.02, unplugged: true, startLevel: 0.03, startUnplugged: false))
-        XCTAssertTrue(RecordingNotices.batteryStops(level: 0.04, unplugged: true, startLevel: -1, startUnplugged: true))
+    func testTheRuleTheNoticesCallIsTheCores() {
+        let rule = BatteryStop()
+        XCTAssertFalse(rule.check(percent: 60, unplugged: true), "the start's reading never stops")
+        XCTAssertTrue(rule.check(percent: RecordingNotices.percent(level: 0.05), unplugged: true))
+        XCTAssertEqual(RecordingNotices.batteryCheckSec, 60)
     }
 
     // MARK: - What each event schedules

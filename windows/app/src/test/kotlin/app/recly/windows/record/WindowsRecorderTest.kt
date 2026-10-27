@@ -8,6 +8,8 @@ import app.recly.windows.detect.Detection
 import app.recly.windows.helper.FakeHelperCommand
 import app.recly.windows.helper.HelperClient
 import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,12 +18,14 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okio.FileSystem
@@ -216,6 +220,117 @@ class WindowsRecorderTest {
         assertEquals(1, order.count { it == "resume" })
         // Every call carries the token this session was handed (`Detection`).
         assertTrue(order.none { it.endsWith(":stale") })
+    }
+
+    /**
+     * docs/01 "Long recordings — reminders": the helper's `level` windows are what the reminder listens to, as the
+     * strip's are on the other shells — ten minutes of an empty room, and the shell is told once.
+     */
+    @Test
+    fun `ten quiet minutes in the helper's levels remind once`() = runBlocking {
+        val core = core()
+        val reminded = mutableListOf<String>()
+        val recorder = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command("quiet=6100"), Dispatchers.IO, SilentLogger) },
+            onFinalized = {},
+            onNobodySpeaking = { synchronized(reminded) { reminded += it } },
+        )
+
+        val recordingId = assertNotNull(recorder.start())
+        heard(recorder, windows = 6100)
+        recorder.stop()
+
+        assertEquals(listOf(recordingId), synchronized(reminded) { reminded.toList() })
+    }
+
+    @Test
+    fun `a window short of ten minutes reminds nothing`() = runBlocking {
+        val core = core()
+        val reminded = mutableListOf<String>()
+        val recorder = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command("quiet=5990"), Dispatchers.IO, SilentLogger) },
+            onFinalized = {},
+            onNobodySpeaking = { synchronized(reminded) { reminded += it } },
+        )
+
+        assertNotNull(recorder.start())
+        heard(recorder, windows = 5990)
+        recorder.stop()
+
+        assertEquals(emptyList(), synchronized(reminded) { reminded.toList() })
+    }
+
+    /** docs/01 "Long recordings — battery stop": started on a good battery, read until it is low, then the shell stops it. */
+    @Test
+    fun `a laptop that runs down to five percent unplugged is stopped once`() = runBlocking {
+        val core = core()
+        val low = CompletableDeferred<String>()
+        val readings = listOf(BatteryReading(60, true), BatteryReading(6, true), BatteryReading(5, true))
+        val reads = AtomicInteger()
+        val recorder = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command(), Dispatchers.IO, SilentLogger) },
+            onFinalized = {},
+            power = { readings.getOrElse(reads.getAndIncrement()) { BatteryReading(5, true) } },
+            onBatteryLow = { if (!low.complete(it)) error("stopped twice") },
+            batteryCheck = 10.milliseconds,
+        )
+
+        val recordingId = assertNotNull(recorder.start())
+
+        assertEquals(recordingId, withTimeout(TIMEOUT_MS) { low.await() })
+        delay(100)
+        assertEquals(3, reads.get(), "read no more once it said stop")
+        recorder.stop()
+    }
+
+    @Test
+    fun `a recording started low, or on a desktop, is never stopped for the battery`() = runBlocking {
+        val core = core()
+        val stopped = AtomicBoolean(false)
+        val lowReads = AtomicInteger()
+        val low = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command(), Dispatchers.IO, SilentLogger) },
+            onFinalized = {},
+            power = { lowReads.incrementAndGet(); BatteryReading(4, true) },
+            onBatteryLow = { stopped.set(true) },
+            batteryCheck = 10.milliseconds,
+        )
+        assertNotNull(low.start())
+        withTimeout(TIMEOUT_MS) { while (lowReads.get() < 5) delay(10) }
+        low.stop()
+        assertFalse(stopped.get(), "the user chose to record on a low battery")
+
+        val desktopReads = AtomicInteger()
+        val desktop = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command(), Dispatchers.IO, SilentLogger) },
+            onFinalized = {},
+            power = { desktopReads.incrementAndGet(); null },
+            onBatteryLow = { stopped.set(true) },
+            batteryCheck = 10.milliseconds,
+        )
+        assertNotNull(desktop.start())
+        delay(100)
+        desktop.stop()
+        assertEquals(1, desktopReads.get(), "a machine with no battery is asked once")
+        assertFalse(stopped.get())
+    }
+
+    /**
+     * Until the reader has taken [windows] of the helper's levels — while the recording runs, since a reminder that
+     * falls due during a stop is not posted.
+     */
+    private suspend fun heard(recorder: WindowsRecorder, windows: Int) = withTimeout(TIMEOUT_MS) {
+        while ((recorder.writtenSec() ?: 0.0) * LiveWaveform.WINDOWS_PER_SEC < windows) delay(10)
     }
 
     private fun recorder(

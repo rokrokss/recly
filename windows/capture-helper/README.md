@@ -20,7 +20,7 @@ per line.
 
 | Direction | Line |
 |---|---|
-| App → helper | `{"command":"start","dir":…,"base":…,"segmentSec":900,"tracks":["mic","sys","mix"]}` |
+| App → helper | `{"command":"start","dir":…,"base":…,"segmentSec":900,"tracks":["mic","sys","mix"],"watchdog":{"title":…,"body":…}}` |
 | App → helper | `{"command":"stop"}` · `{"command":"detect","on":true}` |
 | Helper → app | `{"event":"part_done","part":1,"track":"mic","file":…,"bytes":…,"sha256":…,"startOffsetSec":0.0,"durationSec":900.0}` |
 | Helper → app | `{"event":"mic_in_use","app":"Zoom.exe","inUse":true}` · `{"event":"error","message":…,"fatal":true}` |
@@ -32,6 +32,11 @@ per line.
 - When `stop` arrives (or the app closes stdin), it closes the last segment, sends `part_done` and
   **exits**. stdout closing is the signal the app waits for (docs/14 — "if the helper dies the app
   finalizes through the last part").
+- When the **app** dies under a recording — stdin ends with no `stop` and stdout can no longer be
+  written — it closes the last segment the same way and raises `watchdog` (the app's text, in its
+  language) as a balloon on a tray icon of its own, keeps it until it is clicked or 12 hours pass, and
+  exits (docs/01 "Long recordings — watchdog", docs/14 "Long recordings"). That is why nothing on the
+  recording path prints with `println!`/`eprintln!`, which panic on a closed pipe.
 - stdout is the protocol, stderr is the log.
 
 ## Encoding (ADR-019)

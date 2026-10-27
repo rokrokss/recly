@@ -5,6 +5,8 @@ import UserNotifications
 import UIKit
 #elseif os(watchOS)
 import WatchKit
+#elseif os(macOS)
+import IOKit.ps
 #endif
 
 /// What a recording that runs for hours says through Notification Center, on the iPhone, the watch
@@ -16,9 +18,10 @@ import WatchKit
 /// - **The reminder**, posted the moment the recorder has heard nobody speak for ten minutes
 ///   ([RecorderEvent.nobodySpeaking]), with a Stop that asks nothing. Never scheduled ahead: only
 ///   the audio can say it is due, and the recording process runs in the background to hear it.
-/// - **The battery stop** (iPhone, watch): checked every minute, and at 5 % or less with no charger
-///   the recording is stopped and filed before the device shuts down in the middle of a segment —
-///   unless it started that low ([batteryStops]).
+/// - **The battery stop** (iPhone, watch, a Mac laptop): checked every minute, and at 5 % or less with
+///   no charger the recording is stopped and filed before the device shuts down in the middle of a
+///   segment — unless it started that low (the core's `BatteryStop`). A Mac with no battery reads
+///   nothing and is never asked again.
 /// - **The pause** (iPhone, watch): a restart that ran out of attempts waits for the app to come
 ///   back ([SegmentedRecorder.becameActive]), and the person is asked to open it.
 ///
@@ -40,10 +43,9 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     /// Every call to Notification Center, one after the other: a withdraw that overtook the post
     /// queued before it would leave the dead-man armed over a recording that waits.
     private var queue: Task<Void, Never>?
-    #if os(iOS) || os(watchOS)
     private var battery: Timer?
-    private var batteryAtStart: (level: Float, unplugged: Bool) = (-1, false)
-    #endif
+    /// The core's rule for this recording; its first reading is the one at the start.
+    private var batteryRule: BatteryStop?
 
     /// - Parameter stopKey: the shell's own word for stopping, in its own catalog — the reminder's button.
     public convenience init(stopKey: String) {
@@ -69,19 +71,18 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     /// `RecordingAlerts` says the same).
     static func deadManDelaySec(segmentSec: Int) -> TimeInterval { TimeInterval(2 * segmentSec) }
 
-    static let batteryCheckSec: TimeInterval = 60
+    static let batteryCheckSec = TimeInterval(BatteryStop.companion.CHECK_SEC)
 
-    /// Not while it charges — the level only goes up then — and never on a level the platform
-    /// cannot read (−1).
-    static func batteryLow(level: Float, unplugged: Bool) -> Bool {
-        level >= 0 && level <= 0.05 && unplugged
+    /// `UIDevice` / `WKInterfaceDevice`'s level, 0–1, as the whole percent the core's `BatteryStop`
+    /// reads. A level the platform cannot read (−1) stays −1, which stops nothing.
+    static func percent(level: Float) -> Int32 {
+        level < 0 ? -1 : Int32((level * 100).rounded())
     }
 
-    /// A recording that started this low already is the person's choice and runs on: stopping it
-    /// within the minute would leave a recording with next to nothing in it. One that started above
-    /// the line, or on the charger, is stopped once it drops below it unplugged.
-    static func batteryStops(level: Float, unplugged: Bool, startLevel: Float, startUnplugged: Bool) -> Bool {
-        batteryLow(level: level, unplugged: unplugged) && !batteryLow(level: startLevel, unplugged: startUnplugged)
+    /// A Mac's internal battery, from the IOKit power source's current and maximum capacity: a share of
+    /// the maximum, worked out as a whole percent. Either one missing reads −1, which stops nothing.
+    static func percent(current: Int, max: Int) -> Int32 {
+        current >= 0 && max > 0 ? Int32(current * 100 / max) : -1
     }
 
     // MARK: - The recorder's events
@@ -245,52 +246,46 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
         #endif
     }
 
-    // MARK: - The battery (iPhone, watch)
+    // MARK: - The battery (iPhone, watch, a Mac laptop)
 
     private func startBatteryChecks() {
-        #if os(iOS) || os(watchOS)
         battery?.invalidate()
+        battery = nil
+        #if os(iOS) || os(watchOS)
         Self.device.isBatteryMonitoringEnabled = true
-        batteryAtStart = (Self.device.batteryLevel, Self.device.batteryState == .unplugged)
+        #endif
+        let rule = BatteryStop()
+        batteryRule = rule
+        // The reading at the start is the rule's first; a Mac with no battery has none, and is done.
+        guard let start = Self.readBattery() else { return }
+        _ = rule.check(percent: start.percent, unplugged: start.unplugged)
         let timer = Timer(timeInterval: Self.batteryCheckSec, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.checkBattery() }
         }
         RunLoop.main.add(timer, forMode: .common)
         battery = timer
-        #endif
     }
 
     private func stopBatteryChecks() {
-        #if os(iOS) || os(watchOS)
+        batteryRule = nil
         guard let battery else { return }
         battery.invalidate()
         self.battery = nil
+        #if os(iOS) || os(watchOS)
         Self.device.isBatteryMonitoringEnabled = false
         #endif
     }
 
-    #if os(iOS) || os(watchOS)
-    #if os(iOS)
-    private static var device: UIDevice { .current }
-    #else
-    private static var device: WKInterfaceDevice { .current() }
-    #endif
-
     /// The stop a reminder's button makes, and then the notice that says why — posted once the
     /// recording is no longer capturing.
     private func checkBattery() {
-        let level = Self.device.batteryLevel
-        guard let recording, Self.batteryStops(
-            level: level,
-            unplugged: Self.device.batteryState == .unplugged,
-            startLevel: batteryAtStart.level,
-            startUnplugged: batteryAtStart.unplugged
-        ) else { return }
+        guard let recording, let rule = batteryRule, let reading = Self.readBattery(),
+              rule.check(percent: reading.percent, unplugged: reading.unplugged) else { return }
         stopBatteryChecks()
         logger.log(
             level: .warn,
             event: "rec.recorder.batteryStop",
-            fields: ["recordingId": recording.id, "level": Int((level * 100).rounded())],
+            fields: ["recordingId": recording.id, "level": Int(reading.percent)],
             error: nil
         )
         onStop?()
@@ -301,7 +296,35 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
             sound: Self.idleSound
         ))
     }
+
+    #if os(iOS)
+    private static var device: UIDevice { .current }
+    #elseif os(watchOS)
+    private static var device: WKInterfaceDevice { .current() }
     #endif
+
+    /// The battery as a whole percent and whether it is on its own power; nil where there is no
+    /// battery to read (a Mac desktop).
+    private static func readBattery() -> (percent: Int32, unplugged: Bool)? {
+        #if os(iOS) || os(watchOS)
+        return (percent(level: device.batteryLevel), device.batteryState == .unplugged)
+        #elseif os(macOS)
+        guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+              let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] else { return nil }
+        for source in sources {
+            guard let description = IOPSGetPowerSourceDescription(info, source)?.takeUnretainedValue() as? [String: Any],
+                  description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType else { continue }
+            let current = description[kIOPSCurrentCapacityKey] as? Int ?? -1
+            let max = description[kIOPSMaxCapacityKey] as? Int ?? -1
+            // "Battery Power" is unplugged; "AC Power" is on the charger, whatever the level does.
+            let unplugged = description[kIOPSPowerSourceStateKey] as? String == kIOPSBatteryPowerValue
+            return (percent(current: current, max: max), unplugged)
+        }
+        return nil
+        #else
+        return nil
+        #endif
+    }
 
     // MARK: - Identifiers
 

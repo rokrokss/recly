@@ -18,10 +18,12 @@ import recly.core.platform.Logger
 
 /**
  * What a long recording tells the user while nobody is looking at it (docs/11 ":android:recording"):
- * that it may have died, that it is still going with nobody speaking ([SilenceReminder]), and that
- * the battery ended it. Each is its own notification in a channel of its own, apart from the ongoing one.
+ * that it may have died, that it is still going with nobody speaking (the core's `SilenceReminder`), and
+ * that the battery ended it (the core's `BatteryStop`). Each is its own notification in a channel of its
+ * own, apart from the ongoing one.
  *
- * The rules are the pure functions at the bottom, so `RecordingAlertsTest` can hold them on the JVM.
+ * What is Android's own — the watchdog's delay, the battery reading's shape — is the pure functions at
+ * the bottom, so `RecordingAlertsTest` can hold them on the JVM.
  */
 internal object RecordingAlerts {
     const val CHANNEL_ID: String = "recording-alerts"
@@ -81,23 +83,15 @@ internal object RecordingAlerts {
     fun watchdogDelayMs(segmentSec: Int): Long = WATCHDOG_SEGMENTS * segmentSec * 1000L
 
     /**
-     * Stop before the phone or watch shuts itself down mid-segment, which would cost everything since
-     * the last boundary. Not while it charges: then the level only goes up. A level the platform
-     * cannot read (-1) stops nothing.
+     * `ACTION_BATTERY_CHANGED`'s level as the whole percent the core's `BatteryStop` reads: a share of
+     * the scale, not a percentage of its own. A level the platform cannot read is −1, which stops nothing.
      */
-    fun batteryTooLow(level: Int, scale: Int, plugged: Int): Boolean =
-        level >= 0 && scale > 0 && plugged == 0 && level * 100 / scale <= BATTERY_STOP_PERCENT
+    fun batteryPercent(level: Int, scale: Int): Int = if (level >= 0 && scale > 0) level * 100 / scale else -1
 
-    /**
-     * [batteryTooLow], except for a recording that [startedLow] — [batteryTooLow] of the reading at its
-     * start. That one the user chose to make on a low battery, and stopping it at once would leave a
-     * recording with next to nothing in it, so it is never stopped for the battery.
-     */
-    fun batteryStops(startedLow: Boolean, level: Int, scale: Int, plugged: Int): Boolean =
-        !startedLow && batteryTooLow(level, scale, plugged)
+    /** `EXTRA_PLUGGED` is 0 on battery; a reading without it (−1) is not counted as unplugged. */
+    fun unplugged(plugged: Int): Boolean = plugged == 0
 
     private const val WATCHDOG_SEGMENTS = 2
-    private const val BATTERY_STOP_PERCENT = 5
 }
 
 /**

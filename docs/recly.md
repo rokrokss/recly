@@ -173,28 +173,49 @@ Invariants:
 ### Long recordings — watchdog · reminders · battery stop · waiting to resume
 
 2026-10-26 (GitHub issue #20). A recording that runs for hours must not stop silently. There is no server to notice, so every
-notice is an alarm or a local notification the recording device schedules for itself. v1 constants, not settings:
+notice is an alarm or a local notification the recording device raises for itself. v1 constants, not settings. 2026-10-27: the same
+rules on all six platforms; the two that are pure logic — the silence rule and the battery rule — are the core's (`SilenceReminder`,
+`BatteryStop`, §10 "Shared rules for the shells"), and every shell calls them.
 
-| Rule | What happens | Where |
-|---|---|---|
-| **Watchdog** | When the recording starts, a notice is scheduled `2 × segmentSec` ahead (30 min at 900 s) and pushed back at every part boundary; the stop, a fatal failure and the wait below withdraw it. If the process dies, nobody withdraws it, and it fires: `Recording may have stopped` / `Open Recly to check.` Tap → the app | phones · watches · Mac |
-| **Reminder** | 2026-10-27: when nobody has spoken for 10 minutes while the recording runs — a recording forgotten or walked away from — `Still recording` / `No one has spoken for 10 minutes.`, posted at once, with one `Stop` that stops like the ongoing notification's or Live Activity's stop — no title is asked, the recording is handed over as it is. Once per silence: after speech, the next 10 silent minutes remind again; never during a conversation. Heard by the recording process itself from the live strip's 0.1 s peak windows (`SilenceReminder`, the same rule on Android and Apple): the floor is the quietest window of the last minute; a window sounds at ≥ floor + 10 dB and ≥ about −55 dBFS, so no microphone gain is assumed; speech is ≥ 2 s of sounding windows within the last 10 s, and only speech resets the 10 minutes (a cough, a door or a chime is shorter). A steady noise — a fan, an air conditioner — becomes the floor within a minute and counts as silence. A window of digital zero (a microphone taken away, e.g. by a call) neither counts nor resets. A reminder's Stop only stops the recording it was posted for | phones · watches · Mac |
-| **Battery stop** | Battery ≤ 5 % and not charging → the recording is stopped the same way (the open part is filed, the recording handed over), then `Recording stopped: battery low`. Not for a recording that **started** at ≤ 5 % unplugged: that was the user's choice, and stopping it at once would leave next to nothing. An unreadable level stops nothing | phones · watches |
-| **Waiting to resume** | When a restart after an interruption runs out of its 10 attempts, the recording does not end: the open part is filed where it stands, the watchdog and a reminder still shown are withdrawn, `Recording paused` / `Open Recly to keep recording.` is posted. When the app next becomes active it reattaches once; success writes one `gaps` range over the whole wait (reason unchanged) and re-arms the watchdog, failure keeps waiting. No audio arrives while it waits, so the silence reminder's 10 minutes do not run. A stop while waiting finalizes normally. No timeout — a suspended iOS app runs no timers | iPhone · Apple Watch |
+| Rule | What happens | Galaxy Watch · Android phone | Apple Watch · iPhone | Mac | Windows |
+|---|---|---|---|---|---|
+| **Watchdog** | If the recording process dies, `Recording may have stopped` / `Open Recly to check.` Tap → the app (Windows: the click only dismisses it — the helper does not start the app). On the phones, watches and the Mac a notice is scheduled `2 × segmentSec` ahead (30 min at 900 s) when the recording starts and pushed back at every part boundary; the stop, a fatal failure and the wait below withdraw it, and a dead process cannot, so it fires. Windows records in a separate process, the capture helper, which outlives the app: when the app dies under a recording — no `stop`, and the app's end of the helper's stdout gone with its process (a write fails) — the helper closes the open segment (the next launch's recovery files it), raises the same notice at once and then exits (§14 "Long recordings") | ✓ alarm | ✓ | ✓ | ✓ the helper |
+| **Reminder** | 2026-10-27: when nobody has spoken for 10 minutes while the recording runs — a recording forgotten or walked away from — `Still recording` / `No one has spoken for 10 minutes.`, posted at once, with one `Stop` that stops like the ongoing notification's or Live Activity's stop — no title is asked, the recording is handed over as it is. Once per silence: after speech, the next 10 silent minutes remind again; never during a conversation. Heard by the recording process itself from the live strip's 0.1 s peak windows — on Windows the capture helper's `level` lines, the strip's windows there (the core's `SilenceReminder`): the floor is the quietest window of the last minute; a window sounds at ≥ floor + 10 dB and ≥ about −55 dBFS, so no microphone gain is assumed; speech is ≥ 2 s of sounding windows within the last 10 s, and only speech resets the 10 minutes (a cough, a door or a chime is shorter). A steady noise — a fan, an air conditioner — becomes the floor within a minute and counts as silence. A window of digital zero (a microphone taken away, e.g. by a call) neither counts nor resets. A reminder's Stop only stops the recording it was posted for. On the desktops the windows are the `mix` track's, so the other side of a call speaking is speech | ✓ | ✓ | ✓ | ✓ a tray balloon **without** `Stop` — an AWT balloon has no buttons; clicking it opens the tray popup, where the stop is |
+| **Battery stop** | Battery ≤ 5 % and not charging → the recording is stopped the same way (the open part is filed, the recording handed over, no title asked), then `Recording stopped: battery low`. Not for a recording that **started** at ≤ 5 % unplugged: that was the user's choice, and stopping it at once would leave next to nothing. An unreadable level stops nothing (the core's `BatteryStop`, fed a whole percent). Android reads the sticky `ACTION_BATTERY_CHANGED` at every change; the others every 60 s — `UIDevice` / `WKInterfaceDevice`, the Mac's IOKit power sources (`IOPSCopyPowerSourcesInfo`), Windows' `GetSystemPowerStatus` | ✓ | ✓ | ✓ laptops | ✓ laptops |
+| **Waiting to resume** | When a restart after an interruption runs out of its 10 attempts, the recording does not end: the open part is filed where it stands, the watchdog and a reminder still shown are withdrawn, `Recording paused` / `Open Recly to keep recording.` is posted. When the app next becomes active it reattaches once; success writes one `gaps` range over the whole wait (reason unchanged) and re-arms the watchdog, failure keeps waiting. No audio arrives while it waits, so the silence reminder's 10 minutes do not run. A stop while waiting finalizes normally. No timeout — a suspended iOS app runs no timers | — | ✓ | — | — |
 
 - **No sound**: a chime would be recorded into the recording it is about. Android posts on its own channel (vibration, no sound);
   iPhone and Mac post silently. The Apple Watch has no haptic-only notification, so the three notices that fire only when nothing is
   recorded (watchdog, `Recording paused`, battery) use the default sound — in silent mode a wrist tap; the reminder stays silent.
+  Windows cannot be silent: an AWT balloon has no such option, so the reminder plays the system's notification sound unless the user
+  turned it off, and that sound may be in the `sys` and `mix` tracks; the battery balloon and the helper's watchdog come when nothing is
+  being recorded.
 - **Notification permission** is asked at the first recording start on iPhone, Apple Watch and Mac (after the consent reminder, §12
-  "Consent reminder · jurisdiction notices"); without it the notices are not shown and the recording is unaffected.
-- **Not covered**: Windows (v1). Mac restarts that run out of attempts still end the recording. Android alarms do not survive a reboot
-  or a force stop (some vendors' swipe-away is one). A notice scheduled before a language change keeps the old language.
-- Log events: `rec.watchdog.fired` (Android; an Apple notice fires in a process that is gone), `rec.recorder.batteryStop`
-  (`recordingId`, `level` in whole percent), `rec.recorder.awaitingResume` (`recordingId`, `reason`, `error`); a resume logs the
-  existing `rec.recorder.restarted`.
+  "Consent reminder · jurisdiction notices"); without it the notices are not shown and the recording is unaffected. Android uses the app's
+  notification permission; Windows asks for none (a tray balloon needs none, though the system's notification settings can hide it).
+- **Not covered**: Android alarms do not survive a reboot or a force stop (some vendors' swipe-away is one). On Windows a helper that dies
+  with the app — ended together from Task Manager, a power loss — says nothing, and an app that hangs without dying is not noticed. A
+  notice scheduled before a language change keeps the old language (on Windows: the language at the recording's start).
+- Log events: `rec.watchdog.fired` (Android; an Apple notice fires in a process that is gone; the Windows helper writes it to its stderr,
+  which nobody reads once the app is gone), `rec.recorder.batteryStop` (`recordingId`, `level` in whole percent — every platform),
+  `rec.recorder.nobodySpeaking` (`recordingId`; Windows, when the reminder is due), `rec.notice.noTray` · `rec.notice.failed` (`notice`;
+  Windows, a balloon that could not go up), `rec.recorder.awaitingResume` (`recordingId`, `reason`, `error`); a resume logs the existing
+  `rec.recorder.restarted`.
 - Not verified on a device yet: delivery after a real process death, the silence reminder against real rooms and microphones, the
-  battery stop on Apple, and the iOS background-to-foreground resume. Emulators confirmed the Android watchdog alarm (armed, pushed
-  back, withdrawn) and the battery stop on phone and Wear (2026-10-26).
+  battery stop on Apple (the Mac's IOKit reading included), and the iOS background-to-foreground resume. Emulators confirmed the Android
+  watchdog alarm (armed, pushed back, withdrawn) and the battery stop on phone and Wear (2026-10-26). Windows (2026-10-27): only the
+  development host has run any of it — the rules, the helper's decision (`cargo test`, against the real binary with its fake source) and
+  the shell's wiring over the fake helper; the helper's balloon is only type-checked against the Windows target, and `GetSystemPowerStatus`,
+  the AWT balloons and whether Windows keeps the helper's notice after it exits need a Windows PC.
+
+Where a platform does not have a rule, the reason:
+
+- **Battery stop on a desktop** (a Mac with no internal battery, a Windows PC whose `BatteryFlag` says "no system battery"): nothing runs
+  down. The first reading says so and the battery is not read again for that recording.
+- **Waiting to resume on Android**: Android keeps its recorder through a call — the system silences the input (`isClientSilenced`,
+  recorded as `silenced`, §11 `SilenceMonitor`) and it resumes by itself — so there is no restart to run out of attempts.
+- **Waiting to resume on the Mac and Windows**: the desktops are never suspended in the background, so a restart that fails there is a
+  real failure (the input is gone), and the recording ends as before (§12 "Capture pipeline", §14 "Capture").
 
 ### Identifiers · time
 
@@ -260,7 +281,8 @@ in):
 - `disconnect(alsoDeleteRecordings)` — the local-cleanup half of disconnecting
 - (2026-10-07) `recordings.addHighlight` · `setHighlights` (§3 "Metadata"), `importAudio` · `dropAbandonedImport` (§3 "Naming rules"),
   `retranscribe` (§10 "Re-transcription"), `editTranscript` (§8 "Editing"), `exportFile` (§8 "Exports"), `search` (§10 "Search"), and the
-  pure rules every shell applies the same way — `SpeakerTurns`, `SilenceRanges` (§10 "Shared rules for the shells")
+  pure rules every shell applies the same way — `SpeakerTurns`, `SilenceRanges`, and (2026-10-27) `SilenceReminder`, `BatteryStop`
+  (§10 "Shared rules for the shells")
 
 The shells have only audio capture, transfer APIs, the scheduler and the UI. **Workflow semantics never live in a shell.**
 
@@ -3089,6 +3111,14 @@ and phrase as `search`, so a recording the search found opens with the same matc
   0.25 s windows). A window is silent below 6 dB above the recording's quiet level (twice the 8th percentile of its non-zero peaks), capped
   at 12 dB under its loud level (a quarter of the 95th percentile) so that a recording that never pauses skips nothing, and never below
   about −45 dBFS. Runs of 1 second or more come back 0.25 s shorter at both ends, so speech onsets are kept.
+- **`SilenceReminder`** (2026-10-27, `recording/LongRecording.kt`) — the long-recording reminder's rule (§1 "Long recordings — watchdog ·
+  reminders · battery stop · waiting to resume"): `add(peak)` per 0.1 s window of the strip, true once at the window that completes
+  10 minutes without speech. One instance per recording, fed by one reader; it allocates nothing after construction, because Apple calls it
+  from the recorder's write path. It replaces the Kotlin and Swift copies Android and RecKit had.
+- **`BatteryStop`** (2026-10-27, same file) — the battery stop's rule: `check(percent, unplugged)` per reading of the battery, the first
+  being the reading at the start, true when that reading should stop the recording (≤ `STOP_PERCENT` 5 unplugged, not for a recording
+  that started that low, −1 stops nothing); `CHECK_SEC` (60) is how often the shells that poll read it. Each shell hands it a whole percent
+  of its own reading.
 
 ### Failures the user can fix, and their notices
 
@@ -3215,7 +3245,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next, no retry on the old plan with transcription off, a failed folder stamp fails and is retried, `Started` after a cancellation once queued |
 | Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
 | Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
-| Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT |
+| Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`, `SilenceReminderTest`, `BatteryStopTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT, the long-recording reminder (steady silence, conversation, gain, a fan, blips, digital zero) and the battery stop (start reading, charging, unreadable) |
 
 So that the `spec/` schemas and the core's serialization models do not drift apart, the tests parse the example JSON →
 serialize it → compare its structure with the original.
@@ -3267,9 +3297,10 @@ android/
   `AlarmManager.setAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)` — inexact, so no exact-alarm permission, and on Android 12+ it may
   come up to ~75 % late (30–52 min) — to the non-exported `RecordingWatchdog` receiver, re-armed by `SegmentedRecorder.onBoundary`
   (a boundary whose part could not be filed still counts as alive). A watchdog that starts a fresh process leaves the finalize to
-  `RecordingRecovery` in `Application.onCreate`. The reminder is `SilenceReminder` fed by the service's level poller (the
+  `RecordingRecovery` in `Application.onCreate`. The reminder is the core's `SilenceReminder` fed by the service's level poller (the
   `peakSinceLastAsk()` the live strip reads every 0.1 s, on the watch too); the battery check is the sticky
-  `ACTION_BATTERY_CHANGED` (its first delivery is the reading at start). Channel `recording-alerts` (default importance, vibration,
+  `ACTION_BATTERY_CHANGED` (its first delivery is the reading at start), handed to the core's `BatteryStop` as `level × 100 / scale`
+  and `EXTRA_PLUGGED == 0`. Channel `recording-alerts` (default importance, vibration,
   no sound), notification ids 2–4, apart from the ongoing one (id 1, `recording`). Phone and watch share it.
 - `RecordingRecovery.reconcile()`: at app start and before a new recording starts, finds rows with `status = recording` (except rows still being
   received from the watch, §3 "Watch → phone transfer contract"), registers and finalizes the unregistered parts on disk, and hands recordings that were finalized but not processed
@@ -3405,6 +3436,12 @@ With the built-in speakers the microphone's input node runs with voice processin
   finalize; recovery quarantines an unreadable tail as `.corrupt` and deletes a recording with no readable part (§3);
   `applicationShouldTerminate` answers `.terminateLater` while a session is alive and quits after stop · finalize · enqueue; the device ID lives in
   `{dataDir}/device.id`, not the Keychain (avoids the keychain ACL modal on ad-hoc-signed rebuilds).
+- **Long-recording notices** (§1 "Long recordings — watchdog · reminders · battery stop · waiting to resume"): RecKit's `RecordingNotices`, as on
+  the iPhone (§13) — the watchdog, the reminder with `Stop recording`, and (2026-10-27) the battery stop on a laptop: the IOKit power sources
+  (`IOPSCopyPowerSourcesInfo`) every 60 s, the internal battery's current over maximum capacity as a whole percent and `Power Source State` =
+  `Battery Power` as unplugged, handed to the core's `BatteryStop`. A Mac with no internal battery reads nothing and is not checked again. Both
+  stops are `finish(askingForTitle: false)`, the stop `⌘Q` makes. There is no waiting to resume: the menu bar app is never suspended, so a
+  restart that runs out of attempts is a real failure and ends the recording.
 - **Permissions**: `NSMicrophoneUsageDescription`, `NSAudioCaptureUsageDescription`. There is no API to check tap permission in advance, so the prompt comes at the first
   IOProc start, and if that fails, the app points to the System Settings "Screen & System Audio Recording" deep link.
 - **Tap re-creation**: when the output device changes (`kAudioHardwarePropertyDefaultOutputDevice`) or the format changes, the tap is re-created and recorded in `gaps`.
@@ -3570,7 +3607,8 @@ macOS.
   the watchdog, the reminder (posted at once on `.nobodySpeaking`, which `SegmentedRecorder` emits from its write path when
   `SilenceReminder` has heard 10 minutes without speech in the `LiveWaveform` windows — in-process, so the app recording in the
   background under its audio background mode is what hears it; nothing is scheduled ahead), the battery check every 60 s
-  (`UIDevice` / `WKInterfaceDevice`) and the pause. Pending notices a killed run left are withdrawn at launch; delivered ones stay.
+  (`UIDevice` / `WKInterfaceDevice`, the Mac's IOKit power sources; the core's `BatteryStop`) and the pause. Pending notices a killed run
+  left are withdrawn at launch; delivered ones stay.
   On the iPhone and the Mac the responses reach it through the existing delegate's forward; on the watch it is the delegate.
 - **Playback**: before recording starts, playback is blocked and any existing player is stopped; playback is allowed only after the recording input has finished shutting down.
   Play switches the session to `.playback`/`.default` and activates it. The `.playAndRecord` category that remains after recording ends is not
@@ -3682,10 +3720,13 @@ windows/
                      microphone-in-use detection
 ```
 
-JVM ↔ helper: the app spawns the helper, sends commands on stdin (JSON lines: `start {dir, base, segmentSec, tracks}`, `stop`,
+JVM ↔ helper: the app spawns the helper, sends commands on stdin (JSON lines: `start {dir, base, segmentSec, tracks, watchdog?}`, `stop`,
 `detect on/off`) and receives events on stdout (`part_done {…sha256}`, `level {peaks[]}`, `mic_in_use {app}`, `error`).
-File names are built from the `base` the app gives — the helper does not name files.
+File names are built from the `base` the app gives — the helper does not name files. `watchdog {title, body}` (2026-10-27) is the
+watchdog's notice in the app's language at the start; absent or null, the helper raises none.
 **If the helper dies, the app finalizes up to the last part.** Stdout closing is the signal the app waits for. Stdout is the protocol and stderr is the log.
+**If the app dies, the helper closes the last segment and raises the watchdog** ("Long recordings" below). A failed write to stdout is the
+signal, so nothing the helper prints may panic on a closed pipe.
 
 ### Capture
 
@@ -3729,6 +3770,28 @@ File names are built from the `base` the app gives — the helper does not name 
   receives them through `compose.application.resources.dir` and passes `--ffmpeg <path>` to the helper. The ffmpeg LGPL notice
   ships with the installation as `THIRD-PARTY-ffmpeg.md`. The MSI can only be built on Windows, so CI (`windows-release.yml`) builds it on release tags (`v*`) and attaches it to the GitHub release.
 
+### Long recordings
+
+2026-10-27. The rules of §1 "Long recordings — watchdog · reminders · battery stop · waiting to resume" on Windows. All three notices are tray
+balloons, so they have **no buttons**, and clicking one opens the tray popup as every balloon of this app does.
+
+- **Reminder**: `WindowsRecorder` feeds the helper's `level` windows — the popup strip's — to the core's `SilenceReminder`, on the reader that
+  files the parts, and `ShellModel` posts `Still recording` / `No one has spoken for 10 minutes.` with `TrayIcon.displayMessage`. There is no
+  `Stop` on it; the stop is in the popup the click opens.
+- **Battery stop**: while a recording runs, `GetSystemPowerStatus` (kernel32 through JNA, `record/Battery.kt`) is read at the start and every
+  60 s and handed to the core's `BatteryStop` — `BatteryLifePercent` (255 → unreadable) and `ACLineStatus` 0 as unplugged. `BatteryFlag` 128
+  ("no system battery") is a desktop: nothing more is read for that recording. A stop is the tray's stop without the title dialog — the
+  recording is queued untitled, as a quit's is — then the `Recording stopped: battery low` balloon.
+- **Watchdog**: the app passes the notice with `start`. When the helper's stdin ends without a `stop` (the app's process is gone, and with it
+  its end of every pipe), or a line to stdout cannot be written, the helper closes the open segment, then writes one blank line — which the
+  app's reader skips while it still reads, and which cannot be written once its end of the pipe has closed. Only a recording whose app is
+  gone gets the notice; an app that closed stdin itself (`HelperClient.close`) is still reading and gets the segment's `part_done` as before.
+  The notice is a balloon on a tray icon of the helper's own (`Shell_NotifyIconW`, shown as a toast by Windows 10 and 11) — the mechanism the
+  app's AWT balloons use, so no app identity has to be registered with the shell. A balloon belongs to its icon — taking the icon down can
+  take the notice with it — so the helper keeps the icon until the balloon or the icon is clicked, or 12 hours have passed, and then exits. Nothing is scheduled ahead: a helper that dies with the
+  app says nothing, and so does an app that hangs without dying.
+- **No waiting to resume**: the app is never suspended, so the microphone failing for good is a real failure and ends the recording as before.
+
 ### Agent connection
 
 **Retired (2026-10-11, user decision)**, as on the Mac (§12 "Agent connection"): the MSI carries no `recly-events.exe` and no
@@ -3748,6 +3811,9 @@ The development machine is macOS, so the Windows-only parts sit behind interface
 | Running apps · window titles | process table + `EnumWindows` | always empty → stood in for by `RECLY_DETECT_PROCESSES` |
 | Microphone "Let desktop apps access your microphone" | registry | always `UNKNOWN` (no guidance text appears) |
 | Meeting notifications | tray balloon | same API — shows up in the macOS Notification Center |
+| Long-recording balloons (reminder, battery stop) | tray balloon | same API |
+| Battery (battery stop) | `GetSystemPowerStatus` | none → never stops (a desktop) |
+| The helper's watchdog notice | the helper's own tray icon and balloon | `rec.watchdog.fired` on the helper's stderr only |
 
 ### Tasks
 

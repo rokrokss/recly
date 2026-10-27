@@ -87,3 +87,37 @@ class TrayAlertBalloon(
         if (!SystemTray.isSupported()) null else SystemTray.getSystemTray().trayIcons.firstOrNull()
     }.getOrNull()
 }
+
+/**
+ * docs/01 "Long recordings": what the app itself says about a recording while nobody is looking at it —
+ * the reminder after ten minutes with nobody speaking, and the battery stop. A test's is a list.
+ */
+fun interface RecordingBalloon {
+    fun show(title: Str, body: Str?)
+}
+
+/**
+ * The real one, `TrayIcon.displayMessage` like [TrayAlertBalloon]. An AWT balloon has **no buttons**, so the
+ * reminder has no `Stop` here: clicking it opens the tray popup, as every balloon of this app does, and the stop
+ * is there. Windows plays its notification sound with it unless the user turned that off — a balloon cannot be
+ * made silent — so a reminder's sound may be in the `sys` and `mix` tracks of the recording it is about.
+ */
+class TrayRecordingBalloon(
+    private val logger: Logger,
+    private val strings: () -> Strings,
+) : RecordingBalloon {
+
+    override fun show(title: Str, body: Str?) {
+        val icon = runCatching {
+            if (!SystemTray.isSupported()) null else SystemTray.getSystemTray().trayIcons.firstOrNull()
+        }.getOrNull()
+        if (icon == null) {
+            logger.log(Logger.Level.WARN, "rec.notice.noTray", mapOf("notice" to title.key))
+            return
+        }
+        runCatching {
+            val table = strings()
+            icon.displayMessage(table[title], body?.let { table[it] }, TrayIcon.MessageType.INFO)
+        }.onFailure { logger.log(Logger.Level.WARN, "rec.notice.failed", mapOf("notice" to title.key), it) }
+    }
+}

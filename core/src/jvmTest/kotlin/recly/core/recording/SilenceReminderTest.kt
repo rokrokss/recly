@@ -1,4 +1,4 @@
-package app.recly.recording
+package recly.core.recording
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -6,8 +6,8 @@ import kotlin.test.assertTrue
 
 /**
  * docs/01 "Long recordings — watchdog · reminders · battery stop · waiting to resume": the reminder comes after ten
- * minutes without speech, whatever the microphone's gain, and never in a conversation. RecKit's
- * `SilenceReminderTests` hold the same cases.
+ * minutes without speech, whatever the microphone's gain, and never in a conversation. The one rule every
+ * shell calls (Android, Apple through the XCFramework, Windows).
  */
 class SilenceReminderTest {
 

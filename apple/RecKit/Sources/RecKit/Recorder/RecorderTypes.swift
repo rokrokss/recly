@@ -28,7 +28,7 @@ public enum RecorderEvent: Equatable, Sendable {
     /// A boundary closed a part: audio is still reaching the files.
     case partFiled
 
-    /// Ten minutes of the recording have gone by with nobody speaking ([SilenceReminder]). Once per
+    /// Ten minutes of the recording have gone by with nobody speaking (the core's [SilenceReminder]). Once per
     /// silence: the next one needs speech first.
     case nobodySpeaking
 

@@ -2,6 +2,7 @@ package app.recly.windows.helper
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import recly.core.model.Track
 
 /**
  * docs/14: the lines the Rust helper writes, read by the classes that are the contract for them
@@ -21,6 +22,27 @@ class HelperProtocolTest {
     @Test
     fun `a level line with nothing in it still parses`() {
         assertEquals(HelperEvent.Level(emptyList()), decode("""{"event":"level","peaks":[]}"""))
+    }
+
+    /**
+     * docs/01 "Long recordings — watchdog": the notice rides on the `start`, in the app's language. This exact
+     * line is what `protocol.rs` parses on the other side.
+     */
+    @Test
+    fun `a start carries the watchdog's notice`() {
+        val start = HelperCommand.Start(
+            dir = "/tmp/rec",
+            base = "20260827T100000Z_desktop_01H",
+            segmentSec = 900,
+            tracks = listOf(Track.MIC, Track.SYS, Track.MIX),
+            watchdog = HelperNotice("Recording may have stopped", "Open Recly to check."),
+        )
+
+        assertEquals(
+            """{"command":"start","dir":"/tmp/rec","base":"20260827T100000Z_desktop_01H","segmentSec":900,""" +
+                """"tracks":["mic","sys","mix"],"watchdog":{"title":"Recording may have stopped","body":"Open Recly to check."}}""",
+            helperJson.encodeToString(HelperCommand.serializer(), start),
+        )
     }
 
     private fun decode(line: String): HelperEvent =
