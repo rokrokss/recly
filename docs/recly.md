@@ -2871,12 +2871,47 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 - **Elsewhere.** Share lists `Summary` (`.txt`) after `Transcript for notes`, disabled with `No summary yet`; a search hit shows a matching
   summary line as `Summary · …` and opens on the Summary chip when nothing else matched; an unnamed `me` speaker is `Me` (§8 "Me and others").
 
+### Notes view
+
+2026-10-27 (§8 "Organizing", user decisions). Nothing to switch on, and nothing says provisional: the notes simply change when the
+final pass lands.
+
+- **The detail** (Android phone, iPhone, Mac, Windows). The recording's notes head the Summary view, above any summary. The overview
+  comes first (plain text), then up to three groups in the order `Decisions` · `To-dos` · `Questions`, each a section header over table
+  rows. A group with no items is absent, header included; with no overview and no items there is no block and no empty state. Notes alone
+  bring the `Transcript` / `Summary` chips; the detail still opens on `Transcript`. A summary's running or failed line stays on top.
+- **A row** is at least 44 high: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
+  present, the due date muted. At its end the item's time in the recording's time format, as the transcript's quiet monospace time button:
+  a tap seeks and plays (the citation path), accessibility `Play from 00:12:34`; disabled while the recording records, when its audio is not
+  held, or past the held audio.
+- **A tap on the row** opens the `linesAround` lines under it — the speaker's name only when there is one (`Me` for an unnamed me, part
+  labels never), then the text — with the reader's accent start-edge bar on the note's own line: the line containing the quote, else the
+  one covering its time, else the nearest. One row open at a time; Expand and Collapse are accessibility actions.
+- **Delete**, no confirmation, and a deleted item never comes back (the core keeps a tombstone). Phones: swipe the row end-to-start
+  (Android `SwipeToDismissBox`; iPhone a leading drag of 88 or more), uncovering a strip with `Delete` in the danger colour; the row carries
+  a `Delete` accessibility action. Desktops: the row's context menu `Delete` (Windows also the menu key and Shift+F10), red — it cannot be
+  undone.
+- **The record screen** (phones only). While recording, the groups (no overview) sit under the live waveform and are hidden while empty;
+  times are plain monospace labels by elapsed time (`MM:SS`, `HH:MM:SS` past an hour); a row opens the same way, on the lines transcribed
+  while recording; swipe deletes. Idle shows nothing. The Mac popover, the Windows tray popup and both watches are unchanged.
+- **Lists.** A job with only its notes left (`StepReport.notesOnly`) reads `Done`: no reason line, no retry or countdown, it does not make
+  the state node say `Uploading`, and it does not disable the detail's transcript edits or fills. A notes step's error is never shown on a row.
+- **Consent.** A Blueprint dialog `Recly organizes while you record` / `While you're signed in to ChatGPT, Recly sends each recording's
+  transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never
+  sent. This counts toward your plan.`, `Sign out` (quiet) · `Continue`
+  (primary, default). It closes only through its two buttons — back, Esc or a tap outside is no answer, and it asks again at the next start.
+  Shown after a successful ChatGPT sign-in when `needsConsent()` (before the one-time welcome), and at a start from the app's own UI — the
+  record node, the Mac popover and Transcripts window, a meeting offer — when `needsConsent()`, before the consent reminder and the
+  permission prompts; either answer goes on with the start. Widgets, tiles, launcher shortcuts, Siri and Shortcuts, Controls and the watches
+  never ask. On the iPhone `Continue` also grants the ChatGPT transfer consent (§15). On Windows a meeting offer waits while it is up.
+- Windows log events: `shell.chatgpt.consent.failed`, `shell.notes.lines.failed`, `shell.notes.delete.failed`.
+
 ### Accessibility
 
 The system's `reduce motion` · `prefers-color-scheme` · contrast · font size are applied automatically — **the app settings have no accessibility section,
 and the default motion and light/dark behavior is the only behavior.** The only exception is `Theme` in §9 principle 4: the light/dark scheme alone can be chosen differently from the system by
 the user (it is a preference, not an accessibility toggle), and high contrast and motion are still decided only by the system. **Every state is color + text** — nothing says anything by color alone.
-**Red means only two things (2026-09-26)**: in states, only failure (`FAILED` and its reason), and in actions, only irreversible deletion (`Delete` for a recording or an API key, the confirm button of a delete
+**Red means only two things (2026-09-26)**: in states, only failure (`FAILED` and its reason), and in actions, only irreversible deletion (`Delete` for a recording, an API key or a note item (§9 "Notes view"), the confirm button of a delete
 confirmation dialog). The recording state is the one other red — the record and stop nodes and `Recording` — because red is the recording colour,
 not a warning; the desktop `Stop recording` belongs to it. Drive `Disconnect` is quiet (2026-10-08). A selected list row also shows a 2px accent bar on
 its start edge, not only a tint. Node borders, transcript time boxes, quiet buttons and dropdown boxes keep at least 3:1 against the background in
