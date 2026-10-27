@@ -102,7 +102,7 @@ fun RecordingSection(
     ledger: String? = null,
     /** The transcription node's tap: the processing settings, where what it says is changed. */
     onOpenProcessing: () -> Unit,
-    /** The record node's tap, and a tile's or widget's request: the consent question first (D4). */
+    /** The record node's tap: the consent question first (D4). */
     onStart: () -> Unit,
     /** The permission prompts are done and the microphone is there: the recorder starts. */
     onPermitted: () -> Unit,
@@ -124,6 +124,13 @@ fun RecordingSection(
     modifier: Modifier = Modifier,
     /** The first-run card that offers the speech model, at the top of the tab ([ModelPromptCard]). */
     prompt: @Composable () -> Unit = {},
+    /** A tile's, widget's or shortcut's request: [onStart], but never the question about organizing (docs/08 "Organizing"). */
+    onQuickStart: () -> Unit = onStart,
+    /** docs/08 "Organizing": Continue (true) or Sign out (false) to the question before a start. */
+    onNotesConsentAnswered: (Boolean) -> Unit = {},
+    /** docs/08 "Organizing": a note of the running recording swiped away, and the lines around one. */
+    onDeleteNote: (String) -> Unit = {},
+    noteLines: suspend (Double) -> List<recly.core.notes.NoteLine> = { emptyList() },
 ) {
     val gate = rememberPermissionGate(
         refused = state.micRefused,
@@ -141,7 +148,7 @@ fun RecordingSection(
         if (state.autoStart == null) return@LaunchedEffect
         // Spent whether or not it is acted on, and only acted on while it is still what the user
         // asked for: a tap the app took too long to reach is not a recording (docs/11 A9).
-        if (onConsumeAutoStart() && recorder is RecorderState.Idle) onStart()
+        if (onConsumeAutoStart() && recorder is RecorderState.Idle) onQuickStart()
     }
     // D4: the consent question is answered (or was not due); the system's prompts come now.
     LaunchedEffect(state.askPermissions) {
@@ -221,6 +228,14 @@ fun RecordingSection(
                         .padding(horizontal = Space.m)
                         .testTag("live-waveform"),
                 )
+                // docs/08 "Organizing": what the recording has settled so far, under its waveform — the groups alone, and
+                // nothing while there are none. The rest of the room scrolls, unless the whole screen already does.
+                state.notes?.takeIf { showsNotes(it, overview = false) }?.let { notes ->
+                    NotesBlock(
+                        notes, overview = false, scaleSec = elapsed, onDelete = { onDeleteNote(it.id) }, lines = noteLines,
+                        modifier = if (scrollDashboard) Modifier else Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                    )
+                }
             }
         }
 
@@ -295,6 +310,10 @@ fun RecordingSection(
 
     if (state.consentPrompt) {
         ConsentDialog(onAnswer = onConsentAnswered)
+    }
+    // docs/08 "Organizing": asked before the reminder; either answer goes on with the start.
+    if (state.notesConsentPrompt) {
+        NotesConsentDialog(onContinue = { onNotesConsentAnswered(true) }, onSignOut = { onNotesConsentAnswered(false) })
     }
 }
 

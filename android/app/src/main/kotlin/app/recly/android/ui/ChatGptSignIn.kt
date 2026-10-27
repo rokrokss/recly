@@ -46,6 +46,11 @@ data class ChatGptUiState(
     val revokeUnconfirmed: Boolean = false,
     /** The one-time confirmation after the first sign-in on this device. */
     val welcome: Boolean = false,
+    /**
+     * docs/08 "Organizing": the question about organizing through the plan, right after a sign-in that has not been
+     * agreed to yet — before [welcome].
+     */
+    val notesConsent: Boolean = false,
 )
 
 /**
@@ -103,7 +108,8 @@ class ChatGptSignIn private constructor(private val context: Context) {
                 when (val result = account.finishSignIn(callback)) {
                     is ChatGptResult.Done -> {
                         outcome = ProcessingState.DONE
-                        _state.update { it.copy(welcome = result.welcome) }
+                        val ask = runCatching { CoreModule.get(context).core.notes.needsConsent() }.getOrDefault(false)
+                        _state.update { it.copy(welcome = result.welcome, notesConsent = ask) }
                     }
                     is ChatGptResult.Failed -> {
                         outcome = ProcessingState.FAILED
@@ -133,7 +139,8 @@ class ChatGptSignIn private constructor(private val context: Context) {
 
     /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "Summary view"). */
     fun signOut() {
-        _state.update { it.copy(failure = null, revokeUnconfirmed = false) }
+        // Signed out, neither the organizing question nor the welcome to the plan has anything left to say.
+        _state.update { it.copy(failure = null, revokeUnconfirmed = false, notesConsent = false, welcome = false) }
         scope.launch {
             val result = runCatching { account().signOut() }.getOrNull()
             if (result is ChatGptResult.Failed) _state.update { it.copy(revokeUnconfirmed = true) }
@@ -164,6 +171,12 @@ class ChatGptSignIn private constructor(private val context: Context) {
 
     fun dismissWelcome() {
         _state.update { it.copy(welcome = false) }
+    }
+
+    /** docs/08 "Organizing": Continue under the question after the sign-in. */
+    fun agreeToNotes() {
+        _state.update { it.copy(notesConsent = false) }
+        scope.launch { runCatching { CoreModule.get(context).core.notes.consent() } }
     }
 
     private suspend fun account(): ChatGptAccount = CoreModule.get(context).core.chatGpt

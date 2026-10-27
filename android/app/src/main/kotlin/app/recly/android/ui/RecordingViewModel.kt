@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTime::class)
+@file:OptIn(ExperimentalTime::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 
 package app.recly.android.ui
 
@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,6 +37,8 @@ import recly.core.ReclyCore
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.job.EnqueueResult
 import recly.core.job.JobStatus
+import recly.core.notes.NoteLine
+import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.transcribe.LocalEngineInfo
@@ -55,6 +59,12 @@ data class RecordingUiState(
     val autoStart: Long? = null,
     /** docs/12 M8: true while the consent reminder is up, and the recording is waiting on it. */
     val consentPrompt: Boolean = false,
+    /**
+     * docs/08 "Organizing": true while the question about organizing through ChatGPT is up — asked at a start from this
+     * screen while `notes.needsConsent()` says so, before the reminder and the permission prompts. Whatever the answer,
+     * the start goes on.
+     */
+    val notesConsentPrompt: Boolean = false,
     /**
      * The start is past the consent question and waits on the system's permission prompts, which only
      * the screen can show — it takes this once ([RecordingViewModel.consumePermissionAsk]) and comes back
@@ -90,6 +100,8 @@ data class RecordingUiState(
     /** How the sheet's two ChatGPT boxes were left last, which the next sheet starts from. */
     val fillTitleAfterStop: Boolean = false,
     val fillNamesAfterStop: Boolean = false,
+    /** docs/08 "Organizing": the notes of the recording running now, as they arrive; null while nothing records. */
+    val notes: RecordingNotes? = null,
 )
 
 /** A mark the core kept: [sec] into [recordingId], which is only news while that recording runs. */
@@ -134,6 +146,14 @@ class RecordingViewModel @JvmOverloads constructor(
             completionEvents.collect { event -> onEvent(event) }
         }
         viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
+        viewModelScope.launch {
+            val core = core()
+            // docs/08 "Organizing": the recording that is running, and its notes while it runs.
+            recorder.map { (it as? RecorderState.Recording)?.recordingId }
+                .distinctUntilChanged()
+                .flatMapLatest { id -> if (id == null) flowOf(null) else core.notes.observe(id) }
+                .collect { notes -> _state.update { it.copy(notes = notes) } }
+        }
         viewModelScope.launch {
             core().summaries.observePreferences().collect { prefs ->
                 _state.update { it.copy(fillTitleAfterStop = prefs.fillTitleAfterStop, fillNamesAfterStop = prefs.fillNamesAfterStop) }
@@ -184,16 +204,49 @@ class RecordingViewModel @JvmOverloads constructor(
      *
      * D4: the question comes before the system's permission prompts — the record node, the tile, the
      * widget and the launcher shortcut all start here, and the prompts follow the answer.
+     *
+     * docs/08 "Organizing": a start from this screen's own record node ([quick] false) asks first whether Recly may
+     * organize through ChatGPT, while the core says that is still to ask. A tile, the widget or a shortcut never does.
      */
-    fun start() {
+    fun start(quick: Boolean = false) {
         _state.update { it.copy(messages = emptyList(), highlighted = null) }
         // Asked before the reminder as well as after it: a disconnect that is running would only
         // have to refuse the answer, and a question whose answer cannot count is not worth asking.
         if (refusedByDisconnect()) return
         viewModelScope.launch {
+            val notes = !quick && runCatching { core().notes.needsConsent() }.getOrDefault(false)
             val ask = settings.askConsent.first()
-            _state.update { it.startAsked(ask) }
+            _state.update { it.startAsked(ask, askNotes = notes) }
         }
+    }
+
+    /**
+     * docs/08 "Organizing": the answer to organizing — Continue agrees, Sign out is the ChatGPT sign-out Settings has —
+     * and then the start goes on as if the question had not been due.
+     */
+    fun notesConsentAnswered(agreed: Boolean) {
+        viewModelScope.launch {
+            if (agreed) {
+                runCatching { core().notes.consent() }
+            } else {
+                ChatGptSignIn.get(getApplication()).signOut()
+            }
+            val ask = settings.askConsent.first()
+            _state.update { it.notesConsentAnswered(ask) }
+        }
+    }
+
+    /** docs/08 "Organizing": a swipe deletes a note of the recording that is running, for good. */
+    fun deleteNote(itemId: String) {
+        val recordingId = _state.value.notes?.recordingId ?: return
+        viewModelScope.launch { runCatching { core().notes.deleteItem(recordingId, itemId) } }
+    }
+
+    /** docs/08 "Organizing": the parts' lines around a note, for its row's expansion. */
+    suspend fun noteLines(atSec: Double): List<NoteLine> {
+        val recordingId = _state.value.notes?.recordingId ?: return emptyList()
+        val core = core()
+        return runCatching { withContext(core.deps.io) { core.notes.linesAround(recordingId, atSec) } }.getOrDefault(emptyList())
     }
 
     /**
@@ -429,10 +482,18 @@ internal const val AUTO_START_TTL_MS: Long = 10_000
 
 /**
  * D4: a start asks the consent question first when it is due, and the permission prompts otherwise —
- * never both at once, and never the prompts before the question.
+ * never both at once, and never the prompts before the question. docs/08 "Organizing": the question about
+ * organizing ([askNotes]) comes before both, alone.
  */
-internal fun RecordingUiState.startAsked(askConsent: Boolean): RecordingUiState =
-    if (askConsent) copy(consentPrompt = true, askPermissions = false) else copy(askPermissions = true)
+internal fun RecordingUiState.startAsked(askConsent: Boolean, askNotes: Boolean = false): RecordingUiState = when {
+    askNotes -> copy(notesConsentPrompt = true, consentPrompt = false, askPermissions = false)
+    askConsent -> copy(consentPrompt = true, askPermissions = false)
+    else -> copy(askPermissions = true)
+}
+
+/** docs/08 "Organizing": answered either way, the start goes on — to the reminder when it is due, else the prompts. */
+internal fun RecordingUiState.notesConsentAnswered(askConsent: Boolean): RecordingUiState =
+    copy(notesConsentPrompt = false).startAsked(askConsent)
 
 /** The question answered: yes goes on to the permission prompts; Cancel ends the start there. */
 internal fun RecordingUiState.consentAnswered(confirmed: Boolean): RecordingUiState =

@@ -191,7 +191,7 @@
     <string name="alert_quota">Quota del fornitore esaurita: controlla limiti e fatturazione</string>
     <string name="alert_uploads_waiting">In attesa di Drive: %1$d</string>
     <string name="alert_waiting">Registrazioni in attesa: %1$d</string>
-    <string name="provider_disclosure_transcribe">La trascrizione esterna invia l’intera registrazione a %1$s.\nPer quanto tempo la conserva e se la usa per l’addestramento dipende dall’informativa del fornitore: Recly non lo controlla.\nLeggi l’informativa del fornitore prima di usarlo.</string>
+    <string name="provider_disclosure_transcribe">La trascrizione esterna invia l’intera registrazione a %1$s. Finché hai effettuato l’accesso a ChatGPT, ogni parte viene inviata anche durante la registrazione, quindi il fornitore la riceve due volte.\nPer quanto tempo la conserva e se la usa per l’addestramento dipende dall’informativa del fornitore: Recly non lo controlla.\nLeggi l’informativa del fornitore prima di usarlo.</string>
     <string name="settings_consent_reminder">Promemoria consenso</string>
     <string name="settings_consent_reminder_note">Chiesto una volta, prima della prima registrazione.</string>
     <string name="consent_question">Hai avvisato i partecipanti della registrazione?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Stai usando il tuo piano ChatGPT</string>
     <string name="chatgpt_welcome_body">I riassunti in Recly usano il tuo piano ChatGPT. Puoi gestire l’utilizzo nelle impostazioni di ChatGPT.</string>
     <string name="chatgpt_got_it">Ho capito</string>
+    <string name="notes_consent_title">Recly organizza mentre registri</string>
+    <string name="notes_consent_body">Finché hai effettuato l’accesso a ChatGPT, Recly invia il testo della trascrizione di ogni registrazione al tuo piano ChatGPT mentre registri e dopo l’interruzione, ed elenca decisioni, cose da fare e domande. L’audio non viene mai inviato. Questo rientra nell’utilizzo del tuo piano.</string>
+    <string name="notes_consent_continue">Continua</string>
+    <string name="notes_decisions">Decisioni</string>
+    <string name="notes_todos">Cose da fare</string>
+    <string name="notes_questions">Domande</string>
     <string name="summary_summarize">Riassumi</string>
     <string name="summary_again">Riassumi di nuovo</string>
     <string name="summary_tab">Riassunto</string>

@@ -92,6 +92,7 @@ import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
 import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
+import recly.core.notes.NoteLine
 import recly.core.processing.ProcessingTranscription
 import recly.core.recording.ExportFormat
 import recly.core.recording.SilenceRanges
@@ -167,6 +168,9 @@ class DetailActions(
      * `Filling in…`, and the line under the header says what is being filled in.
      */
     val fill: FillRun? = null,
+    /** docs/08 "Organizing": a note swiped away, for good, and the transcript around a note for its row. */
+    val onDeleteNote: (String) -> Unit = {},
+    val noteLines: suspend (Double) -> List<NoteLine> = { emptyList() },
 )
 
 /**
@@ -392,7 +396,10 @@ fun RecordingDetailScreen(
         }
     }
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null, typing = keyboardVisible && summaryDraft != null)
+    // docs/08 "Organizing": the notes, when there is anything in them, head the Summary view.
+    val notes = detail.notes?.takeIf { showsNotes(it, overview = true) }
+    val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null, typing = keyboardVisible && summaryDraft != null,
+        notes = notes != null)
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
@@ -510,8 +517,21 @@ fun RecordingDetailScreen(
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
                 summaryEditing != null ->
                     SummaryEditor(summaryEditing.text, { summaryDraft = summaryEditing.copy(text = it) }, Modifier.fillMaxSize())
-                chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary, models, { actions.onSummarize(summaryFormat, summaryFailed) },
-                    Modifier.fillMaxSize(), canSeekTo, playFrom)
+                chips && view == DetailView.SUMMARY -> {
+                    val block: (@Composable () -> Unit)? = notes?.let { shown ->
+                        @Composable {
+                            NotesBlock(shown, overview = true, scaleSec = scale, onDelete = { actions.onDeleteNote(it.id) },
+                                lines = actions.noteLines, canPlay = canSeekTo, onPlay = playFrom)
+                        }
+                    }
+                    // No summary asked for: the notes are the view.
+                    if (block != null && detail.summary is SummaryState.None && !askedSummary) {
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { block() }
+                    } else {
+                        SummaryPane(detail.summary, models, { actions.onSummarize(summaryFormat, summaryFailed) },
+                            Modifier.fillMaxSize(), canSeekTo, playFrom, header = block)
+                    }
+                }
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list — whatever
                 // the transcript's own state says, a step that never ran included.
                 transcript == null && detail.waitingForDrive -> Notice(

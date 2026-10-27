@@ -567,5 +567,11 @@
   "Filling in speaker names…": "Đang điền tên người nói…",
   "Filling in": "Đang điền",
   "Could not fill in the title": "Không thể điền tiêu đề",
-  "Could not fill in speaker names": "Không thể điền tên người nói"
+  "Could not fill in speaker names": "Không thể điền tên người nói",
+  "Recly organizes while you record": "Recly sắp xếp ngay khi bạn ghi âm",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Khi bạn đăng nhập ChatGPT, Recly gửi văn bản chép lời của từng bản ghi âm đến gói ChatGPT của bạn trong khi ghi và sau khi dừng, rồi liệt kê các quyết định, việc cần làm và câu hỏi. Âm thanh không bao giờ được gửi. Việc này được tính vào mức sử dụng gói của bạn.",
+  "Decisions": "Quyết định",
+  "To-dos": "Việc cần làm",
+  "Questions": "Câu hỏi",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Chép lời bên ngoài sẽ gửi toàn bộ bản ghi âm đến {0}. Khi bạn đăng nhập ChatGPT, từng phần cũng được gửi trong lúc ghi âm, nên nhà cung cấp nhận bản ghi hai lần.\nThời gian lưu giữ và việc có dùng để huấn luyện hay không là do chính sách riêng của nhà cung cấp đó — Recly không kiểm soát.\nHãy đọc chính sách của nhà cung cấp trước khi sử dụng."
 }

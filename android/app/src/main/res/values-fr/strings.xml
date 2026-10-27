@@ -191,7 +191,7 @@
     <string name="alert_quota">Quota du fournisseur épuisé. Vérifiez les limites et la facturation</string>
     <string name="alert_uploads_waiting">En attente de Drive : %1$d</string>
     <string name="alert_waiting">Enregistrements en attente : %1$d.</string>
-    <string name="provider_disclosure_transcribe">La transcription externe envoie l’enregistrement complet à %1$s.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.</string>
+    <string name="provider_disclosure_transcribe">La transcription externe envoie l’enregistrement complet à %1$s. Tant que vous êtes connecté à ChatGPT, chaque partie est aussi envoyée pendant l’enregistrement, si bien que le fournisseur le reçoit deux fois.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.</string>
     <string name="settings_consent_reminder">Rappel de consentement</string>
     <string name="settings_consent_reminder_note">Demandé une seule fois, avant le premier enregistrement.</string>
     <string name="consent_question">Avez-vous prévenu les participants de l’enregistrement ?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Vous utilisez votre forfait ChatGPT</string>
     <string name="chatgpt_welcome_body">Les résumés dans Recly utilisent votre forfait ChatGPT. Vous pouvez gérer l’utilisation dans les réglages de ChatGPT.</string>
     <string name="chatgpt_got_it">Compris</string>
+    <string name="notes_consent_title">Recly organise pendant que vous enregistrez</string>
+    <string name="notes_consent_body">Tant que vous êtes connecté à ChatGPT, Recly envoie le texte de la transcription de chaque enregistrement à votre forfait ChatGPT pendant l’enregistrement et après l’arrêt, et en liste les décisions, les tâches et les questions. L’audio n’est jamais envoyé. Cela compte dans l’utilisation de votre forfait.</string>
+    <string name="notes_consent_continue">Continuer</string>
+    <string name="notes_decisions">Décisions</string>
+    <string name="notes_todos">Tâches</string>
+    <string name="notes_questions">Questions</string>
     <string name="summary_summarize">Résumer</string>
     <string name="summary_again">Résumer à nouveau</string>
     <string name="summary_tab">Résumé</string>

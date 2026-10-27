@@ -285,10 +285,11 @@ internal data class SummaryDraft(val original: String, val text: String) {
 /**
  * Transcript | Summary, once there is a summary or the user has just asked for one — never while editing the
  * transcript, nor while the summary editor has the keyboard up ([typing], N6): the text keeps that room, and
- * the chips are back when the keyboard goes.
+ * the chips are back when the keyboard goes. docs/08 "Organizing": the recording's notes ([notes]) are in the
+ * Summary view too, above any summary, so they bring the chips with them.
  */
-internal fun showsSummaryChips(summary: SummaryState, asked: Boolean, editing: Boolean, typing: Boolean = false): Boolean =
-    !editing && !typing && (asked || summary !is SummaryState.None)
+internal fun showsSummaryChips(summary: SummaryState, asked: Boolean, editing: Boolean, typing: Boolean = false, notes: Boolean = false): Boolean =
+    !editing && !typing && (asked || notes || summary !is SummaryState.None)
 
 /** The reasons whose own sentence is the whole notice: each says what to do. */
 private val SPOKEN = setOf(
@@ -323,6 +324,9 @@ internal fun modelLabel(modelName: String?, model: String, models: List<ChatGptM
  * docs/09 "Summary view": the summary of the open recording, or where it is. The text is ChatGPT's plain text
  * with its own line breaks; [models] names the model it was written with. A citation in it plays from its time
  * through [onSeek] — the transcript's time buttons' own seek — where [canSeek] allows it.
+ *
+ * [header] — docs/08 "Organizing": the recording's notes — scrolls with the text, above it, whatever state the summary
+ * is in; the lines that say a summary is running or failed stay over both.
  */
 @Composable
 internal fun SummaryPane(
@@ -332,6 +336,7 @@ internal fun SummaryPane(
     modifier: Modifier = Modifier,
     canSeek: (Double) -> Boolean = { false },
     onSeek: (Double) -> Unit = {},
+    header: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
     when (state) {
@@ -341,24 +346,25 @@ internal fun SummaryPane(
             LoadingText(stringResource(R.string.summary_running), MaterialTheme.typography.bodySmall, palette.textMuted,
                 Modifier.padding(horizontal = Space.m, vertical = Space.s).testTag("summary-running"))
             HairLine()
-            (state as? SummaryState.Running)?.previous?.let { PreviousSummary(it, models, canSeek, onSeek) }
+            val previous = (state as? SummaryState.Running)?.previous
+            if (previous != null) PreviousSummary(previous, models, canSeek, onSeek, header) else header?.let { HeaderOnly(it) }
         }
 
         is SummaryState.Ready -> Column(modifier) {
-            SummaryText(state.summary, Modifier.weight(1f), canSeek, onSeek)
+            SummaryText(state.summary, Modifier.weight(1f), canSeek, onSeek, header)
             HairLine()
             SummaryFooter(state.summary, models)
         }
 
         is SummaryState.Failed -> {
             val previous = state.previous
-            if (previous == null) {
+            if (previous == null && header == null) {
                 ChatGptFailure(state.reason, R.string.summary_failed, onRetry, modifier.fillMaxSize(), retryTag = "summary-retry")
             } else {
                 Column(modifier) {
                     ChatGptFailure(state.reason, R.string.summary_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "summary-retry")
                     HairLine()
-                    PreviousSummary(previous, models, canSeek, onSeek)
+                    if (previous != null) PreviousSummary(previous, models, canSeek, onSeek, header) else header?.let { HeaderOnly(it) }
                 }
             }
         }
@@ -367,10 +373,22 @@ internal fun SummaryPane(
 
 /** The summary still kept under a running or failed one: its text and its footer, as when it was Ready. */
 @Composable
-private fun ColumnScope.PreviousSummary(summary: Summary, models: List<ChatGptModel>, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit) {
-    SummaryText(summary, Modifier.weight(1f), canSeek, onSeek)
+private fun ColumnScope.PreviousSummary(
+    summary: Summary,
+    models: List<ChatGptModel>,
+    canSeek: (Double) -> Boolean,
+    onSeek: (Double) -> Unit,
+    header: (@Composable () -> Unit)?,
+) {
+    SummaryText(summary, Modifier.weight(1f), canSeek, onSeek, header)
     HairLine()
     SummaryFooter(summary, models)
+}
+
+/** The pane's [SummaryPane] header with no summary under it yet: the rest of the pane, scrolling. */
+@Composable
+private fun ColumnScope.HeaderOnly(header: @Composable () -> Unit) {
+    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) { header() }
 }
 
 /**
@@ -407,11 +425,18 @@ internal fun SummaryEditor(text: String, onText: (String) -> Unit, modifier: Mod
     }
 }
 
-/** The text as ChatGPT wrote it, selectable, in the transcript's body type. */
+/** The text as ChatGPT wrote it, selectable, in the transcript's body type — under [header], which scrolls with it. */
 @Composable
-private fun SummaryText(summary: Summary, modifier: Modifier, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit) {
-    SelectionContainer(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        CitedText(summary.text, canSeek, onSeek, Modifier.testTag("summary-text"))
+private fun SummaryText(summary: Summary, modifier: Modifier, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit, header: (@Composable () -> Unit)? = null) {
+    if (header == null) {
+        SelectionContainer(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+            CitedText(summary.text, canSeek, onSeek, Modifier.testTag("summary-text"))
+        }
+    } else {
+        Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+            header()
+            SelectionContainer { CitedText(summary.text, canSeek, onSeek, Modifier.testTag("summary-text")) }
+        }
     }
 }
 

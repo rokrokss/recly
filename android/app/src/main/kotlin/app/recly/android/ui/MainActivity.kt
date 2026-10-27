@@ -276,9 +276,9 @@ class MainActivity : ComponentActivity() {
                             onOpenProcessing = { goTo(Tab.SETTINGS) },
                             // A new recording is where the list's last message stops being news, as
                             // on the iPhone.
-                            onStart = {
+                            onStart = { quick ->
                                 jobsModel.dismissMessage()
-                                recordingModel.start()
+                                recordingModel.start(quick)
                             },
                         )
 
@@ -419,7 +419,8 @@ private fun RecordTab(
     model: RecordingViewModel,
     modifier: Modifier,
     onOpenProcessing: () -> Unit,
-    onStart: () -> Unit,
+    /** True for a tile's, widget's or shortcut's start, which never asks about organizing (docs/08 "Organizing"). */
+    onStart: (quick: Boolean) -> Unit,
 ) {
     RecordingSection(
         state = state,
@@ -428,7 +429,8 @@ private fun RecordTab(
         // ledger is the same live list the jobs tab draws.
         ledger = ledgerCode(jobs.items),
         onOpenProcessing = onOpenProcessing,
-        onStart = onStart,
+        onStart = { onStart(false) },
+        onQuickStart = { onStart(true) },
         onPermitted = model::permitted,
         onConsumePermissionAsk = model::consumePermissionAsk,
         onStop = model::stop,
@@ -440,6 +442,9 @@ private fun RecordTab(
         onCancelTitle = model::cancelTitle,
         onFillChanged = model::rememberFill,
         onConsentAnswered = model::consentAnswered,
+        onNotesConsentAnswered = model::notesConsentAnswered,
+        onDeleteNote = model::deleteNote,
+        noteLines = model::noteLines,
         modifier = modifier,
         prompt = {
             state.modelPrompt?.let { info ->
@@ -498,6 +503,8 @@ private fun JobsTab(
                 onClearAsk = { model.clearAsk(detail.recordingId) },
                 onFill = { half -> model.fill(detail.recordingId, half) },
                 fill = state.fills.firstOrNull { it.recordingId == detail.recordingId },
+                onDeleteNote = { model.deleteNote(detail.recordingId, it) },
+                noteLines = { model.noteLines(detail.recordingId, it) },
             ),
         )
     } else {

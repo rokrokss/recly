@@ -191,7 +191,7 @@
     <string name="alert_quota">سهمیه ارائه‌دهنده تمام شده است؛ محدودیت‌ها و صورت‌حساب آن را بررسی کنید</string>
     <string name="alert_uploads_waiting">در انتظار Drive: %1$d</string>
     <string name="alert_waiting">ضبط‌های در انتظار: %1$d</string>
-    <string name="provider_disclosure_transcribe">رونویسی خارجی کل ضبط را به %1$s می‌فرستد.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید.</string>
+    <string name="provider_disclosure_transcribe">رونویسی خارجی کل ضبط را به %1$s می‌فرستد. تا وقتی به ChatGPT وارد شده‌اید، هر بخش هم هنگام ضبط فرستاده می‌شود، پس ارائه‌دهنده آن را دو بار دریافت می‌کند.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید.</string>
     <string name="settings_consent_reminder">یادآور رضایت</string>
     <string name="settings_consent_reminder_note">یک بار، پیش از نخستین ضبط، پرسیده می‌شود.</string>
     <string name="consent_question">آیا شرکت‌کنندگان را از ضبط آگاه کرده‌اید؟</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">از طرح ChatGPT خود استفاده می‌کنید</string>
     <string name="chatgpt_welcome_body">خلاصه‌ها در Recly از طرح ChatGPT شما استفاده می‌کنند. می‌توانید مصرف را در تنظیمات ChatGPT مدیریت کنید.</string>
     <string name="chatgpt_got_it">متوجه شدم</string>
+    <string name="notes_consent_title">Recly هم‌زمان با ضبط مرتب می‌کند</string>
+    <string name="notes_consent_body">تا وقتی به ChatGPT وارد شده‌اید، Recly متن رونویسی هر ضبط را هنگام ضبط و پس از توقف به طرح ChatGPT شما می‌فرستد و تصمیم‌ها، کارها و پرسش‌های آن را فهرست می‌کند. صدا هرگز فرستاده نمی‌شود. این کار جزو مصرف طرح شما حساب می‌شود.</string>
+    <string name="notes_consent_continue">ادامه</string>
+    <string name="notes_decisions">تصمیم‌ها</string>
+    <string name="notes_todos">کارها</string>
+    <string name="notes_questions">پرسش‌ها</string>
     <string name="summary_summarize">خلاصه کردن</string>
     <string name="summary_again">خلاصه کردن دوباره</string>
     <string name="summary_tab">خلاصه</string>

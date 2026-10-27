@@ -567,5 +567,11 @@
   "Filling in speaker names…": "กำลังเติมชื่อผู้พูด…",
   "Filling in": "กำลังเติม",
   "Could not fill in the title": "เติมชื่อไม่ได้",
-  "Could not fill in speaker names": "เติมชื่อผู้พูดไม่ได้"
+  "Could not fill in speaker names": "เติมชื่อผู้พูดไม่ได้",
+  "Recly organizes while you record": "Recly จัดระเบียบระหว่างที่คุณบันทึก",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ Recly จะส่งข้อความถอดเสียงของแต่ละการบันทึกไปยังแพ็กเกจ ChatGPT ของคุณระหว่างบันทึกและหลังจากหยุด แล้วแสดงรายการการตัดสินใจ สิ่งที่ต้องทำ และคำถาม ไม่มีการส่งเสียงไปเลย ส่วนนี้นับรวมในการใช้งานแพ็กเกจของคุณ",
+  "Decisions": "การตัดสินใจ",
+  "To-dos": "สิ่งที่ต้องทำ",
+  "Questions": "คำถาม",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง {0} ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ ระบบจะส่งแต่ละส่วนระหว่างบันทึกด้วย ผู้ให้บริการจึงได้รับเสียงสองครั้ง\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน"
 }

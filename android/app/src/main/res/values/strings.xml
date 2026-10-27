@@ -272,7 +272,7 @@
 
     <!-- docs/15 §3: what leaves the phone when this step runs, and whose policy decides what
          becomes of it afterwards. No retention claims, and no links until the URLs are confirmed. -->
-    <string name="provider_disclosure_transcribe">External transcription sends the whole recording to %1$s.\nHow long they keep it, and whether they train on it, is that provider\'s own policy — Recly does not control it.\nRead the provider\'s policy before you use it.</string>
+    <string name="provider_disclosure_transcribe">External transcription sends the whole recording to %1$s. While you\'re signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider\'s own policy — Recly does not control it.\nRead the provider\'s policy before you use it.</string>
 
     <!-- docs/12 M8 · ADR-011: the recording-consent reminder. The wording is the Mac\'s, word for
          word in both languages (ConsentTextTest holds the two together). -->
@@ -482,6 +482,13 @@
     <string name="chatgpt_welcome_title">You’re using your ChatGPT plan</string>
     <string name="chatgpt_welcome_body">Summaries in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings.</string>
     <string name="chatgpt_got_it">Got it</string>
+    <!-- docs/08 "Organizing": the consent after a sign-in and before a start, and the notes' three groups. -->
+    <string name="notes_consent_title">Recly organizes while you record</string>
+    <string name="notes_consent_body">While you\'re signed in to ChatGPT, Recly sends each recording\'s transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.</string>
+    <string name="notes_consent_continue">Continue</string>
+    <string name="notes_decisions">Decisions</string>
+    <string name="notes_todos">To-dos</string>
+    <string name="notes_questions">Questions</string>
     <string name="summary_summarize">Summarize</string>
     <string name="summary_again">Summarize again</string>
     <string name="summary_tab">Summary</string>

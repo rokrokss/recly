@@ -191,7 +191,7 @@
     <string name="alert_quota">A cota do provedor acabou. Verifique limites e faturamento</string>
     <string name="alert_uploads_waiting">Aguardando o Drive: %1$d</string>
     <string name="alert_waiting">Gravações em espera: %1$d.</string>
-    <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação inteira para %1$s.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar.</string>
+    <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação inteira para %1$s. Enquanto você estiver conectado ao ChatGPT, cada parte também é enviada durante a gravação, então o provedor a recebe duas vezes.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar.</string>
     <string name="settings_consent_reminder">Lembrete de consentimento</string>
     <string name="settings_consent_reminder_note">Perguntado uma vez, antes da primeira gravação.</string>
     <string name="consent_question">Você avisou os participantes sobre a gravação?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Você está usando seu plano do ChatGPT</string>
     <string name="chatgpt_welcome_body">Os resumos no Recly usam seu plano do ChatGPT. Você pode gerenciar o uso nas configurações do ChatGPT.</string>
     <string name="chatgpt_got_it">Entendi</string>
+    <string name="notes_consent_title">O Recly organiza enquanto você grava</string>
+    <string name="notes_consent_body">Enquanto você estiver conectado ao ChatGPT, o Recly envia o texto da transcrição de cada gravação para o seu plano do ChatGPT durante a gravação e depois que você para, e lista as decisões, tarefas e perguntas. O áudio nunca é enviado. Isso conta no uso do seu plano.</string>
+    <string name="notes_consent_continue">Continuar</string>
+    <string name="notes_decisions">Decisões</string>
+    <string name="notes_todos">Tarefas</string>
+    <string name="notes_questions">Perguntas</string>
     <string name="summary_summarize">Resumir</string>
     <string name="summary_again">Resumir de novo</string>
     <string name="summary_tab">Resumo</string>

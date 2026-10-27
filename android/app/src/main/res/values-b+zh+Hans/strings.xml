@@ -191,7 +191,7 @@
     <string name="alert_quota">提供商配额用尽，请检查限额和账单</string>
     <string name="alert_uploads_waiting">等待Drive：%1$d</string>
     <string name="alert_waiting">%1$d条录音正在等待。</string>
-    <string name="provider_disclosure_transcribe">外部转录会将完整录音发送给%1$s。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。</string>
+    <string name="provider_disclosure_transcribe">外部转录会将完整录音发送给%1$s。登录ChatGPT期间，录音时也会逐段发送，因此提供商会收到两次。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。</string>
     <string name="settings_consent_reminder">同意提醒</string>
     <string name="settings_consent_reminder_note">仅在第一次录音前询问一次。</string>
     <string name="consent_question">您已告知参与者将进行录音吗？</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">你正在使用ChatGPT套餐</string>
     <string name="chatgpt_welcome_body">Recly中的总结使用你的ChatGPT套餐。你可以在ChatGPT设置中管理用量。</string>
     <string name="chatgpt_got_it">知道了</string>
+    <string name="notes_consent_title">Recly边录音边整理</string>
+    <string name="notes_consent_body">登录ChatGPT期间，Recly会在录音时和停止后将每段录音的转录文本发送到你的ChatGPT套餐，并列出其中的决定、待办事项和问题。绝不发送音频。这会计入你的套餐用量。</string>
+    <string name="notes_consent_continue">继续</string>
+    <string name="notes_decisions">决定</string>
+    <string name="notes_todos">待办事项</string>
+    <string name="notes_questions">问题</string>
     <string name="summary_summarize">总结</string>
     <string name="summary_again">重新总结</string>
     <string name="summary_tab">总结</string>

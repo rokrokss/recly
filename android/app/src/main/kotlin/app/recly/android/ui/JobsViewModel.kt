@@ -48,6 +48,8 @@ import recly.core.job.StepRun
 import recly.core.job.StepStatus
 import recly.core.model.Step
 import recly.core.model.RecordingStatus
+import recly.core.notes.NoteLine
+import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
@@ -271,6 +273,8 @@ data class DetailState(
     val ask: AskState = AskState.None,
     /** docs/09 "Search": opened from a hit found only in the summary, so the page starts on it. */
     val openSummary: Boolean = false,
+    /** docs/08 "Organizing": the recording's decisions, to-dos and questions as they change; null until first read. */
+    val notes: RecordingNotes? = null,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -379,7 +383,10 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
      * transcribing it.
      */
     private suspend fun transcribing(core: ReclyCore, jobs: List<Job>, recordingId: String): Transcribing {
-        val unsettled = jobs.filter { it.recordingId == recordingId && it.status !in SETTLED }
+        // docs/08 "Organizing": a job with only its notes left is done as far as the transcript is concerned.
+        val unsettled = jobs.filter {
+            it.recordingId == recordingId && it.status !in SETTLED && !StepReport.notesOnly(it.workflow, core.jobs.steps(it.id))
+        }
         // Said only while it is on its way: one parked for the model, a consent or Drive is the list's to explain.
         val again = unsettled.filter { it.retranscription && it.status in IN_FLIGHT }.maxByOrNull { it.createdAt }
         val localRunning = core.localTranscription.isRunning(recordingId)
@@ -579,6 +586,17 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     /** The Ask panel closed: nothing of the answer is kept (docs/08 "Ask"). */
     fun clearAsk(recordingId: String) = launch { core().summaries.clearAsk(recordingId) }
 
+    /** docs/08 "Organizing": a swipe deletes a note for good; the page follows on [DetailState.notes]. */
+    fun deleteNote(recordingId: String, itemId: String) = launch {
+        runCatching { core().notes.deleteItem(recordingId, itemId) }
+    }
+
+    /** docs/08 "Organizing": the transcript around a note, for its row's expansion; none when it cannot be read. */
+    suspend fun noteLines(recordingId: String, atSec: Double): List<NoteLine> {
+        val core = core()
+        return runCatching { withContext(core.deps.io) { core.notes.linesAround(recordingId, atSec) } }.getOrDefault(emptyList())
+    }
+
     /** docs/08 "Summaries": the user's own words over ChatGPT's, saved at once; the page follows on [DetailState.summary]. */
     suspend fun editSummary(recordingId: String, text: String): SummaryState {
         val core = core()
@@ -755,6 +773,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             }
             launch {
                 core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
+            }
+            launch {
+                core.notes.observe(recordingId).collect { notes -> updateDetail(recordingId) { it.copy(notes = notes) } }
             }
             launch {
                 core.recordings.observe().map { core.recordings.get(recordingId)?.meta?.highlights.orEmpty() }
@@ -953,16 +974,18 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             // One job per (recording, workflow); the newest is the one the user last asked for.
             val job = byRecording[record.id]?.maxByOrNull { it.createdAt }
             val steps = job?.let { core.jobs.steps(it.id) }.orEmpty()
+            // docs/08 "Organizing": only the notes left is a finished recording, with nothing to explain.
+            val notesOnly = StepReport.notesOnly(job?.workflow, steps)
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
             // it left behind say nothing about it (docs/10 "job snapshot").
-            val error = job?.snapshotError ?: blockingError(steps)
+            val error = if (notesOnly) null else job?.snapshotError ?: blockingError(steps)
             JobItem(
                 recordingId = record.id,
                 jobId = job?.id,
                 title = record.meta.title?.takeIf { it.isNotBlank() },
                 startedAt = record.meta.startedAt,
                 durationSec = record.meta.durationSec,
-                state = stateOf(record, job),
+                state = stateOf(record, job, notesOnly),
                 remote = record.remote,
                 error = error,
                 waitingMinutes = StepReport.waitingMinutes(steps, now),
@@ -1021,7 +1044,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
  * decision about a record and a job and nothing else — the same shape the other three shells make
  * it in, and one a JVM test can ask directly.
  */
-internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
+internal fun stateOf(record: RecordingRecord, job: Job?, notesOnly: Boolean = false): ItemState = when {
     // docs/03 "Recordings from other devices": the three things happening somewhere else come first. None of them
     // is a job of this device's, and each would otherwise be read as one of this device's own
     // states — a recording coming in from the watch, and one another device is uploading, are both
@@ -1039,6 +1062,8 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
     record.remote || (job == null && record.driveSynced) -> ItemState.DONE
     // Disconnect removes job history without changing the finalized recording.
     job == null -> ItemState.DONE
+    // docs/08 "Organizing": a job with only its notes left (`StepReport.notesOnly`) is a done recording, not a waiting one.
+    notesOnly && job.status in setOf(JobStatus.PENDING, JobStatus.RUNNING, JobStatus.WAITING) -> ItemState.DONE
     else -> when (job.status) {
         JobStatus.PENDING -> ItemState.PENDING
         JobStatus.RUNNING -> ItemState.RUNNING

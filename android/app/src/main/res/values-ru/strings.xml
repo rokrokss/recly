@@ -191,7 +191,7 @@
     <string name="alert_quota">Квота провайдера исчерпана. Проверьте лимиты и оплату</string>
     <string name="alert_uploads_waiting">Ожидание Drive: %1$d</string>
     <string name="alert_waiting">Ожидающих записей: %1$d.</string>
-    <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись в %1$s.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
+    <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись в %1$s. Пока вы вошли в ChatGPT, каждая часть также отправляется во время записи, поэтому провайдер получает запись дважды.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
     <string name="settings_consent_reminder">Напоминание о согласии</string>
     <string name="settings_consent_reminder_note">Спрашивается один раз, перед первой записью.</string>
     <string name="consent_question">Вы сообщили участникам о записи?</string>
@@ -391,6 +391,12 @@
     <string name="chatgpt_welcome_title">Вы используете свой тариф ChatGPT</string>
     <string name="chatgpt_welcome_body">Краткие пересказы в Recly используют ваш тариф ChatGPT. Использованием можно управлять в настройках ChatGPT.</string>
     <string name="chatgpt_got_it">Понятно</string>
+    <string name="notes_consent_title">Recly упорядочивает прямо во время записи</string>
+    <string name="notes_consent_body">Пока вы вошли в ChatGPT, Recly отправляет текст расшифровки каждой записи в ваш тариф ChatGPT во время записи и после её остановки и составляет список решений, задач и вопросов. Аудио никогда не отправляется. Это учитывается в использовании вашего тарифа.</string>
+    <string name="notes_consent_continue">Продолжить</string>
+    <string name="notes_decisions">Решения</string>
+    <string name="notes_todos">Задачи</string>
+    <string name="notes_questions">Вопросы</string>
     <string name="summary_summarize">Пересказать</string>
     <string name="summary_again">Пересказать снова</string>
     <string name="summary_tab">Краткий пересказ</string>
