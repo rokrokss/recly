@@ -191,7 +191,7 @@
     <string name="alert_quota">提供者の利用枠に達しました。上限と請求を確認してください</string>
     <string name="alert_uploads_waiting">Drive待ち：%1$d</string>
     <string name="alert_waiting">録音%1$d件が待機中です。</string>
-    <string name="provider_disclosure_transcribe">外部の文字起こしでは、録音全体を%1$sに送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
+    <string name="provider_disclosure_transcribe">外部の文字起こしでは、録音全体を%1$sに送信します。ChatGPTにログインしている間は録音中にも各パートを送信するため、提供者は同じ音声を二度受け取ります。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
     <string name="settings_consent_reminder">同意のリマインダー</string>
     <string name="settings_consent_reminder_note">最初の録音の前に一度だけ確認します。</string>
     <string name="consent_question">参加者に録音することを伝えましたか？</string>

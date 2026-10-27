@@ -567,5 +567,11 @@
   "Filling in speaker names…": "বক্তার নাম পূরণ করা হচ্ছে…",
   "Filling in": "পূরণ হচ্ছে",
   "Could not fill in the title": "শিরোনাম পূরণ করা যায়নি",
-  "Could not fill in speaker names": "বক্তার নাম পূরণ করা যায়নি"
+  "Could not fill in speaker names": "বক্তার নাম পূরণ করা যায়নি",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "বাহ্যিক ট্রান্সক্রিপশন পুরো রেকর্ডিং {0}-এর কাছে পাঠায়। ChatGPT-তে সাইন ইন থাকলে রেকর্ড করার সময় প্রতিটি অংশও পাঠানো হয়, তাই প্রদানকারী এটি দুবার পায়।\nতারা কতদিন এটি রাখবে এবং প্রশিক্ষণে ব্যবহার করবে কিনা, তা সেই প্রদানকারীর নিজস্ব নীতি; Recly এটি নিয়ন্ত্রণ করে না।\nব্যবহারের আগে প্রদানকারীর নীতি পড়ুন।",
+  "Recly organizes while you record": "রেকর্ড করার সময়েই Recly গুছিয়ে রাখে",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "ChatGPT-তে সাইন ইন থাকা অবস্থায় Recly রেকর্ড করার সময় এবং থামানোর পরে প্রতিটি রেকর্ডিংয়ের ট্রান্সক্রিপ্টের লেখা আপনার ChatGPT প্ল্যানে পাঠায় এবং এর সিদ্ধান্ত, করণীয় ও প্রশ্নগুলোর তালিকা করে। অডিও কখনো পাঠানো হয় না। এটি আপনার প্ল্যানের ব্যবহারে গোনা হয়।",
+  "Decisions": "সিদ্ধান্ত",
+  "To-dos": "করণীয়",
+  "Questions": "প্রশ্ন"
 }

@@ -191,7 +191,7 @@
     <string name="alert_quota">Ubos na ang quota ng provider — suriin ang mga limitasyon at billing nito</string>
     <string name="alert_uploads_waiting">Naghihintay sa Drive: %1$d</string>
     <string name="alert_waiting">Mga recording na naghihintay: %1$d</string>
-    <string name="provider_disclosure_transcribe">Ipinapadala ng external na pag-transcribe ang buong recording sa %1$s.\nKung gaano katagal nila ito itatago, at kung gagamitin nila ito sa training, ay nakasalalay sa sariling patakaran ng provider — hindi ito kontrolado ng Recly.\nBasahin ang patakaran ng provider bago ito gamitin.</string>
+    <string name="provider_disclosure_transcribe">Ipinapadala ng external na pag-transcribe ang buong recording sa %1$s. Habang naka-sign in ka sa ChatGPT, ipinapadala rin ang bawat bahagi habang nagre-record ka, kaya dalawang beses itong natatanggap ng provider.\nKung gaano katagal nila ito itatago, at kung gagamitin nila ito sa training, ay nakasalalay sa sariling patakaran ng provider — hindi ito kontrolado ng Recly.\nBasahin ang patakaran ng provider bago ito gamitin.</string>
     <string name="settings_consent_reminder">Paalala sa pagsang-ayon</string>
     <string name="settings_consent_reminder_note">Itinatanong nang isang beses, bago ang unang recording.</string>
     <string name="consent_question">Sinabihan mo ba ang mga kalahok tungkol sa pag-record?</string>

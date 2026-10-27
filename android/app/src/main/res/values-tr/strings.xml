@@ -191,7 +191,7 @@
     <string name="alert_quota">Sağlayıcının kotası doldu — limitlerini ve faturalandırmayı kontrol edin</string>
     <string name="alert_uploads_waiting">Drive bekleniyor: %1$d</string>
     <string name="alert_waiting">Bekleyen kayıtlar: %1$d</string>
-    <string name="provider_disclosure_transcribe">Harici transkripsiyon, kaydın tamamını %1$s sağlayıcısına gönderir.\nKaydın ne kadar süre saklanacağı ve model eğitiminde kullanılıp kullanılmayacağı o sağlayıcının kendi politikasına bağlıdır — Recly bunu denetlemez.\nKullanmadan önce sağlayıcının politikasını okuyun.</string>
+    <string name="provider_disclosure_transcribe">Harici transkripsiyon, kaydın tamamını %1$s sağlayıcısına gönderir. ChatGPT’de oturum açıkken her bölüm kayıt sırasında da gönderilir, bu yüzden sağlayıcı kaydı iki kez alır.\nKaydın ne kadar süre saklanacağı ve model eğitiminde kullanılıp kullanılmayacağı o sağlayıcının kendi politikasına bağlıdır — Recly bunu denetlemez.\nKullanmadan önce sağlayıcının politikasını okuyun.</string>
     <string name="settings_consent_reminder">Onay hatırlatıcısı</string>
     <string name="settings_consent_reminder_note">İlk kayıttan önce bir kez sorulur.</string>
     <string name="consent_question">Katılımcıları kayıt hakkında bilgilendirdiniz mi?</string>

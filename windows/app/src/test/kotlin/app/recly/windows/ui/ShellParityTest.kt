@@ -162,6 +162,50 @@ class ShellParityTest {
         model.shutdown()
     }
 
+    /**
+     * docs/08 "Organizing": signed in to ChatGPT and not agreed — a start from the app asks that first, ahead of the
+     * consent reminder, and goes on whatever the answer: Sign out, then the reminder and the recording.
+     */
+    @Test
+    fun `a start asks the organizing consent first and records whatever the answer`() = runBlocking {
+        val model = shell(consentReminder = true)
+        model.load(dataDirectory = dir.absolutePath.toPath(), helperCommand = FakeHelperCommand.command())
+        // No ChatGPT sign-in here: the question is asked as if there were one.
+        model.asksOrganizeConsent = { true }
+
+        model.start()
+        assertTrue(model.chatGpt!!.organizeConsent, "no organizing question")
+        assertNotNull(model.organizeConsentStart)
+        assertNull(model.consentRequest, "the reminder came before the organizing question")
+        assertFalse(model.recording)
+        // A second press while it stands asks nothing more.
+        model.start()
+        assertNull(model.consentRequest)
+
+        model.answerOrganizeConsent(false)
+        assertFalse(model.chatGpt!!.organizeConsent)
+        assertNull(model.organizeConsentStart)
+        assertNotNull(model.consentRequest, "the start did not go on after Sign out")
+        model.consentConfirmed(dontAskAgain = false)
+        withTimeout(TIMEOUT_MS) { while (!model.recording) delay(POLL_MS) }
+        model.shutdown()
+    }
+
+    /** And Continue, or closing it, starts the recording at once when the reminder is off. */
+    @Test
+    fun `Continue starts the recording the question stood in front of`() = runBlocking {
+        val model = shell(consentReminder = false)
+        model.load(dataDirectory = dir.absolutePath.toPath(), helperCommand = FakeHelperCommand.command())
+        model.asksOrganizeConsent = { true }
+
+        model.start()
+        assertTrue(model.chatGpt!!.organizeConsent)
+        model.answerOrganizeConsent(true)
+        assertFalse(model.chatGpt!!.organizeConsent)
+        withTimeout(TIMEOUT_MS) { while (!model.recording) delay(POLL_MS) }
+        model.shutdown()
+    }
+
     /** D1: a recording the helper's death ended is not named — it is queued untitled, and the line says it failed. */
     @Test
     fun `a recording the helper ended is queued untitled and said to have failed`() = runBlocking {

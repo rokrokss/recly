@@ -191,7 +191,7 @@
     <string name="alert_quota">প্রদানকারীর কোটা শেষ; এর সীমা ও বিলিং দেখে নিন</string>
     <string name="alert_uploads_waiting">Drive-এর অপেক্ষায়: %1$d</string>
     <string name="alert_waiting">অপেক্ষমাণ রেকর্ডিং: %1$d</string>
-    <string name="provider_disclosure_transcribe">বাহ্যিক ট্রান্সক্রিপশন পুরো রেকর্ডিং %1$s-এর কাছে পাঠায়।\nতারা কতদিন এটি রাখবে এবং প্রশিক্ষণে ব্যবহার করবে কিনা, তা সেই প্রদানকারীর নিজস্ব নীতি; Recly এটি নিয়ন্ত্রণ করে না।\nব্যবহারের আগে প্রদানকারীর নীতি পড়ুন।</string>
+    <string name="provider_disclosure_transcribe">বাহ্যিক ট্রান্সক্রিপশন পুরো রেকর্ডিং %1$s-এর কাছে পাঠায়। ChatGPT-তে সাইন ইন থাকলে রেকর্ড করার সময় প্রতিটি অংশও পাঠানো হয়, তাই প্রদানকারী এটি দুবার পায়।\nতারা কতদিন এটি রাখবে এবং প্রশিক্ষণে ব্যবহার করবে কিনা, তা সেই প্রদানকারীর নিজস্ব নীতি; Recly এটি নিয়ন্ত্রণ করে না।\nব্যবহারের আগে প্রদানকারীর নীতি পড়ুন।</string>
     <string name="settings_consent_reminder">সম্মতির রিমাইন্ডার</string>
     <string name="settings_consent_reminder_note">প্রথম রেকর্ডিংয়ের আগে একবারই জিজ্ঞাসা করা হয়।</string>
     <string name="consent_question">অংশগ্রহণকারীদের কি রেকর্ডিংয়ের কথা জানিয়েছেন?</string>

@@ -240,6 +240,37 @@ fun ChatGptWelcomeDialog(
     }
 }
 
+/**
+ * docs/08 "Organizing": OpenAI's terms ask for express consent before the plan is used in the background — asked right
+ * after a ChatGPT sign-in, and at a recording start from this app while it is missing. Continue agrees; Sign out is
+ * Settings' own sign-out. Closing it answers nothing, and it is asked again at the next start.
+ */
+@Composable
+fun OrganizeConsentDialog(
+    strings: Strings,
+    theme: @Composable (@Composable () -> Unit) -> Unit,
+    onContinue: () -> Unit,
+    onSignOut: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    BlueprintDialog(
+        title = strings[Str.ORGANIZE_CONSENT_TITLE],
+        onDismissRequest = onDismiss,
+        theme = theme,
+        height = CONSENT_HEIGHT,
+        fitContent = true,
+        actions = {
+            BlueprintButton(strings[Str.CHATGPT_SIGN_OUT], onSignOut, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.ORGANIZE_CONSENT_CONTINUE], onContinue, tone = ButtonTone.PRIMARY)
+        },
+    ) {
+        BlueprintDialogText(strings[Str.ORGANIZE_CONSENT_BODY])
+    }
+}
+
+/** A title, a paragraph and the answers, before the window takes the card's own height. */
+private val CONSENT_HEIGHT: Dp = 240.dp
+
 /** Where the window opens before it takes the card's own height ([BlueprintDialog] `fitContent`). */
 private val METERED_HEIGHT: Dp = 160.dp
 

@@ -272,7 +272,7 @@
 
     <!-- docs/15 §3: what leaves the phone when this step runs, and whose policy decides what
          becomes of it afterwards. No retention claims, and no links until the URLs are confirmed. -->
-    <string name="provider_disclosure_transcribe">External transcription sends the whole recording to %1$s.\nHow long they keep it, and whether they train on it, is that provider\'s own policy — Recly does not control it.\nRead the provider\'s policy before you use it.</string>
+    <string name="provider_disclosure_transcribe">External transcription sends the whole recording to %1$s. While you\'re signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider\'s own policy — Recly does not control it.\nRead the provider\'s policy before you use it.</string>
 
     <!-- docs/12 M8 · ADR-011: the recording-consent reminder. The wording is the Mac\'s, word for
          word in both languages (ConsentTextTest holds the two together). -->

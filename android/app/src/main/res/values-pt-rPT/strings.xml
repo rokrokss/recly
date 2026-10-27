@@ -191,7 +191,7 @@
     <string name="alert_quota">O fornecedor esgotou a quota — verifique os limites e a faturação</string>
     <string name="alert_uploads_waiting">À espera do Drive: %1$d</string>
     <string name="alert_waiting">Gravações em espera: %1$d</string>
-    <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação completa para %1$s.\nO tempo de conservação e o eventual uso para treino dependem da política desse fornecedor — o Recly não os controla.\nLeia a política do fornecedor antes de o utilizar.</string>
+    <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação completa para %1$s. Enquanto tiver sessão iniciada no ChatGPT, cada parte também é enviada durante a gravação, pelo que o fornecedor a recebe duas vezes.\nO tempo de conservação e o eventual uso para treino dependem da política desse fornecedor — o Recly não os controla.\nLeia a política do fornecedor antes de o utilizar.</string>
     <string name="settings_consent_reminder">Lembrete de consentimento</string>
     <string name="settings_consent_reminder_note">Perguntado uma vez, antes da primeira gravação.</string>
     <string name="consent_question">Informou os participantes sobre a gravação?</string>

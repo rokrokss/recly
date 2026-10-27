@@ -567,5 +567,11 @@
   "Filling in speaker names…": "Preenchendo os nomes dos falantes…",
   "Filling in": "Preenchendo",
   "Could not fill in the title": "Não foi possível preencher o título",
-  "Could not fill in speaker names": "Não foi possível preencher os nomes dos falantes"
+  "Could not fill in speaker names": "Não foi possível preencher os nomes dos falantes",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "A transcrição externa envia a gravação inteira para {0}. Enquanto você estiver conectado ao ChatGPT, cada parte também é enviada durante a gravação, então o provedor a recebe duas vezes.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar.",
+  "Recly organizes while you record": "O Recly organiza enquanto você grava",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Enquanto você estiver conectado ao ChatGPT, o Recly envia o texto da transcrição de cada gravação para o seu plano do ChatGPT durante a gravação e depois que você para, e lista as decisões, tarefas e perguntas. O áudio nunca é enviado. Isso conta no uso do seu plano.",
+  "Decisions": "Decisões",
+  "To-dos": "Tarefas",
+  "Questions": "Perguntas"
 }

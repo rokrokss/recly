@@ -81,6 +81,8 @@ internal fun SummaryChips(showingSummary: Boolean, onShowSummary: (Boolean) -> U
  * docs/08 "Summaries": the recording's summary — plain text from ChatGPT, shown as it is — or where a new one
  * has got to. The previous summary stays readable under a run and under a failure, until a new one replaces it.
  * Its times play the recording from there ([canPlay], [onPlay]): seek, and start playing (2026-10-10).
+ *
+ * docs/08 "Organizing": above it, the recording's notes ([NotesBlock]), when it has any.
  */
 @Composable
 internal fun SummaryPane(
@@ -96,9 +98,24 @@ internal fun SummaryPane(
         modifier.verticalScroll(rememberScrollState()).padding(Space.m),
         verticalArrangement = Arrangement.spacedBy(Space.m),
     ) {
+        detail.notes?.let { notes ->
+            NotesBlock(
+                notes = notes,
+                canPlay = canPlay,
+                onPlay = onPlay,
+                linesAround = { atSec -> model.noteLines(detail.recordingId, atSec) },
+                onDelete = { item -> model.deleteNote(detail.recordingId, item.id) },
+                strings = strings,
+                seekableDurationSec = detail.audio.totalSec,
+                spanSec = detail.spanSec,
+            )
+        }
         when (val summary = detail.summary) {
-            // Chosen a moment ago, and the core has not said it is running yet.
-            SummaryState.None -> LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
+            // Chosen a moment ago, and the core has not said it is running yet — or, with notes and no summary, the
+            // notes are what the Summary chip was chosen for.
+            SummaryState.None -> if (detail.notes?.isEmpty != false) {
+                LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
+            }
             // The previous summary stays readable under a run and a failure — with its footer, which model wrote it and
             // Copy all, as when it is the one on show (D17).
             is SummaryState.Running -> {

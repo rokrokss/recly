@@ -191,7 +191,7 @@
     <string name="alert_quota">Квота провайдера исчерпана. Проверьте лимиты и оплату</string>
     <string name="alert_uploads_waiting">Ожидание Drive: %1$d</string>
     <string name="alert_waiting">Ожидающих записей: %1$d.</string>
-    <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись в %1$s.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
+    <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись в %1$s. Пока вы вошли в ChatGPT, каждая часть также отправляется во время записи, поэтому провайдер получает её дважды.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
     <string name="settings_consent_reminder">Напоминание о согласии</string>
     <string name="settings_consent_reminder_note">Спрашивается один раз, перед первой записью.</string>
     <string name="consent_question">Вы сообщили участникам о записи?</string>

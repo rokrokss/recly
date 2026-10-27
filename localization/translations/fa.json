@@ -567,5 +567,11 @@
   "Filling in speaker names…": "در حال تکمیل نام گویندگان…",
   "Filling in": "در حال تکمیل",
   "Could not fill in the title": "تکمیل عنوان ممکن نشد",
-  "Could not fill in speaker names": "تکمیل نام گویندگان ممکن نشد"
+  "Could not fill in speaker names": "تکمیل نام گویندگان ممکن نشد",
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "رونویسی خارجی کل ضبط را به {0} می‌فرستد. تا وقتی وارد ChatGPT هستید، هر بخش هم در حین ضبط فرستاده می‌شود، پس ارائه‌دهنده آن را دو بار دریافت می‌کند.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید.",
+  "Recly organizes while you record": "Recly هنگام ضبط مرتب می‌کند",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "تا وقتی وارد ChatGPT هستید، Recly متن رونوشت هر ضبط را در حین ضبط و پس از توقف به طرح ChatGPT شما می‌فرستد و تصمیم‌ها، کارها و پرسش‌های آن را فهرست می‌کند. صدا هرگز فرستاده نمی‌شود. این جزو مصرف طرح شما حساب می‌شود.",
+  "Decisions": "تصمیم‌ها",
+  "To-dos": "کارها",
+  "Questions": "پرسش‌ها"
 }

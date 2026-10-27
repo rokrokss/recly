@@ -667,9 +667,11 @@ private fun Detail(
             }
         }
     }
-    // docs/08 "Summaries": Transcript | Summary, once there is a summary to choose — never over the transcript's
-    // editor. Over the summary's they stay, and going to the transcript leaves it the way leaving any editor does.
-    val summaryChips = !detail.loading && showsSummaryChips(detail.summary, detail.showingSummary, editing = draft != null)
+    // docs/08 "Summaries": Transcript | Summary, once there is a summary to choose — or notes (docs/08 "Organizing"),
+    // which are shown there — never over the transcript's editor. Over the summary's they stay, and going to the
+    // transcript leaves it the way leaving any editor does.
+    val summaryChips = !detail.loading &&
+        showsSummaryChips(detail.summary, detail.showingSummary, editing = draft != null, notes = detail.notes?.isEmpty == false)
     val summaryShown = summaryChips && detail.showingSummary
     if (summaryChips) {
         SummaryChips(
