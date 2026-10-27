@@ -23,6 +23,8 @@ internal class Natives(
 ) {
     private val names = listOf(System.mapLibraryName("onnxruntime"), System.mapLibraryName("sherpa-onnx-jni"))
 
+    /** Synchronized: the transcription and the pieces' voices (docs/08 "Length · size limits") may both ask at once. */
+    @Synchronized
     fun load() {
         fileSystem.createDirectories(dir)
         for (name in names) {

@@ -23,6 +23,7 @@ import okio.Path.Companion.toPath
 import kotlin.coroutines.cancellation.CancellationException
 import recly.core.platform.Logger
 import recly.core.platform.Transport
+import recly.core.transcribe.AudioSpan
 import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.transcribe.LocalModelStore
@@ -32,6 +33,7 @@ import recly.core.transcribe.LocalTranscriptionRequest
 import recly.core.transcribe.LocalTranscriptionResult
 import recly.core.transcribe.Qwen3Asr
 import recly.core.transcribe.SpeakerDiarizationModels
+import recly.core.transcribe.SpeakerEmbedder
 import recly.core.transcribe.SpeakerTurn
 import recly.core.transcribe.SpeakerTurns
 import recly.core.transcribe.SttSegment
@@ -47,7 +49,8 @@ import recly.core.transcribe.UnavailableLocalTranscriptionEngine
  * first ([SpeakerSeparation]) and each speech piece is cut where the speaker changes, so every piece
  * Qwen decodes is one person's — Qwen gives a piece's times only, so a change inside one sentence the
  * diarizer did not see stays in it (docs/09 "On-device speaker separation"). The vocabulary goes to Qwen
- * as its hotwords, which sherpa-onnx puts in the model's prompt.
+ * as its hotwords, which sherpa-onnx puts in the model's prompt. The same speaker model gives the core the
+ * voices it links a long recording's pieces by ([centroids], docs/08 "Length · size limits").
  */
 class QwenSpeechEngine private constructor(
     private val power: PowerManager,
@@ -56,7 +59,7 @@ class QwenSpeechEngine private constructor(
     private val speakerDir: okio.Path,
     private val turnsDir: File,
     private val logger: Logger,
-) : LocalTranscriptionEngine {
+) : LocalTranscriptionEngine, SpeakerEmbedder {
     @Volatile private var cancelled = false
     /** Downloads in flight: `prepare` is the download, and `status` says whether one is running. */
     private val downloads = AtomicInteger()
@@ -251,6 +254,14 @@ class QwenSpeechEngine private constructor(
             progress = (present / total).takeIf { it > 0.0 && it < 1.0 },
             downloading = downloads.get() > 0,
         )
+    }
+
+    /** Null while the speaker model is not on the phone: the pieces' speakers then pair by their shared part alone. */
+    override suspend fun centroids(spans: Map<String, List<AudioSpan>>): Map<String, FloatArray>? {
+        if (!speakers.installed()) return null
+        return withContext(Dispatchers.Default) {
+            SpeakerVoices((speakerDir / SpeakerDiarizationModels.EMBEDDING).toString()).centroids(spans)
+        }
     }
 
     /** The diarizer for [path], its finished blocks kept under a name of the input's own. */

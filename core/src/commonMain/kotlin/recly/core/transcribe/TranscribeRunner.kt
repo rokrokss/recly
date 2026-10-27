@@ -2,6 +2,7 @@
 
 package recly.core.transcribe
 
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.withContext
@@ -286,10 +287,47 @@ class TranscribeRunner(
                 reason = CoreMessage.STEP_FAILED.code("the result of piece ${missing + 1} of ${plan.size} is gone"),
             )
         }
-        val merged = TranscribeChunks.merge(parts, plan, results.map { it!! }, sttCtx.speakersExpected)
+        val pieces = results.map { it!! }
+        val voices = voices(ctx, step, parts, plan, pieces, sttCtx.speakersExpected)
+        val merged = TranscribeChunks.merge(parts, plan, pieces, sttCtx.speakersExpected, voices)
         val output = finish(ctx, step, provider, state, merged, chunks = plan.size)
         plan.indices.forEach { deps.fileSystem.delete(pieceFile(ctx, it), mustExist = false) }
         return StepOutcome.Done(output)
+    }
+
+    /**
+     * docs/08 "Length · size limits": this device's voices for the labels the shared parts paired with no one, and
+     * for the labels before them they could be ([TranscribeChunks.voiceSpans]) — null when there is no one to ask
+     * about, this device cannot embed, or embedding fails, and the pieces' speakers then pair as they would without.
+     * A key it has no voice for pairs that way too. Kept in memory for this merge only.
+     */
+    private suspend fun voices(
+        ctx: StepContext,
+        step: Step.Transcribe,
+        parts: List<Part>,
+        plan: List<List<Int>>,
+        pieces: List<SttResult>,
+        expected: Int?,
+    ): Map<String, FloatArray>? {
+        val spans = TranscribeChunks.voiceSpans(parts, plan, pieces, expected, ctx.recording.dir)
+        if (spans.isEmpty()) return null
+        val fields = mapOf("stepId" to step.id, "labels" to spans.size)
+        val voices = try {
+            deps.speakerEmbedder?.centroids(spans)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            deps.logger.log(Logger.Level.WARN, "transcribe.voices.failed", fields, e)
+            return null
+        }
+        if (voices == null) {
+            deps.logger.log(Logger.Level.WARN, "transcribe.voices.unavailable", fields)
+            return null
+        }
+        val answered = spans.keys.count { it in voices }
+        val level = if (answered == spans.size) Logger.Level.INFO else Logger.Level.WARN
+        deps.logger.log(level, "transcribe.voices", fields + ("voices" to answered))
+        return voices
     }
 
     /** Written whole or not at all, so a process that dies mid-write leaves the piece unfinished, not broken. */

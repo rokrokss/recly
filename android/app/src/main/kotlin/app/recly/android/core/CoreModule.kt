@@ -27,6 +27,7 @@ import recly.core.model.Platform
 import recly.core.platform.AndroidRuntime
 import recly.core.platform.CoreDeps
 import recly.core.platform.DeviceInfo
+import recly.core.transcribe.SpeakerEmbedder
 
 /** What the shell holds for the life of the process (docs/01 "core ↔ shell boundary"). */
 class AppGraph internal constructor(
@@ -62,6 +63,7 @@ object CoreModule {
         FileSystem.SYSTEM.createDirectories(dataDir)
         val transport = KtorTransport()
         val folder = SafFolder(context, AppSettings(context), Dispatchers.IO)
+        val speech = QwenSpeechEngine.make(context, transport, logger)
 
         val deps = CoreDeps(
             clock = clock,
@@ -80,7 +82,9 @@ object CoreModule {
             io = Dispatchers.IO,
             // docs/07 §6: seeds the first transcription language, and only on a first install.
             locale = app.recly.android.settings.coreLocaleTag(Locale.getDefault()),
-            localTranscription = QwenSpeechEngine.make(context, transport, logger),
+            localTranscription = speech,
+            // docs/08 "Length · size limits": the speaker model also links a long recording's pieces by voice.
+            speakerEmbedder = speech as? SpeakerEmbedder,
             localFolder = folder,
         )
 

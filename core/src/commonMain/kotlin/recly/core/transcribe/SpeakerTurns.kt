@@ -138,6 +138,20 @@ object SpeakerTurns {
         }
     }
 
+    /**
+     * One voice from several embeddings of it: the mean of [embeddings], each scaled to unit length first — what
+     * a [SpeakerEmbedder] answers for a key. Null when there are none.
+     */
+    fun centroid(embeddings: List<FloatArray>): FloatArray? {
+        if (embeddings.isEmpty()) return null
+        val sum = FloatArray(embeddings.maxOf { it.size })
+        for (embedding in embeddings) {
+            val unit = normalized(embedding)
+            for (i in unit.indices) sum[i] += unit[i]
+        }
+        return FloatArray(sum.size) { sum[it] / embeddings.size }
+    }
+
     /** The best label for [start]–[end]: longest overlap, else the nearest turn within [nearestSec]. */
     private fun pick(start: Double, end: Double, turns: List<SpeakerTurn>, nearestSec: Double, previous: String?): String? =
         dominant(start, end, turns, previous)
@@ -160,7 +174,7 @@ object SpeakerTurns {
     /** How far apart a range and a turn are; zero or less when they touch or overlap. */
     private fun gap(start: Double, end: Double, turn: SpeakerTurn): Double = max(turn.start - end, start - turn.end)
 
-    private fun cosine(a: FloatArray, b: FloatArray): Float {
+    internal fun cosine(a: FloatArray, b: FloatArray): Float {
         var dot = 0f
         var aa = 0f
         var bb = 0f

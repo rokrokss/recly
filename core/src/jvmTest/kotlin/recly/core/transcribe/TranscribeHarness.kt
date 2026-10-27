@@ -191,6 +191,8 @@ internal class TranscribeHarness(
     private val extraSttHost: String? = null,
     /** Swapped out by the one test that asserts on what the runner puts in the [SttContext]. */
     private val providers: (String) -> SttProvider? = SttProviders::create,
+    /** The device's speaker embedding, for the tests about linking a long recording's pieces by voice. */
+    speakerEmbedder: SpeakerEmbedder? = null,
 ) {
     val drive = FakeDrive()
     val stt = FakeStt()
@@ -215,6 +217,7 @@ internal class TranscribeHarness(
             RoutingTransport("https://api.eu.assemblyai.com", stt.transport(fs), mockTransport(drive, fs)),
         ),
         audio = audio,
+        speakerEmbedder = speakerEmbedder,
     )
 
     val api = DriveApi(deps)

@@ -68,6 +68,9 @@ public struct CoreBridge {
                 region: platform == .ios ? AppleStorefrontRegion() : nil
             ),
             localTranscription: LocalSpeechEngine.make(),
+            // docs/08 "Length · size limits": no on-device voices yet, so a long recording's pieces pair their
+            // speakers by the part they share alone.
+            speakerEmbedder: nil,
             ubiquity: ubiquity,
             localFolder: localFolder
         )

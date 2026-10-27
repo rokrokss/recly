@@ -33,6 +33,11 @@ class CoreDeps(
     val transcriptionPolicy: TranscriptionPolicy = TranscriptionPolicy(),
     val localTranscription: recly.core.transcribe.LocalTranscriptionEngine = recly.core.transcribe.UnavailableLocalTranscriptionEngine(),
     /**
+     * docs/08 "Length · size limits": the on-device speaker embedding that links a long recording's pieces by voice.
+     * Null where the shell has none, and the pieces' speakers are then paired by the part they share alone.
+     */
+    val speakerEmbedder: recly.core.transcribe.SpeakerEmbedder? = null,
+    /**
      * docs/03 "Storage location": the app's iCloud Drive container. Only the iPhone and Mac shells have one
      * (ADR-024); everywhere else this is null and iCloud is not offered.
      */
@@ -45,6 +50,6 @@ class CoreDeps(
 ) {
     internal fun withTransport(transport: Transport): CoreDeps = CoreDeps(
         clock, logger, secureStore, tokenProvider, transport, fileSystem, audio, dataDir,
-        device, io, locale, requireTransferConsent, transcriptionPolicy, localTranscription, ubiquity, localFolder,
+        device, io, locale, requireTransferConsent, transcriptionPolicy, localTranscription, speakerEmbedder, ubiquity, localFolder,
     )
 }

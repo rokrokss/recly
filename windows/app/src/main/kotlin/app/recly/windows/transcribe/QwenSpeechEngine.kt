@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path
 import recly.core.platform.Transport
+import recly.core.transcribe.AudioSpan
 import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.transcribe.LocalModelStore
@@ -26,6 +27,7 @@ import recly.core.transcribe.LocalTranscriptionRequest
 import recly.core.transcribe.LocalTranscriptionResult
 import recly.core.transcribe.Qwen3Asr
 import recly.core.transcribe.SpeakerDiarizationModels
+import recly.core.transcribe.SpeakerEmbedder
 import recly.core.transcribe.SpeakerTurn
 import recly.core.transcribe.SpeakerTurns
 import recly.core.transcribe.SttSegment
@@ -40,13 +42,14 @@ import recly.core.transcribe.UnavailableLocalTranscriptionEngine
  *
  * With the speaker models ([speakers]) the recording is diarized first and each piece of speech is cut
  * where the speaker changes, so every decoded piece has one speaker; without them the transcript simply
- * has none. The user's vocabulary goes into each piece's prompt as Qwen3-ASR hotwords.
+ * has none. The user's vocabulary goes into each piece's prompt as Qwen3-ASR hotwords. The same speaker
+ * model gives the core the voices it links a long recording's pieces by ([centroids], docs/08 "Length · size limits").
  */
 class QwenSpeechEngine private constructor(
     private val store: LocalModelStore,
     private val speakers: LocalModelStore,
     private val natives: Natives,
-) : LocalTranscriptionEngine {
+) : LocalTranscriptionEngine, SpeakerEmbedder {
     @Volatile private var cancelled = false
 
     /** Whether [prepare] is downloading right now — what settings and the card show a percentage for. */
@@ -89,6 +92,15 @@ class QwenSpeechEngine private constructor(
             }
         }
         return status(language)
+    }
+
+    /** Null while the speaker models are not on this PC: the pieces' speakers then pair by their shared part alone. */
+    override suspend fun centroids(spans: Map<String, List<AudioSpan>>): Map<String, FloatArray>? {
+        if (!speakers.installed()) return null
+        return withContext(Dispatchers.Default) {
+            natives.load()
+            SpeakerDiarizer(speakers).voices(spans)
+        }
     }
 
     private fun missing(): List<LocalModelStore> = listOf(store, speakers).filter { !it.installed() }.ifEmpty { listOf(store, speakers) }

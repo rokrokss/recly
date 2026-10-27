@@ -8,8 +8,10 @@ import com.k2fsa.sherpa.onnx.OfflineSpeakerSegmentationModelConfig
 import com.k2fsa.sherpa.onnx.OfflineSpeakerSegmentationPyannoteModelConfig
 import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractor
 import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractorConfig
+import kotlin.math.roundToInt
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import recly.core.transcribe.AudioSpan
 import recly.core.transcribe.LocalModelStore
 import recly.core.transcribe.SpeakerDiarizationModels
 import recly.core.transcribe.SpeakerTurn
@@ -80,6 +82,36 @@ internal class SpeakerDiarizer(private val store: LocalModelStore) {
         if (blocks.size == 1) return blocks.single().first
         val ids = SpeakerTurns.link(blocks.map { it.second })
         return blocks.flatMapIndexed { index, (turns, _) -> turns.map { it.copy(label = ids[index][it.label.toInt()].toString()) } }
+    }
+
+    /**
+     * docs/08 "Length · size limits": the voices the core links a long recording's pieces by — one centroid per key of
+     * [spans], the mean of the unit embeddings of its stretches of the part files, each decoded on its own. A key none
+     * of whose spans embeds is left out. Nothing is kept: the centroids go back to the core for its merge.
+     */
+    suspend fun voices(spans: Map<String, List<AudioSpan>>): Map<String, FloatArray> {
+        val embedder = SpeakerEmbeddingExtractor(embeddingConfig())
+        try {
+            val out = LinkedHashMap<String, FloatArray>()
+            for ((key, list) in spans) {
+                val embeddings = list.mapNotNull { span ->
+                    currentCoroutineContext().ensureActive()
+                    val samples = PcmDecoder(span.file.toString(), span.startSec).use { pcm -> readSamples(span.sampleCount(), pcm::read) }
+                    val stream = embedder.createStream()
+                    try {
+                        stream.acceptWaveform(samples, SAMPLE_RATE)
+                        stream.inputFinished()
+                        if (embedder.isReady(stream)) embedder.compute(stream) else null
+                    } finally {
+                        stream.release()
+                    }
+                }
+                SpeakerTurns.centroid(embeddings)?.let { out[key] = it }
+            }
+            return out
+        } finally {
+            embedder.release()
+        }
     }
 
     /** One speaker's voice in a block: its longest turns, up to [EMBED_MAX_SEC] of them. */
@@ -176,6 +208,22 @@ internal class BlockCutter(private val block: Int, private val max: Int) {
 
     /** What is left, as the last block; null when nothing is. */
     fun finish(): Pair<Long, FloatArray>? = if (filled == 0) null else emitted to buffer.copyOfRange(0, filled)
+}
+
+/** How many samples this span is at [SAMPLE_RATE]. */
+internal fun AudioSpan.sampleCount(): Int = ((endSec - startSec) * SAMPLE_RATE).roundToInt().coerceAtLeast(0)
+
+/** The first [count] samples of the chunks [next] hands out, null at the end; fewer when they end first. */
+internal fun readSamples(count: Int, next: () -> FloatArray?): FloatArray {
+    val out = FloatArray(count)
+    var filled = 0
+    while (filled < count) {
+        val chunk = next() ?: break
+        val n = minOf(chunk.size, count - filled)
+        chunk.copyInto(out, filled, 0, n)
+        filled += n
+    }
+    return if (filled == count) out else out.copyOf(filled)
 }
 
 /**

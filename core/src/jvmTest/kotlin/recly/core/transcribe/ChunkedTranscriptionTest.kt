@@ -18,6 +18,9 @@ import okio.Path
 import recly.core.job.StepFailure
 import recly.core.job.StepOutcome
 import recly.core.message.CoreMessage
+import recly.core.model.Track
+import recly.core.platform.Logger
+import recly.core.recording.MetaWriter
 import recly.core.testing.STEP_RUN_ID
 
 /**
@@ -138,8 +141,136 @@ class ChunkedTranscriptionTest {
         assertEquals(transcriptText, h.localContent(TranscribeRunner.textFileName(h.base)))
     }
 
+    @Test
+    fun `a speaker the shared part did not hear is found again by this device's voices`() = runBlocking {
+        val embedder = FakeEmbedder { VOICES }
+        lateinit var provider: LateSpeakerProvider
+        val h = TranscribeHarness(partCount = 12, providers = { provider }, speakerEmbedder = embedder)
+        provider = LateSpeakerProvider(h.fs)
+
+        assertIs<StepOutcome.Done>(h.run(h.transcribeStep(provider = LateSpeakerProvider.NAME)))
+
+        // C, who speaks only at the end of piece 2, has A's voice: the same S1 as the opening.
+        assertEquals(listOf("S1", "S2", "S2", "S2", "S1"), segmentSpeakers(h))
+        // Asked once: C, and the two labels of piece 1 it could be — from the part files, on their own axes.
+        val asked = embedder.asked.single()
+        assertEquals(setOf("1:A", "1:B", "2:C"), asked.keys)
+        assertEquals(listOf(AudioSpan(h.dir / MetaWriter.partFileName(h.base, 1, Track.MONO), 10.25, 13.75)), asked["1:A"])
+        assertEquals(listOf(AudioSpan(h.dir / MetaWriter.partFileName(h.base, 11, Track.MONO), 500.25, 503.75)), asked["2:C"])
+        assertEquals(listOf(mapOf<String, Any?>("stepId" to "stt", "labels" to 3, "voices" to 3)), h.logger.fieldsOf("transcribe.voices"))
+        assertEquals(Logger.Level.INFO, h.logger.entries.single { it.event == "transcribe.voices" }.level)
+    }
+
+    @Test
+    fun `without voices the pieces' speakers pair as before, and the log says why`() = runBlocking {
+        val cases = listOf(
+            null to "transcribe.voices.unavailable",
+            FakeEmbedder { null } to "transcribe.voices.unavailable",
+            FakeEmbedder { error("the speaker model would not load") } to "transcribe.voices.failed",
+            // A voice for C alone pairs it with no one: piece 1's labels have none to compare with.
+            FakeEmbedder { mapOf("2:C" to VOICES.getValue("2:C")) } to "transcribe.voices",
+        )
+        for ((embedder, event) in cases) {
+            lateinit var provider: LateSpeakerProvider
+            val h = TranscribeHarness(partCount = 12, providers = { provider }, speakerEmbedder = embedder)
+            provider = LateSpeakerProvider(h.fs)
+
+            assertIs<StepOutcome.Done>(h.run(h.transcribeStep(provider = LateSpeakerProvider.NAME)))
+
+            assertEquals(listOf("S1", "S2", "S2", "S2", "S3"), segmentSpeakers(h), event)
+            assertEquals(Logger.Level.WARN, h.logger.entries.single { it.event == event }.level, event)
+        }
+    }
+
+    @Test
+    fun `no voice is asked for when every label paired up in the shared part`() = runBlocking {
+        val embedder = FakeEmbedder { VOICES }
+        lateinit var provider: PiecesProvider
+        val h = TranscribeHarness(partCount = 12, providers = { provider }, speakerEmbedder = embedder)
+        provider = PiecesProvider(h.fs, polling = false)
+
+        h.run(h.transcribeStep(provider = PiecesProvider.NAME))
+
+        assertEquals(emptyList(), embedder.asked)
+        assertEquals(transcriptText, h.localContent(TranscribeRunner.textFileName(h.base)))
+        assertFalse(h.logger.events.any { it.startsWith("transcribe.voices") })
+    }
+
+    /** The speakers of the transcript's segments, in order. */
+    private fun segmentSpeakers(h: TranscribeHarness): List<String> =
+        Json.parseToJsonElement(h.localContent(TranscribeRunner.jsonFileName(h.base))).jsonObject["segments"]!!.jsonArray
+            .map { it.jsonObject["speaker"]!!.jsonPrimitive.content }
+
     /** What [FakeAudioTools] makes of the parts: their contents end to end. */
     private fun audio(parts: IntRange): String = parts.joinToString("") { "audio-$it-MONO" }
+
+    private companion object {
+        val VOICES = mapOf("1:A" to floatArrayOf(1f, 0f), "1:B" to floatArrayOf(0f, 1f), "2:C" to floatArrayOf(0.9f, 0.1f))
+    }
+}
+
+/** A device's speaker embedding that answers what it is given, and keeps what it was asked. */
+private class FakeEmbedder(private val answer: () -> Map<String, FloatArray>?) : SpeakerEmbedder {
+    val asked = mutableListOf<Map<String, List<AudioSpan>>>()
+
+    override suspend fun centroids(spans: Map<String, List<AudioSpan>>): Map<String, FloatArray>? {
+        asked += spans
+        return answer()
+    }
+}
+
+/**
+ * Twelve parts on clova's two-hour ceiling, answered synchronously as parts 1–6 and 6–12. In part 6, the shared
+ * one, piece 1's B is piece 2's X; piece 1's A speaks only at its start, and piece 2's C only at its end.
+ */
+private class LateSpeakerProvider(private val fs: FileSystem) : SttProvider {
+    override val name: String = NAME
+    override val limits: SttLimits = SttLimits(maxDurationSec = 2 * 3600.0)
+
+    override suspend fun submit(ctx: SttContext, file: Path): Submitted {
+        val first = Regex("audio-(\\d+)-").find(fs.read(file) { readUtf8() })!!.groupValues[1].toInt()
+        return Submitted.Finished(if (first == 1) one else two)
+    }
+
+    override suspend fun poll(ctx: SttContext, ref: String): PollResult = error("answers on submit")
+
+    private val one = SttResult(
+        segments = listOf(
+            SttSegment(10.0, 14.0, "A", "opening"),
+            SttSegment(
+                4800.0, 4804.0, "B", "we start the review now",
+                listOf(
+                    SttWord(4800.0, 4800.3, "we"), SttWord(4800.4, 4800.8, "start"), SttWord(4800.9, 4801.0, "the"),
+                    SttWord(4801.1, 4801.6, "review"), SttWord(4803.6, 4804.0, "now"),
+                ),
+            ),
+            SttSegment(4810.0, 4816.0, "B", "sounds good"),
+        ),
+        language = "en",
+        durationSec = 5400.0,
+        model = "piece-model",
+    )
+
+    private val two = SttResult(
+        segments = listOf(
+            SttSegment(
+                300.1, 304.1, "X", "We start the review now.",
+                listOf(
+                    SttWord(300.1, 300.4, "We"), SttWord(300.5, 300.9, "start"), SttWord(301.0, 301.1, "the"),
+                    SttWord(301.2, 301.7, "review"), SttWord(303.7, 304.1, "now."),
+                ),
+            ),
+            SttSegment(310.1, 316.1, "X", "sounds good"),
+            SttSegment(5000.0, 5004.0, "C", "closing remarks"),
+        ),
+        language = "en",
+        durationSec = 6300.0,
+        model = "piece-model",
+    )
+
+    companion object {
+        const val NAME = "late-speaker"
+    }
 }
 
 /**

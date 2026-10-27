@@ -1,5 +1,6 @@
 package recly.core.transcribe
 
+import okio.Path
 import recly.core.job.StepFailure
 import recly.core.message.CoreMessage
 import recly.core.model.Part
@@ -7,7 +8,8 @@ import recly.core.model.Part
 /**
  * docs/08 "Length · size limits": a recording over what the provider takes goes as overlapping pieces of its
  * track, and the pieces' transcripts are put back together here. Pure: [TranscribeRunner] joins, submits and
- * keeps the pieces; this file only decides where they start and how their results meet.
+ * keeps the pieces, and asks the shell's [SpeakerEmbedder] for voices; this file only decides where the pieces
+ * start, which voices to ask for, and how their results meet.
  */
 internal object TranscribeChunks {
     /** Each piece is planned to this share of every declared limit, so the joined file's container never tips it over. */
@@ -22,6 +24,17 @@ internal object TranscribeChunks {
 
     /** How long two labels must speak at the same moment before they are taken for the same person. */
     private const val MIN_SHARED_SEC = 3.0
+
+    /** A voice is told by segments this long and up, less this much at each end, and at most this much of each. */
+    private const val MIN_VOICE_SEGMENT_SEC = 1.5
+    private const val VOICE_TRIM_SEC = 0.25
+    private const val MAX_VOICE_SPAN_SEC = 10.0
+
+    /** At most this much of one voice is embedded: enough to tell it by, little enough to decode quickly. */
+    private const val MAX_VOICE_SEC = 60.0
+
+    /** Under a second, a span the end of a part cuts off is too short to tell a voice by. */
+    private const val MIN_VOICE_SIDE_SEC = 1.0
 
     /**
      * The part numbers of each piece, or null when [parts] fit [limits] as one file — the path every recording
@@ -76,30 +89,175 @@ internal object TranscribeChunks {
     /**
      * The pieces' [results] as the one result a single file would have given: on the joined track's axis, in
      * one set of labels — what [TranscriptNormalizer] expects. [parts] are the track's parts in order and
-     * [chunks] the plan's part numbers.
+     * [chunks] the plan's part numbers. [voices] is what a [SpeakerEmbedder] answered for [voiceSpans], when
+     * one did; without it, or for a label it has no voice for, the labels pair by the shared parts alone.
      */
-    fun merge(parts: List<Part>, chunks: List<List<Int>>, results: List<SttResult>, speakersExpected: Int?): SttResult {
-        // Each part's start on the joined axis: the parts before it, end to end.
-        val starts = HashMap<Int, Double>()
-        parts.fold(0.0) { at, part -> starts[part.part] = at; at + part.durationSec }
-        var merged = shift(results.first().segments, starts.getValue(chunks.first().first()))
+    fun merge(
+        parts: List<Part>,
+        chunks: List<List<Int>>,
+        results: List<SttResult>,
+        speakersExpected: Int?,
+        voices: Map<String, FloatArray>? = null,
+    ): SttResult = SttResult(
+        segments = stitch(parts, chunks, results.map { it.segments }, Labels(speakersExpected, voices, results.first().segments)::next),
+        language = results.firstNotNullOfOrNull { it.language },
+        durationSec = parts.sumOf { it.durationSec },
+        model = results.first().model,
+    )
+
+    /**
+     * What [merge] asks a [SpeakerEmbedder] for, by voice key `"{piece}:{label}"` — a piece's own label: where, in
+     * the part files in [dir], each later piece's label that the shared part paired with no one speaks, and every
+     * label of the pieces before the last such one — the people it could be. Each from the segments the merge keeps
+     * of it ([spans]); a key with no usable speech is left out. Empty when every label paired up: nothing to ask.
+     */
+    fun voiceSpans(
+        parts: List<Part>,
+        chunks: List<List<Int>>,
+        results: List<SttResult>,
+        speakersExpected: Int?,
+        dir: Path,
+    ): Map<String, List<AudioSpan>> {
+        val labels = Labels(speakersExpected, voices = null, results.first().segments)
+        stitch(parts, chunks, results.map { it.segments }, labels::next)
+        val last = labels.leftovers.keys.maxOrNull() ?: return emptyMap()
+        val wanted = HashSet<String>()
+        results.take(last - 1).forEachIndexed { index, result ->
+            result.segments.mapNotNullTo(wanted) { segment -> segment.speaker?.let { voiceKey(index + 1, it) } }
+        }
+        labels.leftovers.forEach { (piece, left) -> left.mapTo(wanted) { voiceKey(piece, it) } }
+        // Each piece's own labels, as voice keys, on the segments the merge keeps of it.
+        val keyed = results.mapIndexed { index, result ->
+            result.segments.map { segment -> segment.copy(speaker = segment.speaker?.let { voiceKey(index + 1, it) }) }
+        }
+        return stitch(parts, chunks, keyed) { emptyMap() }
+            .filter { it.speaker in wanted }
+            .groupBy { it.speaker!! }
+            .mapValues { (_, segments) -> spans(segments, parts, dir) }
+            .filterValues { it.isNotEmpty() }
+    }
+
+    /**
+     * Where one voice can be heard in the part files in [dir], from its [segments] on the joined axis: every
+     * segment of [MIN_VOICE_SEGMENT_SEC] or more, less [VOICE_TRIM_SEC] at each end — a provider's segment edges
+     * are loose — and at most [MAX_VOICE_SPAN_SEC] of it; no more than [MAX_VOICE_SEC] in all, the segments taken
+     * evenly through the voice's time. A span across the end of a part is cut in two there — the parts are end to
+     * end on the joined axis — and a side shorter than [MIN_VOICE_SIDE_SEC] is left out.
+     */
+    internal fun spans(segments: List<SttSegment>, parts: List<Part>, dir: Path): List<AudioSpan> {
+        val usable = segments.filter { it.end - it.start >= MIN_VOICE_SEGMENT_SEC }.sortedBy { it.start }.map { segment ->
+            val start = segment.start + VOICE_TRIM_SEC
+            start to minOf(segment.end - VOICE_TRIM_SEC, start + MAX_VOICE_SPAN_SEC)
+        }
+        var count = usable.size
+        while (count > 1 && evenly(usable, count).sumOf { (start, end) -> end - start } > MAX_VOICE_SEC) count--
+        val starts = starts(parts)
+        return evenly(usable, count).flatMap { (start, end) ->
+            val sides = parts.mapNotNull { part ->
+                val at = starts.getValue(part.part)
+                val from = maxOf(start, at)
+                val to = minOf(end, at + part.durationSec)
+                if (to > from) AudioSpan(dir / part.file, from - at, to - at) else null
+            }
+            if (sides.size > 1) sides.filter { it.endSec - it.startSec >= MIN_VOICE_SIDE_SEC } else sides
+        }
+    }
+
+    /** One later piece where it meets what is merged so far: the part they share, [from] to [to], and each side of the seam. */
+    private class Meeting(
+        val piece: Int,
+        val earlier: List<SttSegment>,
+        val later: List<SttSegment>,
+        val from: Double,
+        val to: Double,
+        val kept: List<SttSegment>,
+        val joining: List<SttSegment>,
+    )
+
+    /**
+     * The [pieces]' segments on the joined axis, each later one cut in at its seam ([seam]) with its labels renamed
+     * as [labels] says; a label it does not name stays as it is.
+     */
+    private fun stitch(
+        parts: List<Part>,
+        chunks: List<List<Int>>,
+        pieces: List<List<SttSegment>>,
+        labels: (Meeting) -> Map<String, String>,
+    ): List<SttSegment> {
+        val starts = starts(parts)
+        var merged = shift(pieces.first(), starts.getValue(chunks.first().first()))
         for (c in 1 until chunks.size) {
             val shared = chunks[c].first()
             val from = starts.getValue(shared)
             val to = from + parts.first { it.part == shared }.durationSec
-            val next = shift(results[c].segments, from)
+            val next = shift(pieces[c], from)
             val (earlierSeam, laterSeam) = seam(merged, next, from, to)
             val kept = earlierSide(merged, earlierSeam)
             val joining = laterSide(next, laterSeam)
-            val labels = speakers(merged, next, from, to, kept, joining, speakersExpected, c + 1)
-            merged = kept + joining.map { it.copy(speaker = it.speaker?.let(labels::getValue)) }
+            val renamed = labels(Meeting(c + 1, merged, next, from, to, kept, joining))
+            merged = kept + joining.map { segment -> segment.copy(speaker = segment.speaker?.let { renamed[it] ?: it }) }
         }
-        return SttResult(
-            segments = merged,
-            language = results.firstNotNullOfOrNull { it.language },
-            durationSec = parts.sumOf { it.durationSec },
-            model = results.first().model,
-        )
+        return merged
+    }
+
+    /** Each part's start on the joined axis: the parts before it, end to end. */
+    private fun starts(parts: List<Part>): Map<Int, Double> {
+        val starts = HashMap<Int, Double>()
+        parts.fold(0.0) { at, part -> starts[part.part] = at; at + part.durationSec }
+        return starts
+    }
+
+    private fun voiceKey(piece: Int, label: String): String = "$piece:$label"
+
+    /** [count] of [items], evenly through them; all of them when [count] is their number. */
+    private fun <T> evenly(items: List<T>, count: Int): List<T> = List(count) { items[((it + 0.5) * items.size / count).toInt()] }
+
+    /**
+     * Each later piece's labels in the merged result's terms ([speakers]), and what the merge learns on the way:
+     * which of the pieces' own labels each merged label stands for, so its voice can be put together from theirs,
+     * and which labels the shared parts paired with no one ([leftovers], by piece number). [voices] are by voice
+     * key; without them every label pairs as the shared parts alone say.
+     */
+    private class Labels(private val expected: Int?, private val voices: Map<String, FloatArray>?, first: List<SttSegment>) {
+        private val members = HashMap<String, MutableList<String>>()
+        val leftovers = LinkedHashMap<Int, List<String>>()
+
+        init {
+            first.mapNotNull { it.speaker }.distinct().forEach { members.getOrPut(it) { mutableListOf() } += voiceKey(1, it) }
+        }
+
+        fun next(meeting: Meeting): Map<String, String> {
+            val labels = with(meeting) {
+                speakers(earlier, later, from, to, kept, joining, expected, piece) { left, candidates ->
+                    if (left.isNotEmpty()) leftovers[piece] = left
+                    byVoice(piece, left, candidates)
+                }
+            }
+            labels.forEach { (label, target) -> members.getOrPut(target) { mutableListOf() } += voiceKey(meeting.piece, label) }
+            return labels
+        }
+
+        /**
+         * [left], the labels of [piece] the shared part paired with no one, paired with [candidates] by voice: the
+         * most similar pair first, one to one, as long as their cosine similarity reaches
+         * [SpeakerTurns.LINK_THRESHOLD]. A candidate's voice is the centroid of its members' voices; a label or a
+         * candidate without one pairs with nobody.
+         */
+        private fun byVoice(piece: Int, left: List<String>, candidates: List<String>): Map<String, String> {
+            val voices = voices ?: return emptyMap()
+            val known = candidates.mapNotNull { target ->
+                SpeakerTurns.centroid(members[target].orEmpty().mapNotNull { voices[it] })?.let { target to it }
+            }
+            val pairs = left.flatMap { label ->
+                val voice = voices[voiceKey(piece, label)] ?: return@flatMap emptyList()
+                known.map { (target, centroid) -> Triple(label, target, SpeakerTurns.cosine(voice, centroid)) }
+            }.filter { it.third >= SpeakerTurns.LINK_THRESHOLD }.sortedByDescending { it.third }
+            val linked = LinkedHashMap<String, String>()
+            for ((label, target, _) in pairs) {
+                if (label !in linked && target !in linked.values) linked[label] = target
+            }
+            return linked
+        }
     }
 
     /**
@@ -135,10 +293,11 @@ internal object TranscribeChunks {
     /**
      * The later piece's labels in the merged result's terms. Inside the shared part, [from] to [to], both pieces
      * heard the same people: every pair of labels is scored by how long the two speak at the same moment, and
-     * the largest scores of at least [MIN_SHARED_SEC] pair up one to one. A label of [joining] left over is
-     * someone new, under a label nobody else has — unless [expected] people are already in the result, when it
-     * goes to the one it shares the most with (one not taken yet, among equals). [kept] is what the earlier
-     * side keeps, [piece] the later piece's number.
+     * the largest scores of at least [MIN_SHARED_SEC] pair up one to one. The labels of [joining] left over go to
+     * [byVoice] with the labels of [earlier] none of this piece's labels took — a voice heard before, never one this
+     * piece already has. One still left over is someone new, under a label nobody else has — unless [expected]
+     * people are already in the result, when it goes to the one it shares the most with (one not taken yet, among
+     * equals). [kept] is what the earlier side keeps, [piece] the later piece's number.
      */
     internal fun speakers(
         earlier: List<SttSegment>,
@@ -149,6 +308,7 @@ internal object TranscribeChunks {
         joining: List<SttSegment>,
         expected: Int?,
         piece: Int,
+        byVoice: (left: List<String>, candidates: List<String>) -> Map<String, String> = { _, _ -> emptyMap() },
     ): Map<String, String> {
         val shared = LinkedHashMap<Pair<String, String>, Double>()
         val mine = earlier.filter { it.speaker != null && it.end > from && it.start < to }
@@ -172,7 +332,13 @@ internal object TranscribeChunks {
         val present = kept.mapNotNullTo(LinkedHashSet()) { it.speaker }
         joiningLabels.forEach { label -> labels[label]?.let { present += it } }
         val taken = earlier.mapNotNullTo(HashSet()) { it.speaker }
-        for (label in joiningLabels.filter { it !in labels }) {
+        val left = joiningLabels.filter { it !in labels }
+        byVoice(left, earlier.mapNotNull { it.speaker }.distinct().filter { it !in targets }).forEach { (label, target) ->
+            labels[label] = target
+            present += target
+            targets += target
+        }
+        for (label in left.filter { it !in labels }) {
             val target = if (expected == null || present.size < expected || present.isEmpty()) {
                 var fresh = "$piece:$label"
                 while (fresh in taken || fresh in labels.values) fresh += "'"

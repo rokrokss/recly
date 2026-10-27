@@ -25,6 +25,7 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.DeviceInfo
 import recly.core.platform.JvmRuntime
 import recly.core.storage.PathFolder
+import recly.core.transcribe.SpeakerEmbedder
 import kotlin.time.Clock as TimeClock
 import recly.core.platform.Clock as CoreClock
 
@@ -59,6 +60,7 @@ object AppModule {
         val transport = KtorTransport()
         val endpoint = TokenEndpoint(transport)
         val tokens = JvmTokenProvider(secureStore, clock, endpoint, logger)
+        val speech = QwenSpeechEngine.make(dataDir, transport, fileSystem, io)
 
         val deps = CoreDeps(
             clock = clock,
@@ -76,7 +78,9 @@ object AppModule {
             ),
             io = io,
             locale = localization.language.tag.ifEmpty { Host.language() },
-            localTranscription = QwenSpeechEngine.make(dataDir, transport, fileSystem, io),
+            localTranscription = speech,
+            // docs/08 "Length · size limits": the speaker models also link a long recording's pieces by voice.
+            speakerEmbedder = speech as? SpeakerEmbedder,
             // docs/03 "Storage location": the folder the user picked, read from the settings store on
             // every call so a new pick applies to the very next write.
             localFolder = PathFolder(fileSystem) { localization.settings.localFolder },
