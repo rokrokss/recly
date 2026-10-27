@@ -162,6 +162,19 @@ class ChunkedTranscriptionTest {
     }
 
     @Test
+    fun `the embedder's own threshold decides whether a voice is the same person`() = runBlocking {
+        // C's voice is 0.99 like A's: one person at the default threshold, someone new for a model that asks for more.
+        val embedder = FakeEmbedder(linkThreshold = 0.995f) { VOICES }
+        lateinit var provider: LateSpeakerProvider
+        val h = TranscribeHarness(partCount = 12, providers = { provider }, speakerEmbedder = embedder)
+        provider = LateSpeakerProvider(h.fs)
+
+        assertIs<StepOutcome.Done>(h.run(h.transcribeStep(provider = LateSpeakerProvider.NAME)))
+
+        assertEquals(listOf("S1", "S2", "S2", "S2", "S3"), segmentSpeakers(h))
+    }
+
+    @Test
     fun `without voices the pieces' speakers pair as before, and the log says why`() = runBlocking {
         val cases = listOf(
             null to "transcribe.voices.unavailable",
@@ -210,7 +223,10 @@ class ChunkedTranscriptionTest {
 }
 
 /** A device's speaker embedding that answers what it is given, and keeps what it was asked. */
-private class FakeEmbedder(private val answer: () -> Map<String, FloatArray>?) : SpeakerEmbedder {
+private class FakeEmbedder(
+    override val linkThreshold: Float = SpeakerTurns.LINK_THRESHOLD,
+    private val answer: () -> Map<String, FloatArray>?,
+) : SpeakerEmbedder {
     val asked = mutableListOf<Map<String, List<AudioSpan>>>()
 
     override suspend fun centroids(spans: Map<String, List<AudioSpan>>): Map<String, FloatArray>? {

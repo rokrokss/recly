@@ -68,9 +68,7 @@ public struct CoreBridge {
                 region: platform == .ios ? AppleStorefrontRegion() : nil
             ),
             localTranscription: LocalSpeechEngine.make(),
-            // docs/08 "Length · size limits": no on-device voices yet, so a long recording's pieces pair their
-            // speakers by the part they share alone.
-            speakerEmbedder: nil,
+            speakerEmbedder: CoreBridge.defaultSpeakerEmbedder,
             ubiquity: ubiquity,
             localFolder: localFolder
         )
@@ -244,6 +242,16 @@ public extension CoreBridge {
     static var defaultUbiquity: (any ReclyCore.UbiquityContainer)? {
         #if os(iOS) || os(macOS)
         ICloudContainer.configured.map { ICloudContainer(identifier: $0) }
+        #else
+        nil
+        #endif
+    }
+
+    /// docs/08 "Length · size limits": the voices a long recording's pieces are linked by, from the bundled speaker
+    /// models on the iPhone and the Mac. The watch transcribes nothing and has none.
+    static var defaultSpeakerEmbedder: (any ReclyCore.SpeakerEmbedder)? {
+        #if os(iOS) || os(macOS)
+        AppleSpeakerEmbedder()
         #else
         nil
         #endif

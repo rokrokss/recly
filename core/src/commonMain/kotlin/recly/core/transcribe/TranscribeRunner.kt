@@ -289,7 +289,8 @@ class TranscribeRunner(
         }
         val pieces = results.map { it!! }
         val voices = voices(ctx, step, parts, plan, pieces, sttCtx.speakersExpected)
-        val merged = TranscribeChunks.merge(parts, plan, pieces, sttCtx.speakersExpected, voices)
+        val threshold = deps.speakerEmbedder?.linkThreshold ?: SpeakerTurns.LINK_THRESHOLD
+        val merged = TranscribeChunks.merge(parts, plan, pieces, sttCtx.speakersExpected, voices, threshold)
         val output = finish(ctx, step, provider, state, merged, chunks = plan.size)
         plan.indices.forEach { deps.fileSystem.delete(pieceFile(ctx, it), mustExist = false) }
         return StepOutcome.Done(output)

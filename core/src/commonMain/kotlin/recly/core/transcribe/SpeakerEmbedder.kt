@@ -13,6 +13,12 @@ data class AudioSpan(val file: Path, val startSec: Double, val endSec: Double)
  */
 interface SpeakerEmbedder {
     /**
+     * The cosine similarity two of this model's centroids must reach to be one person: each model has its own scale.
+     * [SpeakerTurns.LINK_THRESHOLD] unless the model says otherwise.
+     */
+    val linkThreshold: Float get() = SpeakerTurns.LINK_THRESHOLD
+
+    /**
      * One centroid for each key of [spans]: the mean of the unit-normalized embeddings of its spans, which are
      * stretches of the recording's part files. A key without enough usable speech is left out of the answer; null
      * means this device cannot embed now — its speaker model is not here. The core treats a throw like null.

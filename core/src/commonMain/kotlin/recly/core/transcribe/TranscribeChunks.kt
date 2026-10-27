@@ -90,7 +90,8 @@ internal object TranscribeChunks {
      * The pieces' [results] as the one result a single file would have given: on the joined track's axis, in
      * one set of labels — what [TranscriptNormalizer] expects. [parts] are the track's parts in order and
      * [chunks] the plan's part numbers. [voices] is what a [SpeakerEmbedder] answered for [voiceSpans], when
-     * one did; without it, or for a label it has no voice for, the labels pair by the shared parts alone.
+     * one did, and [threshold] its [SpeakerEmbedder.linkThreshold]; without voices, or for a label it has no voice
+     * for, the labels pair by the shared parts alone.
      */
     fun merge(
         parts: List<Part>,
@@ -98,8 +99,14 @@ internal object TranscribeChunks {
         results: List<SttResult>,
         speakersExpected: Int?,
         voices: Map<String, FloatArray>? = null,
+        threshold: Float = SpeakerTurns.LINK_THRESHOLD,
     ): SttResult = SttResult(
-        segments = stitch(parts, chunks, results.map { it.segments }, Labels(speakersExpected, voices, results.first().segments)::next),
+        segments = stitch(
+            parts,
+            chunks,
+            results.map { it.segments },
+            Labels(speakersExpected, voices, threshold, results.first().segments)::next,
+        ),
         language = results.firstNotNullOfOrNull { it.language },
         durationSec = parts.sumOf { it.durationSec },
         model = results.first().model,
@@ -118,7 +125,7 @@ internal object TranscribeChunks {
         speakersExpected: Int?,
         dir: Path,
     ): Map<String, List<AudioSpan>> {
-        val labels = Labels(speakersExpected, voices = null, results.first().segments)
+        val labels = Labels(speakersExpected, voices = null, SpeakerTurns.LINK_THRESHOLD, results.first().segments)
         stitch(parts, chunks, results.map { it.segments }, labels::next)
         val last = labels.leftovers.keys.maxOrNull() ?: return emptyMap()
         val wanted = HashSet<String>()
@@ -216,9 +223,14 @@ internal object TranscribeChunks {
      * Each later piece's labels in the merged result's terms ([speakers]), and what the merge learns on the way:
      * which of the pieces' own labels each merged label stands for, so its voice can be put together from theirs,
      * and which labels the shared parts paired with no one ([leftovers], by piece number). [voices] are by voice
-     * key; without them every label pairs as the shared parts alone say.
+     * key, compared at [threshold]; without them every label pairs as the shared parts alone say.
      */
-    private class Labels(private val expected: Int?, private val voices: Map<String, FloatArray>?, first: List<SttSegment>) {
+    private class Labels(
+        private val expected: Int?,
+        private val voices: Map<String, FloatArray>?,
+        private val threshold: Float,
+        first: List<SttSegment>,
+    ) {
         private val members = HashMap<String, MutableList<String>>()
         val leftovers = LinkedHashMap<Int, List<String>>()
 
@@ -240,7 +252,7 @@ internal object TranscribeChunks {
         /**
          * [left], the labels of [piece] the shared part paired with no one, paired with [candidates] by voice: the
          * most similar pair first, one to one, as long as their cosine similarity reaches
-         * [SpeakerTurns.LINK_THRESHOLD]. A candidate's voice is the centroid of its members' voices; a label or a
+         * [threshold]. A candidate's voice is the centroid of its members' voices; a label or a
          * candidate without one pairs with nobody.
          */
         private fun byVoice(piece: Int, left: List<String>, candidates: List<String>): Map<String, String> {
@@ -251,7 +263,7 @@ internal object TranscribeChunks {
             val pairs = left.flatMap { label ->
                 val voice = voices[voiceKey(piece, label)] ?: return@flatMap emptyList()
                 known.map { (target, centroid) -> Triple(label, target, SpeakerTurns.cosine(voice, centroid)) }
-            }.filter { it.third >= SpeakerTurns.LINK_THRESHOLD }.sortedByDescending { it.third }
+            }.filter { it.third >= threshold }.sortedByDescending { it.third }
             val linked = LinkedHashMap<String, String>()
             for ((label, target, _) in pairs) {
                 if (label !in linked && target !in linked.values) linked[label] = target

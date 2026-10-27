@@ -1821,17 +1821,19 @@ limits decide (2026-10-27, `TranscribeChunks`):
   without words goes by its start. **Speakers**: inside the shared part, every pair of labels is scored by how long both speak at the same
   moment, and the largest scores of at least 3 seconds pair up one to one. A label left over — someone the shared part did not hear — is
   then matched **by voice** (2026-10-27) with the device's own speaker-embedding model (`CoreDeps.speakerEmbedder`; on Android and Windows
-  the speaker diarization model of §15 "Android · Windows local transcription models", once downloaded): for each such label and each
-  label of the earlier pieces it could be, up to 60 seconds of its segments of 1.5 seconds or more — each trimmed 0.25 s at both ends and
-  at most 10 s of it, taken evenly through its time, cut in two where one part file ends — are read from the recording's own part files,
-  all asked for at once, and each label gets a centroid, the mean of its unit embeddings. The most similar pairs at a cosine of 0.6 or more
-  (`SpeakerTurns.LINK_THRESHOLD`) join one to one, never with an earlier label another label of the same piece already took: two labels of
-  one piece stay two people. A label still left over is someone new, under a label no one else has — unless the expected speaker count
-  (§8 `speakers`, `context.participants`) is already reached, when it joins the label it shares the most with. Without the model (and on
-  the Apple apps for now), when embedding fails, or for a label without enough speech, the pieces pair by the shared part alone, as
-  before — `transcribe.voices.unavailable` or `transcribe.voices.failed` at WARN; `transcribe.voices` gives the labels asked and answered.
-  The embeddings exist in memory for the merge only. Labels stay empty where the provider gave none. Model and language come from the
-  first piece, and `transcript.json` has no `jobRef` — no single job made it.
+  the speaker diarization model of §15 "Android · Windows local transcription models", once downloaded; on the iPhone and Mac the bundled
+  WeSpeaker embedding of §15 "Apple on-device speech model assets", each span run the way FluidAudio re-embeds one): for each such label
+  and each label of the earlier pieces it could be, up to 60 seconds of its segments of 1.5 seconds or more — each trimmed 0.25 s at both
+  ends and at most 10 s of it, taken evenly through its time, cut in two where one part file ends — are read from the recording's own part
+  files, all asked for at once, and each label gets a centroid, the mean of its unit embeddings. The most similar pairs at the model's own
+  cosine threshold or more (`SpeakerEmbedder.linkThreshold`: 0.6, `SpeakerTurns.LINK_THRESHOLD`, on Android and Windows; 0.8 on the iPhone
+  and Mac, where different people of one real recording came to 0.77 and one person to 0.83 or more) join one to one, never with an
+  earlier label another label of the same piece already took: two labels of one piece stay two people. A label still left over is someone
+  new, under a label no one else has — unless the expected speaker count (§8 `speakers`, `context.participants`) is already reached, when
+  it joins the label it shares the most with. Without the model, when embedding fails, or for a label without enough speech, the pieces
+  pair by the shared part alone, as before — `transcribe.voices.unavailable` or `transcribe.voices.failed` at WARN; `transcribe.voices`
+  gives the labels asked and answered. The embeddings exist in memory for the merge only. Labels stay empty where the provider gave none.
+  Model and language come from the first piece, and `transcript.json` has no `jobRef` — no single job made it.
 - With `language: auto`, the later pieces are **not** told the language the first one found: providers report it in their own forms (a
   locale, an ISO code, a name), and for `rtzr` the language also picks the model, which would change between pieces.
 

@@ -43,7 +43,7 @@ public enum SpeakerSeparation {
 
     enum SeparationError: Error { case noModels, parameters }
 
-    private static var directory: URL? {
+    static var directory: URL? {
         guard let models = Bundle.module.url(forResource: "Models", withExtension: nil) else { return nil }
         let folder = models.appendingPathComponent("speaker-diarization", isDirectory: true)
         return FileManager.default.fileExists(atPath: folder.appendingPathComponent("plda-parameters.json").path) ? folder : nil
