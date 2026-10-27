@@ -158,6 +158,60 @@ final class OrganizeConsentTests: XCTestCase {
         XCTAssertEqual(calls, ["consent"], "the Mac has no destination to allow")
     }
 
+    /// docs/15 "iPhone providers": the sheet asks ChatGPT's training question where Continue would allow a destination
+    /// that is still missing, and is the consent alone where it is allowed already or there is nothing to allow.
+    func testTheTrainingQuestionIsAskedOnlyWhileTheDestinationIsMissing() {
+        XCTAssertTrue(OrganizeConsent.asksTrainingOff(destinationAllowed: false))
+        XCTAssertFalse(OrganizeConsent.asksTrainingOff(destinationAllowed: true))
+    }
+
+    /// Continue does nothing until the box is ticked where the sheet asks for it; anywhere else it agrees at once.
+    func testContinueWaitsForTheBoxWhereTheSheetAsksForIt() {
+        XCTAssertNil(OrganizeConsent.continued(asksTrainingOff: true, trainingOff: false))
+        XCTAssertEqual(OrganizeConsent.continued(asksTrainingOff: true, trainingOff: true), .agree)
+        XCTAssertEqual(OrganizeConsent.continued(asksTrainingOff: false, trainingOff: false), .agree)
+    }
+
+    /// On the iPhone the sheet asks the training question until ChatGPT is an allowed destination — and again once that
+    /// is withdrawn; on the Mac, which asks for no such permission, never.
+    @MainActor
+    func testTheIPhoneSheetAsksTheTrainingQuestionUntilChatGptIsAllowed() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("OrganizeConsentTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let phone = try await CoreBridge.make(
+            platform: .ios, deviceName: "Test iPhone",
+            dataDirectory: directory.appendingPathComponent("phone", isDirectory: true),
+            databaseName: "organize-training.db", secureStore: InMemorySecureStore(),
+            transcriptionPolicy: TranscriptionPolicy(region: nil)
+        )
+        let chatGpt = TransferTargets.shared.chatGptSummary()
+        let model = ChatGptSettingsModel(core: phone.core)
+        XCTAssertTrue(model.organizeAsksTrainingOff)
+
+        try await phone.core.transferConsents.grant(targets: [chatGpt])
+        try await until { !model.organizeAsksTrainingOff }
+
+        try await phone.core.transferConsents.revoke(id: chatGpt.id)
+        try await until { model.organizeAsksTrainingOff }
+
+        let mac = try await CoreBridge.make(
+            deviceName: "RecKitTests",
+            dataDirectory: directory.appendingPathComponent("mac", isDirectory: true),
+            databaseName: "organize-training.db", secureStore: InMemorySecureStore()
+        )
+        XCTAssertFalse(ChatGptSettingsModel(core: mac.core).organizeAsksTrainingOff)
+    }
+
+    @MainActor
+    private func until(_ condition: () -> Bool) async throws {
+        for _ in 0..<200 {
+            if condition() { return }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTFail("condition not met")
+    }
+
     func testSignOutOnlySignsOut() async {
         var calls: [String] = []
         let answered = await OrganizeConsent.apply(

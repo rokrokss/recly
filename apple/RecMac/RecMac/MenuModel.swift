@@ -453,8 +453,8 @@ final class MenuModel: ObservableObject {
         // docs/08 "Organizing": someone signed in to ChatGPT before the question existed is asked once, at a start —
         // and the recording starts whatever the answer.
         if OrganizeConsent.asksAtStart(fromScreen: fromScreen, needsConsent: chatGpt?.needsOrganizeConsent == true),
-           let answer = BlueprintPanel.run(content: { (finish: @escaping (OrganizeConsent.Answer?) -> Void) in
-               OrganizeConsentDialog { finish($0) }
+           let answer = BlueprintPanel.run(content: { [asksTrainingOff = self.chatGpt?.organizeAsksTrainingOff ?? false] (finish: @escaping (OrganizeConsent.Answer?) -> Void) in
+               OrganizeConsentDialog(asksTrainingOff: asksTrainingOff) { finish($0) }
            }) {
             let chatGpt = chatGpt
             Task { await chatGpt?.answerOrganizeConsent(answer) }

@@ -165,6 +165,10 @@ public final class ChatGptSettingsModel: ObservableObject {
         }
     }
 
+    /// docs/08 "Organizing" · docs/15 "iPhone providers": the consent sheet asks ChatGPT's training question while the
+    /// plan is not yet an allowed destination ([fillAllowed]) — the iPhone's, since Continue allows it.
+    public var organizeAsksTrainingOff: Bool { OrganizeConsent.asksTrainingOff(destinationAllowed: fillAllowed) }
+
     /// docs/08 "Organizing": the consent sheet's answer — after a sign-in, or at a start. Continue agrees and, on the
     /// iPhone, allows the plan as a destination in the same action; Sign out is the section's own sign-out. Signed out,
     /// there is no welcome to show either.
