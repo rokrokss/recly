@@ -69,7 +69,7 @@ struct RecordingView: View {
             // docs/08 "Organizing": asked once, before a start from this screen, of someone signed in to ChatGPT who
             // never answered it. In the screen for the same reason as the reminder above.
             .blueprintDialogOverlay(isPresented: $model.organizeConsentPrompt) {
-                OrganizeConsentDialog(asksTrainingOff: model.chatGpt?.organizeAsksTrainingOff ?? true) {
+                OrganizeConsentDialog(permission: model.chatGpt?.organizePermission ?? OrganizeConsent.permission(destinationAllowed: false)) {
                     model.organizeConsentAnswered($0)
                 }
             }

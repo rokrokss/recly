@@ -115,7 +115,12 @@ public struct TransferDisclosureList: View {
                             .accessibilityIdentifier("training-off")
                     }
                     if summary {
-                        ChatGptTrainingOffConfirmation(trainingOff: $trainingOff)
+                        Text(verbatim: loc("ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls."))
+                            .font(blueprint.fonts.bodySmall)
+                            .fixedSize(horizontal: false, vertical: true)
+                        BlueprintDialogLink(loc("How to turn it off")) { openURL(TrainingOptOut.chatGptHelp) }
+                        BlueprintCheckRow(loc("I turned off “Improve the model for everyone” in ChatGPT."), isOn: $trainingOff)
+                            .accessibilityIdentifier("training-off")
                     }
                     if target.kind == "transcribe",
                        target.endpoint != SttProviders.shared.defaultEndpoint(name: target.provider) {
@@ -132,28 +137,6 @@ public struct TransferDisclosureList: View {
         }
         .foregroundStyle(blueprint.palette.text)
         .accessibilityIdentifier("transfer-disclosure")
-    }
-
-    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
-}
-
-/// docs/15 "iPhone providers": ChatGPT's training question — the line, OpenAI's help and the box the allow button waits
-/// for. The ChatGPT destination's permission asks it, and so does the consent to organize where that consent allows the
-/// destination (docs/08 "Organizing").
-struct ChatGptTrainingOffConfirmation: View {
-    @Binding var trainingOff: Bool
-    @Environment(\.blueprint) private var blueprint
-    @Environment(\.locale) private var locale
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        Text(verbatim: loc("ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls."))
-            .font(blueprint.fonts.bodySmall)
-            .foregroundStyle(blueprint.palette.text)
-            .fixedSize(horizontal: false, vertical: true)
-        BlueprintDialogLink(loc("How to turn it off")) { openURL(TrainingOptOut.chatGptHelp) }
-        BlueprintCheckRow(loc("I turned off “Improve the model for everyone” in ChatGPT."), isOn: $trainingOff)
-            .accessibilityIdentifier("training-off")
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }

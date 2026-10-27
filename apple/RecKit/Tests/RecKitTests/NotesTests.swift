@@ -158,24 +158,34 @@ final class OrganizeConsentTests: XCTestCase {
         XCTAssertEqual(calls, ["consent"], "the Mac has no destination to allow")
     }
 
-    /// docs/15 "iPhone providers": the sheet asks ChatGPT's training question where Continue would allow a destination
-    /// that is still missing, and is the consent alone where it is allowed already or there is nothing to allow.
-    func testTheTrainingQuestionIsAskedOnlyWhileTheDestinationIsMissing() {
-        XCTAssertTrue(OrganizeConsent.asksTrainingOff(destinationAllowed: false))
-        XCTAssertFalse(OrganizeConsent.asksTrainingOff(destinationAllowed: true))
+    /// docs/15 "iPhone providers": while the destination Continue would allow is still missing, the sheet discloses exactly
+    /// the one the summary's permission dialog does — ChatGPT (OpenAI) as a third-party AI service, its endpoint, OpenAI's
+    /// policy and the training box — through the same list; allowed already, or with nothing to allow, nothing.
+    func testTheSheetDisclosesTheDestinationOnlyWhileItIsMissing() {
+        let chatGpt = TransferTargets.shared.chatGptSummary()
+        let disclosed = OrganizeConsent.permission(destinationAllowed: false)
+        XCTAssertEqual(disclosed.map(\.id), [chatGpt.id])
+        XCTAssertEqual(disclosed.map(\.endpoint), ["https://api.openai.com/v1"])
+        XCTAssertTrue(disclosed.allSatisfy(TransferTargetText.summary), "the summary's third-party sentence and what is sent")
+        XCTAssertEqual(disclosed.map(TransferTargetText.name), [RecKitStrings.localized("ChatGPT (OpenAI)")])
+        XCTAssertNotNil(disclosed.first.flatMap { PrivacyLinks.provider($0.provider) })
+        XCTAssertTrue(TrainingOptOut.required(disclosed))
+        XCTAssertTrue(OrganizeConsent.permission(destinationAllowed: true).isEmpty)
     }
 
-    /// Continue does nothing until the box is ticked where the sheet asks for it; anywhere else it agrees at once.
+    /// Continue does nothing until the box is ticked where the sheet discloses the destination; anywhere else it agrees at
+    /// once.
     func testContinueWaitsForTheBoxWhereTheSheetAsksForIt() {
-        XCTAssertNil(OrganizeConsent.continued(asksTrainingOff: true, trainingOff: false))
-        XCTAssertEqual(OrganizeConsent.continued(asksTrainingOff: true, trainingOff: true), .agree)
-        XCTAssertEqual(OrganizeConsent.continued(asksTrainingOff: false, trainingOff: false), .agree)
+        let disclosed = OrganizeConsent.permission(destinationAllowed: false)
+        XCTAssertNil(OrganizeConsent.continued(permission: disclosed, trainingOff: false))
+        XCTAssertEqual(OrganizeConsent.continued(permission: disclosed, trainingOff: true), .agree)
+        XCTAssertEqual(OrganizeConsent.continued(permission: [], trainingOff: false), .agree)
     }
 
-    /// On the iPhone the sheet asks the training question until ChatGPT is an allowed destination — and again once that
-    /// is withdrawn; on the Mac, which asks for no such permission, never.
+    /// On the iPhone the sheet discloses the ChatGPT destination until it is allowed — and again once that is withdrawn;
+    /// on the Mac, which asks for no such permission, never.
     @MainActor
-    func testTheIPhoneSheetAsksTheTrainingQuestionUntilChatGptIsAllowed() async throws {
+    func testTheIPhoneSheetDisclosesChatGptUntilItIsAllowed() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("OrganizeConsentTests-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -187,20 +197,20 @@ final class OrganizeConsentTests: XCTestCase {
         )
         let chatGpt = TransferTargets.shared.chatGptSummary()
         let model = ChatGptSettingsModel(core: phone.core)
-        XCTAssertTrue(model.organizeAsksTrainingOff)
+        XCTAssertEqual(model.organizePermission.map(\.id), [chatGpt.id])
 
         try await phone.core.transferConsents.grant(targets: [chatGpt])
-        try await until { !model.organizeAsksTrainingOff }
+        try await until { model.organizePermission.isEmpty }
 
         try await phone.core.transferConsents.revoke(id: chatGpt.id)
-        try await until { model.organizeAsksTrainingOff }
+        try await until { model.organizePermission.map(\.id) == [chatGpt.id] }
 
         let mac = try await CoreBridge.make(
             deviceName: "RecKitTests",
             dataDirectory: directory.appendingPathComponent("mac", isDirectory: true),
             databaseName: "organize-training.db", secureStore: InMemorySecureStore()
         )
-        XCTAssertFalse(ChatGptSettingsModel(core: mac.core).organizeAsksTrainingOff)
+        XCTAssertTrue(ChatGptSettingsModel(core: mac.core).organizePermission.isEmpty)
     }
 
     @MainActor

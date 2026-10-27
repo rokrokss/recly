@@ -2117,8 +2117,9 @@ for anyone else nothing in this section happens.
   `observeNeedsConsent()`) say so: signed in, or with a sign-in OpenAI ended, and not agreed. The answer is this device's, in `kv`
   (`notes/consent`), until the user signs out of ChatGPT: `chatGpt.signOut` clears it, so the next sign-in asks again. On iPhone the
   same action also allows the plan as a destination (`TransferTargets.chatGptSummary()`, §15 "iPhone providers"); without it nothing
-  is sent. While that destination is not allowed yet, the same sheet also asks the confirmation that permission asks — "I turned off
-  “Improve the model for everyone” in ChatGPT." — and `Continue` waits for it; no second dialog.
+  is sent. While that destination is not allowed yet, the same sheet also carries that permission's whole disclosure — who, the
+  endpoint, what is sent, OpenAI's policy, the box "I turned off “Improve the model for everyone” in ChatGPT." and where to withdraw it
+  — and `Continue` waits for the box; no second dialog.
 - **Items.** `decision` (something the people settled), `todo` (something someone will do — a spoken commitment is a to-do with an
   owner) and `question` (raised and not answered). Each has its text, in the summary's language (§8 "Summaries" — `SummaryLanguage`),
   an owner for a to-do — the transcript's speaker label, never a name — a deadline only when one was said, and its evidence: the time
@@ -2906,9 +2907,11 @@ final pass lands.
   record node, the Mac popover and Transcripts window, a meeting offer — when `needsConsent()`, before the consent reminder and the
   permission prompts; either answer goes on with the start. Widgets, tiles, launcher shortcuts, Siri and Shortcuts, Controls and the watches
   never ask. On the iPhone `Continue` also grants the ChatGPT transfer consent (§15). While that destination is not allowed yet, the dialog
-  also carries the permission's own training line, `How to turn it off` link and box `I turned off “Improve the model for everyone” in
-  ChatGPT.` (§15 "iPhone providers"), and `Continue` stays disabled until the box is ticked; allowed already — and on the Mac — it is as
-  above. On Windows a meeting offer waits while it is up.
+  also carries the summary permission dialog's own disclosure under its text (`TransferDisclosureList`: `ChatGPT (OpenAI)`, `A third-party
+  AI service. Recly does not operate it.`, the endpoint, what is sent, `Provider privacy information`, the training line, `How to turn it
+  off`, the box `I turned off “Improve the model for everyone” in ChatGPT.` and `Permission covers future recordings on this device. You
+  can withdraw it in Settings → Privacy.`; §15 "iPhone providers"), and `Continue` stays disabled until the box is ticked; allowed
+  already — and on the Mac — it is as above. On Windows a meeting offer waits while it is up.
 - Windows log events: `shell.chatgpt.consent.failed`, `shell.notes.lines.failed`, `shell.notes.delete.failed`.
 
 ### Accessibility
@@ -4000,7 +4003,8 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
   iPhone treats it like ElevenLabs: the destination `TransferTargets.chatGptSummary()` (`summarize`, `chatgpt`,
   `https://api.openai.com/v1`) needs the transfer permission, asked the first time `Summarize`, `Ask about this recording…`, `Fill in
   title` or `Fill in speaker names` is chosen or the title sheet's `Fill in the title with ChatGPT` or `Fill in speaker names with
-  ChatGPT` is ticked (§8 "Titles and speaker names"), and its allow button turns on
+  ChatGPT` is ticked (§8 "Titles and speaker names"), or in the notes consent sheet, which carries the same disclosure and whose
+  `Continue` grants it (§8 "Organizing", §9 "Notes view"); its allow button — `Continue` there — turns on
   only when "I turned off “Improve the model for everyone” in ChatGPT." is checked, with a link to OpenAI's data-controls help
   (<https://help.openai.com/en/articles/7730893>). Settings → Privacy lists and withdraws it like the providers.
 

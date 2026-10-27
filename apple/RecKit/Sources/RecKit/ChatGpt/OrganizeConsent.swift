@@ -20,16 +20,17 @@ public enum OrganizeConsent {
         fromScreen && needsConsent
     }
 
-    /// docs/15 "iPhone providers": whether the sheet also asks ChatGPT's training question — where Continue allows the plan
-    /// as a destination that is not allowed yet (the iPhone), as that permission always does. Allowed already, or with no
-    /// permission to ask for (the Mac), the sheet is the consent alone.
-    public static func asksTrainingOff(destinationAllowed: Bool) -> Bool {
-        !destinationAllowed
+    /// docs/15 "iPhone providers": the destination the sheet discloses — the ChatGPT one Continue allows, while it is not
+    /// allowed yet (the iPhone), with the same disclosure and training question as the summary's permission dialog.
+    /// Allowed already, or with no permission to ask for (the Mac), none: the sheet is the consent alone.
+    public static func permission(destinationAllowed: Bool) -> [TransferTarget] {
+        destinationAllowed ? [] : [TransferTargets.shared.chatGptSummary()]
     }
 
-    /// What Continue answers with the box as it is: nothing until it is ticked where the sheet asks the training question.
-    public static func continued(asksTrainingOff: Bool, trainingOff: Bool) -> Answer? {
-        asksTrainingOff && !trainingOff ? nil : .agree
+    /// What Continue answers with the box as it is: nothing while the disclosed destination waits for the training box
+    /// ([TrainingOptOut]), as the permission dialog's own allow button does.
+    public static func continued(permission: [TransferTarget], trainingOff: Bool) -> Answer? {
+        TrainingOptOut.required(permission) && !trainingOff ? nil : .agree
     }
 
     /// What an answer does. Continue agrees (`notes.consent()`) and, where the plan needs the user's permission as a
@@ -62,22 +63,23 @@ public enum OrganizeConsent {
 
 /// docs/08 "Organizing": the consent sheet — what is sent, when, and that it counts toward the plan — with
 /// `Sign out` and `Continue`. The shells present it where their other questions go: the iPhone's in the screen, the
-/// Mac's as a panel at a start and over the surface the sign-in was started from. [asksTrainingOff]
-/// ([OrganizeConsent.asksTrainingOff]) adds ChatGPT's training question, and Continue waits for its box.
+/// Mac's as a panel at a start and over the surface the sign-in was started from. [permission]
+/// ([OrganizeConsent.permission]) adds that destination's disclosure — the summary permission dialog's own — and Continue
+/// waits for its box.
 public struct OrganizeConsentDialog: View {
-    private let asksTrainingOff: Bool
+    private let permission: [TransferTarget]
     private let answer: (OrganizeConsent.Answer) -> Void
-    /// The training question's "I turned off …" answer.
+    /// The disclosure's "I turned off …" answer.
     @State private var trainingOff = false
     @Environment(\.locale) private var locale
 
-    public init(asksTrainingOff: Bool, answer: @escaping (OrganizeConsent.Answer) -> Void) {
-        self.asksTrainingOff = asksTrainingOff
+    public init(permission: [TransferTarget], answer: @escaping (OrganizeConsent.Answer) -> Void) {
+        self.permission = permission
         self.answer = answer
     }
 
     public var body: some View {
-        let agreed = OrganizeConsent.continued(asksTrainingOff: asksTrainingOff, trainingOff: trainingOff)
+        let agreed = OrganizeConsent.continued(permission: permission, trainingOff: trainingOff)
         BlueprintDialog(title: loc("Recly organizes while you record")) {
             BlueprintButton(loc("Sign out"), tone: .quiet) { answer(.signOut) }
                 .accessibilityIdentifier("organize-sign-out")
@@ -88,8 +90,8 @@ public struct OrganizeConsentDialog: View {
         } content: {
             BlueprintDialogText(loc("While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan."))
                 .accessibilityIdentifier("organize-body")
-            if asksTrainingOff {
-                ChatGptTrainingOffConfirmation(trainingOff: $trainingOff)
+            if !permission.isEmpty {
+                TransferDisclosureList(targets: permission, trainingOff: $trainingOff)
             }
         }
     }

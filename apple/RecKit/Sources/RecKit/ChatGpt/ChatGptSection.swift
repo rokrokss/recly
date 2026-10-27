@@ -332,7 +332,7 @@ private struct ChatGptWelcomeHost: View {
     }
 
     private var consent: some View {
-        OrganizeConsentDialog(asksTrainingOff: model.organizeAsksTrainingOff) { answer in
+        OrganizeConsentDialog(permission: model.organizePermission) { answer in
             Task { await model.answerOrganizeConsent(answer) }
         }
     }
