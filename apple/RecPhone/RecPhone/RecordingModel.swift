@@ -223,6 +223,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private let alertNotifier = JobAlertNotifier(subsystem: CoreBridge.appName)
     /// Where that tap waits while there is no screen to take it to (docs/10).
     private let alertRouter = AlertRouter<JobAlert>()
+    /// The dead-man, the reminders, the battery stop and the pause of a long recording; their
+    /// responses come through [alertNotifier], the one delegate.
+    private let notices = RecordingNotices(stopKey: "Stop")
     private var ticker: Timer?
     /// The recording being made, for the marks the Highlight node puts on it and the notes the screen follows.
     @Published private(set) var recordingId: String?
@@ -259,6 +262,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         // the response is delivered as soon as the launch finishes, and there is nothing to route
         // it to until [load] has opened the core — so it is buffered rather than dropped.
         alertNotifier.onFix = { [weak self] alert in self?.alertRouter.deliver(alert) }
+        alertNotifier.forward = { [notices] response in notices.handle(response: response) }
+        // A reminder's Stop and the battery stop end the recording the way the Live Activity's
+        // Stop does: nobody is asked for a title.
+        notices.onStop = { [weak self] in Task { await self?.stopFromIntent() } }
         // Before the load, so that a language picked while the core is still opening is not lost.
         observeLanguage()
         loading = Task { await load() }
@@ -273,6 +280,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// not be made to launch one.
     func installNotificationDelegate() {
         alertNotifier.adoptDelegate()
+        RecordingNotices.withdrawPending()
     }
 
     /// docs/13 I2: open the core, finish whatever the last run left behind, then offer to record.
@@ -297,6 +305,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             ) { [weak self] error in
                 self?.captureFailed(error)
             }
+            recorder.onEvent = { [notices] event in notices.apply(event) }
             self.recorder = recorder
             let recovery = RecordingRecovery(core: bridge.core)
             let session = RecorderSession(
@@ -1027,6 +1036,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
+                // A recording that waits to resume takes the microphone back now, the one moment
+                // it can.
+                self.recorder?.becameActive()
                 _ = self.runner?.run()
                 // The system may have installed the speech assets while the app was away.
                 Task { await self.modelDownload?.refresh() }

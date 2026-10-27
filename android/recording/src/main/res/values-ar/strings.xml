@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">جارٍ التسجيل</string>
     <string name="rec_notification_title">جارٍ التسجيل</string>
     <string name="rec_notification_stop">إيقاف</string>
+    <string name="rec_alerts_channel">تنبيهات التسجيل</string>
+    <string name="rec_watchdog_title">ربما توقف التسجيل</string>
+    <string name="rec_watchdog_body">افتح Recly للتحقق.</string>
+    <string name="rec_reminder_title">التسجيل مستمر</string>
+    <string name="rec_reminder_body">لم يتحدث أحد منذ 10 دقائق.</string>
+    <string name="rec_battery_stop_title">توقف التسجيل: البطارية منخفضة</string>
 </resources>

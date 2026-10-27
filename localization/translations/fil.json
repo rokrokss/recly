@@ -572,5 +572,12 @@
   "Decisions": "Mga desisyon",
   "To-dos": "Mga gagawin",
   "Questions": "Mga tanong",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Ipinapadala ng external na pag-transcribe ang buong recording sa {0}. Habang naka-sign in ka sa ChatGPT, ipinapadala rin ang bawat bahagi habang nagre-record ka, kaya dalawang beses itong natatanggap ng provider.\nKung gaano katagal nila ito itatago, at kung gagamitin nila ito sa training, ay nakasalalay sa sariling patakaran ng provider — hindi ito kontrolado ng Recly.\nBasahin ang patakaran ng provider bago ito gamitin."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Ipinapadala ng external na pag-transcribe ang buong recording sa {0}. Habang naka-sign in ka sa ChatGPT, ipinapadala rin ang bawat bahagi habang nagre-record ka, kaya dalawang beses itong natatanggap ng provider.\nKung gaano katagal nila ito itatago, at kung gagamitin nila ito sa training, ay nakasalalay sa sariling patakaran ng provider — hindi ito kontrolado ng Recly.\nBasahin ang patakaran ng provider bago ito gamitin.",
+  "Recording may have stopped": "Maaaring huminto ang pagre-record",
+  "Open Recly to check.": "Buksan ang Recly para tingnan.",
+  "No one has spoken for 10 minutes.": "Walang nagsalita sa loob ng 10 minuto.",
+  "Recording stopped: battery low": "Huminto ang pagre-record: mahina ang baterya",
+  "Recording alerts": "Mga alerto sa pagre-record",
+  "Recording paused": "Naka-pause ang pagre-record",
+  "Open Recly to keep recording.": "Buksan ang Recly para ituloy ang pagre-record."
 }

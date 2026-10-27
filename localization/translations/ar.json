@@ -572,5 +572,12 @@
   "Decisions": "القرارات",
   "To-dos": "المهام",
   "Questions": "الأسئلة",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "يرسل النسخ الخارجي التسجيل كاملًا إلى {0}. وأثناء تسجيل دخولك إلى ChatGPT يُرسَل كل جزء أيضًا أثناء التسجيل، فيتلقاه المزوّد مرتين.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "يرسل النسخ الخارجي التسجيل كاملًا إلى {0}. وأثناء تسجيل دخولك إلى ChatGPT يُرسَل كل جزء أيضًا أثناء التسجيل، فيتلقاه المزوّد مرتين.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.",
+  "Recording may have stopped": "ربما توقف التسجيل",
+  "Open Recly to check.": "افتح Recly للتحقق.",
+  "No one has spoken for 10 minutes.": "لم يتحدث أحد منذ 10 دقائق.",
+  "Recording stopped: battery low": "توقف التسجيل: البطارية منخفضة",
+  "Recording alerts": "تنبيهات التسجيل",
+  "Recording paused": "توقف التسجيل مؤقتًا",
+  "Open Recly to keep recording.": "افتح Recly لمتابعة التسجيل."
 }

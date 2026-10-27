@@ -4,4 +4,10 @@
     <string name="rec_notification_channel">A gravar</string>
     <string name="rec_notification_title">A gravar</string>
     <string name="rec_notification_stop">Parar</string>
+    <string name="rec_alerts_channel">Alertas de gravação</string>
+    <string name="rec_watchdog_title">A gravação pode ter parado</string>
+    <string name="rec_watchdog_body">Abra o Recly para verificar.</string>
+    <string name="rec_reminder_title">Ainda a gravar</string>
+    <string name="rec_reminder_body">Ninguém falou nos últimos 10 minutos.</string>
+    <string name="rec_battery_stop_title">Gravação parada: bateria fraca</string>
 </resources>

@@ -572,5 +572,12 @@
   "Decisions": "Decisioni",
   "To-dos": "Cose da fare",
   "Questions": "Domande",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La trascrizione esterna invia l’intera registrazione a {0}. Finché hai effettuato l’accesso a ChatGPT, ogni parte viene inviata anche durante la registrazione, quindi il fornitore la riceve due volte.\nPer quanto tempo la conserva e se la usa per l’addestramento dipende dall’informativa del fornitore: Recly non lo controlla.\nLeggi l’informativa del fornitore prima di usarlo."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La trascrizione esterna invia l’intera registrazione a {0}. Finché hai effettuato l’accesso a ChatGPT, ogni parte viene inviata anche durante la registrazione, quindi il fornitore la riceve due volte.\nPer quanto tempo la conserva e se la usa per l’addestramento dipende dall’informativa del fornitore: Recly non lo controlla.\nLeggi l’informativa del fornitore prima di usarlo.",
+  "Recording may have stopped": "La registrazione potrebbe essersi interrotta",
+  "Open Recly to check.": "Apri Recly per controllare.",
+  "No one has spoken for 10 minutes.": "Nessuno ha parlato negli ultimi 10 minuti.",
+  "Recording stopped: battery low": "Registrazione interrotta: batteria scarica",
+  "Recording alerts": "Avvisi di registrazione",
+  "Recording paused": "Registrazione in pausa",
+  "Open Recly to keep recording.": "Apri Recly per continuare a registrare."
 }

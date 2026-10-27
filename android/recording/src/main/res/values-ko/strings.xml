@@ -3,4 +3,10 @@
     <string name="rec_notification_channel">녹음</string>
     <string name="rec_notification_title">녹음 중</string>
     <string name="rec_notification_stop">정지</string>
+    <string name="rec_alerts_channel">녹음 알림</string>
+    <string name="rec_watchdog_title">녹음이 멈춘 것 같습니다</string>
+    <string name="rec_watchdog_body">Recly를 열어 확인하세요.</string>
+    <string name="rec_reminder_title">아직 녹음 중</string>
+    <string name="rec_reminder_body">10분 동안 아무 말이 없었습니다.</string>
+    <string name="rec_battery_stop_title">배터리가 부족해 녹음을 멈췄습니다</string>
 </resources>

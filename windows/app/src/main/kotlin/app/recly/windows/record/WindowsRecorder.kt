@@ -8,6 +8,7 @@ import app.recly.windows.detect.NoDetection
 import app.recly.windows.helper.HelperClient
 import app.recly.windows.helper.HelperCommand
 import app.recly.windows.helper.HelperEvent
+import app.recly.windows.helper.HelperNotice
 import app.recly.windows.settings.RecordingMode
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration
@@ -16,6 +17,8 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,7 +36,9 @@ import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Track
 import recly.core.platform.Logger
+import recly.core.recording.BatteryStop
 import recly.core.recording.MetaWriter
+import recly.core.recording.SilenceReminder
 import kotlin.time.Clock as TimeClock
 
 /** What a finished recording leaves behind — the shell enqueues it (docs/14 "Runner" (a)). */
@@ -93,6 +98,21 @@ class WindowsRecorder(
     private val stopTimeout: Duration = STOP_TIMEOUT,
     /** And how long it then waits for the reader to file what the dying helper flushed. */
     private val drainTimeout: Duration = DRAIN_TIMEOUT,
+    /**
+     * docs/01 "Long recordings — watchdog": the notice the helper raises if this app dies under the recording,
+     * read at every start so it is in the language the app is in then. Null starts the helper without one.
+     */
+    private val watchdog: () -> HelperNotice? = { null },
+    /**
+     * docs/01 "Long recordings — reminders": ten minutes with nobody speaking in the levels the helper sends,
+     * once per silence (the core's [SilenceReminder]). The shell posts the balloon.
+     */
+    private val onNobodySpeaking: (recordingId: String) -> Unit = {},
+    /** docs/01 "Long recordings — battery stop": the laptop's battery, read every [batteryCheck] while recording. */
+    private val power: PowerSource = NoBattery,
+    /** The battery went low under the recording (the core's [BatteryStop]): the shell stops it, asking nothing. */
+    private val onBatteryLow: (recordingId: String) -> Unit = {},
+    private val batteryCheck: Duration = BatteryStop.CHECK_SEC.seconds,
 ) {
     private class Session(
         val recordingId: String,
@@ -117,6 +137,12 @@ class WindowsRecorder(
 
         /** docs/09 screen principle 6: the last thirty seconds of levels, for the popup's strip. */
         val live = LiveWaveform()
+
+        /** docs/01 "Long recordings": the same windows, listened to for ten minutes without speech. */
+        val quiet = SilenceReminder()
+
+        /** The battery's reader for as long as this session records; cancelled when it ends. */
+        @Volatile var battery: Job? = null
 
         /**
          * Parts the helper reported and the database refused. Kept whole, not counted: the stop
@@ -182,7 +208,7 @@ class WindowsRecorder(
         val open = Session(recordingId, startedAt, dir, client, detection.yieldToRecorder())
         try {
             client.open(scope)
-            client.send(HelperCommand.Start(dir.toString(), base, segmentSec, tracks))
+            client.send(HelperCommand.Start(dir.toString(), base, segmentSec, tracks, watchdog()))
             // docs/14 "Detection": the microphone monitor belongs to whichever helper is running, and
             // for the length of this recording that is this one.
             client.send(HelperCommand.Detect(on = true))
@@ -198,6 +224,7 @@ class WindowsRecorder(
         session = open
         onState(true)
         scope.launch { consume(open) }
+        open.battery = scope.launch { watchBattery(open) }
         core.deps.logger.log(
             Logger.Level.INFO,
             "rec.recorder.start",
@@ -232,6 +259,7 @@ class WindowsRecorder(
             // `recording` and `RecordingRecovery` finishes the job at the next launch, which is the
             // one path that gets to look at the directory again.
             mutex.withLock { if (session === open) session = null }
+            open.battery?.cancel()
             core.deps.logger.log(
                 Logger.Level.ERROR,
                 "rec.recorder.stopDeferred",
@@ -288,7 +316,13 @@ class WindowsRecorder(
                     }
             }
 
-            is HelperEvent.Level -> open.live.add(event.peaks)
+            is HelperEvent.Level -> {
+                open.live.add(event.peaks)
+                // Every window, not up to the first that reminds: the rule's floor is made of all of them.
+                var remind = false
+                for (peak in event.peaks) if (open.quiet.add(peak)) remind = true
+                if (remind && !open.stopping) nobodySpeaking(open)
+            }
 
             is HelperEvent.MicInUse ->
                 detection.micInUse(open.detectionToken, event.app, event.inUse)
@@ -299,6 +333,34 @@ class WindowsRecorder(
                     "rec.helper.error",
                     mapOf("message" to event.message, "fatal" to event.fatal),
                 )
+        }
+    }
+
+    private fun nobodySpeaking(open: Session) {
+        core.deps.logger.log(Logger.Level.INFO, "rec.recorder.nobodySpeaking", mapOf("recordingId" to open.recordingId))
+        onNobodySpeaking(open.recordingId)
+    }
+
+    /**
+     * docs/01 "Long recordings — battery stop": the first reading is the start's, then one every [batteryCheck]
+     * until the rule says stop — once — or the session ends. A machine with no battery answers null at once and
+     * is not asked again.
+     */
+    private suspend fun watchBattery(open: Session) {
+        val rule = BatteryStop()
+        while (true) {
+            val reading = runCatching { power.read() }.getOrElse { BatteryReading.UNREADABLE } ?: return
+            if (rule.check(reading.percent, reading.unplugged)) {
+                if (open.stopping) return
+                core.deps.logger.log(
+                    Logger.Level.WARN,
+                    "rec.recorder.batteryStop",
+                    mapOf("recordingId" to open.recordingId, "level" to reading.percent),
+                )
+                onBatteryLow(open.recordingId)
+                return
+            }
+            delay(batteryCheck)
         }
     }
 
@@ -348,6 +410,7 @@ class WindowsRecorder(
     private suspend fun finish(open: Session, title: String?, failed: Boolean = false): StopResult {
         val mine = mutex.withLock { (session === open).also { if (it) session = null } }
         if (!mine) return StopResult.NotRecording
+        open.battery?.cancel()
         val pending = settle(open)
         if (pending > 0) {
             // Deliberately not finalized: the marked parts are not in the meta yet, and a row that

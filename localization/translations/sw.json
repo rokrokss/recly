@@ -572,5 +572,12 @@
   "Decisions": "Maamuzi",
   "To-dos": "Majukumu",
   "Questions": "Maswali",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Unukuzi wa nje hutuma rekodi nzima kwa {0}. Ukiwa umeingia kwenye ChatGPT, kila sehemu pia hutumwa unaporekodi, hivyo mtoa huduma huipokea mara mbili.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Unukuzi wa nje hutuma rekodi nzima kwa {0}. Ukiwa umeingia kwenye ChatGPT, kila sehemu pia hutumwa unaporekodi, hivyo mtoa huduma huipokea mara mbili.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia.",
+  "Recording may have stopped": "Huenda kurekodi kumesimama",
+  "Open Recly to check.": "Fungua Recly ili kuangalia.",
+  "No one has spoken for 10 minutes.": "Hakuna aliyezungumza kwa dakika 10.",
+  "Recording stopped: battery low": "Kurekodi kumesimamishwa: betri iko chini",
+  "Recording alerts": "Arifa za kurekodi",
+  "Recording paused": "Kurekodi kumesitishwa",
+  "Open Recly to keep recording.": "Fungua Recly ili kuendelea kurekodi."
 }

@@ -179,7 +179,9 @@ final class FakeAlertCenter: AlertCenter {
     /// How many of the next posts to refuse.
     var failures = 0
     private(set) var posted: [String] = []
+    private(set) var requests: [UNNotificationRequest] = []
     private(set) var withdrawn: [[String]] = []
+    private(set) var categories: [String] = []
 
     func authorize() async -> Bool { granted }
 
@@ -189,7 +191,10 @@ final class FakeAlertCenter: AlertCenter {
             throw Refused()
         }
         posted.append(request.identifier)
+        requests.append(request)
     }
+
+    func register(_ category: UNNotificationCategory) async { categories.append(category.identifier) }
 
     func withdraw(_ identifiers: [String]) { withdrawn.append(identifiers) }
 }

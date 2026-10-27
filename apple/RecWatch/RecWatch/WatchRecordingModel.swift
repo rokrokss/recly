@@ -45,6 +45,8 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     private var recorder: SegmentedRecorder?
     private var session: RecorderSession?
     private var queue: WatchTransferQueue?
+    /// The dead-man, the reminders, the battery stop and the pause of a long recording.
+    private let notices = RecordingNotices(stopKey: "Stop")
     private var activeObserver: NSObjectProtocol?
     /// docs/07 rule 3: the complication is drawn by another process from a file, so a language
     /// change has to be written into it rather than waiting for the next recording.
@@ -76,6 +78,11 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         }
         // Before the load: the phone's context can land while the core is still opening.
         observeLanguage()
+        // The watch posts nothing else, so the notices are Notification Center's delegate here. A
+        // reminder's Stop and the battery stop are the stop every watch stop is: nothing is asked.
+        notices.adoptDelegate()
+        notices.onStop = { [weak self] in Task { await self?.stopFromIntent() } }
+        RecordingNotices.withdrawPending()
         loading = Task { await load() }
     }
 
@@ -96,6 +103,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             recorder.onPartFiled = { [weak self] recordingId in
                 Task { @MainActor in await self?.hand(over: recordingId) }
             }
+            recorder.onEvent = { [notices] event in notices.apply(event) }
             self.recorder = recorder
             let recovery = RecordingRecovery(core: bridge.core)
             let session = RecorderSession(
@@ -323,7 +331,11 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, let queue = self.queue else { return }
+                guard let self else { return }
+                // A recording that waits to resume takes the microphone back now — a raised wrist
+                // over the app is the one moment it can.
+                self.recorder?.becameActive()
+                guard let queue = self.queue else { return }
                 Task {
                     await queue.pump()
                     await self.refreshWaiting()

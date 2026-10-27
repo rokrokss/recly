@@ -572,5 +572,12 @@
   "Decisions": "تصمیم‌ها",
   "To-dos": "کارها",
   "Questions": "پرسش‌ها",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "رونویسی خارجی کل ضبط را به {0} می‌فرستد. تا وقتی به ChatGPT وارد شده‌اید، هر بخش هم هنگام ضبط فرستاده می‌شود، پس ارائه‌دهنده آن را دو بار دریافت می‌کند.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "رونویسی خارجی کل ضبط را به {0} می‌فرستد. تا وقتی به ChatGPT وارد شده‌اید، هر بخش هم هنگام ضبط فرستاده می‌شود، پس ارائه‌دهنده آن را دو بار دریافت می‌کند.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید.",
+  "Recording may have stopped": "ممکن است ضبط متوقف شده باشد",
+  "Open Recly to check.": "برای بررسی، Recly را باز کنید.",
+  "No one has spoken for 10 minutes.": "۱۰ دقیقه است که کسی صحبت نکرده است.",
+  "Recording stopped: battery low": "ضبط متوقف شد: باتری کم است",
+  "Recording alerts": "هشدارهای ضبط",
+  "Recording paused": "ضبط موقتاً متوقف شد",
+  "Open Recly to keep recording.": "برای ادامهٔ ضبط، Recly را باز کنید."
 }

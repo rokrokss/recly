@@ -7,9 +7,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.os.BatteryManager
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.IconCompat
 import kotlin.time.ExperimentalTime
@@ -29,6 +32,8 @@ import kotlinx.coroutines.launch
 import recly.core.model.Platform
 import recly.core.model.Source
 import recly.core.platform.Logger
+import recly.core.recording.BatteryStop
+import recly.core.recording.SilenceReminder
 
 /**
  * The microphone foreground service (docs/11): recording outlives the screen, the app being
@@ -57,20 +62,18 @@ class RecorderService : Service() {
     /** The level poller, for as long as the microphone is open — see [livePeaks]. */
     private var levels: Job? = null
 
+    /** The battery watch, for as long as the recording runs — see [startAlerts]. */
+    private var battery: BroadcastReceiver? = null
+
     override fun onBind(intent: Intent?) = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> onStart(intent)
-            ACTION_STOP -> {
-                // Before the finalize, not after it: what the strip would draw while the last
-                // segments are being drained is the level of a microphone that is already closed.
-                stopLevels()
-                session.stop(
-                    title = intent.getStringExtra(EXTRA_TITLE),
-                    enqueue = intent.getBooleanExtra(EXTRA_ENQUEUE, true),
-                )
-            }
+            ACTION_STOP -> stopRecording(
+                title = intent.getStringExtra(EXTRA_TITLE),
+                enqueue = intent.getBooleanExtra(EXTRA_ENQUEUE, true),
+            )
 
             // docs/07 rule 3: the notification is drawn once and then sits there for hours, so a
             // language change has to ask for it again. Only ever sent to a service that is already
@@ -123,12 +126,15 @@ class RecorderService : Service() {
                 source = if (core.deps.device.platform == Platform.WEAROS) Source.WATCH else Source.PHONE,
                 onPartFiled = { host().onPartFiled(it) },
                 onError = { fail(it) },
+                onBoundary = { RecordingAlerts.armWatchdog(this@RecorderService, segmentSec) },
             )
             try {
                 val recordingId = recorder.start(title)
                 capture = recorder
                 session.started(recorder, recordingId, core.deps.clock.now())
                 startLevels(recorder)
+                // Not for a stop that raced the start: `started` has just replayed it.
+                if (_state.value is RecorderState.Recording) startAlerts(segmentSec)
             } catch (e: Exception) {
                 session.startFailed()
                 core.deps.logger.log(Logger.Level.ERROR, "rec.recorder.startFailed", emptyMap(), e)
@@ -144,15 +150,20 @@ class RecorderService : Service() {
      * recording" at all.
      *
      * It runs on the watch too, whose screen never draws them; polling an integer ten times a
-     * second is cheaper than a shell flag to turn it off with.
+     * second is cheaper than a shell flag to turn it off with. On both, the same windows are what the
+     * long-recording reminder listens to ([SilenceReminder]).
      */
     private fun startLevels(recorder: SegmentedRecorder) {
         waveform.reset()
         levels = scope.launch {
+            val silence = SilenceReminder()
             try {
                 while (true) {
                     delay(LEVEL_MS)
-                    recorder.peakSinceLastAsk()?.let { waveform.add(it) }
+                    recorder.peakSinceLastAsk()?.let {
+                        waveform.add(it)
+                        if (silence.add(it)) postReminder()
+                    }
                 }
             } finally {
                 // Also the way a service that is being destroyed leaves it: nothing is recording,
@@ -165,6 +176,73 @@ class RecorderService : Service() {
     private fun stopLevels() {
         levels?.cancel()
         levels = null
+    }
+
+    private fun stopRecording(title: String?, enqueue: Boolean) {
+        // Before the finalize, not after it: what the strip would draw while the last
+        // segments are being drained is the level of a microphone that is already closed.
+        stopLevels()
+        stopAlerts()
+        session.stop(title = title, enqueue = enqueue)
+    }
+
+    /**
+     * docs/11 ":android:recording": two of the three alerts of a long recording; the reminder listens
+     * on the level poller ([startLevels]). The watchdog is an alarm because it has to outlive this
+     * process — saying the process died is its whole job; the battery watch needs the process, which
+     * a running recording keeps alive.
+     */
+    private fun startAlerts(segmentSec: Int) {
+        RecordingAlerts.armWatchdog(this, segmentSec)
+        // A sticky broadcast: the level as it is now arrives at once, then every change after it.
+        battery = object : BroadcastReceiver() {
+            /** Fed every delivery; the first is the battery as the recording started. */
+            private val rule = BatteryStop()
+
+            override fun onReceive(context: Context, intent: Intent) {
+                val percent = RecordingAlerts.batteryPercent(
+                    intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1),
+                    intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1),
+                )
+                val unplugged = RecordingAlerts.unplugged(intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1))
+                if (rule.check(percent, unplugged)) batteryStop(percent)
+            }
+        }.also { registerReceiver(it, IntentFilter(Intent.ACTION_BATTERY_CHANGED), RECEIVER_NOT_EXPORTED) }
+    }
+
+    private fun stopAlerts() {
+        RecordingAlerts.cancelWatchdog(this)
+        notificationManager().cancel(RecordingAlerts.REMINDER_ID)
+        battery?.let { runCatching { unregisterReceiver(it) } }
+        battery = null
+    }
+
+    /** Ten minutes without speech (the core's [SilenceReminder]): posted at once, with the ongoing notification's stop. */
+    private fun postReminder() {
+        RecordingAlerts.post(
+            this,
+            RecordingAlerts.REMINDER_ID,
+            getString(R.string.rec_reminder_title),
+            getString(R.string.rec_reminder_body),
+            stop = stopIntent(),
+        )
+    }
+
+    /** The notification's stop action, from a receiver that has nobody to ask for a title either. */
+    private fun batteryStop(percent: Int) {
+        val recordingId = (_state.value as? RecorderState.Recording)?.recordingId
+        stopRecording(title = null, enqueue = true)
+        RecordingAlerts.post(this, RecordingAlerts.BATTERY_ID, getString(R.string.rec_battery_stop_title))
+        val host = host()
+        scope.launch {
+            runCatching {
+                host.core().deps.logger.log(
+                    Logger.Level.WARN,
+                    "rec.recorder.batteryStop",
+                    mapOf("recordingId" to recordingId, "level" to percent),
+                )
+            }
+        }
     }
 
     /**
@@ -180,12 +258,16 @@ class RecorderService : Service() {
             runCatching { host.core().deps.logger.log(level, "rec.recorder.failed", emptyMap(), error) }
             if (!error.fatal) return@launch
             stopLevels()
+            stopAlerts()
             session.failed(recordingId, error.message ?: "recorder failed")
         }
     }
 
     override fun onDestroy() {
         capture = null
+        // The backstop for a watchdog armed after the stop took it down, by a boundary that was
+        // being filed as the stop came.
+        stopAlerts()
         // Not the stop job: that one is deliberately on a scope this cannot reach.
         scope.cancel()
         super.onDestroy()
@@ -209,14 +291,7 @@ class RecorderService : Service() {
         val open = packageManager.getLaunchIntentForPackage(packageName)?.let {
             PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE)
         }
-        val stop = PendingIntent.getService(
-            this,
-            1,
-            Intent(this, RecorderService::class.java)
-                .setAction(ACTION_STOP)
-                .putExtra(EXTRA_ENQUEUE, true),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+        val stop = stopIntent()
         host().recordingNotification(NOTIFICATION_ID, CHANNEL_ID, stop)?.let { return it }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_rec_notification)
@@ -241,6 +316,15 @@ class RecorderService : Service() {
             .setRequestPromotedOngoing(true)
             .build()
     }
+
+    private fun stopIntent(): PendingIntent = PendingIntent.getService(
+        this,
+        1,
+        Intent(this, RecorderService::class.java)
+            .setAction(ACTION_STOP)
+            .putExtra(EXTRA_ENQUEUE, true),
+        PendingIntent.FLAG_IMMUTABLE,
+    )
 
     companion object {
         const val ACTION_START: String = "app.recly.recording.START"

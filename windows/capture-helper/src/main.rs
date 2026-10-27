@@ -3,9 +3,13 @@
 //! One process serves one recording. `stop` — or the app closing stdin, which is what
 //! `HelperClient.close` does — closes the last segment, reports it and exits; the app's rule for a
 //! helper that dies before that is its own (docs/14 "if the helper dies, the app finalizes up to the last part"), and this side helps it by never announcing a part it has not finished writing.
+//!
+//! The other way round — the app dying under a recording — is this side's to notice (docs/01 "Long
+//! recordings — watchdog", [`watchdog`]): nothing here may panic on a pipe the dead app left closed.
 
 use std::io::{BufRead, Write};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 use std::time::{Duration, Instant};
 
@@ -16,12 +20,24 @@ use recly_capture_helper::network;
 use recly_capture_helper::pipeline::drift::{DriftCompensator, INTERVAL_SEC};
 use recly_capture_helper::pipeline::resample::Resampler;
 use recly_capture_helper::pipeline::SAMPLE_RATE_HZ;
-use recly_capture_helper::protocol::{Command, Event, Track};
+use recly_capture_helper::protocol::{Command, Event, Notice, Track};
 use recly_capture_helper::recorder::{Recorder, Written};
 use recly_capture_helper::selftest;
+use recly_capture_helper::watchdog;
 
 /// How long the loop may block on the microphone before it looks at the commands again.
 const PUMP_MS: u64 = 50;
+
+/// Set once a line to the app could not be written: nobody reads stdout any more ([`watchdog::app_gone`]).
+static OUTPUT_CLOSED: AtomicBool = AtomicBool::new(false);
+
+/// stderr is the log (docs/14). Not `eprintln!`, which panics once the app that read it is gone — and
+/// a recording whose app died still has its last segment to close.
+macro_rules! log {
+    ($($arg:tt)*) => {{
+        let _ = writeln!(std::io::stderr(), $($arg)*);
+    }};
+}
 
 fn main() {
     let options = match Options::parse(std::env::args().skip(1)) {
@@ -154,6 +170,8 @@ fn run(options: Options) -> i32 {
     let mut watcher = MicWatcher::new(options.mic_in_use.clone());
     let mut detecting: Option<Instant> = None;
     let mut session: Option<Session> = None;
+    // docs/01 "Long recordings — watchdog": what to say if the app dies under this recording.
+    let mut notice: Option<Notice> = None;
 
     loop {
         // Commands first: a `stop` that arrived while the last buffer was being written is the end
@@ -161,7 +179,8 @@ fn run(options: Options) -> i32 {
         loop {
             match commands.try_recv() {
                 Ok(Some(command)) => match command {
-                    Command::Start { dir, base, segment_sec, tracks } => {
+                    Command::Start { dir, base, segment_sec, tracks, watchdog } => {
+                        notice = watchdog;
                         if options.noise {
                             // Not protocol. `HelperClient` logs and skips it (docs/14).
                             println!("recly-capture-helper: starting {base}");
@@ -197,8 +216,8 @@ fn run(options: Options) -> i32 {
                 // same rule for lines that are not events.
                 Ok(None) => {}
                 Err(TryRecvError::Empty) => break,
-                // The app closed stdin, which is `HelperClient.close`: the same end as a `stop`.
-                Err(TryRecvError::Disconnected) => return finish(session),
+                // The app closed stdin, which is `HelperClient.close` — or it died, which closes it too.
+                Err(TryRecvError::Disconnected) => return ended(session, notice),
             }
         }
 
@@ -219,6 +238,10 @@ fn run(options: Options) -> i32 {
                 if failed {
                     return code;
                 }
+                // Nobody is reading what this recording reports: the app is gone.
+                if OUTPUT_CLOSED.load(Ordering::SeqCst) {
+                    return ended(session, notice);
+                }
                 // A `--parts` limit was reached. `--die` is the app's helper-death path.
                 if !more && options.die {
                     let _ = std::io::stdout().flush();
@@ -238,6 +261,25 @@ fn finish(session: Option<Session>) -> i32 {
         return 0;
     };
     report(session.finish())
+}
+
+/// The app let go of this helper without a `stop`: stdin closed, or stdout could not be written. The last
+/// segment is closed either way — announced if the app still reads, filed by its next launch's recovery
+/// if not — and if the app is gone rather than merely done with this helper, the watchdog's notice goes
+/// up (docs/01 "Long recordings — watchdog").
+fn ended(session: Option<Session>, notice: Option<Notice>) -> i32 {
+    let recording = session.is_some();
+    let code = finish(session);
+    // A blank line, which the app's reader skips while it reads — and which cannot be written once its
+    // end of the pipe has closed with its process. That is the difference between the two endings.
+    emit_line("");
+    if watchdog::app_gone(recording, OUTPUT_CLOSED.load(Ordering::SeqCst)) {
+        log!("recly-capture-helper: rec.watchdog.fired notice={}", notice.is_some());
+        if let Some(notice) = notice {
+            watchdog::raise(&notice);
+        }
+    }
+    code
 }
 
 /// Everything a write produced, in the order the app has to see it: the parts that closed first —
@@ -262,9 +304,16 @@ fn report(written: Written) -> i32 {
 }
 
 fn emit(event: &Event) {
-    let line = serde_json::to_string(event).expect("an event is always serialisable");
-    println!("{line}");
-    let _ = std::io::stdout().flush();
+    emit_line(&serde_json::to_string(event).expect("an event is always serialisable"));
+}
+
+/// One line to the app. A write that fails is not a panic — `println!` would be one — but the sign that
+/// nobody reads stdout any more.
+fn emit_line(line: &str) {
+    let mut out = std::io::stdout().lock();
+    if writeln!(out, "{line}").and_then(|()| out.flush()).is_err() {
+        OUTPUT_CLOSED.store(true, Ordering::SeqCst);
+    }
 }
 
 /// stdin on a thread of its own, because the main loop is busy waiting for audio. `None` is a line
@@ -278,7 +327,7 @@ fn spawn_reader() -> Receiver<Option<Command>> {
                 continue;
             }
             let parsed = serde_json::from_str::<Command>(&line)
-                .map_err(|error| eprintln!("recly-capture-helper: unparsed command: {error}"))
+                .map_err(|error| log!("recly-capture-helper: unparsed command: {error}"))
                 .ok();
             if sender.send(parsed).is_err() {
                 return;
@@ -317,7 +366,7 @@ impl Session {
     ) -> std::io::Result<Self> {
         let system = tracks.iter().any(|track| track.needs_system_audio());
         let factory = encode::factory(options.encoder, options.ffmpeg.clone());
-        eprintln!(
+        log!(
             "recly-capture-helper: rec.start base={base} tracks={} segmentSec={segment_sec} encoder={} source={:?}",
             tracks.len(),
             factory.name(),
@@ -404,7 +453,7 @@ impl Session {
                 // docs/03 "Tracks": the system track is the one that may have holes in it. A
                 // recording does not end because the render endpoint went away.
                 Ok(Delivery::Failed(error)) => {
-                    eprintln!("recly-capture-helper: system audio stopped: {error}");
+                    log!("recly-capture-helper: system audio stopped: {error}");
                     break;
                 }
                 Err(_) => break,
@@ -505,11 +554,11 @@ impl Session {
             let underruns = self.compensator.underrun_frames;
             let dropped = self.compensator.dropped_frames;
             let ratio = self.compensator.ratio();
-            eprintln!(
+            log!(
                 "recly-capture-helper: rec.stop frames={frames} tailDrainedFrames={drained} driftRatio={ratio:.6} sysUnderrunFrames={underruns} sysDroppedFrames={dropped}"
             );
         } else {
-            eprintln!("recly-capture-helper: rec.stop frames={frames} tailDrainedFrames={drained}");
+            log!("recly-capture-helper: rec.stop frames={frames} tailDrainedFrames={drained}");
         }
         if written.failure.is_some() {
             return written;

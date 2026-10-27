@@ -38,8 +38,9 @@ struct LiveWaveform {
 
     /// Counts [samples] into the windows, carrying the open one across the buffer boundary: a tap
     /// delivers 4096 frames at a time and a window is 1600, so a window ends inside a buffer far
-    /// more often than between two.
-    mutating func add(_ samples: UnsafeBufferPointer<Float>) {
+    /// more often than between two. [finished] hears each window's peak as it closes, in order —
+    /// the recorder's [SilenceReminder] listens to the same windows the strip draws.
+    mutating func add(_ samples: UnsafeBufferPointer<Float>, finished: (Float) -> Void = { _ in }) {
         for sample in samples {
             // Clamped: a mix can exceed full scale, and a bar taller than the row is not louder.
             let level = min(abs(sample), 1)
@@ -47,6 +48,7 @@ struct LiveWaveform {
             openFrames += 1
             if openFrames == windowFrames {
                 ring[next] = openPeak
+                finished(openPeak)
                 next = (next + 1) % capacity
                 filled = min(filled + 1, capacity)
                 openPeak = 0

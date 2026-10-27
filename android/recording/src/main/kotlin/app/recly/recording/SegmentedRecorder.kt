@@ -61,6 +61,8 @@ class SegmentedRecorder(
     /** A boundary filed a part ([RecorderHost.onPartFiled]); launched, so it never holds the boundary up. */
     private val onPartFiled: suspend (recordingId: String) -> Unit = {},
     private val onError: (RecorderError) -> Unit,
+    /** A boundary of this recording was reached: the encoder is alive (the watchdog, docs/11 ":android:recording"). */
+    private val onBoundary: () -> Unit = {},
 ) : Capture {
     private class Session(
         val recorder: MediaRecorder,
@@ -328,6 +330,8 @@ class SegmentedRecorder(
         try {
             mutex.withLock {
                 val open = session?.takeIf { it.recorder === sender } ?: return@withLock
+                // Filed or not: a part that cannot reach the database is still a recording that runs.
+                onBoundary()
                 armNext(open)
                 val hintSec = open.timer.advance(boundaryMs)
                 open.closer.drain(open.ledger.openPart, hintSec) { part -> registerPart(open, part) }

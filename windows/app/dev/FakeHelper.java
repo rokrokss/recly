@@ -25,6 +25,8 @@ import java.security.MessageDigest;
  *   partsOnStop  emit the parts when `stop` arrives instead of when `start` does
  *   hang         never answer `stop` and never exit — the app has to kill it
  *   write        actually write each part to `{dir}/{file}` and report its real sha256
+ *   quiet=N      after the start, N tenth-of-a-second `level` windows of an empty room — the
+ *                long-recording reminder's ten minutes (docs/01) without waiting for them
  *
  * `write` is off by default because the tests that assert what a recording leaves on disk expect
  * `meta.json` and nothing else (`WindowsRecorderTest`). It exists for the acceptance harness
@@ -43,6 +45,7 @@ public final class FakeHelper {
         boolean write = false;
         String micInUse = null;
         double micIdleAfter = 0;
+        int quiet = 0;
         for (String arg : args) {
             if (arg.equals("die")) die = true;
             else if (arg.equals("noise")) noise = true;
@@ -53,6 +56,7 @@ public final class FakeHelper {
             else if (arg.startsWith("sec=")) sec = Double.parseDouble(arg.substring(4));
             else if (arg.startsWith("micInUse=")) micInUse = arg.substring(9);
             else if (arg.startsWith("micIdleAfter=")) micIdleAfter = Double.parseDouble(arg.substring(13));
+            else if (arg.startsWith("quiet=")) quiet = Integer.parseInt(arg.substring(6));
         }
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -68,6 +72,7 @@ public final class FakeHelper {
                 if (!partsOnStop) {
                     emitAll(start, parts, sec, write);
                 }
+                emitQuiet(quiet);
                 if (die) {
                     // Not a `stop`, no goodbye: the app finds out by the pipe closing.
                     System.exit(9);
@@ -107,6 +112,19 @@ public final class FakeHelper {
     /** Both threads write to stdout, and half a JSON line is a line the app logs and drops. */
     private static synchronized void emitMic(String app, boolean inUse) {
         System.out.println("{\"event\":\"mic_in_use\",\"app\":\"" + app + "\",\"inUse\":" + inUse + "}");
+        System.out.flush();
+    }
+
+    /** Ten windows a line, as the helper's pump sends them: a room at about −50 dBFS that nobody speaks in. */
+    private static void emitQuiet(int windows) {
+        for (int sent = 0; sent < windows; sent += 10) {
+            StringBuilder peaks = new StringBuilder();
+            for (int i = 0; i < Math.min(10, windows - sent); i++) {
+                if (i > 0) peaks.append(',');
+                peaks.append(i % 2 == 0 ? "0.003" : "0.0025");
+            }
+            System.out.println("{\"event\":\"level\",\"peaks\":[" + peaks + "]}");
+        }
         System.out.flush();
     }
 

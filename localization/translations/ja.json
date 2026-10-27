@@ -572,5 +572,12 @@
   "Decisions": "決定事項",
   "To-dos": "やること",
   "Questions": "質問",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、録音全体を{0}に送信します。ChatGPTにサインインしている間は録音中にも各パートを送信するため、提供者は同じ音声を二度受け取ります。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。"
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、録音全体を{0}に送信します。ChatGPTにサインインしている間は録音中にも各パートを送信するため、提供者は同じ音声を二度受け取ります。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。",
+  "Recording may have stopped": "録音が停止した可能性があります",
+  "Open Recly to check.": "Reclyを開いて確認してください。",
+  "No one has spoken for 10 minutes.": "10分間、誰も話していません。",
+  "Recording stopped: battery low": "バッテリー残量が少ないため録音を停止しました",
+  "Recording alerts": "録音アラート",
+  "Recording paused": "録音を一時停止しました",
+  "Open Recly to keep recording.": "Reclyを開くと録音を再開します。"
 }

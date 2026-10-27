@@ -572,5 +572,12 @@
   "Decisions": "فیصلے",
   "To-dos": "کرنے کے کام",
   "Questions": "سوالات",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "بیرونی ٹرانسکرپشن پوری ریکارڈنگ {0} کو بھیجتا ہے۔ ChatGPT میں سائن ان رہنے پر ریکارڈنگ کے دوران ہر حصہ بھی بھیجا جاتا ہے، اس لیے فراہم کنندہ کو یہ دو بار ملتی ہے۔\nوہ اسے کتنی دیر رکھتے ہیں اور کیا اسے تربیت کے لیے استعمال کرتے ہیں، یہ اس فراہم کنندہ کی اپنی پالیسی ہے — Recly اسے کنٹرول نہیں کرتا۔\nاستعمال سے پہلے فراہم کنندہ کی پالیسی پڑھیں۔"
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "بیرونی ٹرانسکرپشن پوری ریکارڈنگ {0} کو بھیجتا ہے۔ ChatGPT میں سائن ان رہنے پر ریکارڈنگ کے دوران ہر حصہ بھی بھیجا جاتا ہے، اس لیے فراہم کنندہ کو یہ دو بار ملتی ہے۔\nوہ اسے کتنی دیر رکھتے ہیں اور کیا اسے تربیت کے لیے استعمال کرتے ہیں، یہ اس فراہم کنندہ کی اپنی پالیسی ہے — Recly اسے کنٹرول نہیں کرتا۔\nاستعمال سے پہلے فراہم کنندہ کی پالیسی پڑھیں۔",
+  "Recording may have stopped": "ریکارڈنگ شاید رک گئی ہے",
+  "Open Recly to check.": "چیک کرنے کے لیے Recly کھولیں۔",
+  "No one has spoken for 10 minutes.": "10 منٹ سے کسی نے بات نہیں کی۔",
+  "Recording stopped: battery low": "ریکارڈنگ رک گئی: بیٹری کم ہے",
+  "Recording alerts": "ریکارڈنگ الرٹس",
+  "Recording paused": "ریکارڈنگ عارضی طور پر رکی ہوئی ہے",
+  "Open Recly to keep recording.": "ریکارڈنگ جاری رکھنے کے لیے Recly کھولیں۔"
 }

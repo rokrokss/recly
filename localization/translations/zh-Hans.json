@@ -572,5 +572,12 @@
   "Decisions": "决定",
   "To-dos": "待办事项",
   "Questions": "问题",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部转录会将完整录音发送给{0}。登录ChatGPT期间，录音时也会逐段发送，因此提供商会收到两次。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。"
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部转录会将完整录音发送给{0}。登录ChatGPT期间，录音时也会逐段发送，因此提供商会收到两次。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。",
+  "Recording may have stopped": "录音可能已停止",
+  "Open Recly to check.": "打开Recly查看。",
+  "No one has spoken for 10 minutes.": "已经10分钟没有人说话了。",
+  "Recording stopped: battery low": "电量不足，录音已停止",
+  "Recording alerts": "录音提醒",
+  "Recording paused": "录音已暂停",
+  "Open Recly to keep recording.": "打开Recly继续录音。"
 }

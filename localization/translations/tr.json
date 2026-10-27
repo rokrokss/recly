@@ -572,5 +572,12 @@
   "Decisions": "Kararlar",
   "To-dos": "Yapılacaklar",
   "Questions": "Sorular",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Harici transkripsiyon, kaydın tamamını {0} sağlayıcısına gönderir. ChatGPT’de oturumunuz açıkken her parça kayıt sırasında da gönderilir, bu yüzden sağlayıcı kaydı iki kez alır.\nKaydın ne kadar süre saklanacağı ve model eğitiminde kullanılıp kullanılmayacağı o sağlayıcının kendi politikasına bağlıdır — Recly bunu denetlemez.\nKullanmadan önce sağlayıcının politikasını okuyun."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Harici transkripsiyon, kaydın tamamını {0} sağlayıcısına gönderir. ChatGPT’de oturumunuz açıkken her parça kayıt sırasında da gönderilir, bu yüzden sağlayıcı kaydı iki kez alır.\nKaydın ne kadar süre saklanacağı ve model eğitiminde kullanılıp kullanılmayacağı o sağlayıcının kendi politikasına bağlıdır — Recly bunu denetlemez.\nKullanmadan önce sağlayıcının politikasını okuyun.",
+  "Recording may have stopped": "Kayıt durmuş olabilir",
+  "Open Recly to check.": "Kontrol etmek için Recly'yi açın.",
+  "No one has spoken for 10 minutes.": "10 dakikadır kimse konuşmadı.",
+  "Recording stopped: battery low": "Kayıt durduruldu: pil zayıf",
+  "Recording alerts": "Kayıt uyarıları",
+  "Recording paused": "Kayıt duraklatıldı",
+  "Open Recly to keep recording.": "Kayda devam etmek için Recly'yi açın."
 }

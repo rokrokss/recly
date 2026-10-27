@@ -11,6 +11,11 @@
             android:name=".RecorderService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <!-- The watchdog's alarm (`RecordingAlerts.armWatchdog`); only this app's own PendingIntent reaches it. -->
+        <receiver
+            android:name=".RecordingWatchdog"
+            android:exported="false" />
     </application>
 
 </manifest>

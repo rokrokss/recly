@@ -40,6 +40,13 @@ impl Track {
     }
 }
 
+/// A notification's two lines, already in the app's language — the helper has no strings of its own.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct Notice {
+    pub title: String,
+    pub body: String,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", rename_all_fields = "camelCase")]
 pub enum Command {
@@ -49,6 +56,10 @@ pub enum Command {
         base: String,
         segment_sec: u32,
         tracks: Vec<Track>,
+        /// docs/01 "Long recordings — watchdog": what to say if the app dies under this recording. Absent
+        /// (an app that predates it) or null, nothing is said.
+        #[serde(default)]
+        watchdog: Option<Notice>,
     },
     Stop,
     /// docs/14 "Detection": mic-in-use monitoring, on or off.
@@ -110,14 +121,37 @@ mod tests {
     fn a_start_from_the_app_parses() {
         let line = r#"{"command":"start","dir":"/tmp/rec","base":"20260827T100000Z_desktop_01H","segmentSec":900,"tracks":["mic","sys","mix"]}"#;
         match serde_json::from_str::<Command>(line).expect("start") {
-            Command::Start { dir, base, segment_sec, tracks } => {
+            Command::Start { dir, base, segment_sec, tracks, watchdog } => {
                 assert_eq!("/tmp/rec", dir);
                 assert_eq!("20260827T100000Z_desktop_01H", base);
                 assert_eq!(900, segment_sec);
                 assert_eq!(vec![Track::Mic, Track::Sys, Track::Mix], tracks);
+                assert_eq!(None, watchdog, "an app that predates the watchdog sends none");
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    /// docs/01 "Long recordings — watchdog": the line `HelperProtocolTest` encodes, and the null an app with
+    /// nothing to say sends (`encodeDefaults`).
+    #[test]
+    fn a_start_carries_the_watchdog_notice() {
+        let line = r#"{"command":"start","dir":"/tmp/rec","base":"20260827T100000Z_desktop_01H","segmentSec":900,"tracks":["mic","sys","mix"],"watchdog":{"title":"Recording may have stopped","body":"Open Recly to check."}}"#;
+        match serde_json::from_str::<Command>(line).expect("start") {
+            Command::Start { watchdog, .. } => assert_eq!(
+                Some(Notice {
+                    title: "Recording may have stopped".into(),
+                    body: "Open Recly to check.".into(),
+                }),
+                watchdog,
+            ),
+            other => panic!("{other:?}"),
+        }
+        let none = r#"{"command":"start","dir":"/tmp/rec","base":"b","segmentSec":900,"tracks":["mic"],"watchdog":null}"#;
+        assert!(matches!(
+            serde_json::from_str::<Command>(none).expect("start"),
+            Command::Start { watchdog: None, .. }
+        ));
     }
 
     #[test]

@@ -572,5 +572,12 @@
   "Decisions": "Решения",
   "To-dos": "Задачи",
   "Questions": "Вопросы",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись в {0}. Пока вы вошли в ChatGPT, каждая часть также отправляется во время записи, поэтому провайдер получает запись дважды.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись в {0}. Пока вы вошли в ChatGPT, каждая часть также отправляется во время записи, поэтому провайдер получает запись дважды.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.",
+  "Recording may have stopped": "Запись могла остановиться",
+  "Open Recly to check.": "Откройте Recly, чтобы проверить.",
+  "No one has spoken for 10 minutes.": "Уже 10 минут никто не говорит.",
+  "Recording stopped: battery low": "Запись остановлена: низкий заряд батареи",
+  "Recording alerts": "Уведомления о записи",
+  "Recording paused": "Запись приостановлена",
+  "Open Recly to keep recording.": "Откройте Recly, чтобы продолжить запись."
 }

@@ -22,6 +22,18 @@ final class LiveWaveformTests: XCTestCase {
         XCTAssertEqual(waveform.peaks, [0.4], "the window closed on its fourth frame, not the buffer's end")
     }
 
+    /// The silence reminder hears every window the strip gets, as it closes and in order — the open
+    /// one included only once it is finished.
+    func testEachFinishedWindowIsHandedOnAsItCloses() {
+        var waveform = LiveWaveform(windowFrames: 2, capacity: 2)
+        var heard: [Float] = []
+
+        let samples: [Float] = [0.1, -0.3, 0.2, 0.05, 0.4, 0.6, 0.7]
+        samples.withUnsafeBufferPointer { waveform.add($0) { heard.append($0) } }
+
+        XCTAssertEqual(heard, [0.3, 0.2, 0.6], "the ring holds two, but every window was heard")
+    }
+
     /// The peak is of |sample|: a waveform drawn from the raw value would show silence for the half
     /// of a loud wave that is below zero.
     func testTheLoudestSampleWinsWhicheverSideOfZeroItIsOn() {

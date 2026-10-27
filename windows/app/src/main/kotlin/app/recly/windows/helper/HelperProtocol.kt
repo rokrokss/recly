@@ -23,6 +23,11 @@ import recly.core.model.Track
 @JsonClassDiscriminator("command")
 sealed class HelperCommand {
 
+    /**
+     * [watchdog] (docs/01 "Long recordings — watchdog"): what the helper says, in the app's language, if
+     * the app dies under this recording — the helper outlives it, and is the only one left to notice.
+     * Null starts a recording with no watchdog, which is also what a helper that predates the field reads.
+     */
     @Serializable
     @SerialName("start")
     data class Start(
@@ -30,6 +35,7 @@ sealed class HelperCommand {
         val base: String,
         val segmentSec: Int,
         val tracks: List<Track>,
+        val watchdog: HelperNotice? = null,
     ) : HelperCommand()
 
     @Serializable
@@ -41,6 +47,10 @@ sealed class HelperCommand {
     @SerialName("detect")
     data class Detect(val on: Boolean) : HelperCommand()
 }
+
+/** A notification's two lines, already in the app's language — the helper has no strings of its own. */
+@Serializable
+data class HelperNotice(val title: String, val body: String)
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable

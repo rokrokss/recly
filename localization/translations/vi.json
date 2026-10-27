@@ -572,5 +572,12 @@
   "Decisions": "Quyết định",
   "To-dos": "Việc cần làm",
   "Questions": "Câu hỏi",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Chép lời bên ngoài sẽ gửi toàn bộ bản ghi âm đến {0}. Khi bạn đăng nhập ChatGPT, từng phần cũng được gửi trong lúc ghi âm, nên nhà cung cấp nhận bản ghi hai lần.\nThời gian lưu giữ và việc có dùng để huấn luyện hay không là do chính sách riêng của nhà cung cấp đó — Recly không kiểm soát.\nHãy đọc chính sách của nhà cung cấp trước khi sử dụng."
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Chép lời bên ngoài sẽ gửi toàn bộ bản ghi âm đến {0}. Khi bạn đăng nhập ChatGPT, từng phần cũng được gửi trong lúc ghi âm, nên nhà cung cấp nhận bản ghi hai lần.\nThời gian lưu giữ và việc có dùng để huấn luyện hay không là do chính sách riêng của nhà cung cấp đó — Recly không kiểm soát.\nHãy đọc chính sách của nhà cung cấp trước khi sử dụng.",
+  "Recording may have stopped": "Có thể đã dừng ghi âm",
+  "Open Recly to check.": "Mở Recly để kiểm tra.",
+  "No one has spoken for 10 minutes.": "Không ai nói gì trong 10 phút qua.",
+  "Recording stopped: battery low": "Đã dừng ghi âm: pin yếu",
+  "Recording alerts": "Cảnh báo ghi âm",
+  "Recording paused": "Đã tạm dừng ghi âm",
+  "Open Recly to keep recording.": "Mở Recly để tiếp tục ghi âm."
 }

@@ -572,5 +572,12 @@
   "Decisions": "การตัดสินใจ",
   "To-dos": "สิ่งที่ต้องทำ",
   "Questions": "คำถาม",
-  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง {0} ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ ระบบจะส่งแต่ละส่วนระหว่างบันทึกด้วย ผู้ให้บริการจึงได้รับเสียงสองครั้ง\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน"
+  "External transcription sends the whole recording to {0}. While you're signed in to ChatGPT, each part is also sent as you record, so the provider receives it twice.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง {0} ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ ระบบจะส่งแต่ละส่วนระหว่างบันทึกด้วย ผู้ให้บริการจึงได้รับเสียงสองครั้ง\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน",
+  "Recording may have stopped": "การบันทึกเสียงอาจหยุดแล้ว",
+  "Open Recly to check.": "เปิด Recly เพื่อตรวจสอบ",
+  "No one has spoken for 10 minutes.": "ไม่มีใครพูดมา 10 นาทีแล้ว",
+  "Recording stopped: battery low": "หยุดบันทึกเสียงแล้ว: แบตเตอรี่เหลือน้อย",
+  "Recording alerts": "การแจ้งเตือนการบันทึกเสียง",
+  "Recording paused": "หยุดบันทึกเสียงชั่วคราว",
+  "Open Recly to keep recording.": "เปิด Recly เพื่อบันทึกเสียงต่อ"
 }
