@@ -1000,12 +1000,9 @@ public final class SegmentedRecorder {
     /// microphone back. One attempt, with the reason and the moment the input was lost, so the gap
     /// it writes spans the whole wait; a failure waits again for the next time. No timer: a
     /// suspended app runs none.
-    ///
-    /// Also the `.ended` an interruption never delivered (see [AudioInput.becameActive]).
     public func becameActive() {
         control.async { [weak self] in
             guard let self else { return }
-            input.becameActive()
             let owed = lock.withLock { self.awaiting.flatMap { self.session === $0.session ? $0 : nil } }
             guard let owed else { return }
             reattach(owed.session, reason: owed.reason, lostAt: owed.lostAt, attempt: Self.reattachRetries)

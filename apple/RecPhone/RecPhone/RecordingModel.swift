@@ -983,7 +983,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 // A recording that waits to resume takes the microphone back now, the one moment
-                // it can — and one an interruption left silenced without an end is restarted.
+                // it can.
                 self.recorder?.becameActive()
                 _ = self.runner?.run()
                 // The system may have installed the speech assets while the app was away.

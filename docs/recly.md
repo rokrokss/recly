@@ -3561,8 +3561,10 @@ macOS.
   `silenced` is closed only after a real restart succeeds, and the reconnect interval is recorded in `gaps`. Late notifications for a recording that has ended are ignored.
   Loss or reset of the OS audio service saves the audio so far and ends the recording. Following Apple's guidelines, the next recording starts with a user action.
   A restart that runs out of attempts waits for the app to become active instead of ending the recording (`SegmentedRecorder.becameActive()`,
-  from the shells' `didBecomeActive` observers), and an interruption whose end notification never came is taken then as ended without
-  `shouldResume` (`interruption_no_resume`) — §1 "Long recordings — watchdog · reminders · battery stop · waiting to resume".
+  from the shells' `didBecomeActive` observers) — §1 "Long recordings — watchdog · reminders · battery stop · waiting to resume".
+  Becoming active does not end an interruption that is still open: the user may open the app in the middle of the call, when the
+  microphone cannot be had, and the `.ended` that follows is what resumes (2026-10-27). An `.ended` that never comes leaves the
+  recording silenced; the watchdog says so.
 - **Long-recording notices**: `RecordingNotices` (RecKit) follows the recorder's `onEvent` stream on the iPhone, the watch and the Mac —
   the watchdog, reminders scheduled at start for 2 h … 12 h (11 requests, under iOS's 64 pending), the battery check every 60 s
   (`UIDevice` / `WKInterfaceDevice`) and the pause. Pending notices a killed run left are withdrawn at launch; delivered ones stay.

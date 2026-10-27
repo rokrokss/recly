@@ -61,21 +61,6 @@ final class IOSAudioInputTests: XCTestCase {
         XCTAssertEqual(interruption.notified(userInfo(.began)), .ignore)
     }
 
-    /// The app came to the front and the `.ended` never did: taken as one without `.shouldResume`,
-    /// so a silenced recording is restarted rather than left silent for good — once.
-    func testComingToTheFrontEndsAnInterruptionThatNeverEnded() {
-        XCTAssertEqual(interruption.notified(userInfo(.began)), .silenced)
-
-        XCTAssertEqual(interruption.activated(), .resumeByRestart(reason: Interruption.noResume))
-        XCTAssertEqual(interruption.activated(), .ignore)
-        XCTAssertEqual(interruption.notified(userInfo(.ended, options: .shouldResume)), .ignore)
-    }
-
-    /// Coming to the front with no interruption open asks for nothing.
-    func testComingToTheFrontWithoutAnInterruptionIsIgnored() {
-        XCTAssertEqual(interruption.activated(), .ignore)
-    }
-
     /// A notification with nothing this understands in it changes nothing.
     func testANotificationWithoutATypeIsIgnored() {
         XCTAssertEqual(interruption.notified(nil), .ignore)

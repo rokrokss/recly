@@ -172,13 +172,6 @@ final class IOSAudioInput: AudioInput {
         }
     }
 
-    func becameActive() {
-        control.async { [weak self] in
-            guard let self, !mediaServicesLost else { return }
-            act(on: interruption.activated())
-        }
-    }
-
     private func observe() {
         let token = generation
         func subscribe(_ name: Notification.Name, object: Any? = nil, action: @escaping (IOSAudioInput, Notification) -> Void) {
@@ -335,13 +328,6 @@ struct Interruption: Equatable {
         @unknown default:
             return .ignore
         }
-    }
-
-    /// The app came to the front with an interruption still open. The system does not promise an
-    /// `.ended`, and a recording silenced by one that never came would stay silenced for good — so
-    /// this is that `.ended`, without `.shouldResume`: the restart path and its `gaps` entry.
-    mutating func activated() -> Action {
-        notified([AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.ended.rawValue])
     }
 
     /// A route change or an engine configuration change — a Bluetooth headset connecting, say.
