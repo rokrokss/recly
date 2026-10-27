@@ -13,6 +13,7 @@ import app.recly.windows.record.Completion
 import app.recly.windows.record.LiveWaveform
 import app.recly.windows.ui.component.BadgeTone
 import java.io.File
+import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,7 +39,10 @@ import recly.core.job.JobStatus
 class ShellParityTest {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val dir = File("build/shell-parity")
+    // One directory for each test: Windows does not delete the database a model left open, and a later test that
+    // loaded the same directory found the earlier recordings' jobs in it (2026-10-27, the helper-death test saw a job
+    // row before its own recording had even started).
+    private val dir = File("build/shell-parity/${UUID.randomUUID()}")
 
     @AfterTest
     fun tearDown() {
