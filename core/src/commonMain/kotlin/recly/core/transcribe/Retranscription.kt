@@ -6,8 +6,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import recly.core.drive.FolderMarker
 import recly.core.drive.string
+import recly.core.job.Job
 import recly.core.job.JobService
 import recly.core.job.JobStatus
+import recly.core.job.StepReport
 import recly.core.model.RecordingStatus
 import recly.core.model.Track
 import recly.core.platform.CoreDeps
@@ -23,7 +25,10 @@ sealed interface RetranscribeResult {
     /** Queued as [jobId]; it shows in the job observation like any other, flagged `Job.retranscription`. */
     data class Started(val jobId: String) : RetranscribeResult
 
-    /** A job of this recording has not settled yet — it may be writing the transcript right now. */
+    /**
+     * A job of this recording has not settled yet — it may be writing the transcript right now. One with only
+     * its notes left, not running them now, does not count (docs/10 "Re-transcription").
+     */
     data object Busy : RetranscribeResult
 
     /** The audio is neither on this device nor anywhere it can be fetched from. */
@@ -61,7 +66,7 @@ internal class Retranscription(
         val folderId = folderOf(record) ?: return RetranscribeResult.Unsupported
         val plan = plan(recordingId) ?: return RetranscribeResult.NoTranscriptionConfigured
         // Asked again, atomically, by the enqueue; this one only spares a download that would be refused.
-        if (jobs.list().any { it.recordingId == recordingId && it.status !in SETTLED }) return RetranscribeResult.Busy
+        if (jobs.list().any { it.recordingId == recordingId && inTheWay(it) }) return RetranscribeResult.Busy
         if (!audioHere(record)) return RetranscribeResult.NoAudio
         // The durable results and checkpoints of the re-transcription this one replaces, named by its step runs.
         val replaced = jobs.list().filter { it.recordingId == recordingId && it.retranscription }
@@ -83,6 +88,13 @@ internal class Retranscription(
         }
         return RetranscribeResult.Started(job.id)
     }
+
+    /**
+     * A job that has not settled, unless all it has left is its notes (docs/08 "Organizing") and it is not running
+     * them now: the enqueue settles such a job instead ([recly.core.job.JobStore.enqueueRetranscription]).
+     */
+    private suspend fun inTheWay(job: Job): Boolean =
+        job.status !in SETTLED && (job.status == JobStatus.RUNNING || !StepReport.notesOnly(job.workflow, jobs.steps(job.id)))
 
     /** The plan a retry of a re-transcription runs (docs/10 "Retry"): the current settings again. */
     suspend fun plan(recordingId: String): recly.core.model.Workflow? {

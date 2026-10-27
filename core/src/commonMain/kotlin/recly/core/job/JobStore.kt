@@ -78,13 +78,26 @@ class JobStore(
      * docs/10 "Re-transcription": a new job of [plan] for a finished recording — whatever its parts, which
      * the caller has made sure are here. Null, and nothing written, while any job of the recording has
      * not settled (`DONE`, `FAILED`, `SKIPPED_SHORT`): it may be writing the very transcript this would
-     * replace. An earlier re-transcription of the recording, settled, is replaced — one job per
+     * replace. A job with only its notes left ([StepReport.notesOnly], docs/08 "Organizing") that is not
+     * running writes no transcript and is not in the way: it is settled here instead — what is left of it
+     * `SKIPPED`, the job `DONE` — so it never organizes a transcript about to be replaced; [plan] makes the
+     * notes again. An earlier re-transcription of the recording, settled, is replaced — one job per
      * `(recording, workflow)` still holds, and the newest job is the one a list shows.
      */
     suspend fun enqueueRetranscription(recordingId: String, plan: Workflow, now: Instant): Job? = locked {
         db.transactionWithResult {
             val jobs = queries.selectJobsByRecording(recordingId).executeAsList()
-            if (jobs.any { it.status !in SETTLED }) return@transactionWithResult null
+            val open = jobs.filter { it.status !in SETTLED }
+                .map { job -> job to queries.selectStepRunsByJob(job.id).executeAsList().map { it.toStepRun() } }
+            val notesOnly = open.filter { (job, steps) ->
+                job.status != JobStatus.RUNNING.name && StepReport.notesOnly(job.workflowOrNull(), steps)
+            }
+            if (notesOnly.size < open.size) return@transactionWithResult null
+            notesOnly.forEach { (job, steps) ->
+                steps.filter { it.status != StepStatus.SUCCEEDED && it.status != StepStatus.SKIPPED }
+                    .forEach { writeStep(it.copy(status = StepStatus.SKIPPED, nextAttemptAt = null, lastError = null)) }
+                queries.updateJobStatus(JobStatus.DONE.name, null, now.isoUtc(), job.id)
+            }
             jobs.filter { it.workflow_id == plan.id }.forEach {
                 queries.deleteStepRunsByJob(it.id)
                 queries.deleteJobById(it.id)
@@ -331,11 +344,13 @@ class JobStore(
      * check and the write are one transaction. `RecordingRepository.delete` removes the rows in a
      * transaction of its own, and SQLite has a single writer — so a claim that comes second finds
      * nothing, and a deletion that comes second has stopped the run first (`Executor.stopping`).
-     * Returns false when the job went with its recording since `selectDue`.
+     * Returns false when the job went with its recording since `selectDue`, or was settled since — a
+     * re-transcription settles a job that had only its notes left ([enqueueRetranscription]).
      */
     suspend fun claimRunning(jobId: String, now: Instant): Boolean = locked {
         db.transactionWithResult {
-            if (queries.selectJobById(jobId).executeAsOneOrNull() == null) {
+            val row = queries.selectJobById(jobId).executeAsOneOrNull()
+            if (row == null || row.status in SETTLED) {
                 return@transactionWithResult false
             }
             queries.updateJobStatus(JobStatus.RUNNING.name, null, now.isoUtc(), jobId)

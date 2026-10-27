@@ -2163,9 +2163,10 @@ for anyone else nothing in this section happens.
   `CHATGPT_SIGN_IN_REQUIRED` — OpenAI ended the sign-in — six hours between tries (the step's `retry.maxDelaySec` is a day);
   anything else takes the usual backoff. Signing in again lets a step waiting for a sign-in or a plan go at the next pass. After 8
   tries the step fails with `onError: continue` and the job is done without notes. A job with only its notes left
-  (`StepReport.notesOnly`) is shown as done, is no transcription in the way of an edit or a fill (§8 "Editing"), and is not in the
-  folder's `pending` marker (§3).
-- **A transcription again** (§10 "Re-transcription") makes the notes again; deleted items stay deleted.
+  (`StepReport.notesOnly`) is shown as done, is no transcription in the way of an edit or a fill (§8 "Editing") or of a transcription
+  again unless its notes are being made right now (§10 "Re-transcription"), and is not in the folder's `pending` marker (§3).
+- **A transcription again** (§10 "Re-transcription") makes the notes again; deleted items stay deleted. Notes still waiting from before
+  are closed when it is queued, never made from the transcript it replaces.
 - **Model and request.** The model Settings → ChatGPT picked for summaries, for both passes. The request is a summary's
   (`POST /v1/responses`, `store: false`, streamed, the same errors; §15 §10); every answer is one JSON object, read leniently, as a
   fill's (§8 "Titles and speaker names").
@@ -3201,7 +3202,10 @@ and here. It works for this device's own recordings, uploaded and done, and for 
   settled, the sweep keeps the parts (it needs every job of the recording done); afterwards another device's recording ages by its file
   clock again.
 - **Results**: `Started(jobId)`; `Busy` — a job of the recording has not settled (`DONE`, `FAILED`, `SKIPPED_SHORT`), checked again in the
-  enqueue's transaction; `NoAudio` — not here and not fetchable; `NoTranscriptionConfigured` — transcription is off; `Unsupported` — not a
+  enqueue's transaction. A job with only its notes left (`StepReport.notesOnly`, §8 "Organizing") that is not running them right now is
+  not in the way: the same transaction settles it — what is left of it `SKIPPED`, the job `DONE` — so it never organizes a transcript about
+  to be replaced, and a pass that picked it up before finds it settled (`JobStore.claimRunning`); one running them is `Busy` until they
+  end. `NoAudio` — not here and not fetchable; `NoTranscriptionConfigured` — transcription is off; `Unsupported` — not a
   finished recording with a folder: still recording, importing, arriving from the watch, being uploaded elsewhere, never uploaded, or no
   such recording.
 - **Account and storage**: a `transcript.publish` into a Drive folder counts as Drive work (`uploadsToDrive`), so the job is bound to the
@@ -3367,7 +3371,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Import (`AudioImportTest`) | the importing row, staging, parts named and finalized at once, the plan queued; unreadable · unsupported · cancelled leave nothing; recovery leaves an import in progress alone and drops an abandoned one |
 | Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next, no retry on the old plan with transcription off, a failed folder stamp fails and is retried, `Started` after a cancellation once queued |
 | Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
-| Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; append-only items across parts, repeats and deletions; quote check; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again |
+| Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; append-only items across parts, repeats and deletions; quote check; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again, which waiting notes do not hold up and which closes them |
 | Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
 | Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT |
 

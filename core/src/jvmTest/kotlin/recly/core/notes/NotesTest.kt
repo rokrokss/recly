@@ -26,8 +26,10 @@ import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptHarness
+import recly.core.db.RecDatabase
 import recly.core.job.EnqueueResult
 import recly.core.job.JobStatus
+import recly.core.job.JobStore
 import recly.core.job.StepReport
 import recly.core.job.StepStatus
 import recly.core.message.CoreMessage
@@ -575,5 +577,43 @@ class NotesTest {
         assertEquals(emptyList(), again.todos)
         assertEquals(listOf("Able price?"), again.questions.map { it.text })
         assertNotEquals(first, again)
+    }
+
+    @Test
+    fun `notes waiting out a usage limit do not hold up a transcription again, which closes them`() = runBlocking {
+        ready()
+        engine.answer = { listOf(SttSegment(0.0, 30.0, "spk-a", speech("alpha"))) }
+        usageLimit()
+        val meta = f.record()
+        f.core.enqueue(meta.recordingId)
+        f.drain()
+        val waiting = job()
+        assertEquals(JobStatus.WAITING, waiting.status)
+        assertTrue(StepReport.notesOnly(waiting.workflow, f.core.jobs.steps(waiting.id)))
+
+        val store = JobStore(RecDatabase(f.driver), f.deps)
+        store.updateJob(waiting.id, JobStatus.RUNNING, null, f.clock.now())
+        assertEquals(RetranscribeResult.Busy, f.core.retranscribe(meta.recordingId), "notes being made right now are in the way")
+        store.updateJob(waiting.id, JobStatus.WAITING, waiting.nextRunAt, f.clock.now())
+
+        val started = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
+        assertEquals(JobStatus.DONE, job().status, "the old job is settled")
+        val closed = organizeStep(waiting.id)
+        assertEquals(StepStatus.SKIPPED, closed.status)
+        assertNull(closed.nextAttemptAt)
+        assertNull(closed.lastError)
+        assertFalse(store.claimRunning(waiting.id, f.clock.now()), "a pass that picked it up before is refused")
+        assertEquals(JobStatus.DONE, job().status)
+        assertEquals(RetranscribeResult.Busy, f.core.retranscribe(meta.recordingId), "the transcription again has real work left")
+
+        answer(conversation("Alpha again.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
+        f.drain()
+        f.clock.advance(6.hours)
+        f.drain()
+
+        assertEquals(JobStatus.DONE, f.core.jobs.list().single { it.id == started.jobId }.status)
+        assertEquals(StepStatus.SKIPPED, organizeStep(waiting.id).status, "the closed step never ran")
+        assertEquals(2, responses().size, "the limit, then the transcription again's notes")
+        assertEquals("Alpha again.", notes.get(meta.recordingId).overview)
     }
 }
