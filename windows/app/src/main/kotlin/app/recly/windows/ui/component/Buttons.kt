@@ -29,9 +29,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -52,6 +56,7 @@ import app.recly.windows.ui.theme.mono
 import app.recly.windows.ui.theme.processingHoldMs
 import app.recly.windows.ui.theme.processingPhase
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 /** docs/09: square, bordered, never a pill. Four weights is all this shell needs. */
 enum class ButtonTone { PRIMARY, ACCENT, QUIET, DANGER }
@@ -136,7 +141,27 @@ fun BlueprintButton(
             // A label that will not fit is cut with a mark that says so — a Korean button label is
             // half again as long as the English one, and a 640dp window is where that shows.
             overflow = TextOverflow.Ellipsis,
+            modifier = if (monospace) Modifier.onLabelBaseline() else Modifier,
         )
+    }
+}
+
+/**
+ * A 14 label in monospace — a time, a speed, a speaker's id — set on the baseline a button's sans label has in the
+ * same box, so the controls in one row share one baseline whatever the two faces are (2026-10-27). Centred by its own
+ * ascent and descent instead, Consolas sat a pixel and a half above Segoe UI on Windows, where SF Mono and SF agree:
+ * the box is a sans label's — one line of it, and each further line of the label — with the label's first baseline on
+ * the sans one, so it centres as a sans label does. Ink that reaches past the sans face's ascent or descent hangs over.
+ */
+@Composable
+internal fun Modifier.onLabelBaseline(): Modifier {
+    val measurer = rememberTextMeasurer(cacheSize = 0)
+    val sansStyle = MaterialTheme.typography.labelLarge
+    val sans = remember(measurer, sansStyle) { measurer.measure("A", sansStyle) }
+    return layout { measurable, constraints ->
+        val text = measurable.measure(constraints)
+        val height = sans.size.height + text[LastBaseline] - text[FirstBaseline]
+        layout(text.width, height) { text.place(0, sans.firstBaseline.roundToInt() - text[FirstBaseline]) }
     }
 }
 

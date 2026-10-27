@@ -56,6 +56,7 @@ import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SwitchTrack
 import app.recly.windows.ui.component.focusRing
+import app.recly.windows.ui.component.onLabelBaseline
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
@@ -439,6 +440,7 @@ internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, re
             style = if (name != null) MaterialTheme.typography.labelLarge else mono.bodySmall,
             color = palette.textMuted,
             maxLines = 1,
+            modifier = if (name != null) Modifier else Modifier.onLabelBaseline(),
         )
     }
 }
@@ -600,7 +602,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
         ) {
             // The buttons' 14 beside it, in monospace: one baseline along the bar (2026-10-09). A number, left to right
             // in every language (2026-10-10).
-            Text(label, style = mono.bodySmall.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
+            Text(label, style = mono.bodySmall.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s).onLabelBaseline())
             if (skipSilence) {
                 Box(Modifier.align(Alignment.TopEnd).padding(Space.xs).size(6.dp).background(palette.accent, RoundedCornerShape(Radius.badge)))
             }

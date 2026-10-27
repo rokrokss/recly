@@ -249,7 +249,7 @@ internal fun CitedText(
  * around them the box a press plays it from.
  */
 internal data class CitationTarget(val run: Int, val glyphs: Rect) {
-    /** At least [reach] each way, centred on the words: it reaches over the lines next to it, where [citationHit] decides. */
+    /** At least [reach] each way, centred on the words and their line: it reaches over the lines next to it, where [citationHit] decides. */
     fun area(reach: Float): Rect {
         val width = maxOf(glyphs.width, reach)
         val height = maxOf(glyphs.height, reach)
@@ -267,14 +267,18 @@ internal data class CitationTarget(val run: Int, val glyphs: Rect) {
 internal fun citationHit(point: Offset, targets: List<CitationTarget>, reach: Float): CitationTarget? =
     targets.filter { it.area(reach).contains(point) }.minByOrNull { it.distance(point) }
 
-/** The box around the characters [start] to [end] on each line they are on — one, unless a time wraps. */
+/**
+ * The box around the characters [start] to [end] on each line they are on — one, unless a time wraps: across, the
+ * characters' own; up and down, the line's own top and bottom. A character's box is its own face's ascent and descent,
+ * and the time's monospace face is not the line's sans one: centred on it, a target reached 20 above the line and 23
+ * below on Windows (2026-10-27, Consolas in Segoe UI). The line is the same box whatever the two faces are.
+ */
 private fun citationTargets(layout: TextLayoutResult, run: Int, start: Int, end: Int): List<CitationTarget> =
-    (start until end).groupBy(layout::getLineForOffset).values.map { offsets ->
+    (start until end).groupBy(layout::getLineForOffset).map { (line, offsets) ->
+        val characters = offsets.map(layout::getBoundingBox)
         CitationTarget(
             run,
-            offsets.map(layout::getBoundingBox).reduce { a, b ->
-                Rect(minOf(a.left, b.left), minOf(a.top, b.top), maxOf(a.right, b.right), maxOf(a.bottom, b.bottom))
-            },
+            Rect(characters.minOf { it.left }, layout.getLineTop(line), characters.maxOf { it.right }, layout.getLineBottom(line)),
         )
     }
 
