@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">L’enregistrement s’est peut-être arrêté</string>
     <string name="rec_watchdog_body">Ouvrez Recly pour vérifier.</string>
     <string name="rec_reminder_title">Enregistrement en cours</string>
-    <string name="rec_reminder_body">Durée d’enregistrement : %1$s</string>
+    <string name="rec_reminder_body">Personne n’a parlé depuis 10 minutes.</string>
     <string name="rec_battery_stop_title">Enregistrement arrêté : batterie faible</string>
 </resources>

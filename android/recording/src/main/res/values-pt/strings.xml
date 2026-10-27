@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">A gravação pode ter parado</string>
     <string name="rec_watchdog_body">Abra o Recly para verificar.</string>
     <string name="rec_reminder_title">Ainda gravando</string>
-    <string name="rec_reminder_body">Tempo de gravação: %1$s</string>
+    <string name="rec_reminder_body">Ninguém falou nos últimos 10 minutos.</string>
     <string name="rec_battery_stop_title">Gravação interrompida: bateria fraca</string>
 </resources>

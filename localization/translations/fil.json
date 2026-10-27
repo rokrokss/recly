@@ -570,7 +570,7 @@
   "Could not fill in speaker names": "Hindi mapunan ang mga pangalan ng nagsasalita",
   "Recording may have stopped": "Maaaring huminto ang pagre-record",
   "Open Recly to check.": "Buksan ang Recly para tingnan.",
-  "Recording time: {0}": "Tagal ng pagre-record: {0}",
+  "No one has spoken for 10 minutes.": "Walang nagsalita sa loob ng 10 minuto.",
   "Recording stopped: battery low": "Huminto ang pagre-record: mahina ang baterya",
   "Recording alerts": "Mga alerto sa pagre-record",
   "Recording paused": "Naka-pause ang pagre-record",

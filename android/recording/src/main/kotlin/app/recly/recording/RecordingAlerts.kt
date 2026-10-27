@@ -18,8 +18,8 @@ import recly.core.platform.Logger
 
 /**
  * What a long recording tells the user while nobody is looking at it (docs/11 ":android:recording"):
- * that it may have died, that it is still going, and that the battery ended it. Each is its own
- * notification in a channel of its own, apart from the ongoing one.
+ * that it may have died, that it is still going with nobody speaking ([SilenceReminder]), and that
+ * the battery ended it. Each is its own notification in a channel of its own, apart from the ongoing one.
  *
  * The rules are the pure functions at the bottom, so `RecordingAlertsTest` can hold them on the JVM.
  */
@@ -81,16 +81,6 @@ internal object RecordingAlerts {
     fun watchdogDelayMs(segmentSec: Int): Long = WATCHDOG_SEGMENTS * segmentSec * 1000L
 
     /**
-     * How long from [elapsedMs] into a recording until its next reminder: at [FIRST_REMINDER_HOURS],
-     * then on every whole hour after. From the elapsed time each time rather than counted up, so a
-     * reminder that came late does not make the next ones come in a burst.
-     */
-    fun reminderDelayMs(elapsedMs: Long): Long {
-        val hours = maxOf(FIRST_REMINDER_HOURS, elapsedMs / HOUR_MS + 1)
-        return hours * HOUR_MS - elapsedMs
-    }
-
-    /**
      * Stop before the phone or watch shuts itself down mid-segment, which would cost everything since
      * the last boundary. Not while it charges: then the level only goes up. A level the platform
      * cannot read (-1) stops nothing.
@@ -106,9 +96,7 @@ internal object RecordingAlerts {
     fun batteryStops(startedLow: Boolean, level: Int, scale: Int, plugged: Int): Boolean =
         !startedLow && batteryTooLow(level, scale, plugged)
 
-    const val HOUR_MS: Long = 3_600_000L
     private const val WATCHDOG_SEGMENTS = 2
-    private const val FIRST_REMINDER_HOURS = 2L
     private const val BATTERY_STOP_PERCENT = 5
 }
 

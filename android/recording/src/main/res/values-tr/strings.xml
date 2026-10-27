@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">Kayıt durmuş olabilir</string>
     <string name="rec_watchdog_body">Kontrol etmek için Recly\'yi açın.</string>
     <string name="rec_reminder_title">Kayıt sürüyor</string>
-    <string name="rec_reminder_body">Kayıt süresi: %1$s</string>
+    <string name="rec_reminder_body">10 dakikadır kimse konuşmadı.</string>
     <string name="rec_battery_stop_title">Kayıt durduruldu: pil zayıf</string>
 </resources>

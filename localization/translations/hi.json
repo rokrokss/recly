@@ -570,7 +570,7 @@
   "Could not fill in speaker names": "वक्ताओं के नाम नहीं भरे जा सके",
   "Recording may have stopped": "रिकॉर्डिंग शायद रुक गई है",
   "Open Recly to check.": "जाँचने के लिए Recly खोलें।",
-  "Recording time: {0}": "रिकॉर्डिंग का समय: {0}",
+  "No one has spoken for 10 minutes.": "10 मिनट से किसी ने कुछ नहीं बोला।",
   "Recording stopped: battery low": "रिकॉर्डिंग रुकी: बैटरी कम है",
   "Recording alerts": "रिकॉर्डिंग अलर्ट",
   "Recording paused": "रिकॉर्डिंग रुकी हुई है",

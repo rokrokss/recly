@@ -570,7 +570,7 @@
   "Could not fill in speaker names": "تعذّر ملء أسماء المتحدثين",
   "Recording may have stopped": "ربما توقف التسجيل",
   "Open Recly to check.": "افتح Recly للتحقق.",
-  "Recording time: {0}": "مدة التسجيل: {0}",
+  "No one has spoken for 10 minutes.": "لم يتحدث أحد منذ 10 دقائق.",
   "Recording stopped: battery low": "توقف التسجيل: البطارية منخفضة",
   "Recording alerts": "تنبيهات التسجيل",
   "Recording paused": "توقف التسجيل مؤقتًا",

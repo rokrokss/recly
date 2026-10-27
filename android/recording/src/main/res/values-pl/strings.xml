@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">Nagrywanie mogło zostać zatrzymane</string>
     <string name="rec_watchdog_body">Otwórz Recly, aby sprawdzić.</string>
     <string name="rec_reminder_title">Nagrywanie trwa</string>
-    <string name="rec_reminder_body">Czas nagrywania: %1$s</string>
+    <string name="rec_reminder_body">Od 10 minut nikt nic nie mówi.</string>
     <string name="rec_battery_stop_title">Nagrywanie zatrzymane: niski poziom baterii</string>
 </resources>

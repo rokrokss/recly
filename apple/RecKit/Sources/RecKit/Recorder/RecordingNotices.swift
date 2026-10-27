@@ -13,8 +13,9 @@ import WatchKit
 ///
 /// - **The dead-man**, two segments after the start and pushed back at every boundary. A recording
 ///   that runs never lets it fire; a process that died cannot withdraw it, which is the point.
-/// - **The reminders**, at 2 h, 3 h … 12 h from the start, each with a Stop that asks nothing —
-///   eleven requests, well under iOS's 64 pending.
+/// - **The reminder**, posted the moment the recorder has heard nobody speak for ten minutes
+///   ([RecorderEvent.nobodySpeaking]), with a Stop that asks nothing. Never scheduled ahead: only
+///   the audio can say it is due, and the recording process runs in the background to hear it.
 /// - **The battery stop** (iPhone, watch): checked every minute, and at 5 % or less with no charger
 ///   the recording is stopped and filed before the device shuts down in the middle of a segment —
 ///   unless it started that low ([batteryStops]).
@@ -34,7 +35,7 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     private let stopKey: String
     private let logger: any ReclyCore.Logger
     private let center: AlertCenter
-    private var recording: (id: String, startedAt: Date, segmentSec: Int)?
+    private var recording: (id: String, segmentSec: Int)?
     private var waiting = false
     /// Every call to Notification Center, one after the other: a withdraw that overtook the post
     /// queued before it would leave the dead-man armed over a recording that waits.
@@ -68,17 +69,7 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     /// `RecordingAlerts` says the same).
     static func deadManDelaySec(segmentSec: Int) -> TimeInterval { TimeInterval(2 * segmentSec) }
 
-    static let reminderHours = 2 ... 12
     static let batteryCheckSec: TimeInterval = 60
-
-    /// The reminders still ahead of [now], counted from the start: a recording that resumed at
-    /// 3 h 20 min is reminded at 4 h, and an hour already behind is not said late.
-    static func reminders(startedAt: Date, now: Date) -> [(hour: Int, delaySec: TimeInterval)] {
-        reminderHours.compactMap { hour in
-            let delay = startedAt.addingTimeInterval(TimeInterval(hour) * 3600).timeIntervalSince(now)
-            return delay > 0 ? (hour, delay) : nil
-        }
-    }
 
     /// Not while it charges — the level only goes up then — and never on a level the platform
     /// cannot read (−1).
@@ -93,23 +84,12 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
         batteryLow(level: level, unplugged: unplugged) && !batteryLow(level: startLevel, unplugged: startUnplugged)
     }
 
-    /// The whole hours a reminder names, the system's way, in the app's language ("2 hr", "2시간").
-    static func hours(_ hour: Int) -> String {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour]
-        formatter.unitsStyle = .short
-        var calendar = Calendar.current
-        calendar.locale = AppLanguage.locale
-        formatter.calendar = calendar
-        return formatter.string(from: TimeInterval(hour) * 3600) ?? "\(hour)"
-    }
-
     // MARK: - The recorder's events
 
     public func apply(_ event: RecorderEvent) {
         switch event {
-        case .started(let id, let at, let segmentSec):
-            recording = (id, at, segmentSec)
+        case .started(let id, let segmentSec):
+            recording = (id, segmentSec)
             waiting = false
             let category = Self.category(stop: AppStrings.localized(stopKey))
             then { [center] in
@@ -118,17 +98,27 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
                 _ = await center.authorize()
                 await center.register(category)
             }
-            arm()
+            post(deadMan(segmentSec: segmentSec))
             startBatteryChecks()
 
         case .partFiled:
             guard let recording, !waiting else { return }
             post(deadMan(segmentSec: recording.segmentSec))
 
+        case .nobodySpeaking:
+            guard let recording, !waiting else { return }
+            post(notice(
+                Self.reminderId,
+                title: RecKitStrings.localized("Still recording"),
+                body: RecKitStrings.localized("No one has spoken for 10 minutes."),
+                recordingId: recording.id,
+                category: Self.reminderCategory
+            ))
+
         case .awaitingResume:
             guard let recording else { return }
             waiting = true
-            withdraw([Self.deadManId] + Self.reminderHours.map(Self.reminderId))
+            withdraw([Self.deadManId, Self.reminderId])
             post(notice(
                 Self.pausedId,
                 title: RecKitStrings.localized("Recording paused"),
@@ -138,10 +128,10 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
             ))
 
         case .resumed:
-            guard recording != nil else { return }
+            guard let recording else { return }
             waiting = false
             withdraw([Self.pausedId])
-            arm()
+            post(deadMan(segmentSec: recording.segmentSec))
 
         case .ended:
             recording = nil
@@ -176,7 +166,7 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     }
 
     /// No recording outlives the process that made it, so what a killed run left pending — its
-    /// dead-man, its reminders — is withdrawn at launch. Pending only: a dead-man that has fired is
+    /// dead-man — is withdrawn at launch. Pending only: a dead-man that has fired is
     /// news the person may not have seen yet, and the watch is launched in the background too.
     public static func withdrawPending() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: scheduledIds)
@@ -195,22 +185,6 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     }
 
     // MARK: - Notification Center
-
-    /// The dead-man from now, and the reminders still ahead.
-    private func arm() {
-        guard let recording else { return }
-        post(deadMan(segmentSec: recording.segmentSec))
-        for (hour, delay) in Self.reminders(startedAt: recording.startedAt, now: Date()) {
-            post(notice(
-                Self.reminderId(hour),
-                title: RecKitStrings.localized("Still recording"),
-                body: RecKitStrings.localized("Recording time: %@", Self.hours(hour)),
-                recordingId: recording.id,
-                after: delay,
-                category: Self.reminderCategory
-            ))
-        }
-    }
 
     private func deadMan(segmentSec: Int) -> UNNotificationRequest {
         notice(
@@ -335,12 +309,12 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     static let deadManId = "recording.deadman"
     static let pausedId = "recording.paused"
     static let batteryId = "recording.battery"
-    static func reminderId(_ hour: Int) -> String { "recording.reminder.\(hour)" }
+    static let reminderId = "recording.reminder"
     public static let reminderCategory = "recording.reminder"
     static let stopAction = "recording.stop"
     private static let recordingKey = "recordingId"
     /// What a stop withdraws: everything but the battery notice, which is posted by the stop itself.
-    static let scheduledIds = [deadManId, pausedId] + reminderHours.map(reminderId)
+    static let scheduledIds = [deadManId, pausedId, reminderId]
 
     // MARK: - UNUserNotificationCenterDelegate (the watch)
 

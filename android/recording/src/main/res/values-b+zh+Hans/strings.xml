@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">录音可能已停止</string>
     <string name="rec_watchdog_body">打开Recly查看。</string>
     <string name="rec_reminder_title">仍在录音</string>
-    <string name="rec_reminder_body">录音时长：%1$s</string>
+    <string name="rec_reminder_body">已经10分钟没有人说话了。</string>
     <string name="rec_battery_stop_title">电量不足，录音已停止</string>
 </resources>

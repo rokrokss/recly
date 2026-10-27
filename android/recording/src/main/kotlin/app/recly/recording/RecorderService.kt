@@ -12,11 +12,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
-import android.icu.text.MeasureFormat
-import android.icu.util.Measure
-import android.icu.util.MeasureUnit
 import android.os.BatteryManager
-import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.IconCompat
 import kotlin.time.ExperimentalTime
@@ -64,8 +60,7 @@ class RecorderService : Service() {
     /** The level poller, for as long as the microphone is open — see [livePeaks]. */
     private var levels: Job? = null
 
-    /** The long-recording reminder and the battery watch, for as long as the recording runs — see [startAlerts]. */
-    private var reminders: Job? = null
+    /** The battery watch, for as long as the recording runs — see [startAlerts]. */
     private var battery: BroadcastReceiver? = null
 
     override fun onBind(intent: Intent?) = null
@@ -152,15 +147,20 @@ class RecorderService : Service() {
      * recording" at all.
      *
      * It runs on the watch too, whose screen never draws them; polling an integer ten times a
-     * second is cheaper than a shell flag to turn it off with.
+     * second is cheaper than a shell flag to turn it off with. On both, the same windows are what the
+     * long-recording reminder listens to ([SilenceReminder]).
      */
     private fun startLevels(recorder: SegmentedRecorder) {
         waveform.reset()
         levels = scope.launch {
+            val silence = SilenceReminder()
             try {
                 while (true) {
                     delay(LEVEL_MS)
-                    recorder.peakSinceLastAsk()?.let { waveform.add(it) }
+                    recorder.peakSinceLastAsk()?.let {
+                        waveform.add(it)
+                        if (silence.add(it)) postReminder()
+                    }
                 }
             } finally {
                 // Also the way a service that is being destroyed leaves it: nothing is recording,
@@ -184,19 +184,13 @@ class RecorderService : Service() {
     }
 
     /**
-     * docs/11 ":android:recording": the three alerts of a long recording. The watchdog is an alarm
-     * because it has to outlive this process — saying the process died is its whole job; the reminder
-     * and the battery watch need the process, which a running recording keeps alive.
+     * docs/11 ":android:recording": two of the three alerts of a long recording; the reminder listens
+     * on the level poller ([startLevels]). The watchdog is an alarm because it has to outlive this
+     * process — saying the process died is its whole job; the battery watch needs the process, which
+     * a running recording keeps alive.
      */
     private fun startAlerts(segmentSec: Int) {
         RecordingAlerts.armWatchdog(this, segmentSec)
-        val startedMs = SystemClock.elapsedRealtime()
-        reminders = scope.launch {
-            while (true) {
-                delay(RecordingAlerts.reminderDelayMs(SystemClock.elapsedRealtime() - startedMs))
-                postReminder((SystemClock.elapsedRealtime() - startedMs) / RecordingAlerts.HOUR_MS)
-            }
-        }
         // A sticky broadcast: the level as it is now arrives at once, then every change after it.
         battery = object : BroadcastReceiver() {
             /** From that first delivery: the battery as the recording started. */
@@ -214,21 +208,18 @@ class RecorderService : Service() {
 
     private fun stopAlerts() {
         RecordingAlerts.cancelWatchdog(this)
-        reminders?.cancel()
-        reminders = null
         notificationManager().cancel(RecordingAlerts.REMINDER_ID)
         battery?.let { runCatching { unregisterReceiver(it) } }
         battery = null
     }
 
-    private fun postReminder(hours: Long) {
-        val elapsed = MeasureFormat.getInstance(resources.configuration.locales[0], MeasureFormat.FormatWidth.SHORT)
-            .format(Measure(hours, MeasureUnit.HOUR))
+    /** Ten minutes without speech ([SilenceReminder]): posted at once, with the ongoing notification's stop. */
+    private fun postReminder() {
         RecordingAlerts.post(
             this,
             RecordingAlerts.REMINDER_ID,
             getString(R.string.rec_reminder_title),
-            getString(R.string.rec_reminder_body, elapsed),
+            getString(R.string.rec_reminder_body),
             stop = stopIntent(),
         )
     }

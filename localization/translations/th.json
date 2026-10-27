@@ -570,7 +570,7 @@
   "Could not fill in speaker names": "เติมชื่อผู้พูดไม่ได้",
   "Recording may have stopped": "การบันทึกเสียงอาจหยุดแล้ว",
   "Open Recly to check.": "เปิด Recly เพื่อตรวจสอบ",
-  "Recording time: {0}": "เวลาบันทึก: {0}",
+  "No one has spoken for 10 minutes.": "ไม่มีใครพูดมา 10 นาทีแล้ว",
   "Recording stopped: battery low": "หยุดบันทึกเสียงแล้ว: แบตเตอรี่เหลือน้อย",
   "Recording alerts": "การแจ้งเตือนการบันทึกเสียง",
   "Recording paused": "หยุดบันทึกเสียงชั่วคราว",

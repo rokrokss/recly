@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">ریکارڈنگ شاید رک گئی ہے</string>
     <string name="rec_watchdog_body">چیک کرنے کے لیے Recly کھولیں۔</string>
     <string name="rec_reminder_title">ابھی ریکارڈنگ جاری ہے</string>
-    <string name="rec_reminder_body">ریکارڈنگ کا وقت: %1$s</string>
+    <string name="rec_reminder_body">10 منٹ سے کسی نے بات نہیں کی۔</string>
     <string name="rec_battery_stop_title">ریکارڈنگ رک گئی: بیٹری کم ہے</string>
 </resources>

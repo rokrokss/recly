@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">Запись могла остановиться</string>
     <string name="rec_watchdog_body">Откройте Recly, чтобы проверить.</string>
     <string name="rec_reminder_title">Запись ещё идёт</string>
-    <string name="rec_reminder_body">Время записи: %1$s</string>
+    <string name="rec_reminder_body">Уже 10 минут никто не говорит.</string>
     <string name="rec_battery_stop_title">Запись остановлена: низкий заряд батареи</string>
 </resources>

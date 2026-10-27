@@ -9,31 +9,11 @@ import kotlin.test.assertTrue
 class RecordingAlertsTest {
 
     private val minute = 60_000L
-    private val hour = RecordingAlerts.HOUR_MS
 
     @Test
     fun `the watchdog waits two segments, so one late boundary is not a dead recording`() {
         assertEquals(30 * minute, RecordingAlerts.watchdogDelayMs(SegmentedRecorder.DEFAULT_SEGMENT_SEC))
         assertEquals(20_000L, RecordingAlerts.watchdogDelayMs(10))
-    }
-
-    @Test
-    fun `the first reminder is at two hours`() {
-        assertEquals(2 * hour, RecordingAlerts.reminderDelayMs(0))
-        assertEquals(minute, RecordingAlerts.reminderDelayMs(2 * hour - minute))
-    }
-
-    @Test
-    fun `after the first, one every hour`() {
-        assertEquals(hour, RecordingAlerts.reminderDelayMs(2 * hour))
-        assertEquals(hour, RecordingAlerts.reminderDelayMs(5 * hour))
-    }
-
-    /** The next one is on the next whole hour, not an hour after a reminder that came late. */
-    @Test
-    fun `a late reminder does not move the ones after it`() {
-        assertEquals(30 * minute, RecordingAlerts.reminderDelayMs(2 * hour + 30 * minute))
-        assertEquals(minute, RecordingAlerts.reminderDelayMs(4 * hour - minute))
     }
 
     @Test

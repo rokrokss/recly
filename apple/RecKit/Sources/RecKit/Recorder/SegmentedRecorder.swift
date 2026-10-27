@@ -62,6 +62,8 @@ public final class SegmentedRecorder {
         /// docs/09 screen principle 6: the levels the shells draw while this recording runs. On the session,
         /// so the strip starts empty with every recording and is gone the moment one ends.
         var live = LiveWaveform()
+        /// docs/01 "Long recordings": ten minutes of the same windows without speech.
+        var quiet = SilenceReminder()
 
         init(
             recordingId: String,
@@ -320,7 +322,7 @@ public final class SegmentedRecorder {
             "segmentSec": segmentSec,
             "tracks": Self.tracks(of: mode).count,
         ])
-        emit(.started(recordingId: recordingId, at: Date(), segmentSec: segmentSec))
+        emit(.started(recordingId: recordingId, segmentSec: segmentSec))
         return recordingId
     }
 
@@ -561,7 +563,7 @@ public final class SegmentedRecorder {
     private func writeTracks(_ mic: AVAudioPCMBuffer, of session: Session) throws -> Bool {
         guard let drift = session.drift else {
             guard try session.mic.write(mic) else { return false }
-            Self.observe(mic, in: session)
+            observe(mic, in: session)
             return true
         }
         guard let sys = AVAudioPCMBuffer(pcmFormat: session.format, frameCapacity: mic.frameLength) else {
@@ -583,16 +585,22 @@ public final class SegmentedRecorder {
         for (writer, buffer) in zip(session.writers, [mic, sys, mixed]) {
             guard try writer.write(buffer) else { return false }
         }
-        Self.observe(mixed, in: session)
+        observe(mixed, in: session)
         return true
     }
 
     /// The frames a writer has just taken, into the strip the shells draw (docs/09 screen principle 6) —
     /// after the write rather than before it, so what the strip shows is what the file got. The
-    /// track a person hears: `mono` in microphone mode, `mix` in a meeting.
-    private static func observe(_ heard: AVAudioPCMBuffer, in session: Session) {
+    /// track a person hears: `mono` in microphone mode, `mix` in a meeting. Its windows are what the
+    /// silence reminder listens to, here in the process that records — in the background too, which
+    /// the audio background mode keeps running — so the notice is posted the moment it is due.
+    private func observe(_ heard: AVAudioPCMBuffer, in session: Session) {
         guard let samples = heard.floatChannelData else { return }
-        session.live.add(UnsafeBufferPointer(start: samples[0], count: Int(heard.frameLength)))
+        var remind = false
+        session.live.add(UnsafeBufferPointer(start: samples[0], count: Int(heard.frameLength))) { peak in
+            if session.quiet.add(peak) { remind = true }
+        }
+        if remind { emit(.nobodySpeaking) }
     }
 
     /// `mix` — the file the user's own AI is meant to eat, where the separate tracks are for speaker

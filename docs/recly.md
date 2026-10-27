@@ -178,13 +178,13 @@ notice is an alarm or a local notification the recording device schedules for it
 | Rule | What happens | Where |
 |---|---|---|
 | **Watchdog** | When the recording starts, a notice is scheduled `2 × segmentSec` ahead (30 min at 900 s) and pushed back at every part boundary; the stop, a fatal failure and the wait below withdraw it. If the process dies, nobody withdraws it, and it fires: `Recording may have stopped` / `Open Recly to check.` Tap → the app | phones · watches · Mac |
-| **Reminder** | At 2 h of recording, then every whole hour: `Still recording` / `Recording time: {0}` (whole hours, the system's short unit format in the app language) with one `Stop` that stops like the ongoing notification's or Live Activity's stop — no title is asked, the recording is handed over as it is. A reminder's Stop only stops the recording it was posted for | phones · watches · Mac |
+| **Reminder** | 2026-10-27: when nobody has spoken for 10 minutes while the recording runs — a recording forgotten or walked away from — `Still recording` / `No one has spoken for 10 minutes.`, posted at once, with one `Stop` that stops like the ongoing notification's or Live Activity's stop — no title is asked, the recording is handed over as it is. Once per silence: after speech, the next 10 silent minutes remind again; never during a conversation. Heard by the recording process itself from the live strip's 0.1 s peak windows (`SilenceReminder`, the same rule on Android and Apple): the floor is the quietest window of the last minute; a window sounds at ≥ floor + 10 dB and ≥ about −55 dBFS, so no microphone gain is assumed; speech is ≥ 2 s of sounding windows within the last 10 s, and only speech resets the 10 minutes (a cough, a door or a chime is shorter). A steady noise — a fan, an air conditioner — becomes the floor within a minute and counts as silence. A window of digital zero (a microphone taken away, e.g. by a call) neither counts nor resets. A reminder's Stop only stops the recording it was posted for | phones · watches · Mac |
 | **Battery stop** | Battery ≤ 5 % and not charging → the recording is stopped the same way (the open part is filed, the recording handed over), then `Recording stopped: battery low`. Not for a recording that **started** at ≤ 5 % unplugged: that was the user's choice, and stopping it at once would leave next to nothing. An unreadable level stops nothing | phones · watches |
-| **Waiting to resume** | When a restart after an interruption runs out of its 10 attempts, the recording does not end: the open part is filed where it stands, the watchdog and reminders are withdrawn, `Recording paused` / `Open Recly to keep recording.` is posted. When the app next becomes active it reattaches once; success writes one `gaps` range over the whole wait (reason unchanged) and re-arms the notices, failure keeps waiting. A stop while waiting finalizes normally. No timeout — a suspended iOS app runs no timers | iPhone · Apple Watch |
+| **Waiting to resume** | When a restart after an interruption runs out of its 10 attempts, the recording does not end: the open part is filed where it stands, the watchdog and a reminder still shown are withdrawn, `Recording paused` / `Open Recly to keep recording.` is posted. When the app next becomes active it reattaches once; success writes one `gaps` range over the whole wait (reason unchanged) and re-arms the watchdog, failure keeps waiting. No audio arrives while it waits, so the silence reminder's 10 minutes do not run. A stop while waiting finalizes normally. No timeout — a suspended iOS app runs no timers | iPhone · Apple Watch |
 
 - **No sound**: a chime would be recorded into the recording it is about. Android posts on its own channel (vibration, no sound);
   iPhone and Mac post silently. The Apple Watch has no haptic-only notification, so the three notices that fire only when nothing is
-  recorded (watchdog, `Recording paused`, battery) use the default sound — in silent mode a wrist tap; the reminders stay silent.
+  recorded (watchdog, `Recording paused`, battery) use the default sound — in silent mode a wrist tap; the reminder stays silent.
 - **Notification permission** is asked at the first recording start on iPhone, Apple Watch and Mac (after the consent reminder, §12
   "Consent reminder · jurisdiction notices"); without it the notices are not shown and the recording is unaffected.
 - **Not covered**: Windows (v1). Mac restarts that run out of attempts still end the recording. Android alarms do not survive a reboot
@@ -192,9 +192,9 @@ notice is an alarm or a local notification the recording device schedules for it
 - Log events: `rec.watchdog.fired` (Android; an Apple notice fires in a process that is gone), `rec.recorder.batteryStop`
   (`recordingId`, `level` in whole percent), `rec.recorder.awaitingResume` (`recordingId`, `reason`, `error`); a resume logs the
   existing `rec.recorder.restarted`.
-- Not verified on a device yet: delivery after a real process death, the hourly reminder, the battery stop on Apple, and the iOS
-  background-to-foreground resume. Emulators confirmed the Android watchdog alarm (armed, pushed back, withdrawn) and the battery
-  stop on phone and Wear (2026-10-26).
+- Not verified on a device yet: delivery after a real process death, the silence reminder against real rooms and microphones, the
+  battery stop on Apple, and the iOS background-to-foreground resume. Emulators confirmed the Android watchdog alarm (armed, pushed
+  back, withdrawn) and the battery stop on phone and Wear (2026-10-26).
 
 ### Identifiers · time
 
@@ -3267,7 +3267,8 @@ android/
   `AlarmManager.setAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)` — inexact, so no exact-alarm permission, and on Android 12+ it may
   come up to ~75 % late (30–52 min) — to the non-exported `RecordingWatchdog` receiver, re-armed by `SegmentedRecorder.onBoundary`
   (a boundary whose part could not be filed still counts as alive). A watchdog that starts a fresh process leaves the finalize to
-  `RecordingRecovery` in `Application.onCreate`. The reminder is a coroutine in the service; the battery check is the sticky
+  `RecordingRecovery` in `Application.onCreate`. The reminder is `SilenceReminder` fed by the service's level poller (the
+  `peakSinceLastAsk()` the live strip reads every 0.1 s, on the watch too); the battery check is the sticky
   `ACTION_BATTERY_CHANGED` (its first delivery is the reading at start). Channel `recording-alerts` (default importance, vibration,
   no sound), notification ids 2–4, apart from the ongoing one (id 1, `recording`). Phone and watch share it.
 - `RecordingRecovery.reconcile()`: at app start and before a new recording starts, finds rows with `status = recording` (except rows still being
@@ -3566,7 +3567,9 @@ macOS.
   microphone cannot be had, and the `.ended` that follows is what resumes (2026-10-27). An `.ended` that never comes leaves the
   recording silenced; the watchdog says so.
 - **Long-recording notices**: `RecordingNotices` (RecKit) follows the recorder's `onEvent` stream on the iPhone, the watch and the Mac —
-  the watchdog, reminders scheduled at start for 2 h … 12 h (11 requests, under iOS's 64 pending), the battery check every 60 s
+  the watchdog, the reminder (posted at once on `.nobodySpeaking`, which `SegmentedRecorder` emits from its write path when
+  `SilenceReminder` has heard 10 minutes without speech in the `LiveWaveform` windows — in-process, so the app recording in the
+  background under its audio background mode is what hears it; nothing is scheduled ahead), the battery check every 60 s
   (`UIDevice` / `WKInterfaceDevice`) and the pause. Pending notices a killed run left are withdrawn at launch; delivered ones stay.
   On the iPhone and the Mac the responses reach it through the existing delegate's forward; on the watch it is the delegate.
 - **Playback**: before recording starts, playback is blocked and any existing player is stopped; playback is allowed only after the recording input has finished shutting down.

@@ -23,10 +23,14 @@ public struct RecordingOutcome: Sendable {
 /// What [SegmentedRecorder.onEvent] reports about the recording that is running — the moments
 /// [RecordingNotices] schedules and withdraws its notifications at.
 public enum RecorderEvent: Equatable, Sendable {
-    case started(recordingId: String, at: Date, segmentSec: Int)
+    case started(recordingId: String, segmentSec: Int)
 
     /// A boundary closed a part: audio is still reaching the files.
     case partFiled
+
+    /// Ten minutes of the recording have gone by with nobody speaking ([SilenceReminder]). Once per
+    /// silence: the next one needs speech first.
+    case nobodySpeaking
 
     /// iOS and watchOS: a restart ran out of attempts, and the recording waits for the app to come
     /// to the front rather than ending ([SegmentedRecorder.becameActive]).

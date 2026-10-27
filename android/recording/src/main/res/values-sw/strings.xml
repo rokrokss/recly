@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">Huenda kurekodi kumesimama</string>
     <string name="rec_watchdog_body">Fungua Recly ili kuangalia.</string>
     <string name="rec_reminder_title">Bado inarekodi</string>
-    <string name="rec_reminder_body">Muda wa kurekodi: %1$s</string>
+    <string name="rec_reminder_body">Hakuna aliyezungumza kwa dakika 10.</string>
     <string name="rec_battery_stop_title">Kurekodi kumesimamishwa: betri iko chini</string>
 </resources>

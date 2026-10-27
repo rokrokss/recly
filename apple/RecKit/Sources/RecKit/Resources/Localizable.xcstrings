@@ -65157,145 +65157,145 @@
         }
       }
     },
-    "Recording time: %@": {
+    "No one has spoken for 10 minutes.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recording time: %@"
+            "value": "No one has spoken for 10 minutes."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "녹음 시간: %@"
+            "value": "10분 동안 아무 말이 없었습니다."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "録音時間：%@"
+            "value": "10分間、誰も話していません。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "录音时长：%@"
+            "value": "已经10分钟没有人说话了。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "錄音時間：%@"
+            "value": "已經10分鐘沒有人說話了。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tiempo de grabación: %@"
+            "value": "Nadie ha hablado en los últimos 10 minutos."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Durée d’enregistrement : %@"
+            "value": "Personne n’a parlé depuis 10 minutes."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aufnahmedauer: %@"
+            "value": "Seit 10 Minuten hat niemand gesprochen."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tempo de gravação: %@"
+            "value": "Ninguém falou nos últimos 10 minutos."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tempo de gravação: %@"
+            "value": "Ninguém falou nos últimos 10 minutos."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "مدة التسجيل: %@"
+            "value": "لم يتحدث أحد منذ 10 دقائق."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "रिकॉर्डिंग का समय: %@"
+            "value": "10 मिनट से किसी ने कुछ नहीं बोला।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Время записи: %@"
+            "value": "Уже 10 минут никто не говорит."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Durata della registrazione: %@"
+            "value": "Nessuno ha parlato negli ultimi 10 minuti."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Czas nagrywania: %@"
+            "value": "Od 10 minut nikt nic nie mówi."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kayıt süresi: %@"
+            "value": "10 dakikadır kimse konuşmadı."
           }
         },
         "fil": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tagal ng pagre-record: %@"
+            "value": "Walang nagsalita sa loob ng 10 minuto."
           }
         },
         "bn": {
           "stringUnit": {
             "state": "translated",
-            "value": "রেকর্ডিংয়ের সময়: %@"
+            "value": "10 মিনিট ধরে কেউ কথা বলেনি।"
           }
         },
         "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "ریکارڈنگ کا وقت: %@"
+            "value": "10 منٹ سے کسی نے بات نہیں کی۔"
           }
         },
         "sw": {
           "stringUnit": {
             "state": "translated",
-            "value": "Muda wa kurekodi: %@"
+            "value": "Hakuna aliyezungumza kwa dakika 10."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thời gian ghi âm: %@"
+            "value": "Không ai nói gì trong 10 phút qua."
           }
         },
         "fa": {
           "stringUnit": {
             "state": "translated",
-            "value": "زمان ضبط: %@"
+            "value": "۱۰ دقیقه است که کسی صحبت نکرده است."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "เวลาบันทึก: %@"
+            "value": "ไม่มีใครพูดมา 10 นาทีแล้ว"
           }
         }
       }

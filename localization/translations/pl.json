@@ -570,7 +570,7 @@
   "Could not fill in speaker names": "Nie udało się uzupełnić imion mówców",
   "Recording may have stopped": "Nagrywanie mogło zostać zatrzymane",
   "Open Recly to check.": "Otwórz Recly, aby sprawdzić.",
-  "Recording time: {0}": "Czas nagrywania: {0}",
+  "No one has spoken for 10 minutes.": "Od 10 minut nikt nic nie mówi.",
   "Recording stopped: battery low": "Nagrywanie zatrzymane: niski poziom baterii",
   "Recording alerts": "Alerty nagrywania",
   "Recording paused": "Nagrywanie wstrzymane",

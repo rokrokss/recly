@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">Es posible que la grabación se haya detenido</string>
     <string name="rec_watchdog_body">Abre Recly para comprobarlo.</string>
     <string name="rec_reminder_title">Aún grabando</string>
-    <string name="rec_reminder_body">Tiempo de grabación: %1$s</string>
+    <string name="rec_reminder_body">Nadie ha hablado en los últimos 10 minutos.</string>
     <string name="rec_battery_stop_title">Grabación detenida: batería baja</string>
 </resources>

@@ -448,6 +448,35 @@ final class SegmentedRecorderTests: XCTestCase {
         XCTAssertEqual(recorder.livePeaks(), [], "the strip outlived the recording")
     }
 
+    /// docs/01 "Long recordings": the silence reminder listens to the same windows, in the process that
+    /// records — ten minutes of a quiet room and the recorder says so, once and not a window early.
+    func testTenQuietMinutesAreReportedOnceFromTheAudioPath() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 900, input: input) { failures.record($0) }
+        recorder.onEvent = { events.record($0) }
+        _ = try await recorder.start(title: nil)
+        // A low hum at the same level window after window: a room with nobody in it.
+        let hum: (Int) -> Float = { Float(0.003 * sin(2 * .pi * 100 * Double($0) / Double(SegmentedRecorder.sampleRateHz))) }
+        let tenMinutes = SilenceReminder.remindAfterWindows * LiveWaveform.windowFrames
+
+        XCTAssertTrue(input.push(frames: tenMinutes - LiveWaveform.windowFrames, sample: hum))
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertFalse(events.all.contains(.nobodySpeaking), "reminded before ten minutes: \(events.all)")
+
+        XCTAssertTrue(input.push(frames: 60 * SegmentedRecorder.sampleRateHz, sample: hum))
+        await waitUntil { events.all.contains(.nobodySpeaking) }
+        XCTAssertEqual(events.all.filter { $0 == .nobodySpeaking }.count, 1, "\(events.all)")
+
+        let result = await recorder.stop(title: nil)
+        guard case .finalized = result else {
+            return XCTFail("expected a finalized stop, got \(result) (errors: \(failures.all))")
+        }
+        XCTAssertEqual(failures.fatal.count, 0, "\(failures.all)")
+    }
+
     // MARK: - Waiting to resume (iOS, watchOS)
 
     /// A backgrounded phone cannot take the microphone back, so a restart that runs out of attempts
@@ -505,7 +534,7 @@ final class SegmentedRecorderTests: XCTestCase {
         XCTAssertEqual(failures.fatal.count, 0, "\(failures.all)")
         await waitUntil { events.all.last == .ended }
         XCTAssertEqual(Array(events.all.dropFirst()), [.awaitingResume, .resumed, .ended])
-        guard case .started(recordingId, _, 5)? = events.all.first else {
+        guard case .started(recordingId, 5)? = events.all.first else {
             return XCTFail("the first event was not the start: \(events.all)")
         }
     }

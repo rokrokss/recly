@@ -8,6 +8,6 @@
     <string name="rec_watchdog_title">Aufnahme möglicherweise beendet</string>
     <string name="rec_watchdog_body">Zum Prüfen Recly öffnen.</string>
     <string name="rec_reminder_title">Aufnahme läuft noch</string>
-    <string name="rec_reminder_body">Aufnahmedauer: %1$s</string>
+    <string name="rec_reminder_body">Seit 10 Minuten hat niemand gesprochen.</string>
     <string name="rec_battery_stop_title">Aufnahme beendet: Akku schwach</string>
 </resources>
