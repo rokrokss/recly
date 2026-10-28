@@ -2188,7 +2188,10 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   conclusion; after Stop only) and `section` (an item of one of the user's own sections, with that section's id). Each has its text, in
   the notes' language (§8 "AI requests" — `SummaryLanguage`),
   an owner for a to-do — the transcript's speaker label, never a name — a deadline only when one was said, and its evidence: the time
-  of the line it is on (`[HH:MM:SS]`, read back as seconds) and a quote copied from that line verbatim.
+  of the line it is on (`[HH:MM:SS]`, read back as seconds) and a quote copied from that line verbatim. Only the owner carries a label
+  (2026-10-28): the requests that write words ask for no speaker label in them — an item's text, a summary, the overview — and for a
+  person only as the transcript names them or their role, since a label left in the text stays after the user names that speaker,
+  beside the owner's name.
 - **Settings** (Settings → Notes; `notes.preferences()`, `setPreferences`, `observePreferences`). `NotesPreferences(instructions,
   sections)`, this device's, in `kv` (`notes/prefs/instructions`, `notes/prefs/sections`). `Notes instructions`, up to 1,000 characters,
   trimmed: the user's own words on how to write the notes ("to-dos grouped by owner", "keep technical terms in English"), which every

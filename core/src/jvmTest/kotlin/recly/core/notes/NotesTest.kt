@@ -764,6 +764,21 @@ class NotesTest {
     }
 
     @Test
+    fun `speaker labels stay out of the words the notes are written in, and only a to-do's owner carries one`() = runBlocking {
+        ready()
+        engine.answer = { meeting }
+        answer(conversation("Alpha.", item("todo", "Write the alpha memo", "00:00:30", "able1 able2 able3", owner = "S2")))
+        f.recordAndRun()
+
+        val rule = "Never write a speaker label such as S1 in the words you write — a summary, an overview or an item's text"
+        val asked = instructions(0)
+        assertTrue(rule in asked, asked)
+        assertTrue("\"owner\": for a todo, the speaker label of the person who will do it" in asked, asked)
+        assertTrue(rule in NotesPrompts.provisional("English"), "while recording too")
+        assertTrue(rule in NotesPrompts.overview("English"), "and the overview of a recording of several conversations")
+    }
+
+    @Test
     fun `Settings keep the instructions and up to three named sections, trimmed, and give a new section its id`() = runBlocking {
         assertEquals(NotesPreferences(), notes.preferences())
         val kept = notes.setPreferences(

@@ -28,6 +28,13 @@ internal object NotesPrompts {
     private const val LINES = "Each transcript line starts with [HH:MM:SS], its time on the recording, then a speaker label such as S1 when there is one " +
         "— a label only tells voices apart and is not a name — and what was said.\n"
 
+    /**
+     * Only `owner` carries a speaker label: one written into the words stays there after the user names that speaker,
+     * beside the name the owner resolves to (`S2 shares the file — Minji`).
+     */
+    private const val NO_LABELS = "Never write a speaker label such as S1 in the words you write — a summary, an overview or an item's text: it means nothing to the reader. " +
+        "Refer to a person only as the transcript does, by a name or a role said in it, or leave them out.\n"
+
     private const val JSON_ONLY = "Answer with one JSON object and nothing else: no Markdown, no code fence, no other text.\n"
 
     private fun item(language: String, ask: NotesAsk, points: Boolean) = buildString {
@@ -67,6 +74,7 @@ internal object NotesPrompts {
         append(item(language, ask, points = false))
         append("Report only new items whose evidence is in THIS PART. Never repeat or reword an item of NOTES SO FAR. ")
         append("When this part changes one of them — a decision reversed, a question answered, a deadline moved — add a new item that says so.\n")
+        append(NO_LABELS)
         append(EVIDENCE)
         append(user(ask, marked = false))
         append("""When there is nothing new, answer {"items": []}.""")
@@ -84,6 +92,7 @@ internal object NotesPrompts {
         append(item(language, ask, points = true))
         append("A decision is reported as it stands at the end: one changed later is reported as changed. A question is reported only when it is still unanswered at the end. ")
         append("Key points are the few things most worth remembering that are not already a decision, a to-do or a question.\n")
+        append(NO_LABELS)
         append(EVIDENCE)
         append(user(ask, marked))
         append("""When there is nothing to note, answer with the summary and "items": [].""")
@@ -117,6 +126,7 @@ internal object NotesPrompts {
     fun overview(language: String): String = buildString {
         append("Below are the summaries of the conversations of one recording, in order, each with its time span.\n")
         append("Write an overview of the whole recording in three to five sentences, in $language: what happened over the recording. Plain text, no Markdown, no list markers.\n")
+        append(NO_LABELS)
         append(JSON_ONLY)
         append("""{"overview": "..."}""")
     }
