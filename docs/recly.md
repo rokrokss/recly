@@ -2431,6 +2431,10 @@ The principle in one line: **intent, not decoration**.
   for mono on the Kotlin shells; Apple keeps the platform's own.
   - **Watches** have their own sizes, fitted to the round and square faces they were laid out on (2026-09-29 Play review): Wear timer 34, label 13,
     small 12; Apple Watch timer 20, status 14. Status words are mono there too, and an idle record node is filled with `surface`, as on the phones.
+  - **Widgets** — the iPhone's and Android's home screen widgets, the Live Activity, the Apple Watch complication and the Wear tile — take the
+    same sizes rather than the platform's text styles (2026-10-28): the clock 20 where it has a line of its own, a word 14, and 12 in a compact
+    slot or on a curved label; the Wear tile the watch's label 13 and small 12. On Apple they grow with the user's text size by the factor the
+    app measures. A tile can draw only Roboto, so its words are in the sans; a Wear complication is drawn by the watch face in its own type.
 - **Time format** (2026-10-08, user decision): under an hour `MM:SS` (`02:03`), from an hour `HH:MM:SS` (`01:02:03`). Every time inside one
   recording's screen — the detail clock, transcript time buttons, highlight ticks and their menus, find and search hit times — takes its format
   from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches, the `Highlight · …`

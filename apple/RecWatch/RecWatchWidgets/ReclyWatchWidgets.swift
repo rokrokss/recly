@@ -55,6 +55,8 @@ struct StatusProvider: TimelineProvider {
 
 struct ComplicationFace: View {
     @Environment(\.widgetFamily) private var family
+    /// The factor the user's text size asks for, measured as the watch app's `BlueprintRoot` measures it.
+    @ScaledMetric(relativeTo: .body) private var unit: CGFloat = 100
     let status: WatchStatus
 
     var body: some View {
@@ -85,14 +87,14 @@ struct ComplicationFace: View {
         case .accessoryRectangular:
             HStack(spacing: 6) {
                 ComplicationMark(mark: status.mark)
-                line.font(font(.body))
+                line.font(font(status.elapsedSince == nil ? WidgetTokens.TypeSize.bodySmall : WidgetTokens.TypeSize.title))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
         default:
             ComplicationMark(mark: status.mark)
                 .widgetLabel {
-                    line.font(font(.caption2))
+                    line.font(font(WidgetTokens.TypeSize.small))
                 }
         }
     }
@@ -107,10 +109,12 @@ struct ComplicationFace: View {
         return title
     }
 
+    /// docs/09 "Typography": a size from the scale rather than a system text style, grown with the user's text size.
     /// Monospace, except for a word in a language written in Hangul, Kana or Han ([WatchStatus.wordsInSans]):
     /// the time is always monospace.
-    private func font(_ style: Font.TextStyle) -> Font {
-        status.elapsedSince == nil && status.wordsInSans ? .system(style) : .system(style, design: .monospaced)
+    private func font(_ size: CGFloat) -> Font {
+        let design: Font.Design = status.elapsedSince == nil && status.wordsInSans ? .default : .monospaced
+        return .system(size: size * unit / 100, design: design)
     }
 
     /// docs/07 rule 2·3: the extension links no RecKit and cannot read the app's language setting

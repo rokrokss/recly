@@ -6,7 +6,7 @@ import SwiftUI
 /// A watch face tints its own accessory widgets, so the complication draws one colour only: the
 /// recording mark's red, which a full-colour face shows and a tinted face replaces with its accent
 /// (2026-10-11, N4). The rest is measurement — the glyph, at the same 19pt `BlueprintIcon` uses
-/// everywhere else, and the two corner radii.
+/// everywhere else, the two corner radii, and the type sizes.
 enum WidgetTokens {
     /// `BlueprintIcon`'s own default size.
     static let iconSize: CGFloat = 19
@@ -18,6 +18,14 @@ enum WidgetTokens {
     enum Radius {
         static let node: CGFloat = 4
         static let badge: CGFloat = 2
+    }
+
+    /// docs/09 "Typography": the Apple Watch's own — the timer 20 and a status word 14 where the face gives the line
+    /// room, and 12 on a curved or circular label (2026-10-28).
+    enum TypeSize {
+        static let small: CGFloat = 12
+        static let bodySmall: CGFloat = 14
+        static let title: CGFloat = 20
     }
 }
 

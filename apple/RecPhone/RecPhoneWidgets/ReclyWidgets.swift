@@ -30,7 +30,7 @@ struct RecordingLiveActivityWidget: Widget {
             HStack(spacing: 16) {
                 Label {
                     Text("Recording")
-                        .font(.system(.subheadline, weight: .semibold))
+                        .widgetFont(WidgetTokens.TypeSize.bodySmall, weight: .semibold)
                         .foregroundStyle(WidgetTokens.text)
                 } icon: {
                     // docs/09 "Shape": a filled square, not a circle — the same mark the recording
@@ -41,7 +41,7 @@ struct RecordingLiveActivityWidget: Widget {
                 }
                 Spacer()
                 elapsed(context.state.startedAt)
-                    .font(.system(.title3, design: .monospaced))
+                    .widgetFont(WidgetTokens.TypeSize.title, design: .monospaced)
                     .foregroundStyle(WidgetTokens.text)
                 stopButton
             }
@@ -63,7 +63,7 @@ struct RecordingLiveActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.center) {
                     elapsed(context.state.startedAt)
-                        .font(.system(.title2, design: .monospaced))
+                        .widgetFont(WidgetTokens.TypeSize.title, design: .monospaced)
                         .foregroundStyle(WidgetTokens.text)
                         .environment(\.locale, locale)
                         .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
@@ -76,7 +76,7 @@ struct RecordingLiveActivityWidget: Widget {
                 recordMark
             } compactTrailing: {
                 elapsed(context.state.startedAt)
-                    .font(.system(.caption, design: .monospaced))
+                    .widgetFont(WidgetTokens.TypeSize.small, design: .monospaced)
                     .foregroundStyle(WidgetTokens.text)
                     .environment(\.locale, locale)
                     .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
@@ -103,7 +103,8 @@ struct RecordingLiveActivityWidget: Widget {
     private var stopButton: some View {
         Button(intent: StopRecordingIntent()) {
             Text("Stop")
-                .font(.system(.subheadline, weight: .medium))
+                // docs/09 "Typography": a button's label is 14.
+                .widgetFont(WidgetTokens.TypeSize.bodySmall, weight: .medium)
                 .foregroundStyle(WidgetTokens.danger)
                 // docs/09 "Component measurements": a button's 8 × 4.
                 .padding(.horizontal, 8)
@@ -186,13 +187,13 @@ struct RecordWidgetView: View {
                     AccessoryWidgetBackground()
                     if let startedAt = status.startedAt, status.recording {
                         Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
-                            .font(.system(.caption2, design: .monospaced))
+                            .widgetFont(WidgetTokens.TypeSize.small, design: .monospaced)
                             .multilineTextAlignment(.center)
                             .minimumScaleFactor(0.6)
                             .padding(4)
                     } else {
                         Image(systemName: "dot.square")
-                            .font(.title2)
+                            .font(.system(size: WidgetTokens.iconSize, weight: .light))
                     }
                 }
             }
@@ -201,12 +202,12 @@ struct RecordWidgetView: View {
         case .accessoryRectangular:
             toggle {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(verbatim: "Recly").font(.headline)
+                    Text(verbatim: "Recly").widgetFont(WidgetTokens.TypeSize.bodySmall, weight: .semibold)
                     if let startedAt = status.startedAt, status.recording {
                         Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
-                            .font(.system(.body, design: .monospaced))
+                            .widgetFont(WidgetTokens.TypeSize.title, design: .monospaced)
                     } else {
-                        Text("Record")
+                        Text("Record").widgetFont(WidgetTokens.TypeSize.bodySmall)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -224,12 +225,12 @@ struct RecordWidgetView: View {
         VStack(spacing: 10) {
             if let startedAt = status.startedAt, status.recording {
                 Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
-                    .font(.system(.title3, design: .monospaced))
+                    .widgetFont(WidgetTokens.TypeSize.title, design: .monospaced)
                     .foregroundStyle(WidgetTokens.text)
                     .multilineTextAlignment(.center)
             } else {
                 Text(verbatim: "Recly")
-                    .font(.system(.subheadline, weight: .semibold))
+                    .widgetFont(WidgetTokens.TypeSize.bodySmall, weight: .semibold)
                     .foregroundStyle(WidgetTokens.text)
             }
             toggle {

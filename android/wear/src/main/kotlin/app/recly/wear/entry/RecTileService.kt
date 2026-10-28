@@ -8,8 +8,7 @@ import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DimensionBuilders.dp
-import androidx.wear.protolayout.material.Text
-import androidx.wear.protolayout.material.Typography
+import androidx.wear.protolayout.DimensionBuilders.sp
 import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
@@ -24,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import app.recly.wear.ui.theme.WearBlueprint
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.toArgb
 
 /**
@@ -78,25 +78,35 @@ class RecTileService : TileService() {
             .addContent(recordNode(recording))
         status?.let {
             content.addContent(LayoutElementBuilders.Spacer.Builder().setHeight(dp(8f)).build())
-            content.addContent(
-                Text.Builder(this, it)
-                    .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                    .setColor(argb(if (recording || failed) DANGER else TEXT))
-                    .setMaxLines(2)
-                    .build(),
-            )
+            content.addContent(text(it, WearBlueprint.small, if (recording || failed) DANGER else TEXT, maxLines = 2))
         }
         return PrimaryLayout.Builder(device)
             .setResponsiveContentInsetEnabled(true)
-            .setPrimaryLabelTextContent(
-                Text.Builder(this, getString(R.string.app_name))
-                    .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                    .setColor(argb(MUTED))
-                    .build(),
-            )
+            .setPrimaryLabelTextContent(text(getString(R.string.app_name), WearBlueprint.label, MUTED, maxLines = 1))
             .setContent(content.build())
             .build()
     }
+
+    /**
+     * docs/09 "Typography": the watch's own sizes — the label 13 and the small 12 the record screen draws — rather than
+     * Material's caption (2026-10-28). In the sans: a tile draws Roboto and nothing else, so not the screen's mono.
+     * `ELLIPSIZE_END`, as Material's own text sets it: its replacement needs a newer tile renderer than every watch has.
+     */
+    @Suppress("DEPRECATION")
+    private fun text(text: String, style: TextStyle, color: Int, maxLines: Int): LayoutElementBuilders.LayoutElement =
+        LayoutElementBuilders.Text.Builder()
+            .setText(text)
+            .setFontStyle(
+                LayoutElementBuilders.FontStyle.Builder()
+                    .setSize(sp(style.fontSize.value))
+                    .setColor(argb(color))
+                    .build(),
+            )
+            .setLineHeight(sp(style.lineHeight.value))
+            .setMaxLines(maxLines)
+            .setMultilineAlignment(LayoutElementBuilders.TEXT_ALIGN_CENTER)
+            .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
+            .build()
 
     /**
      * docs/09 "Shape": the app's own record node, not Material's pill (UX decisions of 2026-10-08) — a

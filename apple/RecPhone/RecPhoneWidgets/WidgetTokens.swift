@@ -30,6 +30,37 @@ enum WidgetTokens {
 
     /// docs/09 "Accessibility": whatever it draws, nothing you can tap is smaller than this.
     static let minTouch: CGFloat = 44
+
+    /// docs/09 "Typography": the scale's sizes this extension draws — the clock 20 where it has a line of its own, the
+    /// words 14, and 12 in a compact slot (2026-10-28).
+    enum TypeSize {
+        static let small: CGFloat = 12
+        static let bodySmall: CGFloat = 14
+        static let title: CGFloat = 20
+    }
+
+    /// `BlueprintIcon`'s own default size — a glyph, as the watch complication draws its glyphs.
+    static let iconSize: CGFloat = 19
+}
+
+/// docs/09 "Typography": one of the scale's sizes, in the sans or the mono, grown with the user's text size by the factor
+/// `BlueprintRoot` measures for the app — not a system text style, whose own sizes (15, 17, 22) are not the scale's
+/// (2026-10-28).
+private struct WidgetFont: ViewModifier {
+    @ScaledMetric(relativeTo: .body) private var unit: CGFloat = 100
+    let size: CGFloat
+    let weight: Font.Weight
+    let design: Font.Design
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: size * unit / 100, weight: weight, design: design))
+    }
+}
+
+extension View {
+    func widgetFont(_ size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
+        modifier(WidgetFont(size: size, weight: weight, design: design))
+    }
 }
 
 extension Color {

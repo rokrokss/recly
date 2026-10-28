@@ -196,6 +196,27 @@ final class BlueprintContrastTests: XCTestCase {
         XCTAssertTrue(watch.contains("badge: CGFloat = \(Int(Radius.badge))"))
     }
 
+    /// docs/09 "Typography" (2026-10-28): the widgets, the Live Activity and the complication draw the scale's sizes —
+    /// copied, as the colours are — and no system text style, whose sizes (15, 17, 22) are not on it.
+    func testTheWidgetsDrawTheScalesSizes() throws {
+        let phone = try Self.source("RecPhone/RecPhoneWidgets/WidgetTokens.swift")
+        let watch = try Self.source("RecWatch/RecWatchWidgets/WidgetTokens.swift")
+        for (name, copy) in [("phone", phone), ("watch", watch)] {
+            XCTAssertTrue(copy.contains("small: CGFloat = \(Int(TypeSize.small))"), "the \(name) widgets' small drifted")
+            XCTAssertTrue(copy.contains("bodySmall: CGFloat = \(Int(TypeSize.bodySmall))"), "the \(name) widgets' bodySmall drifted")
+            XCTAssertTrue(copy.contains("title: CGFloat = \(Int(TypeSize.title))"), "the \(name) widgets' title drifted")
+        }
+        XCTAssertTrue(phone.contains("iconSize: CGFloat = 19"), "the circular accessory's glyph size drifted")
+
+        let style = try NSRegularExpression(
+            pattern: #"(?:\.system\(|\bfont\()\.(?:largeTitle|title[23]?|headline|subheadline|body|callout|footnote|caption2?)\b"#
+        )
+        for path in ["RecPhone/RecPhoneWidgets/ReclyWidgets.swift", "RecWatch/RecWatchWidgets/ReclyWatchWidgets.swift"] {
+            let view = try Self.source(path)
+            XCTAssertNil(style.firstMatch(in: view, range: NSRange(view.startIndex..., in: view)), "\(path) draws in a system text style")
+        }
+    }
+
     /// docs/09 "Tokens": the share extension's line and page are the palette's too — the light value on the light
     /// page, the dark on the dark, and the secondary ink promoted to the body colour in high contrast.
     func testTheShareExtensionsCopyOfTheTokensIsThePalettes() throws {
