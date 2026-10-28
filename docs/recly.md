@@ -2463,7 +2463,7 @@ The principle in one line: **intent, not decoration**.
   | Text field | inset 12 × 8; focus: accent at `selectedLine` |
   | Chip | label 14; room for its `✓` kept while unselected, so selecting moves nothing; edge `inputBorder` |
   | Switch | thumb radius 2; disabled: a dashed track in `disabled` |
-  | Dialog | title 20; body 14 in every tone — the tone is the colour only; card edge `inputBorder` |
+  | Dialog | title 20; body 14 in every tone — the tone is the colour only; card edge `inputBorder` over a scrim — on a sheet of its own (iPhone, Mac) the sheet is the card and no second edge is drawn inside it, the text 16 from its edges |
   | Empty list | title 16, hint 14 |
   | Focus ring | accent at `selectedLine`, inside the control, square like it — every focusable control, not only fields |
 - **Lines**: connectors and dividers 1dp (2dp in high contrast), straight lines and right angles only.

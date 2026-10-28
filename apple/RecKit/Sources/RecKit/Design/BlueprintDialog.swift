@@ -13,6 +13,7 @@ import SwiftUI
 /// There is no motion to reduce: nothing here animates.
 public struct BlueprintDialog<Actions: View, Content: View>: View {
     @Environment(\.blueprint) private var blueprint
+    @Environment(\.blueprintDialogOnSheet) private var onSheet
     private let title: String
     private let actions: Actions
     private let content: Content
@@ -66,12 +67,18 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
             }
         }
         .padding(Space.m)
-        .frame(maxWidth: Self.maxWidth)
-        .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
+        // On a sheet the sheet's width is the dialog's: a 420 inside the Mac's 460 left the words 36 from its edge and 16
+        // from its top.
+        .frame(maxWidth: onSheet ? .infinity : Self.maxWidth)
+        // On a sheet of its own the sheet is the card — its edge, its corners — and a second card inside it was a frame
+        // in a frame (2026-10-28). Over a scrim the card is the only edge there is.
+        .background(onSheet ? Color.clear : blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
         .overlay {
             // …and a card edge in `inputBorder`: the grid's colour is decoration (2026-10-15).
-            RoundedRectangle(cornerRadius: Radius.node)
-                .strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
+            if !onSheet {
+                RoundedRectangle(cornerRadius: Radius.node)
+                    .strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
+            }
         }
     }
 
@@ -84,9 +91,9 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
 }
 
 extension View {
-    /// The dialog as the platform presents a modal: a sheet, over the dot grid, with the card in
-    /// the middle of it. The one presentation both shells use for a question that has to be
-    /// answered before anything else happens.
+    /// The dialog as the platform presents a modal: a sheet of the dot grid with the dialog drawn
+    /// on it, the sheet's edge its card's. The one presentation both shells use for a question that
+    /// has to be answered before anything else happens.
     public func blueprintDialog<Content: View>(
         isPresented: Binding<Bool>,
         @ViewBuilder content: @escaping () -> Content
@@ -166,7 +173,20 @@ public struct BlueprintDialogScrim<Content: View>: View {
     }
 }
 
-/// The page a [BlueprintDialog] is presented on: the dot grid, and the card centred on it.
+private struct DialogOnSheetKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// The dialog is the whole of a sheet ([BlueprintDialogSheet]), which draws its edge for it.
+    var blueprintDialogOnSheet: Bool {
+        get { self[DialogOnSheetKey.self] }
+        set { self[DialogOnSheetKey.self] = newValue }
+    }
+}
+
+/// The page a [BlueprintDialog] is presented on: the dot grid, with the dialog drawn straight onto it, the sheet's own
+/// edge being the card's — as the iPhone's title sheet is.
 public struct BlueprintDialogSheet<Content: View>: View {
     private let content: Content
     /// The card's height with its margin. The sheet is that tall, so a two-line question is not
@@ -181,7 +201,7 @@ public struct BlueprintDialogSheet<Content: View>: View {
     public var body: some View {
         ScrollView {
             content
-                .padding(Space.m)
+                .environment(\.blueprintDialogOnSheet, true)
                 .frame(maxWidth: .infinity)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
         }
@@ -191,7 +211,10 @@ public struct BlueprintDialogSheet<Content: View>: View {
         #if os(iOS)
         .presentationDetents(height.map { [.height($0)] } ?? [.medium])
         #else
-        .frame(minWidth: 460, minHeight: 300)
+        // As tall as the question, as on the iPhone: with no card to hold them, the answers would otherwise sit above
+        // an empty band of a fixed 300. A fixed width, so a long body wraps rather than widening the sheet.
+        .frame(width: 460)
+        .frame(minHeight: height ?? 300)
         #endif
     }
 }

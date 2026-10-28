@@ -148,6 +148,8 @@ public struct NotesBlock: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // A container of its own, or its identifier lands on every row and hides their `note-<id>`.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("notes")
     }
 
