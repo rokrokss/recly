@@ -68,7 +68,9 @@
              watch appearing, and the watch declares no capability of its own for a filter to
              match. Declaring one and filtering CAPABILITY_CHANGED on it is the way out. The
              CHANNEL_EVENT filter below narrows the channel callbacks to this app's own `/rec/`
-             paths so another app's traffic never reaches RecListenerService. -->
+             paths so another app's traffic never reaches RecListenerService. DATA_CHANGED is the
+             watch's recorder state, one exact path: a prefix would also take the phone's own
+             `/rec/language` item. -->
         <service
             android:name=".wear.RecListenerService"
             android:exported="true"
@@ -82,6 +84,13 @@
                 <data
                     android:host="*"
                     android:pathPrefix="/rec/"
+                    android:scheme="wear" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:host="*"
+                    android:path="/rec/recording"
                     android:scheme="wear" />
             </intent-filter>
         </service>

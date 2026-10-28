@@ -3,14 +3,18 @@
 package app.recly.android.wear
 
 import android.net.Uri
+import app.recly.android.core.AndroidLogger
 import app.recly.android.core.CoreModule
 import app.recly.android.work.WorkScheduler
 import app.recly.datalayer.TransferPath
 import app.recly.datalayer.WearJson
+import app.recly.datalayer.WearRecording
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.ChannelClient
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
@@ -92,6 +96,31 @@ class RecListenerService : WearableListenerService() {
                     is TransferPath.PartFile -> acceptPart(core, channel.nodeId, parsed, file)
                     is TransferPath.Progress -> acceptProgress(core, parsed, file)
                     is TransferPath.Meta -> acceptMeta(core, channel.nodeId, parsed, file)
+                }
+            }
+        }
+    }
+
+    /**
+     * docs/11 "While the paired Galaxy Watch records": the watch's recorder state. The manifest asks for
+     * `DATA_CHANGED` on [WearRecording.PATH] only, but `BIND_LISTENER` is unfiltered and would bring any
+     * item here — hence the path check. Drawn from the event alone, since nothing on this instance
+     * outlives it (see [onInputClosed]); a change this build cannot read leaves the notice as it is.
+     */
+    override fun onDataChanged(events: DataEventBuffer) {
+        val event = events.lastOrNull { it.dataItem.uri.path == WearRecording.PATH } ?: return
+        when (event.type) {
+            DataEvent.TYPE_DELETED -> WatchRecordingNotice.onEvent(applicationContext, null)
+            DataEvent.TYPE_CHANGED -> {
+                val state = event.dataItem.data?.let(WearRecording::decode)
+                if (state == null) {
+                    AndroidLogger().log(
+                        Logger.Level.WARN,
+                        "transfer.recording.unreadable",
+                        mapOf("node" to event.dataItem.uri.host),
+                    )
+                } else {
+                    WatchRecordingNotice.onEvent(applicationContext, state)
                 }
             }
         }

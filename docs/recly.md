@@ -1137,7 +1137,8 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   from the parts — `{recordingId, startedAt}` while it records, nothing once it stops — because the first part only comes a segment
   (15 minutes) in. It is written when the recorder starts recording, when it stops, and at app start when nothing is recording, so a
   process that died mid-recording leaves nothing standing once the app runs again. Galaxy Watch: a Data Layer item at `/rec/recording`
-  (urgent), its payload hand-written JSON `{"recordingId":"…","startedAt":"…"}` (ISO-8601, UTC), deleted on the stop. Apple Watch: the
+  (urgent), its payload hand-written JSON `{"recordingId":"…","startedAt":"…"}` (ISO-8601, UTC), deleted the moment the recorder leaves
+  recording (before the finalize) — the watch's own item only, by its node id, so a phone paired with two watches keeps the other's. Apple Watch: the
   watch's application context `{recording: {recordingId, startedAt}}` (`startedAt` in seconds since 1970; a context without `recording` is
   "not recording"), and the same dictionary as a live message when the phone is reachable, because a context does not wake the iPhone app.
   The phone keeps only the newest state, ignores one not shaped like it, and draws it (§11, §13 "iPhone"); none of it
@@ -3539,7 +3540,9 @@ android/
 - **While the paired Galaxy Watch records** (2026-10-28): `RecListenerService` takes `DATA_CHANGED` on `/rec/recording` (§3 "Watch → phone
   transfer contract") and the phone shows an ongoing notification — `Recording on the watch`, the platform's chronometer from the watch's
   `startedAt`, no action, a tap opens the app — in a channel of its own, `watch-recording` (low importance, no sound or vibration, id 300),
-  asking to be promoted like the recorder's own (A12). `setLocalOnly(true)`: a phone notification is bridged to the watch by default, and
+  asking to be promoted like the recorder's own (A12). It sits in a group of its own under a summary (id 301, ongoing and local-only too),
+  for the reason the job notices have one: ungrouped, Android 16 bundled it with the recorder's notification on a phone recording at the
+  same time, the Stop behind two expands. The newest event wins; with two watches, either one's deletion takes it down. `setLocalOnly(true)`: a phone notification is bridged to the watch by default, and
   this one would buzz the very watch that is recording. The item's deletion takes it down, the app's start repaints it from the item that
   is standing (a reboot clears the shade, not the item), and a locale change repaints it (docs/07 rule 3).
 - `RecordingRecovery.reconcile()`: at app start and before a new recording starts, finds rows with `status = recording` (except rows still being

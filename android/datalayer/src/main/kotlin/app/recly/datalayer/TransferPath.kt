@@ -104,8 +104,9 @@ sealed interface TransferPath {
          * A ULID is 26 Crockford base32 characters, but the id is the watch's and this is a safety
          * check, not a format check: what matters is that it cannot escape a directory or collide
          * with one. Length-bounded, and no character that means anything to a file system.
+         * [WearRecording] holds the same id to it.
          */
-        private fun isId(value: String): Boolean =
+        internal fun isId(value: String): Boolean =
             value.length in 1..64 && value.all { it.isLetterOrDigit() || it == '-' || it == '_' }
 
         private fun isSha256(value: String): Boolean =

@@ -6,6 +6,7 @@ import android.app.Application
 import app.recly.android.core.CoreModule
 import app.recly.android.entry.RecWidget
 import app.recly.android.ui.DisconnectGate
+import app.recly.android.wear.WatchRecordingNotice
 import app.recly.android.work.JobAlertNotifier
 import app.recly.android.work.NextRun
 import app.recly.android.work.WaveformPrecompute
@@ -63,6 +64,9 @@ class RecApp : Application(), RecorderHost {
         // docs/10 "Failures the user can fix, and their notices": the queue is the only thing that knows a
         // reason has been fixed, so the notifications live off it rather than off the failures.
         scope.launch { JobAlertNotifier(this@RecApp).run(core()) }
+        // docs/11 "While the paired Galaxy Watch records": a reboot clears the shade and not the watch's item, and the
+        // boot receiver is what starts this process after one.
+        WatchRecordingNotice.repaint(this)
         scope.launch { publishRecorderState() }
         scope.launch { applyTheme() }
     }

@@ -20,6 +20,7 @@ import app.recly.wear.entry.RecComplicationService
 import app.recly.wear.entry.RecTileService
 import app.recly.wear.language.PhoneLanguage
 import app.recly.wear.transfer.FileTransferQueue
+import app.recly.wear.transfer.RecordingIndicator
 import app.recly.wear.transfer.Recordings
 import app.recly.wear.transfer.TransferScheduler
 import app.recly.wear.transfer.TransferSender
@@ -112,6 +113,8 @@ class RecWearApp : Application(), RecorderHost {
             runCatching { PhoneLanguage.adoptStored(this@RecWearApp) }
                 .onFailure { logger.log(Logger.Level.DEBUG, "shell.wear.language.failed", emptyMap(), it) }
         }
+        // docs/03 "Watch → phone transfer contract": the phone hears of a recording at its start, not a segment in.
+        scope.launch { RecordingIndicator.run(this@RecWearApp, logger) }
         // The tile and the complication render outside this process and nothing else would tell
         // them a recording started or a transfer finished. `drop(1)` because the first emission is
         // the state they already have.

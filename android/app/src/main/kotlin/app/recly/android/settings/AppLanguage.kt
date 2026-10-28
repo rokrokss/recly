@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.LocaleList
 import androidx.glance.appwidget.updateAll
 import app.recly.android.entry.RecWidget
+import app.recly.android.wear.WatchRecordingNotice
 import app.recly.android.work.JobAlertNotifier
 import app.recly.recording.RecorderService
 import java.util.Locale
@@ -136,14 +137,17 @@ fun interface LocalizedSurfaces {
 }
 
 /**
- * The recorder's notification, the job notifications and the home widget — everything this app
- * draws outside an activity, and so everything the platform will not redraw on a locale change.
+ * The recorder's notification, the job notifications, the watch's recording notice and the home
+ * widget — everything this app draws outside an activity, and so everything the platform will not
+ * redraw on a locale change.
  */
 class AppSurfaces(private val context: Context) : LocalizedSurfaces {
     override fun refresh() {
         RecorderService.refreshNotification(context)
         // docs/10: posted once and then left alone, so they would keep the old language.
         JobAlertNotifier.refresh(context)
+        // docs/11 "While the paired Galaxy Watch records": likewise, until the watch stops.
+        WatchRecordingNotice.repaint(context)
         // Glance renders in the launcher's process off a snapshot of ours; nothing but a push
         // makes it look again. `updateAll` is a no-op when the widget is not placed.
         CoroutineScope(Dispatchers.Main).launch { runCatching { RecWidget().updateAll(context) } }
