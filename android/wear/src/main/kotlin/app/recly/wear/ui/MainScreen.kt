@@ -52,6 +52,7 @@ import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import app.recly.recording.RecorderState
@@ -209,7 +210,8 @@ private fun RecordScreen(
                     colors = ButtonDefaults.outlinedButtonColors(),
                     // The input border's level (the phone's `inputBorder`): the grid's colour left the button's edge unseen.
                     border = BorderStroke(WearBlueprint.line, WearBlueprint.textMuted),
-                    label = { Text(text = stringResource(R.string.info_open), maxLines = 1) },
+                    // docs/09 "Typography": the watch's label 13, named rather than left to the component — as the guide's Back is.
+                    label = { Text(text = stringResource(R.string.info_open), style = MaterialTheme.typography.labelSmall, maxLines = 1) },
                 )
             }
             Spacer(Modifier.height(padding.calculateBottomPadding()))

@@ -2424,7 +2424,10 @@ The principle in one line: **intent, not decoration**.
   Cascadia/Consolas): timer `12:34`, part `p001`, file names, bytes, status words (`Waiting for Drive`), device ID. Scale:
   12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation. Nothing is smaller than 12, watches included — on Wear at its 227dp
   layout basis, which a smaller face scales as a whole (touch targets excepted: they stay 48 on every face). The timer is mono at regular
-  weight with 1 of tracking on every shell; a button's label is 14 whether it is sans or mono (2026-10-15). Line height is 1.4 for sans and 1.35
+  weight with 1 of tracking on every shell; a button's label is 14 whether it is sans or mono (2026-10-15). A dialog's or sheet's body
+  — a question, a consent or disclosure notice, the ChatGPT welcome — and a banner are 14 in every tone, the size of the rest of the app's
+  running text; a row's secondary line and a section's footnote stay 12 (screen principle 4). No text is left to the platform's default style
+  (17 on iOS, 13 on macOS, 16 in Material 3), which drew the same sentence at a different size on every shell (2026-10-28). Line height is 1.4 for sans and 1.35
   for mono on the Kotlin shells; Apple keeps the platform's own.
   - **Watches** have their own sizes, fitted to the round and square faces they were laid out on (2026-09-29 Play review): Wear timer 34, label 13,
     small 12; Apple Watch timer 20, status 14. Status words are mono there too, and an idle record node is filled with `surface`, as on the phones.
@@ -2460,7 +2463,7 @@ The principle in one line: **intent, not decoration**.
   | Text field | inset 12 × 8; focus: accent at `selectedLine` |
   | Chip | label 14; room for its `✓` kept while unselected, so selecting moves nothing; edge `inputBorder` |
   | Switch | thumb radius 2; disabled: a dashed track in `disabled` |
-  | Dialog | title 20; card edge `inputBorder` |
+  | Dialog | title 20; body 14 in every tone — the tone is the colour only; card edge `inputBorder` |
   | Empty list | title 16, hint 14 |
   | Focus ring | accent at `selectedLine`, inside the control, square like it — every focusable control, not only fields |
 - **Lines**: connectors and dividers 1dp (2dp in high contrast), straight lines and right angles only.

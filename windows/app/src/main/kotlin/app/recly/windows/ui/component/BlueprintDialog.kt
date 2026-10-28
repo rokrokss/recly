@@ -291,7 +291,7 @@ internal fun stackActions(available: Int, widths: List<Int>, spacing: Int): Bool
 /** How much of a long question stays pinned above the scroll region. */
 private const val TITLE_LINES = 3
 
-/** docs/09: the body is 14–16, and what it means decides the colour. */
+/** docs/09 "Component measurements": the body is 14 in every tone, and what it means decides only the colour. */
 enum class DialogTone { BODY, MUTED, WARNING, DANGER }
 
 /** One line of a dialog body. Sans, not mono: it is a sentence and not a column of data. */
@@ -301,11 +301,7 @@ fun BlueprintDialogText(text: String, modifier: Modifier = Modifier, tone: Dialo
     Text(
         text,
         modifier = modifier,
-        style = if (tone == DialogTone.BODY) {
-            MaterialTheme.typography.bodyMedium
-        } else {
-            MaterialTheme.typography.bodySmall
-        },
+        style = MaterialTheme.typography.bodyMedium,
         color = when (tone) {
             DialogTone.BODY -> palette.text
             DialogTone.MUTED -> palette.textMuted

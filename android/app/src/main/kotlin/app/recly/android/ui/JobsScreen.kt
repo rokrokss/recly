@@ -208,7 +208,7 @@ fun JobsScreen(
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Text(stringResource(R.string.list_loading), color = palette.textMuted)
+                                Text(stringResource(R.string.list_loading), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
                             }
                         } else {
                             // docs/09 screen principle 8: no button here — the tab bar right below already says Record.

@@ -11,7 +11,10 @@ final class ShareViewController: UIViewController {
         view.backgroundColor = ShareTokens.background
         let line = UILabel()
         line.text = String(localized: "Open Recly to import.")
-        line.font = .preferredFont(forTextStyle: .body)
+        // docs/09 "Typography": the app's running text, 14, with the user's Dynamic Type on top — as `BlueprintFonts`
+        // measures it, against the body style — and not the platform's body, which is 17.
+        line.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 14))
+        line.adjustsFontForContentSizeCategory = true
         line.textColor = ShareTokens.textMuted
         line.textAlignment = .center
         line.numberOfLines = 0

@@ -134,6 +134,7 @@ internal fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifi
             .testTag("message"),
         contentAlignment = Alignment.CenterStart,
     ) {
-        Text(text, style = MaterialTheme.typography.bodySmall, color = palette.warningInk)
+        // 14, as the iPhone's, the Mac's and Windows' banner: a sentence to read, not a row's secondary line (2026-10-28).
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = palette.warningInk)
     }
 }

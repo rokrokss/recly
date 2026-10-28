@@ -73,7 +73,8 @@ fun InfoScreen(onBack: () -> Unit) {
                     shape = RoundedCornerShape(WearBlueprint.radius),
                     colors = ButtonDefaults.outlinedButtonColors(),
                     border = BorderStroke(WearBlueprint.line, WearBlueprint.textMuted),
-                    label = { Text(stringResource(R.string.info_back)) },
+                    // docs/09 "Typography": the watch's label 13, as Help's — Button's own label is 15, over the titles' 14.
+                    label = { Text(stringResource(R.string.info_back), style = MaterialTheme.typography.labelSmall) },
                 )
             }
         }

@@ -45,17 +45,19 @@ struct SettingsView: View {
         .dotGridBackground()
         .sheet(isPresented: $model.privacyPresented) {
             if let privacy = model.transferPrivacy {
-                NavigationStack {
-                    TransferPrivacyView(model: privacy)
-                        .toolbar {
-                            ToolbarItem(placement: .confirmationAction) {
-                                // docs/09: the design's own square button, quiet, as every other Close.
-                                BlueprintButton(RecKitStrings.localized("Close"), tone: .quiet, minWidth: minTouch) {
-                                    model.privacyPresented = false
-                                }
-                            }
+                // The screen's own header, as every other sheet has — a navigation bar's title is the platform's
+                // large title, in a size of its own (2026-10-28).
+                VStack(spacing: 0) {
+                    ScreenHeader(title: RecKitStrings.localized("Privacy"), trailingAlignment: .trailing, oneRow: true) {
+                        // docs/09: the design's own square button, quiet, as every other Close.
+                        BlueprintButton(RecKitStrings.localized("Close"), tone: .quiet, minWidth: minTouch) {
+                            model.privacyPresented = false
                         }
+                    }
+                    HairLine()
+                    TransferPrivacyView(model: privacy)
                 }
+                .dotGridBackground()
             }
         }
         // docs/09 "Summary view": the first sign-in on this phone, confirmed once.

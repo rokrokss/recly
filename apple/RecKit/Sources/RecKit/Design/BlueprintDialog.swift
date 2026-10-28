@@ -196,7 +196,8 @@ public struct BlueprintDialogSheet<Content: View>: View {
     }
 }
 
-/// docs/09: the body is 14–16, and what it means decides the colour.
+/// docs/09: the body is 14, the app's running text, whatever it says (2026-10-28); what it means decides the colour
+/// and nothing else.
 public enum DialogTone: Sendable {
     case body
     case muted
@@ -218,7 +219,7 @@ public struct BlueprintDialogText: View {
 
     public var body: some View {
         Text(verbatim: text)
-            .font(tone == .body ? blueprint.fonts.body : blueprint.fonts.bodySmall)
+            .font(blueprint.fonts.bodySmall)
             .foregroundStyle(ink)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)

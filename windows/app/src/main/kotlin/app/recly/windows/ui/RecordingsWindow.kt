@@ -348,11 +348,12 @@ private fun Sidebar(
                 ListMessage(notice, strings, model::dismissListMessage)
                 HairLine()
             }
-            // The row is gone with the failed import, so the reason is said here, until the next import.
+            // The row is gone with the failed import, so the reason is said here, until the next import — a banner,
+            // at the 14 a banner's sentence is (docs/09 "Typography"), as the Mac's is.
             model.importFailure?.let { reason ->
                 Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-                    Text(strings[Str.IMPORT_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
-                    Text(reason.text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                    Text(strings[Str.IMPORT_FAILED], style = MaterialTheme.typography.bodyMedium, color = blueprint.danger)
+                    Text(reason.text(strings), style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted)
                 }
                 HairLine()
             }
@@ -484,7 +485,8 @@ private fun ListMessage(notice: ShellNotice, strings: Strings, onDismiss: () -> 
             .padding(horizontal = Space.sm, vertical = Space.s),
         contentAlignment = Alignment.CenterStart,
     ) {
-        Text(notice.message.text(strings), style = MaterialTheme.typography.bodySmall, color = notice.tone.ink())
+        // A banner's sentence: 14 (docs/09 "Typography"), as the Mac's `Banner` is.
+        Text(notice.message.text(strings), style = MaterialTheme.typography.bodyMedium, color = notice.tone.ink())
     }
 }
 

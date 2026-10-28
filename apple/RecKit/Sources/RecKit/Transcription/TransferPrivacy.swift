@@ -251,7 +251,9 @@ public struct TransferPrivacyView: View {
             VStack(alignment: .leading, spacing: Space.m) {
                 TextLink(loc("Privacy Policy")) { openURL(PrivacyLinks.recly(locale: locale)) }
                 if let message = model.message {
-                    Text(verbatim: message.text).foregroundStyle(blueprint.palette.danger)
+                    Text(verbatim: message.text)
+                        .font(blueprint.fonts.bodySmall)
+                        .foregroundStyle(blueprint.palette.danger)
                 }
                 if !pending.isEmpty {
                     SectionHeader(loc("Transfer permission needed"))
@@ -267,10 +269,14 @@ public struct TransferPrivacyView: View {
                 SectionHeader(loc("Allowed destinations"))
                 if model.approved.isEmpty {
                     Text(verbatim: loc("No external destinations allowed yet."))
+                        .font(blueprint.fonts.bodySmall)
+                        .foregroundStyle(blueprint.palette.text)
                 }
                 ForEach(model.approved, id: \.id) { target in
                     VStack(alignment: .leading, spacing: Space.xs) {
                         Text(verbatim: TransferTargetText.name(target))
+                            .font(blueprint.fonts.bodySmall)
+                            .foregroundStyle(blueprint.palette.text)
                         Text(verbatim: target.endpoint)
                             .font(blueprint.fonts.monoSmall)
                             .fixedSize(horizontal: false, vertical: true)
@@ -290,8 +296,6 @@ public struct TransferPrivacyView: View {
             }
             .padding(Space.m)
         }
-        .navigationTitle(loc("Privacy"))
-        .dotGridBackground()
         .task { await model.reload() }
     }
 
