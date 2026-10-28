@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://rec.app/spec/notes.schema.json",
   "title": "rec notes",
-  "description": "{base}.notes.v1.json beside the recording's parts, on the device that made them. Not uploaded or synced. See docs/recly.md §8 \"Organizing\".",
+  "description": "{base}.notes.v1.json beside the recording's parts. Final notes — after every change to them: a pass, an edit, a deletion — also go to the recording's Drive or iCloud folder as {base}.notes.json, the same JSON, with the folder's notesAt; a local folder keeps them on the device. See docs/recly.md §8 \"Organizing\" and §3 \"Drive layout\".",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -31,10 +31,10 @@
       ]
     },
     "overview": {
-      "description": "Two or three lines over the whole recording; final notes only.",
+      "description": "Three to five sentences over the whole recording; final notes only. The user's words once overviewEditedAt is set.",
       "type": "string",
       "minLength": 1,
-      "maxLength": 600
+      "maxLength": 1200
     },
     "items": {
       "type": "array",
@@ -69,6 +69,10 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "section": {
+            "description": "The id of the user's section a deleted section item was in.",
+            "$ref": "#/$defs/ulid"
           }
         }
       }
@@ -95,7 +99,7 @@
           "summary": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 600
+            "maxLength": 1200
           }
         }
       }
@@ -113,6 +117,43 @@
       "description": "The ChatGPT model the notes were last made with.",
       "type": "string",
       "minLength": 1
+    },
+    "modelName": {
+      "description": "The plan's name for model (`GPT-5.4`), shown under the notes.",
+      "type": "string",
+      "minLength": 1
+    },
+    "sections": {
+      "description": "The user's own sections (Settings → ChatGPT → My sections) the notes were made with, in order: up to three from Settings, plus an earlier one still holding an item the user edited — so the list itself is not capped.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/ulid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "description": {
+            "description": "What goes in it, as the user wrote it; may be empty.",
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "overviewEditedAt": {
+      "description": "When the user last changed the overview in Edit notes; from then on the overview stays theirs.",
+      "type": "string",
+      "format": "date-time"
     },
     "createdAt": {
       "type": "string",
@@ -163,10 +204,13 @@
       "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
     },
     "kind": {
+      "description": "point: a key point, made after Stop only; section: an item of one of the user's own sections, named by the item's section.",
       "enum": [
         "decision",
         "todo",
-        "question"
+        "question",
+        "point",
+        "section"
       ]
     },
     "item": {
@@ -188,6 +232,7 @@
           "$ref": "#/$defs/kind"
         },
         "text": {
+          "description": "What the model wrote, which matching goes by; the user's words are userText.",
           "type": "string",
           "minLength": 1,
           "maxLength": 500
@@ -229,6 +274,21 @@
           "description": "The index of a final item's conversation.",
           "type": "integer",
           "minimum": 0
+        },
+        "section": {
+          "description": "The id of the user's section a section item is in.",
+          "$ref": "#/$defs/ulid"
+        },
+        "userText": {
+          "description": "The user's words for the item from Edit notes, shown instead of text.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "editedAt": {
+          "description": "When the user last edited the item; an edited item stays theirs.",
+          "type": "string",
+          "format": "date-time"
         },
         "createdAt": {
           "type": "string",

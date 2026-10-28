@@ -5,6 +5,18 @@
   "overview": "A product review that settled the Friday launch, then a call with the vendor about the contract renewal.",
   "items": [
     {
+      "id": "01J9ABCDEG0000000000000004",
+      "kind": "point",
+      "text": "Support saw twice as many sign-in tickets after the last release.",
+      "evidence": {
+        "atSec": 145.0,
+        "quote": "we had about twice the sign-in tickets after the last release"
+      },
+      "provisional": false,
+      "conversation": 0,
+      "createdAt": "2026-08-26T01:20:00.000Z"
+    },
+    {
       "id": "01J9ABCDEG0000000000000001",
       "kind": "decision",
       "text": "The launch moves to Friday.",
@@ -41,6 +53,21 @@
       "provisional": false,
       "conversation": 1,
       "createdAt": "2026-08-26T02:10:00.000Z"
+    },
+    {
+      "id": "01J9ABCDEG0000000000000005",
+      "kind": "section",
+      "text": "Customers asked for a dark theme.",
+      "evidence": {
+        "atSec": 880.0,
+        "quote": "a lot of customers keep asking for a dark theme"
+      },
+      "provisional": false,
+      "conversation": 0,
+      "section": "01J9ABCDEH0000000000000001",
+      "userText": "Customers keep asking for a dark theme; three enterprise accounts named it.",
+      "editedAt": "2026-08-26T02:30:00.000Z",
+      "createdAt": "2026-08-26T01:20:00.000Z"
     }
   ],
   "tombstones": [
@@ -69,7 +96,15 @@
     3
   ],
   "model": "gpt-5.6-terra",
+  "modelName": "GPT-5.6 Terra",
+  "sections": [
+    {
+      "id": "01J9ABCDEH0000000000000001",
+      "name": "Customer requests",
+      "description": "Features or changes a customer asked for, with the customer's name when said."
+    }
+  ],
   "createdAt": "2026-08-26T01:15:30.000Z",
-  "updatedAt": "2026-08-26T02:12:00.000Z",
+  "updatedAt": "2026-08-26T02:30:00.000Z",
   "finalizedAt": "2026-08-26T02:12:00.000Z"
 }

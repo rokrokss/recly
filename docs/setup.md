@@ -177,23 +177,24 @@ recording.**
   and in the Mac and Windows **Details** windows.
 - **In your storage**: one folder per recording, for example
   `recly/memo/2026-10/20261006T010000Z_phone_01J9ABCD/`, holding the audio in parts of about 15
-  minutes, `….meta.json`, and with transcription `….transcript.txt` and `….transcript.json`. With a
+  minutes, `….meta.json`, with transcription `….transcript.txt` and `….transcript.json`, and in Google
+  Drive or iCloud the recording's notes as `….notes.json` once organized. With a
   local folder you can choose **Monthly folders** or **One folder** (`recly/memo/`) under **Recording processing** →
   **Storage folder**; Google Drive and iCloud always use a folder a month.
 
 | In **Details** | What it does |
 |---|---|
-| **Share** (Windows: **Export…**) | the transcript as `.txt`, `.md`, `.srt` or `.vtt`, the audio as `.m4a`, or **Copy all** |
+| **Share** (Windows: **Export…**) | the transcript as `.txt`, `.md`, `.srt` or `.vtt`, the notes as `.txt`, the audio as `.m4a`, or **Copy all** |
 | **More** → **Edit transcript** | fix the text; tap a speaker to rename them or move a line to another speaker. Saving rewrites the transcript files and does not start your ChatGPT agent again |
 | **More** → **Transcribe again** | transcribe with the current settings; replaces your edits |
 | **More** → **Rename** | change the title |
-| **More** → **Summarize** | after **Settings** → **ChatGPT** → **Continue with ChatGPT**: a summary of the transcript from your ChatGPT plan, under **Summary** (not on the China mainland App Store) |
-| **More** → **Summarize as…** | the same in another format: General, One-on-one, Lecture, Interview, or your own **My format** from **Settings** → **ChatGPT** |
-| **More** → **Edit summary** | fix the summary; in Google Drive or iCloud your other devices show the edit, with a local folder it stays on this device |
+| **More** → **Organize** | after **Settings** → **ChatGPT** → **Continue with ChatGPT**: the recording's notes from your ChatGPT plan — an overview, key points, decisions, to-dos, questions and your own sections — under **Notes**; **Organize again** once it has notes. Once you agree after signing in, recordings are also organized while you record and after you stop (not on the China mainland App Store) |
+| **Settings** → **Notes** | **Notes instructions**: how every recording's notes are written. **My sections**: up to three sections of your own, each with what goes in it. **About you**: what matters to you, for notes and answers |
+| **More** → **Edit notes** | fix the overview or a note's words, or empty a note to delete it; in Google Drive or iCloud your other devices show the edit, with a local folder it stays on this device |
 | **More** → **Ask about this recording…** | a follow-up email, the action items, the open questions, a translation, feedback on how you spoke, or your own question; the answer is not saved |
 | **More** → **Fill in title** | a title from your ChatGPT plan, if the recording has none. To have it before the transcript is saved, tick **Fill in the title with ChatGPT** when you name a recording after stopping it |
 | **More** → **Fill in speaker names** | the names of the speakers called by name, from your ChatGPT plan. To have them before the transcript is saved, tick **Fill in speaker names with ChatGPT** when you name a recording after stopping it |
-| a time such as `[00:12:34]` in a summary | plays from there |
+| a note's time, or a time such as `[00:12:34]` in an answer | plays from there |
 | speed (`1×`) | 0.75× to 2×, and **Skip silence** |
 
 ### Import audio

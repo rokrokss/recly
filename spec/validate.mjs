@@ -123,6 +123,8 @@ for (const [label, expected, change] of [
   ["item without evidence", false, c => { delete c.items[0].evidence; return c; }],
   ["empty quote", false, c => { c.items[0].evidence.quote = ""; return c; }],
   ["unknown field", false, c => { c.items[0].speakerName = "Mina"; return c; }],
+  ["edited item emptied", false, c => { c.items.find(i => i.userText).userText = ""; return c; }],
+  ["section name over 40", false, c => { c.sections[0].name = "x".repeat(41); return c; }],
   ["future schema", false, c => { c.schema = 2; return c; }],
 ]) {
   const valid = notesSchema(change(structuredClone(notesBase)));
