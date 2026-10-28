@@ -231,6 +231,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published private(set) var recordingId: String?
     /// When the recording on screen began — the Live Activity counts up from it.
     private var startedAt: Date?
+    /// docs/13 "iPhone" Display: when the paired Apple Watch's recording began, while it records. Read
+    /// back from the widget's file to begin with, so the widget does not go blank between this launch
+    /// and the session's activation, which brings the watch's newest state (docs/03 "Watch → phone
+    /// transfer contract").
+    private var watchStartedAt = PhoneStatusStore.load().watchStartedAt
     /// The one load. Everything an intent can reach waits for it: the app may have been launched
     /// into the background by Siri a moment ago and the core is opened asynchronously.
     private var loading: Task<Void, Never>?
@@ -327,6 +332,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             publishStatus()
             // And before the first pill of this run: the last one's is still counting up.
             await activity.endStale()
+            // The watch's pill it kept, held to what this run knows of the watch.
+            await updateActivity()
             let download = ModelDownload(core: bridge.core)
             download.capturing = state != .idle
             // The recordings the download resumed are due now.
@@ -954,13 +961,17 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         PhoneStatusStore.save(PhoneStatus(
             recording: isRecording,
             startedAt: isRecording ? (startedAt ?? Date()) : nil,
+            // Not this process's recording, so not cleared with it: the watch says when it stops.
+            watchStartedAt: watchStartedAt,
             language: AppLanguage.current.code ?? ""
         ))
         WidgetCenter.shared.reloadTimelines(ofKind: PhoneStatusStore.widgetKind)
     }
 
     private func updateActivity() async {
-        await activity.apply(RecordingActivityPlan.plan(for: state, startedAt: startedAt))
+        await activity.apply(
+            RecordingActivityPlan.plan(for: state, startedAt: startedAt, watchStartedAt: watchStartedAt)
+        )
     }
 
     private func startTicking() {
@@ -1105,9 +1116,27 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         receiver.onActivated = { [weak self] in
             Task { @MainActor in self?.publishLanguageToWatch() }
         }
+        // The main queue rather than a task each: a start and its stop told back to back have to land in
+        // the order they came.
+        receiver.onWatchRecording = { [weak self] state in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self?.watchRecordingChanged(state) }
+            }
+        }
         watchReceiver = receiver
         WCSession.default.delegate = receiver
         WCSession.default.activate()
+    }
+
+    /// docs/03 "Watch → phone transfer contract" · docs/13 "iPhone" Display: the watch's recorder, drawn by the
+    /// widgets and the Live Activity — neither of which the core or Drive ever sees.
+    private func watchRecordingChanged(_ state: WatchRecordingState) {
+        // The context at activation and the live message say the same thing more often than not.
+        guard state.startedAt != watchStartedAt else { return }
+        watchStartedAt = state.startedAt
+        logger.info("watch.recording recording=\(state != .idle, privacy: .public)")
+        publishStatus()
+        Task { await updateActivity() }
     }
 
     /// The receiver's core: there once the load has finished, nil if it failed.

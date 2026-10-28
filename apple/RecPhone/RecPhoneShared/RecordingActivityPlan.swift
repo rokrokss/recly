@@ -11,9 +11,14 @@ enum RecordingActivityPlan: Equatable {
     case none
     case show(RecordingActivityAttributes.ContentState)
 
-    static func plan(for state: RecorderState, startedAt: Date?) -> RecordingActivityPlan {
-        guard case .recording = state, let startedAt else { return .none }
-        return .show(RecordingActivityAttributes.ContentState(startedAt: startedAt))
+    /// - Parameter watchStartedAt: when the paired Apple Watch's recording began, while it records
+    ///   (docs/13 "iPhone" Display). The phone's own recording takes precedence over it.
+    static func plan(for state: RecorderState, startedAt: Date?, watchStartedAt: Date? = nil) -> RecordingActivityPlan {
+        if case .recording = state, let startedAt {
+            return .show(RecordingActivityAttributes.ContentState(startedAt: startedAt))
+        }
+        guard let watchStartedAt else { return .none }
+        return .show(RecordingActivityAttributes.ContentState(startedAt: watchStartedAt, onWatch: true))
     }
 
     /// docs/13 "renewed at the 8-hour limit": ActivityKit ends a Live Activity eight hours after it was

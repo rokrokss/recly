@@ -68,6 +68,9 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
     /// has been (`WCErrorCodeSessionNotActivated`, measured on the paired simulators), so the
     /// context is published from here rather than from the call that started activation.
     var onActivated: (() -> Void)?
+    /// docs/03 "Watch → phone transfer contract": the watch's recorder, from its application context and from
+    /// its live message — each the newest when it arrives. Called on `WCSession`'s delegate queue.
+    var onWatchRecording: ((WatchRecordingState) -> Void)?
     /// The accept that is running or waiting, so the next one can be chained behind it. Touched from
     /// `WCSession`'s delegate queue and, in the tests, from the test thread — hence the lock.
     private let chain = NSLock()
@@ -120,6 +123,16 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
             try? await Task.sleep(for: window)
             release()
         }
+    }
+
+    /// The watch's recorder state, from either of its two ways in. One not shaped like it is ignored and
+    /// the phone keeps what it has (docs/03 "Watch → phone transfer contract").
+    func watchRecording(_ dictionary: [String: Any]) {
+        guard let state = WatchRecordingContext.state(dictionary) else {
+            logger.error("watch.recording.unreadable")
+            return
+        }
+        onWatchRecording?(state)
     }
 
     /// **In arrival order, one at a time.** The staging above is synchronous and so already runs in
@@ -317,8 +330,14 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
         received(file.fileURL, metadata: file.metadata ?? [:])
     }
 
+    /// A live message is the watch's wake, unless it is shaped like the recorder's state (2026-10-28).
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        woken()
+        guard WatchRecordingContext.isState(message) else { return woken() }
+        watchRecording(message)
+    }
+
+    func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        watchRecording(applicationContext)
     }
 
     func session(
@@ -333,6 +352,8 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
             """
         )
         guard activationState == .activated else { return }
+        // The context is a snapshot: whatever stands now is the watch's newest, however long ago it came.
+        watchRecording(session.receivedApplicationContext)
         onActivated?()
     }
 

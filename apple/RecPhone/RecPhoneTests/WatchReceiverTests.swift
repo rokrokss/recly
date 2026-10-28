@@ -1,6 +1,7 @@
 import Foundation
 import ReclyCore
 import RecKit
+import WatchConnectivity
 import XCTest
 
 /// docs/13 I6 · docs/03 "Watch → phone transfer contract", the receiving half (docs/lanes M5-L4 deliverable 6):
@@ -222,6 +223,57 @@ final class WatchReceiverTests: XCTestCase {
 
         XCTAssertEqual(holds.entries, ["hold"])
         try await untilReleased(holds)
+    }
+
+    /// docs/03 "Watch → phone transfer contract": the watch's recorder reaches the phone in its application
+    /// context and in a live message alike, and a context without `recording` is the stop.
+    func testTheWatchsRecordingIsReadFromItsContextAndItsMessage() {
+        // Before today: a start later than a day from now is not believed.
+        let startedAt = Date(timeIntervalSince1970: 1_760_000_000)
+        let recording = WatchRecordingState.recording(recordingId: recordingId, startedAt: startedAt)
+        var told: [WatchRecordingState] = []
+        receiver.onWatchRecording = { told.append($0) }
+
+        receiver.session(.default, didReceiveApplicationContext: WatchRecordingContext.context(recording))
+        receiver.session(.default, didReceiveMessage: WatchRecordingContext.context(.idle))
+        receiver.session(.default, didReceiveMessage: WatchRecordingContext.context(recording))
+        receiver.session(.default, didReceiveApplicationContext: [:])
+
+        XCTAssertEqual(told, [recording, .idle, recording, .idle])
+    }
+
+    /// The wake is what it always was: it holds the app up for the transfers behind it, and says nothing
+    /// about the recorder — the watch sends it at every part of a recording that is still going.
+    func testTheWakeIsNotReadAsTheRecordersState() {
+        let holds = Transcript()
+        receiver = WatchReceiver(
+            core: { [core] in core },
+            acks: acks,
+            staging: staging,
+            holdAwake: {
+                holds.record("hold")
+                return {}
+            },
+            wakeWindow: .milliseconds(1)
+        )
+        var told: [WatchRecordingState] = []
+        receiver.onWatchRecording = { told.append($0) }
+
+        receiver.session(.default, didReceiveMessage: ["wake": true])
+
+        XCTAssertEqual(holds.entries, ["hold"], "woken")
+        XCTAssertEqual(told, [], "not a stop")
+    }
+
+    /// One not shaped like the state is ignored, and the phone keeps what it has.
+    func testARecordingStateNotShapedLikeOneIsIgnored() {
+        var told: [WatchRecordingState] = []
+        receiver.onWatchRecording = { told.append($0) }
+
+        receiver.session(.default, didReceiveApplicationContext: ["recording": ["recordingId": "../escape", "startedAt": 1_760_000_000.0]])
+        receiver.session(.default, didReceiveMessage: ["recording": "yes"])
+
+        XCTAssertEqual(told, [])
     }
 
     /// The sha check is the core's — it hashes what actually arrived — and the ack says exactly what

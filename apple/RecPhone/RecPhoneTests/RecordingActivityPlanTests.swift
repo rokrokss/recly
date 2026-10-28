@@ -36,6 +36,31 @@ final class RecordingActivityPlanTests: XCTestCase {
         )
     }
 
+    /// docs/13 "iPhone" Display: while only the paired Apple Watch records, the pill counts from the watch's start
+    /// and says it is the watch's — there is nothing on the phone to stop.
+    func testTheWatchsRecordingIsShownWhenThePhoneMakesNone() {
+        let watchStartedAt = Date(timeIntervalSince1970: 1_799_999_000)
+
+        for state in [RecorderState.idle, .starting, .stopping] {
+            XCTAssertEqual(
+                RecordingActivityPlan.plan(for: state, startedAt: nil, watchStartedAt: watchStartedAt),
+                .show(RecordingActivityAttributes.ContentState(startedAt: watchStartedAt, onWatch: true)),
+                "\(state)"
+            )
+        }
+    }
+
+    /// The phone's own recording takes precedence: it is the one with a stop button that does something.
+    func testThePhonesRecordingWinsOverTheWatchs() {
+        let plan = RecordingActivityPlan.plan(
+            for: .recording(recordingId: "01J9"),
+            startedAt: startedAt,
+            watchStartedAt: Date(timeIntervalSince1970: 1_799_999_000)
+        )
+
+        XCTAssertEqual(plan, .show(RecordingActivityAttributes.ContentState(startedAt: startedAt)))
+    }
+
     /// docs/13 "renewed at the 8-hour limit": ActivityKit takes the activity away eight hours after it was
     /// requested, so a new one is asked for before that — and not a moment sooner, because every
     /// hand-over is a flicker on the Lock Screen.
@@ -69,5 +94,17 @@ final class RecordingActivityPlanTests: XCTestCase {
         XCTAssertEqual(state.startedAt, Date(timeIntervalSinceReferenceDate: 1_800_000_000))
         XCTAssertEqual(state.language, "", "a state with no language means the device's own")
         XCTAssertEqual(state.appLocale, .current)
+        XCTAssertFalse(state.onWatch, "a state with no onWatch is the phone's own recording")
+    }
+
+    /// And `onWatch` itself survives the trip ActivityKit makes it take.
+    func testTheWatchsStateRoundTrips() throws {
+        let state = RecordingActivityAttributes.ContentState(startedAt: startedAt, onWatch: true, language: "ko")
+
+        let decoded = try JSONDecoder().decode(
+            RecordingActivityAttributes.ContentState.self, from: JSONEncoder().encode(state)
+        )
+
+        XCTAssertEqual(decoded, state)
     }
 }

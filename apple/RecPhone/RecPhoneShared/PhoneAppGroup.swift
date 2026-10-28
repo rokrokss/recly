@@ -17,6 +17,9 @@ struct PhoneStatus: Codable, Equatable {
     var recording = false
     /// When the recording began, so the widget counts up with no update.
     var startedAt: Date?
+    /// docs/13 "iPhone" Display: when the paired Apple Watch's recording began, while it records — the watch's
+    /// own clock, which the widget counts up from as it does from [startedAt]. The phone's recording wins.
+    var watchStartedAt: Date?
     /// docs/07 rule 3: the app's language, which the extension cannot read on its own. Empty is the device's.
     var language = ""
 

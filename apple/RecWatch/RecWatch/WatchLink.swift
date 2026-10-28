@@ -4,7 +4,8 @@ import RecKit
 import WatchConnectivity
 
 /// The watch's end of `WCSession` (docs/13 "Apple Watch" Transfer, M5-L4 deliverable 2): the
-/// queue's way out, the acks' way in, and the phone's language setting's way in.
+/// queue's way out, the acks' way in, the phone's language setting's way in, and the recorder's state
+/// on its way out (docs/03 "Watch → phone transfer contract").
 ///
 /// It is built before the core is — activating the session early is what lets the acks for a
 /// transfer that finished while the app was gone be waiting when the queue opens — so the queue is
@@ -20,6 +21,12 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
     /// The ack handling that is running or waiting, so the next one goes behind it and [settle] can
     /// wait for the last.
     private var previous: Task<Void, Never>?
+    /// The recorder's state as last published. Kept because the session refuses a context until it
+    /// has activated, and the activation publishes it then.
+    private var recording: WatchRecordingState?
+    /// [recording] has not gone out as a live message yet — the phone was out of reach, or the session
+    /// had not said it was in reach — so it goes when [sessionReachabilityDidChange] says so.
+    private var recordingOwed = false
     private let lock = NSLock()
     /// docs/07 rule 2: the phone's language setting, which the watch follows.
     var onLanguage: ((AppLanguage.Choice) -> Void)?
@@ -93,6 +100,37 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
         logger.info("transfer.wake")
     }
 
+    /// docs/03 "Watch → phone transfer contract": the phone shows that the watch is recording. The context
+    /// is what the phone reads whenever its app runs next; the live message is what reaches the app now,
+    /// because a context does not wake it — sent only while the phone is in reach, and fails harmlessly.
+    func publish(_ state: WatchRecordingState) {
+        lock.withLock {
+            recording = state
+            recordingOwed = true
+        }
+        send(state)
+    }
+
+    private func send(_ state: WatchRecordingState) {
+        // Before the activation the context is refused; [activationDidCompleteWith] sends what is kept.
+        guard session.activationState == .activated else { return }
+        let context = WatchRecordingContext.context(state)
+        do {
+            try session.updateApplicationContext(context)
+        } catch {
+            // No phone paired, or no Recly on it: there is nobody to tell.
+            logger.info("transfer.recording.skipped error=\(String(describing: error), privacy: .public)")
+            return
+        }
+        let live = session.isReachable
+        logger.info("transfer.recording recording=\(state != .idle, privacy: .public) live=\(live, privacy: .public)")
+        guard live else { return }
+        lock.withLock { recordingOwed = false }
+        session.sendMessage(context, replyHandler: nil) { [logger] error in
+            logger.info("transfer.recording.failed error=\(String(describing: error), privacy: .public)")
+        }
+    }
+
     // MARK: - WCSessionDelegate
 
     func session(
@@ -105,6 +143,7 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
             return
         }
         logger.info("transfer.session state=\(activationState.rawValue, privacy: .public)")
+        if activationState == .activated, let recording = lock.withLock({ self.recording }) { send(recording) }
         // docs/13: unacked items are resent when the app activates and when `WCSession` does.
         lock.lock()
         let queue = self.queue
@@ -115,8 +154,12 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
 
     /// The phone came into reach — or this app far enough into the front for the session to say so,
     /// which can be after the pass it became active for. Run that pass again: it is what wakes the phone.
+    /// And tell it the recorder's state, if that was published before: at a launch the session is
+    /// activated before it is in reach, so the activation's own send went out as a context only.
     func sessionReachabilityDidChange(_ session: WCSession) {
-        guard session.isReachable, let queue = lock.withLock({ self.queue }) else { return }
+        guard session.isReachable else { return }
+        if let recording = lock.withLock({ recordingOwed ? self.recording : nil }) { send(recording) }
+        guard let queue = lock.withLock({ self.queue }) else { return }
         serially { await queue.pump() }
     }
 

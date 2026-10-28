@@ -29,7 +29,8 @@ struct RecordingLiveActivityWidget: Widget {
         ActivityConfiguration(for: RecordingActivityAttributes.self) { context in
             HStack(spacing: 16) {
                 Label {
-                    Text("Recording")
+                    // docs/13 "iPhone" Display: the paired watch's recording says so, and has nothing here to stop.
+                    (context.state.onWatch ? Text("Recording on the watch") : Text("Recording"))
                         .widgetFont(WidgetTokens.TypeSize.bodySmall, weight: .semibold)
                         .foregroundStyle(WidgetTokens.text)
                 } icon: {
@@ -43,7 +44,9 @@ struct RecordingLiveActivityWidget: Widget {
                 elapsed(context.state.startedAt)
                     .widgetFont(WidgetTokens.TypeSize.title, design: .monospaced)
                     .foregroundStyle(WidgetTokens.text)
-                stopButton
+                    // A timer takes the width its longest reading needs; with no Stop beside it, it keeps to the edge.
+                    .multilineTextAlignment(context.state.onWatch ? .trailing : .leading)
+                if !context.state.onWatch { stopButton }
             }
             .padding()
             // docs/09 "Tokens": the palette's own page black rather than a translucent system one — and
@@ -69,8 +72,23 @@ struct RecordingLiveActivityWidget: Widget {
                         .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    stopButton.environment(\.locale, locale)
-                        .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
+                    if !context.state.onWatch {
+                        stopButton.environment(\.locale, locale)
+                            .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    // docs/13 "iPhone" Display: the watch's recording, with nothing here to stop. Across the bottom
+                    // rather than in the stop button's corner beside the camera, which a 30-character translation
+                    // squeezes to a glyph a line.
+                    if context.state.onWatch {
+                        Text("Recording on the watch")
+                            .widgetFont(WidgetTokens.TypeSize.bodySmall)
+                            .foregroundStyle(WidgetTokens.text)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .environment(\.locale, locale)
+                            .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
+                    }
                 }
             } compactLeading: {
                 recordMark
@@ -143,7 +161,8 @@ struct StartRecordingControl: ControlWidget {
 
 /// docs/09 "Quick start": the Home Screen and Lock Screen `Record` widget — a square record node, or while a
 /// recording runs its timer and a stop node. Both run the app's own intents: the start opens the app,
-/// where the audio session belongs, and the stop runs in the app's process.
+/// where the audio session belongs, and the stop runs in the app's process. While only the paired watch
+/// records, its timer and `Recording on the watch` with no node: a tap opens the app (docs/13 "iPhone" Display).
 struct RecordWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: PhoneStatusStore.widgetKind, provider: RecordTimeline()) { entry in
@@ -179,7 +198,54 @@ struct RecordWidgetView: View {
     let status: PhoneStatus
     @Environment(\.widgetFamily) private var family
 
+    /// docs/13 "iPhone" Display: the watch's recording, drawn only while the phone makes none of its own.
+    private var watchStartedAt: Date? { status.recording ? nil : status.watchStartedAt }
+
     var body: some View {
+        if let watchStartedAt {
+            onWatch(since: watchStartedAt)
+        } else {
+            onPhone
+        }
+    }
+
+    /// There is nothing on the phone to stop, so nothing here is a button: the widget's own tap opens the app.
+    @ViewBuilder
+    private func onWatch(since startedAt: Date) -> some View {
+        let clock = Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                clock
+                    .widgetFont(WidgetTokens.TypeSize.small, design: .monospaced)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.6)
+                    .padding(4)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Recording on the watch"))
+        case .accessoryRectangular:
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Recording on the watch").widgetFont(WidgetTokens.TypeSize.bodySmall, weight: .semibold)
+                clock.widgetFont(WidgetTokens.TypeSize.title, design: .monospaced)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        default:
+            VStack(spacing: 10) {
+                clock
+                    .widgetFont(WidgetTokens.TypeSize.title, design: .monospaced)
+                    .multilineTextAlignment(.center)
+                Text("Recording on the watch")
+                    .widgetFont(WidgetTokens.TypeSize.bodySmall)
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundStyle(WidgetTokens.text)
+        }
+    }
+
+    @ViewBuilder
+    private var onPhone: some View {
         switch family {
         case .accessoryCircular:
             toggle {

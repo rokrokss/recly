@@ -71,6 +71,9 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         // And before the load too, so that the acks for a transfer that finished while the app was
         // gone are already queued when the queue opens.
         link.activate()
+        // docs/03 "Watch → phone transfer contract": nothing records in a process that has only just
+        // started, so one that died mid-recording leaves nothing standing on the phone once this runs.
+        link.publish(.idle)
         // docs/07 rule 2: the watch has no language setting of its own; the phone's arrives in its
         // application context and is applied where it stands.
         link.onLanguage = { choice in
@@ -220,8 +223,11 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         do {
             guard let recordingId = try await session.start() else { return }
             self.recordingId = recordingId
-            startedAt = Date()
+            let startedAt = Date()
+            self.startedAt = startedAt
             microphoneDenied = false
+            // docs/03 "Watch → phone transfer contract": the phone shows it from now on, not from the first part.
+            link.publish(.recording(recordingId: recordingId, startedAt: startedAt))
             // docs/13 WA5.
             WKInterfaceDevice.current().play(.start)
             logger.info("shell.recording.start id=\(recordingId, privacy: .public)")
@@ -355,6 +361,8 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             startedAt = nil
             recordingId = nil
             highlightedAtSec = nil
+            // The stop, however it came: there is nothing on the phone to show from here on.
+            link.publish(.idle)
         }
         // 2026-10-08 §4: the clock keeps the recording's length while it is saved, and is back to
         // nothing only once the recorder is idle again.
