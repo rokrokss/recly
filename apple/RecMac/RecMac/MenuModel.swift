@@ -235,7 +235,7 @@ final class MenuModel: ObservableObject {
             let bridge = try await CoreBridge.make(tokenProvider: tokens)
             self.bridge = bridge
             // docs/12 "Echo": the microphone decides voice processing itself, at each start.
-            let recorder = SegmentedRecorder(core: bridge.core) { [weak self] error in
+            let recorder = SegmentedRecorder(core: bridge.core, segmentSec: CoreBridge.configuredSegmentSec) { [weak self] error in
                 self?.captureFailed(error)
             }
             recorder.onEvent = { [notices] event in notices.apply(event) }
