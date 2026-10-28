@@ -106,7 +106,7 @@ final class ChatGptLoopbackTests: XCTestCase {
     }
 }
 
-/// docs/09 "Summary view": the section's sign-in, run against the real core with a browser that stands in for
+/// docs/09 "AI view": the section's sign-in, run against the real core with a browser that stands in for
 /// the user. None of these reach OpenAI: a decline is answered before any token request.
 @MainActor
 final class ChatGptSettingsTests: XCTestCase {
@@ -194,49 +194,76 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertFalse(timed.waitingForBrowser)
     }
 
-    /// docs/08 "Summaries": the format saves at once, the fields when editing ends; the format shown falls back to
-    /// General once My format has no words, and My format is offered only while it has some.
-    func testSummaryPreferencesSaveAndShowTheFormatInEffect() async throws {
+    /// docs/09 "AI view" — Settings → Notes: the fields save when editing ends, trimmed, and what is being typed stays
+    /// as typed; a section editing leaves without a name goes from the list, the rest go when the screen does; three
+    /// sections at most; Remove saves at once; and the saved sections are the list the next time Settings opens.
+    func testNotesSettingsSaveWhenEditingEnds() async throws {
         let bridge = try await bridge()
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
-        XCTAssertEqual(model.shownPreferences.formats, [.auto, .oneOnOne, .lecture, .interview])
         // The saved preferences arrive first, as they do long before anyone types on a screen.
         try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(model.instructions, "")
+        XCTAssertTrue(model.sections.isEmpty)
 
-        model.customFormat = "Risks, Next steps  "
-        XCTAssertEqual(model.shownPreferences.formats, [.auto, .oneOnOne, .lecture, .interview, .custom])
-        model.selectFormat(.custom)
-        XCTAssertEqual(model.preferences.format, .custom, "the pick is shown at once")
-        try await until { model.preferences.customFormat == "Risks, Next steps" }
-        // What was being typed stays as typed: the saved text is the same, trimmed.
-        XCTAssertEqual(model.customFormat, "Risks, Next steps  ")
+        model.instructions = "Group to-dos by owner.  "
+        model.saveNotes()
+        try await until { model.notesPreferences.instructions == "Group to-dos by owner." }
+        XCTAssertEqual(model.instructions, "Group to-dos by owner.  ")
+
+        let empty = try XCTUnwrap(model.addSection())
+        model.saveNotes()
+        XCTAssertEqual(model.sections.count, 1, "a section editing is still in stays")
+        model.saveNotes(leaving: empty)
+        XCTAssertTrue(model.sections.isEmpty, "left without a name, it goes")
+
+        let risks = try XCTUnwrap(model.addSection())
+        model.sections[0].name = " Risks "
+        model.sections[0].description = "Anything that could delay the launch "
+        model.saveNotes(leaving: risks)
+        try await until { model.notesPreferences.sections.count == 1 }
+        let saved = try await bridge.core.notes.preferences()
+        XCTAssertEqual(saved.sections.map(\.name), ["Risks"])
+        XCTAssertEqual(saved.sections.map(\.description_), ["Anything that could delay the launch"])
+        XCTAssertEqual(model.sections.map(\.sectionId), saved.sections.map(\.id), "the section takes the id the core gave it")
+        XCTAssertEqual(model.sections.map(\.name), [" Risks "])
+
+        XCTAssertNotNil(model.addSection())
+        XCTAssertNotNil(model.addSection())
+        XCTAssertNil(model.addSection(), "three at most")
+        XCTAssertEqual(model.sections.count, 3)
+        model.saveNotes(droppingNameless: true)
+        XCTAssertEqual(model.sections.map(\.name), [" Risks "], "the screen goes, and the nameless ones with it")
+
+        let reopened = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await until { reopened.sections.count == 1 }
+        XCTAssertEqual(reopened.sections.map(\.name), ["Risks"])
+        XCTAssertEqual(reopened.instructions, "Group to-dos by owner.")
+
+        model.removeSection(model.sections[0].key)
+        XCTAssertTrue(model.sections.isEmpty)
+        try await until { model.notesPreferences.sections.isEmpty }
+        let last = try await bridge.core.notes.preferences()
+        XCTAssertTrue(last.sections.isEmpty)
+        XCTAssertEqual(last.instructions, "Group to-dos by owner.")
+    }
+
+    /// docs/09 "AI view": About you, under Notes, saves when its editing ends, trimmed; the field keeps what is typed.
+    func testAboutYouSavesWhenEditingEnds() async throws {
+        let bridge = try await bridge()
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await Task.sleep(for: .milliseconds(300))
 
         model.aboutMe = " PM "
         model.savePreferences()
         try await until { model.preferences.aboutMe == "PM" }
+        XCTAssertEqual(model.aboutMe, " PM ")
         let saved = try await bridge.core.summaries.preferences()
-        XCTAssertEqual(saved.format, .custom)
         XCTAssertEqual(saved.aboutMe, "PM")
-
-        model.customFormat = ""
-        XCTAssertEqual(model.shownPreferences.effectiveFormat, .auto)
-        model.savePreferences()
-        try await until { model.preferences.customFormat.isEmpty }
-        XCTAssertEqual(model.preferences.effectiveFormat, .auto)
-
-        // A field that ends its editing as the format menu closes saves with the format just picked.
-        model.aboutMe = "PM, deadlines"
-        model.selectFormat(.lecture)
-        model.savePreferences()
-        try await until { model.preferences.aboutMe == "PM, deadlines" && model.preferences.format == .lecture }
-        let last = try await bridge.core.summaries.preferences()
-        XCTAssertEqual(last.format, .lecture)
-        XCTAssertEqual(last.aboutMe, "PM, deadlines")
     }
 
     /// docs/08 "Titles and speaker names": the title sheet's two boxes are off until ticked and each is kept as it was
     /// left — saved at once, signed in or out, on the Mac with nothing to ask — apart from the other, and stays as it is
-    /// when the format or About you changes.
+    /// when About you changes.
     func testTheTitleSheetBoxesAreKeptApartAndSurviveTheOtherPreferences() async throws {
         let bridge = try await bridge()
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
@@ -263,14 +290,12 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertTrue(saved.fillTitleAfterStop)
         XCTAssertTrue(saved.fillNamesAfterStop)
 
-        model.selectFormat(.lecture)
         model.aboutMe = "PM"
         model.savePreferences()
-        try await until { model.preferences.aboutMe == "PM" && model.preferences.format == .lecture }
+        try await until { model.preferences.aboutMe == "PM" }
         XCTAssertTrue(model.preferences.fillTitleAfterStop)
         XCTAssertTrue(model.preferences.fillNamesAfterStop)
         saved = try await bridge.core.summaries.preferences()
-        XCTAssertEqual(saved.format, .lecture)
         XCTAssertEqual(saved.aboutMe, "PM")
         XCTAssertTrue(saved.fillTitleAfterStop)
         XCTAssertTrue(saved.fillNamesAfterStop)
@@ -282,7 +307,6 @@ final class ChatGptSettingsTests: XCTestCase {
         let last = try await savedPreferences(bridge) { !$0.fillTitleAfterStop }
         XCTAssertFalse(last.fillTitleAfterStop)
         XCTAssertTrue(last.fillNamesAfterStop)
-        XCTAssertEqual(last.format, .lecture)
         XCTAssertEqual(last.aboutMe, "PM")
     }
 
@@ -302,41 +326,52 @@ final class ChatGptSettingsTests: XCTestCase {
     }
 }
 
-/// docs/09 "Detail header and More menu" · "Summary view": the item's reason and title, and the words a
-/// failed summary is shown with.
+/// docs/09 "Detail header and More menu" · "AI view": the items' reasons, the notes' footer and editor, Share's Notes
+/// and a search hit in the notes, and the words a failed Organize is shown with.
 @MainActor
-final class SummaryMenuTests: XCTestCase {
+final class NotesMenuTests: XCTestCase {
     private let signedIn = ChatGptConnection.SignedIn(account: "a@example.com", models: [ChatGptModel(id: "gpt-x", label: "GPT X")], model: "gpt-x")
-    private let summary = Summary(recordingId: "r1", text: "Summary\n- one", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: nil, modelName: nil)
 
-    func testTheReasonSaysWhatStandsInTheWay() {
+    /// docs/09 "AI view": Organize says the first reason in its order — Still recording, No transcript yet or the
+    /// unsettled job's, the sign-in — then `Organizing…` while a pass runs.
+    func testTheOrganizeReasonSaysWhatStandsInTheWay() {
         func reason(writing: Bool = false, transcript: Bool = true, busy: String? = nil,
-                    connection: ChatGptConnection? = nil, state: SummaryState = SummaryState.None.shared, summarizing: Bool = false) -> String? {
-            RecordingDetailModel.summarizeReason(
-                writing: writing, hasTranscript: transcript, busy: busy, connection: connection ?? signedIn,
-                summary: state, summarizing: summarizing
+                    connection: ChatGptConnection? = nil, organizing: Bool = false) -> String? {
+            RecordingDetailModel.organizeReason(
+                writing: writing, hasTranscript: transcript, busy: busy, connection: connection ?? signedIn, organizing: organizing
             )
         }
         XCTAssertNil(reason())
-        XCTAssertEqual(reason(writing: true, transcript: false), RecKitStrings.localized("Still recording"))
+        XCTAssertEqual(reason(writing: true, transcript: false, organizing: true), RecKitStrings.localized("Still recording"))
         XCTAssertEqual(reason(transcript: false), RecKitStrings.localized("No transcript yet"))
         XCTAssertEqual(reason(busy: RecKitStrings.localized("Transcribing…")), RecKitStrings.localized("Transcribing…"))
         let signIn = CoreMessages.sentence(.chatgptSignInRequired)
         XCTAssertEqual(signIn, RecKitStrings.localized("Sign in to ChatGPT in Settings"))
-        XCTAssertEqual(reason(connection: ChatGptConnection.SignedOut.shared), signIn)
+        XCTAssertEqual(reason(connection: ChatGptConnection.SignedOut.shared, organizing: true), signIn)
         XCTAssertEqual(reason(connection: ChatGptConnection.Expired(account: "a@example.com")), signIn)
-        XCTAssertEqual(reason(state: SummaryState.Running(previous: nil)), RecKitStrings.localized("Summarizing…"))
-        XCTAssertEqual(reason(summarizing: true), RecKitStrings.localized("Summarizing…"))
-        XCTAssertNil(reason(state: SummaryState.Ready(summary: summary)))
+        XCTAssertEqual(reason(organizing: true), RecKitStrings.localized("Organizing…"))
     }
 
-    func testAgainOnlyWhenThereIsASummaryToReplace() {
-        XCTAssertFalse(RecordingDetailModel.hasSummary(SummaryState.None.shared))
-        XCTAssertFalse(RecordingDetailModel.hasSummary(SummaryState.Running(previous: nil)))
-        XCTAssertFalse(RecordingDetailModel.hasSummary(SummaryState.Failed(reason: "PROVIDER_ERROR", previous: nil)))
-        XCTAssertTrue(RecordingDetailModel.hasSummary(SummaryState.Ready(summary: summary)))
-        XCTAssertTrue(RecordingDetailModel.hasSummary(SummaryState.Running(previous: summary)))
-        XCTAssertTrue(RecordingDetailModel.hasSummary(SummaryState.Failed(reason: "PROVIDER_ERROR", previous: summary)))
+    /// docs/09 "AI view" — "Editing": Edit notes is off while the recording records, and while a pass writes the notes
+    /// over the ones it would edit.
+    func testEditNotesWaitsForTheRecordingAndForAPass() {
+        XCTAssertNil(RecordingDetailModel.editNotesReason(writing: false, organizing: false))
+        XCTAssertEqual(RecordingDetailModel.editNotesReason(writing: false, organizing: true), RecKitStrings.localized("Organizing…"))
+        XCTAssertEqual(RecordingDetailModel.editNotesReason(writing: true, organizing: true), RecKitStrings.localized("Still recording"))
+    }
+
+    /// docs/09 "Detail header and More menu": Ask stands in the way of nothing but what Organize does — a pass being run
+    /// is no reason.
+    func testAskHasOrganizesReasonsButNotARunningPass() {
+        func ask(writing: Bool = false, transcript: Bool = true, busy: String? = nil, connection: ChatGptConnection? = nil) -> String? {
+            RecordingDetailModel.askReason(writing: writing, hasTranscript: transcript, busy: busy, connection: connection ?? signedIn)
+        }
+        XCTAssertNil(ask())
+        XCTAssertEqual(ask(writing: true, transcript: false), RecKitStrings.localized("Still recording"))
+        XCTAssertEqual(ask(transcript: false), RecKitStrings.localized("No transcript yet"))
+        XCTAssertEqual(ask(busy: RecKitStrings.localized("Transcribing…")), RecKitStrings.localized("Transcribing…"))
+        XCTAssertEqual(ask(connection: ChatGptConnection.SignedOut.shared), CoreMessages.sentence(.chatgptSignInRequired))
+        XCTAssertEqual(ask(connection: ChatGptConnection.Expired(account: "a@example.com")), CoreMessages.sentence(.chatgptSignInRequired))
     }
 
     func testAFailureIsItsOwnSentenceWhenTheUserCanActOnIt() {
@@ -350,73 +385,45 @@ final class SummaryMenuTests: XCTestCase {
         XCTAssertFalse(ChatGptText.cancelled(provider))
     }
 
-    /// docs/09 "Summary view": Edit summary is there once a summary is, and off while a new one is written.
-    func testEditSummaryWaitsForARunningSummary() {
-        XCTAssertNil(RecordingDetailModel.savedSummary(SummaryState.None.shared))
-        XCTAssertNil(RecordingDetailModel.savedSummary(SummaryState.Running(previous: nil)))
-        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Ready(summary: summary)), summary)
-        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Running(previous: summary)), summary)
-        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Failed(reason: "PROVIDER_ERROR", previous: summary)), summary)
-
-        let running = RecKitStrings.localized("Summarizing…")
-        XCTAssertNil(RecordingDetailModel.editSummaryReason(summary: SummaryState.Ready(summary: summary), summarizing: false))
-        XCTAssertNil(RecordingDetailModel.editSummaryReason(summary: SummaryState.Failed(reason: "PROVIDER_ERROR", previous: summary), summarizing: false))
-        XCTAssertEqual(RecordingDetailModel.editSummaryReason(summary: SummaryState.Running(previous: summary), summarizing: false), running)
-        XCTAssertEqual(RecordingDetailModel.editSummaryReason(summary: SummaryState.Ready(summary: summary), summarizing: true), running)
+    /// The editor's second line: the notes reach the other devices only from Drive or iCloud.
+    func testTheEditorsLineFollowsTheRecordingsStorage() {
+        XCTAssertTrue(RecordingDetailModel.notesStayHere(storage: nil))
+        XCTAssertTrue(RecordingDetailModel.notesStayHere(storage: .folder))
+        XCTAssertFalse(RecordingDetailModel.notesStayHere(storage: .drive))
+        XCTAssertFalse(RecordingDetailModel.notesStayHere(storage: .icloud))
     }
 
-    /// The footer says a summary was edited; Summarize again asks before it replaces one that was.
-    func testAnEditedSummaryIsSaidAndAskedAbout() {
-        let edited = Summary(recordingId: "r1", text: "Mine", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: "2026-10-09T01:00:00Z", format: nil, modelName: nil)
-        XCTAssertEqual(ChatGptText.summaryFooter(summary, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT X"))
-        XCTAssertEqual(
-            ChatGptText.summaryFooter(edited, connection: signedIn),
-            RecKitStrings.localized("ChatGPT · %@", "GPT X") + " · " + RecKitStrings.localized("Edited")
-        )
-        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Failed(reason: "PROVIDER_ERROR", previous: edited))?.editedAt, edited.editedAt)
-    }
-
-    /// Save is offered only for a text the core would keep: not an unchanged one, not an empty one.
-    func testADraftChangesOnlyWithTextTheCoreWouldKeep() {
-        var draft = SummaryDraft(summary)
+    /// Save is offered only for words that changed: not for spaces around them, nor for a field left as it was. An item
+    /// emptied is a change — the core deletes it — and with no overview there is no overview to change.
+    func testADraftChangesOnlyWithWordsThatChanged() {
+        let decision = NoteGroupsTests.item("d1", .decision, text: "Launch on Friday")
+        let todo = NoteGroupsTests.item("t1", .todo, text: "Send the notes", owner: "Minji", due: "Thursday")
+        let notes = NoteGroupsTests.notes(overview: "The launch moved.", decisions: [decision], todos: [todo])
+        var draft = NotesDraft(notes)
         XCTAssertFalse(draft.changed)
-        draft.text = summary.text + "\n  "
+        draft.overview = "The launch moved.\n  "
+        draft.texts["d1"] = " Launch on Friday "
         XCTAssertFalse(draft.changed)
-        draft.text = "   \n"
-        XCTAssertFalse(draft.changed)
-        draft.text = "Summary\n- one\n- two"
+        draft.texts["t1"] = ""
         XCTAssertTrue(draft.changed)
+        XCTAssertNil(draft.edits.overview)
+        XCTAssertEqual(draft.edits.items.map(\.itemId), ["t1"])
+        XCTAssertEqual(draft.edits.items.map(\.text), [""])
+        XCTAssertEqual(NotesDraft.meta(todo), "Minji · Thursday")
+
+        var bare = NotesDraft(NoteGroupsTests.notes(questions: [NoteGroupsTests.item("q1", .question)]))
+        XCTAssertNil(bare.originalOverview, "no overview, no field for one")
+        bare.overview = "Typed where there is no field"
+        XCTAssertFalse(bare.changed)
     }
 
-    /// The editor's note: the summary reaches the other devices only from Drive or iCloud.
-    func testTheNoteFollowsTheRecordingsStorage() {
-        XCTAssertTrue(RecordingDetailModel.summaryStaysHere(storage: nil))
-        XCTAssertTrue(RecordingDetailModel.summaryStaysHere(storage: .folder))
-        XCTAssertFalse(RecordingDetailModel.summaryStaysHere(storage: .drive))
-        XCTAssertFalse(RecordingDetailModel.summaryStaysHere(storage: .icloud))
+    /// docs/09 "AI view": under the notes, the model as the plan names it, else its id.
+    func testTheFooterNamesTheModel() {
+        XCTAssertEqual(ChatGptText.notesFooter("gpt-x", connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT X"))
+        XCTAssertEqual(ChatGptText.notesFooter("GPT-5.4", connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT-5.4"))
     }
 
-    /// docs/09 "Detail header and More menu": Ask stands in the way of nothing but what Summarize does — a summary
-    /// being written is no reason.
-    func testAskHasSummarizesReasonsButNotARunningSummary() {
-        func ask(writing: Bool = false, transcript: Bool = true, busy: String? = nil, connection: ChatGptConnection? = nil) -> String? {
-            RecordingDetailModel.askReason(writing: writing, hasTranscript: transcript, busy: busy, connection: connection ?? signedIn)
-        }
-        XCTAssertNil(ask())
-        XCTAssertEqual(ask(writing: true, transcript: false), RecKitStrings.localized("Still recording"))
-        XCTAssertEqual(ask(transcript: false), RecKitStrings.localized("No transcript yet"))
-        XCTAssertEqual(ask(busy: RecKitStrings.localized("Transcribing…")), RecKitStrings.localized("Transcribing…"))
-        XCTAssertEqual(ask(connection: ChatGptConnection.SignedOut.shared), CoreMessages.sentence(.chatgptSignInRequired))
-        XCTAssertEqual(ask(connection: ChatGptConnection.Expired(account: "a@example.com")), CoreMessages.sentence(.chatgptSignInRequired))
-        // Summarize as… shares Summarize's reasons, the running summary included.
-        XCTAssertEqual(
-            RecordingDetailModel.summarizeReason(writing: false, hasTranscript: true, busy: nil, connection: signedIn,
-                                                 summary: SummaryState.Running(previous: nil), summarizing: false),
-            RecKitStrings.localized("Summarizing…")
-        )
-    }
-
-    /// docs/09 "Summary view": Fill in title and Fill in speaker names each say the one reason that stands first — Still
+    /// docs/09 "AI view": Fill in title and Fill in speaker names each say the one reason that stands first — Still
     /// recording, then No transcript yet or the unsettled job's, then the sign-in, then a run asking for that half, then
     /// nothing of that half left to fill.
     func testEachFillItemSaysTheFirstReasonInItsOrder() {
@@ -453,7 +460,7 @@ final class SummaryMenuTests: XCTestCase {
         }
     }
 
-    /// docs/09 "Summary view": an item is `Filling in…` only while a run asks for its own half — the title sheet's or
+    /// docs/09 "AI view": an item is `Filling in…` only while a run asks for its own half — the title sheet's or
     /// More's — and the lines under the header name what the run asks for, the title's first.
     func testARunHoldsOnlyTheHalvesItAsksFor() {
         let title = FillRun(recordingId: "r", title: true, names: false)
@@ -520,34 +527,7 @@ final class SummaryMenuTests: XCTestCase {
         XCTAssertFalse(TitleSheetFill.none.any)
     }
 
-    /// The footer names the model as the plan named it when the summary was written, even once the plan's list no
-    /// longer has it; with no name kept, the list's label, then the id.
-    func testTheFooterNamesTheModelAsItWasWhenWritten() {
-        let named = Summary(recordingId: "r1", text: "Notes", model: "gpt-old", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: nil, modelName: "GPT-5.4")
-        let unnamed = Summary(recordingId: "r1", text: "Notes", model: "gpt-old", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: nil, modelName: nil)
-        XCTAssertEqual(ChatGptText.summaryFooter(named, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT-5.4"))
-        XCTAssertEqual(ChatGptText.summaryFooter(unnamed, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "gpt-old"))
-        XCTAssertEqual(ChatGptText.summaryFooter(summary, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT X"))
-    }
-
-    /// The footer names a format other than General, before `Edited`.
-    func testTheFooterNamesTheFormat() {
-        let lecture = Summary(recordingId: "r1", text: "Notes", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: "lecture", modelName: nil)
-        let editedInterview = Summary(recordingId: "r1", text: "Notes", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z",
-                                      editedAt: "2026-10-09T01:00:00Z", format: "interview", modelName: nil)
-        let made = RecKitStrings.localized("ChatGPT · %@", "GPT X")
-        XCTAssertEqual(ChatGptText.summaryFooter(summary, connection: signedIn), made)
-        XCTAssertEqual(ChatGptText.summaryFooter(lecture, connection: signedIn), made + " · " + RecKitStrings.localized("Lecture"))
-        XCTAssertEqual(
-            ChatGptText.summaryFooter(editedInterview, connection: signedIn),
-            made + " · " + RecKitStrings.localized("Interview") + " · " + RecKitStrings.localized("Edited")
-        )
-        XCTAssertEqual(ChatGptText.formatLabel(.auto), RecKitStrings.localized("General"))
-        XCTAssertEqual(ChatGptText.formatLabel(.oneOnOne), RecKitStrings.localized("One-on-one"))
-        XCTAssertEqual(ChatGptText.formatLabel(.custom), RecKitStrings.localized("My format"))
-    }
-
-    /// docs/09 "Summary view": the text cut at the citations the core finds, in UTF-16 as the core counts — a line
+    /// docs/09 "AI view": the text cut at the citations the core finds, in UTF-16 as the core counts — a line
     /// in Korean with an emoji before the citation lands on the same characters.
     func testCitationsSplitTheTextWhereTheCoreFindsThem() {
         let text = "- 결정 👍 [00:12:34]\n- Next [1:05] and [99:99] stays text"
@@ -570,38 +550,42 @@ final class SummaryMenuTests: XCTestCase {
         XCTAssertNil(CitedText.second(URL(string: "https://chatgpt.com/settings/usage")!))
     }
 
-    /// docs/09 "Share / export": Summary comes after Transcript for notes, exports the summary, and is off with
-    /// `No summary yet` until the recording has one.
-    func testShareOffersTheSummaryOnceThereIsOne() {
-        XCTAssertEqual(ShareFormat.allCases, [.transcript, .notes, .summary, .subtitles, .webSubtitles, .audio])
-        XCTAssertEqual(ShareFormat.summary.export, .summary)
-        XCTAssertEqual(ShareFormat.summary.title, RecKitStrings.localized("Summary"))
-        XCTAssertFalse(ShareFormat.summary.needsTranscript)
-        XCTAssertEqual(RecordingDetailModel.summaryExportReason(SummaryState.None.shared), RecKitStrings.localized("No summary yet"))
-        XCTAssertEqual(RecordingDetailModel.summaryExportReason(SummaryState.Running(previous: nil)), RecKitStrings.localized("No summary yet"))
-        XCTAssertNil(RecordingDetailModel.summaryExportReason(SummaryState.Ready(summary: summary)))
-        XCTAssertNil(RecordingDetailModel.summaryExportReason(SummaryState.Failed(reason: "PROVIDER_ERROR", previous: summary)))
+    /// docs/09 "AI view" — "Elsewhere": Notes comes after Transcript for notes, exports the notes as text, and is off
+    /// with `No notes yet` until the recording has some.
+    func testShareOffersTheNotesOnceThereAreSome() {
+        XCTAssertEqual(ShareFormat.allCases, [.transcript, .markdown, .notes, .subtitles, .webSubtitles, .audio])
+        XCTAssertEqual(ShareFormat.notes.export, .notes)
+        XCTAssertEqual(ShareFormat.markdown.export, .md)
+        XCTAssertEqual(ShareFormat.notes.title, RecKitStrings.localized("Notes"))
+        XCTAssertEqual(ShareFormat.markdown.title, RecKitStrings.localized("Transcript for notes"))
+        XCTAssertEqual(ShareFormat.notes.detail, RecKitStrings.localized("Text · .txt"))
+        XCTAssertFalse(ShareFormat.notes.needsTranscript)
+        XCTAssertTrue(ShareFormat.markdown.needsTranscript)
+        XCTAssertEqual(RecordingDetailModel.notesExportReason(nil), RecKitStrings.localized("No notes yet"))
+        XCTAssertEqual(RecordingDetailModel.notesExportReason(NoteGroupsTests.notes(overview: " ")), RecKitStrings.localized("No notes yet"))
+        XCTAssertNil(RecordingDetailModel.notesExportReason(NoteGroupsTests.notes(overview: "The launch moved.")))
+        XCTAssertNil(RecordingDetailModel.notesExportReason(NoteGroupsTests.notes(points: [NoteGroupsTests.item("p1", .point)])))
     }
 
-    /// docs/10 "Search": the summary's line carries its label, with the matches moved past it; a hit found only
-    /// there opens the recording on its summary.
-    func testASummaryHitIsLabelledAndOpensOnTheSummary() {
-        let match = SummaryMatch(text: "- Budget review moved", ranges: [SearchRange(offset: 2, length: 6)])
-        let (line, ranges) = SearchResultRow.summaryLine(match)
-        let label = RecKitStrings.localized("Summary") + " · "
+    /// docs/10 "Search": the notes' line carries its label, with the matches moved past it; a hit found only there opens
+    /// the recording on its notes.
+    func testANotesHitIsLabelledAndOpensOnTheNotes() {
+        let match = NotesMatch(text: "- Budget review moved", ranges: [SearchRange(offset: 2, length: 6)])
+        let (line, ranges) = SearchResultRow.notesLine(match)
+        let label = RecKitStrings.localized("Notes") + " · "
         XCTAssertEqual(line, label + "- Budget review moved")
         let range = try! XCTUnwrap(ranges.first)
         let utf16 = Array(line.utf16)
         XCTAssertEqual(String(utf16CodeUnits: Array(utf16[Int(range.offset)..<Int(range.offset + range.length)]), count: Int(range.length)), "Budget")
 
-        func hit(title: Bool, snippets: [SearchSnippet], summary: SummaryMatch?) -> SearchHit {
+        func hit(title: Bool, snippets: [SearchSnippet], notes: NotesMatch?) -> SearchHit {
             SearchHit(recordingId: "r1", title: "Weekly", startedAt: "2026-10-10T00:00:00Z", matchesInTitle: title,
-                      titleRanges: [], snippets: snippets, summary: summary)
+                      titleRanges: [], snippets: snippets, notes: notes)
         }
-        XCTAssertTrue(hit(title: false, snippets: [], summary: match).onlyInSummary)
-        XCTAssertFalse(hit(title: true, snippets: [], summary: match).onlyInSummary)
-        XCTAssertFalse(hit(title: false, snippets: [SearchSnippet(atSec: 1, text: "budget", ranges: [])], summary: match).onlyInSummary)
-        XCTAssertFalse(hit(title: true, snippets: [], summary: nil).onlyInSummary)
+        XCTAssertTrue(hit(title: false, snippets: [], notes: match).onlyInNotes)
+        XCTAssertFalse(hit(title: true, snippets: [], notes: match).onlyInNotes)
+        XCTAssertFalse(hit(title: false, snippets: [SearchSnippet(atSec: 1, text: "budget", ranges: [])], notes: match).onlyInNotes)
+        XCTAssertFalse(hit(title: true, snippets: [], notes: nil).onlyInNotes)
     }
 
     /// docs/09 "Ask": Translate names the app's language as the App language list does.
@@ -642,35 +626,38 @@ final class SummaryTransferTests: XCTestCase {
         XCTAssertEqual(TrainingOptOut.chatGptHelp.absoluteString, "https://help.openai.com/en/articles/7730893")
     }
 
-    /// The iPhone asks before the first summary sends anything; allowed, the summary goes ahead — here it
-    /// ends at the missing transcript, before any request.
-    func testTheIPhoneAsksBeforeTheFirstSummaryAndGoesOnOnceAllowed() async throws {
+    /// The iPhone asks before the first Organize sends anything; declined, nothing is sent and nothing is allowed;
+    /// allowed, the Organize goes ahead — here it ends at the sign-in, before any request, as the notes' failure.
+    func testTheIPhoneAsksBeforeTheFirstOrganizeAndGoesOnOnceAllowed() async throws {
         let bridge = try await CoreBridge.make(
             platform: .ios, deviceName: "Test iPhone",
             dataDirectory: directory, databaseName: "summary-consent.db", secureStore: InMemorySecureStore(),
             transcriptionPolicy: TranscriptionPolicy(region: nil)
         )
         let model = RecordingDetailModel(core: bridge.core, recordingId: "01JTESTRECORDING0000000000", title: "Meeting")
-        await model.summarize()
+        await model.organize()
         XCTAssertEqual(model.summaryConsent.map(\.id), [TransferTargets.shared.chatGptSummary().id])
-        XCTAssertFalse(model.summarizing)
+        XCTAssertFalse(model.organizing)
 
         await model.answerSummaryConsent(allow: false)
         XCTAssertTrue(model.summaryConsent.isEmpty)
         let still = try await bridge.core.transferConsents.missing(targets: [TransferTargets.shared.chatGptSummary()])
         XCTAssertEqual(still.count, 1)
+        let untouched = try await bridge.core.notes.get(recordingId: model.recordingId)
+        XCTAssertNil(untouched.failure, "declined, nothing was tried")
 
-        await model.summarize()
+        await model.organize()
         await model.answerSummaryConsent(allow: true)
         let missing = try await bridge.core.transferConsents.missing(targets: [TransferTargets.shared.chatGptSummary()])
         XCTAssertTrue(missing.isEmpty)
         XCTAssertTrue(model.summaryConsent.isEmpty)
-        let state = try await bridge.core.summaries.state(recordingId: model.recordingId)
-        XCTAssertTrue(state is SummaryState.Failed, "\(state)")
+        XCTAssertFalse(model.organizing)
+        let notes = try await bridge.core.notes.get(recordingId: model.recordingId)
+        XCTAssertEqual(notes.failure.flatMap(ChatGptText.message), .chatgptSignInRequired)
     }
 
     /// docs/08 "Titles and speaker names": on the iPhone ticking either of the title sheet's boxes asks for the ChatGPT
-    /// permission first, as Summarize does — declined, it stays off; allowed, it is ticked, and either box is ticked
+    /// permission first, as Organize does — declined, it stays off; allowed, it is ticked, and either box is ticked
     /// again later without asking.
     func testTheIPhoneAsksBeforeATitleSheetBoxIsTicked() async throws {
         let bridge = try await CoreBridge.make(

@@ -42,7 +42,7 @@ import recly.core.transcribe.providerJson
 /** One model the signed-in plan offers, as `GET /v1/models` lists it. [label] is OpenAI's own name for it. */
 data class ChatGptModel(val id: String, val label: String)
 
-/** What Settings → ChatGPT shows (docs/09 "Summary view"). */
+/** What Settings → ChatGPT shows (docs/09 "AI view"). */
 sealed class ChatGptConnection {
     /** docs/15 "China mainland App Store": not offered in this storefront — the shells show nothing. */
     data object Unavailable : ChatGptConnection()
@@ -74,7 +74,7 @@ internal enum class ChatGptStanding { UNAVAILABLE, SIGNED_OUT, SIGNED_IN, EXPIRE
 
 /** A call that either worked or says why, as a [CoreMessage] wire code the shell renders (docs/07 §5). */
 sealed class ChatGptResult {
-    /** [welcome]: the first sign-in on this device, which the shells confirm once (docs/09 "Summary view"). */
+    /** [welcome]: the first sign-in on this device, which the shells confirm once (docs/09 "AI view"). */
     data class Done(val welcome: Boolean = false) : ChatGptResult()
 
     data class Failed(val reason: String) : ChatGptResult()
@@ -653,7 +653,7 @@ class ChatGptAccount internal constructor(
         const val PIECE = 2000
         const val MODEL_KEY = "chatgpt/model"
 
-        /** Listed by the plan but not offered for summaries (docs/09 "Summary view", user decision 2026-10-09). */
+        /** Listed by the plan but not offered for summaries (docs/09 "AI view", user decision 2026-10-09). */
         val HIDDEN_MODELS = setOf("gpt-6-sol", "gpt-5.6-sol", "gpt-5.6-luna")
 
         /** docs "Refresh errors" (checked 2026-10-09). */

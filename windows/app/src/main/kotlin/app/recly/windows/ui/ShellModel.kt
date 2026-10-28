@@ -80,14 +80,14 @@ import recly.core.DisconnectResult
 import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.AskState
 import recly.core.chatgpt.FillRun
-import recly.core.chatgpt.SummaryFormat
-import recly.core.chatgpt.SummaryState
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
 import recly.core.model.Highlight
 import recly.core.model.RecordingStatus
+import recly.core.notes.NoteEdit
 import recly.core.notes.NoteLine
+import recly.core.notes.NotesHeadings
 import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
 import recly.core.processing.ProcessingSaveResult
@@ -223,13 +223,14 @@ data class RecordingDetail(
     /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
     val find: String? = null,
     val findAtSec: Double? = null,
-    /** docs/08 "Summaries": the recording's summary, as the core has it. */
-    val summary: SummaryState = SummaryState.None,
-    /** The Summary chip is the chosen one. A detail opens on the transcript, or on a summary search found it in. */
-    val showingSummary: Boolean = false,
+    /**
+     * The Notes chip is the chosen one (docs/09 "AI view"). A detail opens on the transcript, or on notes a search
+     * found it in.
+     */
+    val showingNotes: Boolean = false,
     /** docs/08 "Ask": the question asked about it in this run of the app, and where it has got to. */
     val ask: AskState = AskState.None,
-    /** docs/08 "Organizing": its decisions, to-dos and questions as the core has them; null until read. */
+    /** docs/08 "Organizing": its notes as the core has them — whether they are being made, and the last failure; null until read. */
     val notes: RecordingNotes? = null,
     /**
      * The recording as its list row has it ([Recents.one]), null until it has been read: More → Delete's rule and
@@ -424,7 +425,7 @@ class ShellModel(
     var launchAtLogin: Boolean by mutableStateOf(false)
         private set
 
-    /** docs/15 §10 "Sign in with ChatGPT": the settings section and what the summaries run on. */
+    /** docs/15 §10 "Sign in with ChatGPT": the settings section and what the notes run on. */
     var chatGpt: ChatGptViewModel? by mutableStateOf(null)
         private set
 
@@ -455,7 +456,7 @@ class ShellModel(
 
     /**
      * The tray's Details on a row while the Details window is already up: the window takes it through the same leave
-     * as its own list ([RecordingsWindow]), so a transcript or summary being edited asks before it goes (D7).
+     * as its own list ([RecordingsWindow]), so a transcript or notes being edited ask before they go (D7).
      */
     var detailAsked: RecentItem? by mutableStateOf(null)
         private set
@@ -472,16 +473,6 @@ class ShellModel(
     /** docs/10 "Re-transcription": the confirmation, while it is up. */
     var retranscribeRequest: RetranscribeRequest? by mutableStateOf(null)
         private set
-
-    /** Summarize again was chosen over an edited summary, and the detail asks before replacing it. */
-    var summaryReplaceAsked: Boolean by mutableStateOf(false)
-        private set
-
-    /** The format that question is about: More → Summarize as's choice, or null for Settings' (docs/08 "Summaries"). */
-    private var replaceFormat: SummaryFormat? = null
-
-    /** The recording and format the last summary was asked for in, which Retry under a failure asks for again. */
-    private var lastSummary: Pair<String, SummaryFormat?>? = null
 
     /** docs/08 "Ask": the recording the Ask panel is open over, while it is. */
     var askingAbout: String? by mutableStateOf(null)
@@ -812,6 +803,7 @@ class ShellModel(
         microphone = microphoneAccess(logger)
         micAccess = microphone.state()
         chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.core.notes, graph.loopback, scope, logger).also { it.start() }
+        graph.core.notes.setHeadings(notesHeadings(localization.current))
 
         val command = helperCommand
         this.helperCommand = command
@@ -1441,18 +1433,15 @@ class ShellModel(
             }
         }
         launch {
-            graph.core.summaries.observe(recordingId).collect { summary -> updateDetail(recordingId) { it.copy(summary = summary) } }
-        }
-        launch {
             graph.core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
         }
         launch {
             graph.core.notes.observe(recordingId).collect { notes ->
                 updateDetail(recordingId) {
-                    // The last note deleted with no summary to show: back to the transcript rather than a loader for ever,
-                    // as a summary that never ran goes back.
-                    val emptied = notes.isEmpty && it.notes?.isEmpty == false && it.summary == SummaryState.None
-                    it.copy(notes = notes, showingSummary = it.showingSummary && !emptied)
+                    // The last note deleted, with nothing being made and no failure to say: back to the transcript
+                    // rather than a view with nothing in it.
+                    val emptied = notes.isEmpty && it.notes?.isEmpty == false && !notes.organizing && notes.failure == null
+                    it.copy(notes = notes, showingNotes = it.showingNotes && !emptied)
                 }
             }
         }
@@ -1592,13 +1581,13 @@ class ShellModel(
 
     /**
      * A search result: the detail opens on its transcript hit with every match of [query] tinted — or, for a
-     * hit in the title alone, as it opens from the list, with nothing to find; or, found in its summary alone, on
-     * the summary ([opensOnSummary]).
+     * hit in the title alone, as it opens from the list, with nothing to find; or, found in its notes alone, on
+     * the notes ([opensOnNotes]).
      */
     fun openSearchHit(hit: SearchHit, query: String) {
         val title = hit.title?.takeIf { it.isNotBlank() }?.let(UiMessage::Text) ?: Str.UNTITLED.message()
         val first = hit.snippets.firstOrNull()
-        openDetail(hit.recordingId, title, find = query.takeIf { first != null }, findAtSec = first?.atSec, showingSummary = opensOnSummary(hit))
+        openDetail(hit.recordingId, title, find = query.takeIf { first != null }, findAtSec = first?.atSec, showingNotes = opensOnNotes(hit))
     }
 
     /** More → Transcribe again: the confirmation, worded from the settings as they are now. */
@@ -1702,50 +1691,28 @@ class ShellModel(
     }
 
     /**
-     * More → Summarize (docs/08 "Summaries"): runs on the core's own scope, so closing the window does not
-     * stop it, and the detail follows it through [followDetailResults]. The view goes to the summary at once.
-     * [format] is More → Summarize as's choice; null is the one Settings says.
+     * More → Organize and Organize again, and Retry under a failure (docs/09 "AI view"): asks nothing — what the user
+     * edited or deleted stays — and goes to the notes at once. It runs on the app's own scope, so closing the window
+     * does not stop it, and the detail follows the notes through [followDetailResults]: `Organizing…` while it runs,
+     * the failure after one. Notes that came to nothing go back to the transcript, as the last note deleted does.
      */
-    fun summarize(format: SummaryFormat? = null) {
+    fun organize() {
         val graph = graph ?: return
         val recordingId = detail?.recordingId ?: return
-        showSummary(true)
-        lastSummary = recordingId to format
+        showNotes(true)
         scope.launch {
             try {
-                graph.core.summaries.summarize(recordingId, format)
+                graph.core.notes.organizeAgain(recordingId)
             } catch (e: kotlin.coroutines.cancellation.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.summarize.failed", error = e)
-                // Nothing ran, so there is no state to follow: back to the transcript rather than a loader for ever.
-                updateDetail(recordingId) { if (it.summary == SummaryState.None) it.copy(showingSummary = false) else it }
+                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.organize.failed", error = e)
+            }
+            val now = runCatching { graph.core.notes.get(recordingId) }.getOrNull()
+            if (now == null || (now.isEmpty && now.failure == null && !now.organizing)) {
+                updateDetail(recordingId) { it.copy(showingNotes = false) }
             }
         }
-    }
-
-    /**
-     * More → Summarize again over a summary the user edited: replacing it is asked first
-     * (docs/08 "Summaries"). Any other summary is made at once.
-     */
-    fun askToSummarize(format: SummaryFormat? = null) {
-        val detail = detail ?: return
-        if (summarizeAsksFirst(detail.summary)) {
-            replaceFormat = format
-            summaryReplaceAsked = true
-        } else {
-            summarize(format)
-        }
-    }
-
-    fun answerSummaryReplace(replace: Boolean) {
-        summaryReplaceAsked = false
-        if (replace) summarize(replaceFormat)
-    }
-
-    /** Retry under a failed summary: the same recording in the same format, without asking (docs/09 "Summary view"). */
-    fun retrySummary() {
-        summarize(lastSummary?.takeIf { it.first == detail?.recordingId }?.second)
     }
 
     /** More → Ask about this recording (docs/08 "Ask"). */
@@ -1784,21 +1751,29 @@ class ShellModel(
     }
 
     /**
-     * docs/08 "Summaries": the user's text for the recording's summary, kept here and carried to its folder by the
-     * core. What the recording has after it — the edited summary, or the run that is in the way — or null when it
-     * could not be saved.
+     * Edit notes' Save (docs/09 "AI view"): the overview when it changed, and the items whose words did — an emptied one
+     * is deleted. The core keeps them as the user's from then on and carries them to the recording's folder. False when
+     * they could not be saved, and the editor stays.
      */
-    suspend fun editSummary(recordingId: String, text: String): SummaryState? {
+    suspend fun editNotes(recordingId: String, overview: String?, items: List<NoteEdit>): Boolean {
+        val graph = graph ?: return false
+        return runCatching { graph.core.notes.edit(recordingId, overview, items) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.edit.failed", error = it) }
+            .isSuccess
+    }
+
+    /** Copy all under the notes: the overview and every group with its heading, as text; null when it cannot be read. */
+    suspend fun notesText(recordingId: String): String? {
         val graph = graph ?: return null
-        return runCatching { graph.core.summaries.edit(recordingId, text) }
-            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.summary.edit.failed", error = it) }
+        return runCatching { graph.core.notes.text(recordingId) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.copy.failed", error = it) }
             .getOrNull()
     }
 
-    /** The Transcript | Summary chips. */
-    fun showSummary(show: Boolean) {
+    /** The Transcript | Notes chips. */
+    fun showNotes(show: Boolean) {
         val recordingId = detail?.recordingId ?: return
-        updateDetail(recordingId) { it.copy(showingSummary = show) }
+        updateDetail(recordingId) { it.copy(showingNotes = show) }
     }
 
     /** docs/08 "Organizing": the transcript's lines around a note, for its row to open on; none when they cannot be read. */
@@ -1849,10 +1824,10 @@ class ShellModel(
         title: UiMessage,
         find: String? = null,
         findAtSec: Double? = null,
-        showingSummary: Boolean = false,
+        showingNotes: Boolean = false,
     ) {
         val graph = graph ?: return
-        detail = RecordingDetail(recordingId, title, find = find, findAtSec = findAtSec, showingSummary = showingSummary)
+        detail = RecordingDetail(recordingId, title, find = find, findAtSec = findAtSec, showingNotes = showingNotes)
         scope.launch {
             val result = runCatching { graph.core.results(recordingId) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.detail.failed", error = it) }
@@ -1870,7 +1845,7 @@ class ShellModel(
                 availability = result?.availability ?: TranscriptAvailability.UNAVAILABLE,
                 find = find,
                 findAtSec = findAtSec,
-                showingSummary = showingSummary,
+                showingNotes = showingNotes,
             )
         }
     }
@@ -2464,9 +2439,10 @@ class ShellModel(
     fun selectLanguage(choice: AppLanguage) {
         localization.language = choice
         language = choice
-        // Summaries, Ask's presets and its Translate follow the app's language without a restart (2026-10-10) —
-        // the same tag the core was opened with ([AppGraph]).
+        // Notes, Ask's presets and its Translate follow the app's language without a restart (2026-10-10) —
+        // the same tag the core was opened with ([AppGraph]) — and so do the headings of the notes as text.
         graph?.core?.summaries?.setLocale(choice.tag.ifEmpty { Host.language() })
+        graph?.core?.notes?.setHeadings(notesHeadings(localization.current))
     }
 
     fun selectTheme(choice: AppTheme) {

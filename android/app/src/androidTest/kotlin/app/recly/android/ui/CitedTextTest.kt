@@ -14,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * docs/09 "Summary view": a summary's bulleted lines, each starting with a citation, put the citations one line
+ * docs/09 "AI view": a summary's bulleted lines, each starting with a citation, put the citations one line
  * apart — closer than their 48dp targets are tall. A tap at the middle of any of them plays that one.
  */
 class CitedTextTest {

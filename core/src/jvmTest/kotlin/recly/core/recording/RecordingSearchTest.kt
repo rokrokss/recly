@@ -5,8 +5,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import recly.core.model.RecordingMeta
 import recly.core.model.Track
 import recly.core.model.recJson
+import recly.core.notes.NoteEvidence
+import recly.core.notes.NoteKind
+import recly.core.notes.NotesFile
+import recly.core.notes.StoredNote
 import recly.core.testing.CoreFixture
 import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
@@ -40,16 +45,37 @@ class RecordingSearchTest {
         assertEquals(emptyList(), f.core.search("   ", 10))
     }
 
+    /** Final notes beside the recording's parts, as a pass and the user's edits left them. */
+    private fun writeNotes(meta: RecordingMeta, overview: String?, vararg items: StoredNote) {
+        val notes = NotesFile(
+            recordingId = meta.recordingId, stage = NotesFile.FINAL, overview = overview, items = items.toList(),
+            createdAt = "2026-08-26T02:00:00.000Z", updatedAt = "2026-08-26T02:00:00.000Z", finalizedAt = "2026-08-26T02:00:00.000Z",
+        )
+        f.fs.write(f.dirOf(meta) / NotesFile.name(MetaWriter.baseName(meta))) { writeUtf8(recJson.encodeToString(NotesFile.serializer(), notes)) }
+    }
+
+    private fun note(id: String, text: String, userText: String? = null) = StoredNote(
+        id, NoteKind.TODO, text, evidence = NoteEvidence(1.0, "hello 1"), provisional = false, userText = userText,
+        createdAt = "2026-08-26T02:00:00.000Z",
+    )
+
     @Test
-    fun `a summary line is found too`() = runBlocking {
+    fun `a line of the notes is found too, an item as the user left it`() = runBlocking {
         val meta = f.recordAndRun(title = "Weekly")
-        f.core.summaries.save(recly.core.chatgpt.Summary(meta.recordingId, "Summary\n- The Budget moves to Q3 [00:12:34].", "gpt-a", "2026-08-26T02:00:00.000Z"))
+        writeNotes(
+            meta, "We met.\nThe Budget moves to Q3.",
+            note("01J9N0TE000000000000000001", "Hire designers", userText = "Hire two designers"),
+            note("01J9N0TE000000000000000002", "Send the deck"),
+        )
 
         val hit = f.core.search("budget", 10).single()
-        assertEquals(SummaryMatch("The Budget moves to Q3.", listOf(SearchRange(4, 6))), hit.summary)
+        assertEquals(NotesMatch("The Budget moves to Q3.", listOf(SearchRange(4, 6))), hit.notes)
         assertEquals(emptyList(), hit.snippets)
         assertFalse(hit.matchesInTitle)
-        assertEquals(null, f.core.search("hello 1", 10).single().summary, "a transcript hit says nothing of the summary")
+        assertEquals(NotesMatch("Hire two designers", listOf(SearchRange(5, 3))), f.core.search("TWO", 10).single().notes)
+        assertEquals(NotesMatch("Send the deck", listOf(SearchRange(9, 4))), f.core.search("deck", 10).single().notes)
+        assertEquals(emptyList(), f.core.search("hire designers", 10), "not the words the user replaced")
+        assertEquals(null, f.core.search("hello 1", 10).single().notes, "a transcript hit says nothing of the notes")
     }
 
     @Test

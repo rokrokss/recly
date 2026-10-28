@@ -73,7 +73,7 @@ internal fun AskDialog(
         AskPanel(
             state = detail.ask,
             presets = presets,
-            modelLabel = { id, name -> summaryModelLabel(id, name, model.chatGpt?.connection ?: ChatGptConnection.SignedOut) },
+            modelLabel = { id, name -> chatGptModelLabel(id, name, model.chatGpt?.connection ?: ChatGptConnection.SignedOut) },
             canPlay = canPlay,
             onPlay = onPlay,
             onAsk = model::ask,
@@ -86,15 +86,15 @@ internal fun AskDialog(
 
 /**
  * The panel's body: the presets as chips that ask at once, the user's own question with Ask, and the answer — the
- * square loader while it runs, the text with its times and the summary's footer when it is ready, the summary's
- * failure notice when it is not. Everything that asks waits while a question runs.
+ * square loader while it runs, the text with its times and the notes' footer when it is ready, the notes' failure
+ * notice when it is not. Everything that asks waits while a question runs.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun AskPanel(
     state: AskState,
     presets: List<AskPreset>,
-    /** The footer's model, from its id and the name kept with the answer ([summaryModelLabel]). */
+    /** The footer's model, from its id and the name kept with the answer ([chatGptModelLabel]). */
     modelLabel: (String, String?) -> String,
     canPlay: Boolean,
     onPlay: (Double) -> Unit,
@@ -156,11 +156,13 @@ internal fun AskPanel(
             is AskState.Running -> LoadingText(strings[Str.ASK_RUNNING], MaterialTheme.typography.bodyMedium, blueprint.textMuted)
             is AskState.Ready -> {
                 CitedText(state.answer.text, canPlay, onPlay, strings, seekableDurationSec)
-                SummaryFooter(state.answer.text, strings[Str.SUMMARY_MODEL, modelLabel(state.answer.model, state.answer.modelName)], state.answer.recordingId, strings)
+                ChatGptFooter(strings[Str.SUMMARY_MODEL, modelLabel(state.answer.model, state.answer.modelName)], state.answer.recordingId, strings) {
+                    state.answer.text
+                }
             }
             // Retry asks the same preset or the same words again.
-            is AskState.Failed -> SummaryFailureNotice(
-                summaryFailure(state.reason, Str.ASK_FAILED),
+            is AskState.Failed -> ChatGptFailureNotice(
+                chatGptFailure(state.reason, Str.ASK_FAILED),
                 onManageUsage,
                 { onAsk(state.preset, state.question) },
                 strings,

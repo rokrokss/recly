@@ -4,7 +4,7 @@ import SwiftUI
 import XCTest
 @testable import RecKit
 
-/// docs/09 "Summary view": a citation's target is at least the minimum each way, centred on it, and a tap where two
+/// docs/09 "AI view": a citation's target is at least the minimum each way, centred on it, and a tap where two
 /// targets meet plays the nearer citation.
 final class CitedTextTests: XCTestCase {
     func testATargetIsAtLeastTheMinimumEachWayCentredOnTheCitation() {

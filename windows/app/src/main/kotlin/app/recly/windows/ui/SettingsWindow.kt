@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -33,6 +34,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import app.recly.windows.auth.OAuthConfig
@@ -65,8 +68,8 @@ import app.recly.windows.ui.theme.mono
 import app.recly.windows.ui.theme.ProcessingState
 import kotlin.time.ExperimentalTime
 import recly.core.chatgpt.ChatGptConnection
-import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryPreferences
+import recly.core.notes.NotesPreferences
 import recly.core.storage.StorageKind
 
 /**
@@ -87,7 +90,10 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Appearance(model, strings)
             Capture(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
-            model.chatGpt?.let { ChatGpt(it, strings) }
+            model.chatGpt?.let {
+                ChatGpt(it, strings)
+                NotesSettings(it, strings)
+            }
             model.processing?.let { ProcessingSettingsFile(it, strings) }
             About(model, strings)
         }
@@ -278,8 +284,9 @@ private fun Capture(model: ShellModel, strings: Strings) {
 }
 
 /**
- * docs/09 "Summary view" · docs/15 §10: the user's own ChatGPT plan, for summaries — in the Drive rows' shape, with
- * the Drive connect button's tones. Nothing at all where it is not offered.
+ * docs/09 "AI view" · docs/15 §10: the user's own ChatGPT plan, for notes and questions — in the Drive rows'
+ * shape, with the Drive connect button's tones: the sign-in, Manage usage, the model and the footnote, and nothing of
+ * what the notes are asked for, which is Settings → Notes' ([NotesSettings]). Nothing at all where it is not offered.
  */
 @Composable
 private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
@@ -347,61 +354,50 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
         ChatGptNotice.RevokeUnconfirmed -> SectionFootnote(strings[Str.CHATGPT_REVOKE_UNCONFIRMED])
         null -> Unit
     }
-    SummaryPreferenceRows(chatGpt, strings)
     SectionFootnote(strings[Str.CHATGPT_FOOTNOTE])
 }
 
 /**
- * docs/08 "Summaries": what every summary on this PC is shaped as and who it is for — under the model, and there
- * signed out too, since only running a summary needs the sign-in. The format is saved when it is chosen; the two
- * texts when their field is left; the fill-in switches under them when they are switched.
- *
- * Shorter since 2026-10-10: the format offers all five always, and My format's field is there only while the format
- * is My format — taking the cursor when it is chosen with nothing written yet, and saying until then that summaries
- * use General.
+ * docs/09 "AI view": Settings → Notes, right after ChatGPT and there signed out too, since only organizing needs the
+ * sign-in — what every recording's notes on this PC are asked for, whichever provider makes them: the instructions, up
+ * to three sections of the user's own, and About you. Each field is saved when its editing ends, a section when the
+ * cursor leaves it — one left without a name goes then — and Remove at once.
  */
 @Composable
-private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
-    val preferences = chatGpt.preferences
-    val customFocus = remember { FocusRequester() }
-    var focusCustom by remember { mutableStateOf(false) }
-    TableRow(title = strings[Str.SUMMARY_FORMAT], trailing = {
-        BlueprintDropdown(
-            label = strings[Str.SUMMARY_FORMAT],
-            options = SummaryFormat.entries.map { it to strings[summaryFormatLabel(it)] },
-            selected = preferences.format,
-            onSelect = { format ->
-                focusCustom = format == SummaryFormat.CUSTOM && preferences.customFormat.isBlank()
-                chatGpt.selectFormat(format)
-            },
-        )
-    })
-    if (preferences.format == SummaryFormat.CUSTOM) {
-        SettingsCard {
-            PreferenceField(
-                saved = preferences.customFormat,
-                onSave = chatGpt::saveCustomFormat,
-                label = strings[Str.SUMMARY_FORMAT_CUSTOM],
-                placeholder = strings[Str.SUMMARY_CUSTOM_PLACEHOLDER],
-                hint = strings[Str.SUMMARY_CUSTOM_NOTE],
-                emptyHint = strings[Str.SUMMARY_CUSTOM_EMPTY],
-                max = SummaryPreferences.CUSTOM_MAX,
-                returnSaves = false,
-                lines = CUSTOM_LINES,
-                focusRequester = customFocus,
-            )
-        }
-        HairLine()
-        LaunchedEffect(focusCustom) {
-            if (focusCustom) {
-                runCatching { customFocus.requestFocus() }
-                focusCustom = false
-            }
-        }
-    }
+private fun NotesSettings(chatGpt: ChatGptViewModel, strings: Strings) {
+    if (chatGpt.connection == ChatGptConnection.Unavailable) return
+    Section(strings[Str.NOTES_TAB])
     SettingsCard {
         PreferenceField(
-            saved = preferences.aboutMe,
+            saved = chatGpt.notesInstructions,
+            onSave = chatGpt::saveNotesInstructions,
+            label = strings[Str.NOTES_INSTRUCTIONS],
+            placeholder = strings[Str.NOTES_INSTRUCTIONS_PLACEHOLDER],
+            hint = strings[Str.NOTES_INSTRUCTIONS_NOTE],
+            max = NotesPreferences.INSTRUCTIONS_MAX,
+            returnSaves = false,
+            lines = INSTRUCTIONS_LINES,
+        )
+    }
+    HairLine()
+    SettingsCard {
+        Text(strings[Str.NOTES_SECTIONS], style = MaterialTheme.typography.labelSmall, color = blueprint.textMuted)
+        // The section Add section made, whose name takes the cursor once it is drawn.
+        var focusKey by remember { mutableStateOf<Int?>(null) }
+        chatGpt.sections.forEach { section ->
+            key(section.key) {
+                SectionFields(section, chatGpt, strings, focus = focusKey == section.key, onFocused = { focusKey = null })
+            }
+        }
+        if (chatGpt.sections.size < NotesPreferences.SECTIONS_MAX) {
+            BlueprintButton(strings[Str.NOTES_SECTION_ADD], { focusKey = chatGpt.addSection() }, tone = ButtonTone.QUIET)
+        }
+        Text(strings[Str.NOTES_SECTIONS_NOTE], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+    }
+    HairLine()
+    SettingsCard {
+        PreferenceField(
+            saved = chatGpt.preferences.aboutMe,
             onSave = chatGpt::saveAboutMe,
             label = strings[Str.SUMMARY_ABOUT],
             placeholder = strings[Str.SUMMARY_ABOUT_PLACEHOLDER],
@@ -409,6 +405,68 @@ private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
             max = SummaryPreferences.ABOUT_MAX,
             returnSaves = true,
             lines = ABOUT_LINES,
+        )
+    }
+    HairLine()
+}
+
+/**
+ * One of My sections: its name on one line — Return ends it — what goes in it on up to three, and a quiet Remove
+ * that names it for a reader. Its editing ends when the cursor leaves both fields, the window goes behind another or
+ * closes, and the section is saved then as it is ([ChatGptViewModel.endSection]).
+ */
+@Composable
+private fun SectionFields(section: SectionDraft, chatGpt: ChatGptViewModel, strings: Strings, focus: Boolean, onFocused: () -> Unit) {
+    var name by remember(section.name) { mutableStateOf(section.name) }
+    var description by remember(section.description) { mutableStateOf(section.description) }
+    val latestName by rememberUpdatedState(name)
+    val latestDescription by rememberUpdatedState(description)
+    val focusManager = LocalFocusManager.current
+    val nameFocus = remember { FocusRequester() }
+    var editing by remember { mutableStateOf(false) }
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(windowFocused) { if (!windowFocused) chatGpt.endSection(section.key, latestName, latestDescription) }
+    // Gone with the window; a section Remove took is not there any more, and nothing is saved for it.
+    DisposableEffect(section.key) { onDispose { chatGpt.endSection(section.key, latestName, latestDescription) } }
+    LaunchedEffect(focus) {
+        if (focus) {
+            runCatching { nameFocus.requestFocus() }
+            onFocused()
+        }
+    }
+    Column(
+        Modifier.fillMaxWidth().onFocusChanged {
+            if (editing && !it.hasFocus) chatGpt.endSection(section.key, latestName, latestDescription)
+            editing = it.hasFocus
+        },
+        verticalArrangement = Arrangement.spacedBy(Space.s),
+    ) {
+        BlueprintTextField(
+            value = name,
+            onValueChange = { typed -> name = typed.replace(LINE_BREAK, " ").take(NotesPreferences.SECTION_NAME_MAX) },
+            label = strings[Str.NOTES_SECTION_NAME],
+            modifier = Modifier.onPreviewKeyEvent { event ->
+                (event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focusManager.clearFocus() }
+            },
+            placeholder = strings[Str.NOTES_SECTION_NAME_PLACEHOLDER],
+            focusRequester = nameFocus,
+        )
+        BlueprintTextField(
+            value = description,
+            onValueChange = { description = it.take(NotesPreferences.DESCRIPTION_MAX) },
+            label = strings[Str.NOTES_SECTION_DESCRIPTION],
+            singleLine = false,
+            minLines = DESCRIPTION_LINES.first,
+            maxLines = DESCRIPTION_LINES.last,
+            placeholder = strings[Str.NOTES_SECTION_DESCRIPTION_PLACEHOLDER],
+        )
+        BlueprintButton(
+            strings[Str.NOTES_SECTION_REMOVE],
+            { chatGpt.removeSection(section.key) },
+            modifier = Modifier.align(Alignment.End).semantics {
+                contentDescription = name.takeIf { it.isNotBlank() }?.let { strings[Str.VOCABULARY_REMOVE, it] } ?: strings[Str.NOTES_SECTION_REMOVE]
+            },
+            tone = ButtonTone.QUIET,
         )
     }
 }
@@ -435,7 +493,7 @@ internal fun PreferenceField(
     var text by remember(saved) { mutableStateOf(saved) }
     val latest by rememberUpdatedState(text)
     val focus = LocalFocusManager.current
-    // Going to another window ends the editing — a summary asked for there uses what was typed here — and so does
+    // Going to another window ends the editing — notes asked for there use what was typed here — and so does
     // this one closing. Saving what is already kept saves nothing.
     val windowFocused = LocalWindowInfo.current.isWindowFocused
     LaunchedEffect(windowFocused) { if (!windowFocused) onSave(latest) }
@@ -532,8 +590,9 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
     HairLine()
 }
 
-/** My format: two lines open, eight before it scrolls; About you: one, up to three (2026-10-10). */
-private val CUSTOM_LINES = 2..8
+/** Notes instructions: two lines open, eight before it scrolls; a section's contents and About you: one, up to three. */
+private val INSTRUCTIONS_LINES = 2..8
+private val DESCRIPTION_LINES = 1..3
 private val ABOUT_LINES = 1..3
 
 private val LINE_BREAK = Regex("\\r\\n|\\r|\\n")

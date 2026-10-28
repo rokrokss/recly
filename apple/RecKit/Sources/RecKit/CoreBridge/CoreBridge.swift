@@ -74,7 +74,11 @@ public struct CoreBridge {
         )
 
         let core = try AppleRuntime.shared.openCore(deps: deps, name: databaseName, basePath: dataDirectory.path)
-        if platform != .watchos { _ = try await core.initializeProcessing() }
+        if platform != .watchos {
+            _ = try await core.initializeProcessing()
+            // docs/08 "Organizing" — "Copy and share": the notes' text under the app's words for its groups.
+            core.notes.setHeadings(headings: NoteGroups.headings)
+        }
         return CoreBridge(core: core, deps: deps, dataDirectory: dataDirectory)
     }
 

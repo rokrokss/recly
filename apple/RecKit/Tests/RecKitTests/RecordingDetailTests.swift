@@ -359,8 +359,8 @@ final class RecordingDetailTests: XCTestCase {
         XCTAssertTrue(model.writing)
         let still = RecKitStrings.localized("Still recording")
         let reasons = [
-            model.renameReason, model.editReason, model.retranscribeReason, model.summarizeReason,
-            model.editSummaryReason, model.askReason, model.fillTitleReason, model.fillNamesReason, model.highlightReason,
+            model.renameReason, model.editReason, model.retranscribeReason, model.organizeReason,
+            model.editNotesReason, model.askReason, model.fillTitleReason, model.fillNamesReason, model.highlightReason,
             model.deleteReason,
         ]
         XCTAssertEqual(reasons, Array(repeating: still, count: reasons.count))

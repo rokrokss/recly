@@ -2,16 +2,15 @@
 import ReclyCore
 import SwiftUI
 
-/// docs/09 "Summary view": the meeting notes ChatGPT wrote from this recording's transcript, as plain text —
-/// no shell renders Markdown — with the model that wrote them and Copy all under them. While a new one is
-/// written, or after one failed, the last one stays readable under the line that says so. The notes organized on
-/// their own (docs/08 "Organizing") come first.
-struct SummaryPane: View {
+/// docs/09 "AI view" · "Notes view": the `Notes` chip's body — the `Organizing…` line or the failure notice on top, then
+/// the recording's notes ([NotesBlock]: the overview, the groups, the user's sections), then the model that wrote them
+/// and `Copy all`. The notes there are stay readable under the line or the notice.
+struct NotesPane: View {
     @ObservedObject var model: RecordingDetailModel
-    /// Summarize again, from the failure notice.
+    /// Organize again, from the failure notice.
     let retry: () -> Void
-    /// How far the recording here can be played, and the seek a citation makes — nil while it cannot be
-    /// played from a point (see [CitedText]).
+    /// How far the recording here can be played, and the seek a time button makes — nil while it cannot be played
+    /// from a point.
     let seekableSec: Double
     let onSeek: ((Double) -> Void)?
     @State private var copied = false
@@ -21,7 +20,13 @@ struct SummaryPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.m) {
-                // docs/08 "Organizing": the notes, above a summary the user asked for — absent when there are none.
+                if model.organizing {
+                    LoadingText(text: loc("Organizing…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+                        .accessibilityIdentifier("notes-organizing")
+                } else if let failure = model.notes?.failure {
+                    ChatGptFailureNotice(reason: failure, failed: loc("Could not organize"), retrying: model.organizing, retry: retry)
+                        .accessibilityIdentifier("notes-failed")
+                }
                 if model.hasNotes {
                     NotesBlock(
                         notes: model.notes,
@@ -34,32 +39,13 @@ struct SummaryPane: View {
                         delete: model.deleteNote
                     )
                     .id(model.recordingId)
-                }
-                switch onEnum(of: model.summary) {
-                case .none:
-                    if model.summarizing { running }
-                case .running(let run):
-                    running
-                    // The last one stays as it was, with its model and Copy all, while the new one is written.
-                    if let previous = run.previous {
-                        text(previous)
-                        footer(previous)
-                    }
-                case .ready(let ready):
-                    text(ready.summary)
-                    footer(ready.summary)
-                case .failed(let failed):
-                    notice(failed.reason)
-                    if let previous = failed.previous {
-                        text(previous)
-                        footer(previous)
-                    }
+                    footer
                 }
             }
             .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .accessibilityIdentifier("summary-pane")
+        .accessibilityIdentifier("notes-pane")
         .task(id: copied) {
             guard copied else { return }
             try? await Task.sleep(for: .seconds(3))
@@ -67,48 +53,38 @@ struct SummaryPane: View {
         }
     }
 
-    private var running: some View {
-        LoadingText(text: loc("Summarizing…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
-            .accessibilityIdentifier("summary-running")
-    }
-
-    private func text(_ summary: Summary) -> some View {
-        CitedText(text: summary.text, seekableSec: seekableSec, onSeek: onSeek)
-            .accessibilityIdentifier("summary-text")
-    }
-
-    private func footer(_ summary: Summary) -> some View {
+    /// `ChatGPT · <model>` (when the notes say which) and `Copy all`, which copies `notes.text`.
+    private var footer: some View {
         HStack(spacing: Space.s) {
-            Text(verbatim: ChatGptText.summaryFooter(summary, connection: model.chatGpt))
-                .font(blueprint.fonts.sans(TypeSize.small))
-                .foregroundStyle(blueprint.palette.textMuted)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            Group {
+                if let name = model.notes?.model {
+                    Text(verbatim: ChatGptText.notesFooter(name, connection: model.chatGpt))
+                        .font(blueprint.fonts.sans(TypeSize.small))
+                        .foregroundStyle(blueprint.palette.textMuted)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             BlueprintButton(
                 copied ? loc("Copied") : loc("Copy all"),
                 tone: .quiet,
                 leading: copied ? BlueprintChip.selectionMark : nil
             ) {
-                model.copySummary()
+                Task { await model.copyNotes() }
                 copied = true
             }
             .disabled(copied)
-            .accessibilityIdentifier("summary-copy")
+            .accessibilityIdentifier("notes-copy")
         }
-    }
-
-    private func notice(_ reason: String) -> some View {
-        ChatGptFailureNotice(reason: reason, failed: loc("Could not summarize"), retrying: model.summarizing, retry: retry)
-            .accessibilityIdentifier("summary-failed")
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// One centred notice and at most one way out of it (docs/09 screen principle 8): a summary's failure, and an
+/// One centred notice and at most one way out of it (docs/09 screen principle 8): an Organize's failure, and an
 /// answer's (docs/09 "Ask").
 struct ChatGptFailureNotice: View {
     let reason: String
-    /// What it says when the code has no sentence the user can act on — `Could not summarize`.
+    /// What it says when the code has no sentence the user can act on — `Could not organize`.
     let failed: String
     /// A run already going again: Retry waits for it.
     let retrying: Bool
@@ -139,7 +115,7 @@ struct ChatGptFailureNotice: View {
             } else if message != .chatgptSignInRequired, message != .chatgptPlanRequired {
                 BlueprintButton(RecKitStrings.localized("Retry"), tone: .quiet, action: retry)
                     .disabled(retrying)
-                    .accessibilityIdentifier("summary-retry")
+                    .accessibilityIdentifier("chatgpt-retry")
             }
         }
         .frame(maxWidth: .infinity)
@@ -147,7 +123,7 @@ struct ChatGptFailureNotice: View {
     }
 }
 
-/// docs/09 "Summary view": a summary or an answer as selectable plain text, every `[HH:MM:SS]` in it playing the
+/// docs/09 "AI view": an answer as selectable plain text, every `[HH:MM:SS]` in it playing the
 /// recording from there — the seek a transcript time button makes. Mono and accent, never underlined: a dotted
 /// underline means a web page (docs/09, 2026-10-09).
 ///
@@ -268,7 +244,7 @@ private struct CitationMark: TextAttribute {
     let run: Int
 }
 
-/// docs/09 "Summary view": a citation's target — its glyphs on one line of the text, and around them the box a
+/// docs/09 "AI view": a citation's target — its glyphs on one line of the text, and around them the box a
 /// tap or a click plays it from.
 struct CitationTarget: Equatable {
     /// The citation's place among the text's runs.
@@ -377,68 +353,114 @@ private struct CitationTargets: View {
     }
 }
 
-/// docs/09 "Summary view": the summary as the user rewrites it — the whole text in one field.
-struct SummaryDraft: Equatable {
-    let original: String
-    var text: String
+/// docs/09 "AI view" — "Editing": the notes as the user rewrites them — the overview, when there is one, and each item's
+/// words; owners, due dates and times are not theirs to change here.
+struct NotesDraft {
+    /// The groups as they were when editing began, in the order the editor shows them.
+    let groups: [NoteGroup]
+    /// The overview as it was, nil when there was none — and so no field for it.
+    let originalOverview: String?
+    var overview: String
+    /// Each item's words, by its id.
+    var texts: [String: String]
 
-    init(_ summary: Summary) {
-        original = summary.text
-        text = summary.text
+    init(_ notes: RecordingNotes?) {
+        groups = NoteGroups.of(notes)
+        originalOverview = NoteGroups.overview(notes, shown: true)
+        overview = originalOverview ?? ""
+        texts = Dictionary(groups.flatMap(\.items).map { ($0.id, $0.text) }, uniquingKeysWith: { first, _ in first })
     }
 
-    /// An empty or unchanged text is not saved (docs/08 "Summaries"), so neither is a change to keep.
+    /// What Save hands `notes.edit`: the overview when its words changed (nil leaves it), and each item whose words
+    /// changed — an emptied one, which the core deletes.
+    var edits: (overview: String?, items: [NoteEdit]) {
+        let overview = originalOverview.flatMap { was in Self.trimmed(self.overview) == was ? nil : Self.trimmed(self.overview) }
+        let items = groups.flatMap(\.items).compactMap { item -> NoteEdit? in
+            let text = Self.trimmed(texts[item.id] ?? item.text)
+            return text == Self.trimmed(item.text) ? nil : NoteEdit(itemId: item.id, text: text)
+        }
+        return (overview, items)
+    }
+
     var changed: Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmed.isEmpty && trimmed != original.trimmingCharacters(in: .whitespacesAndNewlines)
+        let edits = edits
+        return edits.overview != nil || !edits.items.isEmpty
     }
+
+    /// The owner and the due date under an item's field, muted; nil when it has neither.
+    static func meta(_ item: NoteItem) -> String? {
+        let owner = item.owner?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = [owner, NoteGroups.due(item)].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    private static func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 }
 
-/// docs/09 "Summary view": edit mode stands in for the summary the way the transcript's editor stands in for
-/// the transcript — one plain field holding the whole text, the note on where a save goes under it, and the
-/// phone's Cancel · Save under that, above the keyboard.
-struct SummaryEditor: View {
-    @Binding var text: String
-    let changed: Bool
+/// docs/09 "AI view" — "Editing": edit mode stands in for the notes the way the transcript's editor stands in for the
+/// transcript — the overview in one field, then each group's header over its items, each item one field with its owner
+/// and due date muted under it and no time button; under them the two lines on what a save does, and the phone's
+/// Cancel · Save under that, above the keyboard.
+struct NotesEditor: View {
+    @Binding var draft: NotesDraft
     /// The recording's storage is this device's own (or none yet): the edit does not reach other devices.
     let staysHere: Bool
     let saving: Bool
     let cancel: () -> Void
     let save: () -> Void
-    /// The text view has the cursor — the page's, so the iPhone can put the Transcript | Summary chips away while
-    /// the keyboard is up.
-    var focused: FocusState<Bool>.Binding
+    /// Which field has the cursor — `overview` or an item's id — the page's, so the iPhone can put the Transcript |
+    /// Notes chips away while the keyboard is up.
+    var focused: FocusState<String?>.Binding
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
 
+    private static let overviewField = "overview"
+
     var body: some View {
         VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: Space.s) {
-                // A text view, not a field: Return is a new line here, on the Mac too.
-                TextEditor(text: $text)
-                    .scrollContentBackground(.hidden)
-                    // The summary's own size (A-A4), in its own direction (2.13).
-                    .font(blueprint.fonts.bodySmall)
-                    .contentDirection(text)
-                    .foregroundStyle(blueprint.palette.text)
-                    .focused(focused)
-                    // A field's 12 × 8, less the inset the text view keeps of its own on each platform.
-                    .fieldBox(focused: focused.wrappedValue, inset: FieldInset.textView)
-                    .accessibilityLabel(Text(verbatim: loc("Summary")))
-                    .accessibilityIdentifier("summary-edit-text")
-                Text(verbatim: loc(staysHere
-                    ? "Saving keeps the summary on this device."
-                    : "Saving updates the summary in your storage, and your other devices show it."))
+            ScrollView {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    if draft.originalOverview != nil {
+                        field($draft.overview, label: loc("Notes"), key: Self.overviewField)
+                            .accessibilityIdentifier("notes-edit-overview")
+                    }
+                    ForEach(draft.groups) { group in
+                        SectionHeader(group.title)
+                        ForEach(group.items, id: \.id) { item in
+                            VStack(alignment: .leading, spacing: Space.xxs) {
+                                field(
+                                    Binding(get: { draft.texts[item.id] ?? "" }, set: { draft.texts[item.id] = $0 }),
+                                    label: group.title,
+                                    key: item.id
+                                )
+                                .accessibilityIdentifier("notes-edit-\(item.id)")
+                                if let meta = NotesDraft.meta(item) {
+                                    Text(verbatim: meta)
+                                        .font(blueprint.fonts.sans(TypeSize.small))
+                                        .foregroundStyle(blueprint.palette.textMuted)
+                                        .contentDirection(meta)
+                                }
+                            }
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        Text(verbatim: loc("An item you empty is deleted when you save."))
+                        Text(verbatim: loc(staysHere
+                            ? "Saving keeps the notes on this device."
+                            : "Saving updates the notes in your storage, and your other devices show them."))
+                    }
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, Space.s)
+                }
+                .padding(Space.m)
             }
-            .padding(Space.m)
             #if os(iOS)
             HairLine()
             HStack(spacing: Space.s) {
                 Spacer(minLength: 0)
-                EditorButtons(changed: changed, saving: saving, cancel: cancel, save: save)
+                EditorButtons(changed: draft.changed, saving: saving, cancel: cancel, save: save)
             }
             .padding(.horizontal, Space.m)
             .padding(.vertical, Space.s)
@@ -447,8 +469,21 @@ struct SummaryEditor: View {
         }
         #if os(iOS)
         // 2026-10-08 §9: changes leave only through Cancel and its `Discard your changes?`.
-        .interactiveDismissDisabled(changed)
+        .interactiveDismissDisabled(draft.changed)
         #endif
+        .accessibilityIdentifier("notes-editor")
+    }
+
+    /// One multi-line plain field, as the transcript editor's.
+    private func field(_ text: Binding<String>, label: String, key: String) -> some View {
+        TextField("", text: text, axis: .vertical)
+            .textFieldStyle(.plain)
+            .font(blueprint.fonts.bodySmall)
+            .foregroundStyle(blueprint.palette.text)
+            .contentDirection(text.wrappedValue)
+            .focused(focused, equals: key)
+            .fieldBox(focused: focused.wrappedValue == key)
+            .accessibilityLabel(Text(verbatim: label))
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }

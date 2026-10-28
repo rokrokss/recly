@@ -238,7 +238,7 @@ enum class Str {
      */
     UNTITLED,
 
-    // docs/08 "Result files" · "Errors": the transcripts and summaries window.
+    // docs/08 "Result files" · "Errors": the transcripts and notes window.
     WINDOW_RECORDINGS,
     DETAIL_PICK,
     DETAIL_LOADING,
@@ -488,7 +488,7 @@ enum class Str {
 
     CORE_STALE,
 
-    // docs/15 §10 "Sign in with ChatGPT" and docs/08 "Summaries".
+    // docs/15 §10 "Sign in with ChatGPT" and docs/08 "AI requests".
     CHATGPT_TITLE,
     CHATGPT_USE_PLAN,
     CHATGPT_USE_PLAN_NOTE,
@@ -505,43 +505,19 @@ enum class Str {
     CHATGPT_WELCOME_TITLE,
     CHATGPT_WELCOME_BODY,
     CHATGPT_GOT_IT,
-    SUMMARY_SUMMARIZE,
-    SUMMARY_AGAIN,
-    SUMMARY_TAB,
-    SUMMARY_RUNNING,
-    SUMMARY_FAILED,
     SUMMARY_MODEL,
     CORE_CHATGPT_SIGN_IN_REQUIRED,
     CORE_CHATGPT_USAGE_LIMIT,
     CORE_CHATGPT_PLAN_REQUIRED,
     CHATGPT_PAGE_OK,
     CHATGPT_PAGE_RETURN,
-    SUMMARY_EDIT,
-    SUMMARY_DISCARD_BODY,
-    SUMMARY_REPLACE_TITLE,
-    SUMMARY_REPLACE_BODY,
-    SUMMARY_REPLACE,
-    SUMMARY_EDITED,
-    SUMMARY_EDIT_NOTE_SHARED,
-    SUMMARY_EDIT_NOTE_LOCAL,
     HELPER_UNAVAILABLE,
 
-    // docs/08 "Summaries" · "Ask" · "Me and others" (round 3).
-    SUMMARY_FORMAT,
-    SUMMARY_FORMAT_AUTO,
-    SUMMARY_FORMAT_ONE_ON_ONE,
-    SUMMARY_FORMAT_LECTURE,
-    SUMMARY_FORMAT_INTERVIEW,
-    SUMMARY_FORMAT_CUSTOM,
-    SUMMARY_CUSTOM_PLACEHOLDER,
-    SUMMARY_CUSTOM_NOTE,
-    SUMMARY_CUSTOM_EMPTY,
+    // docs/08 "AI requests" · "Ask" · "Me and others" (round 3).
     SUMMARY_ABOUT,
     SUMMARY_ABOUT_PLACEHOLDER,
     SUMMARY_ABOUT_NOTE,
-    SUMMARY_AS,
     SUMMARY_PLAY_FROM,
-    SUMMARY_NONE,
     ASK_MENU,
     ASK_TITLE,
     ASK_FOLLOW_UP_EMAIL,
@@ -574,6 +550,31 @@ enum class Str {
     NOTES_DECISIONS,
     NOTES_TODOS,
     NOTES_QUESTIONS,
+
+    // docs/08 "Organizing" · docs/09 "AI view": Organize, Edit notes and Settings → Notes (2026-10-28).
+    NOTES_TAB,
+    NOTES_KEY_POINTS,
+    NOTES_ORGANIZE,
+    NOTES_ORGANIZE_AGAIN,
+    NOTES_ORGANIZING,
+    NOTES_FAILED,
+    NOTES_NONE,
+    NOTES_EDIT,
+    NOTES_DISCARD_BODY,
+    NOTES_EDIT_DELETES,
+    NOTES_EDIT_NOTE_SHARED,
+    NOTES_EDIT_NOTE_LOCAL,
+    NOTES_INSTRUCTIONS,
+    NOTES_INSTRUCTIONS_PLACEHOLDER,
+    NOTES_INSTRUCTIONS_NOTE,
+    NOTES_SECTIONS,
+    NOTES_SECTION_NAME,
+    NOTES_SECTION_NAME_PLACEHOLDER,
+    NOTES_SECTION_DESCRIPTION,
+    NOTES_SECTION_DESCRIPTION_PLACEHOLDER,
+    NOTES_SECTION_REMOVE,
+    NOTES_SECTION_ADD,
+    NOTES_SECTIONS_NOTE,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

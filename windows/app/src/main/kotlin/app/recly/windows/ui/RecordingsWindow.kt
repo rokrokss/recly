@@ -124,7 +124,6 @@ import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
-import recly.core.chatgpt.SummaryState
 import recly.core.transcribe.TranscriptAvailability
 
 /**
@@ -179,18 +178,18 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
             }
         }
     }
-    // docs/08 "Editing" · "Summaries": the editors' drafts are the window's, so that leaving one — another recording,
+    // docs/08 "Editing" · docs/09 "AI view": the editors' drafts are the window's, so that leaving one — another recording,
     // the window closing — asks first while it has changes. One editor is open at a time.
     var draft by remember { mutableStateOf<TranscriptDraft?>(null) }
-    var summaryDraft by remember { mutableStateOf<SummaryDraft?>(null) }
+    var notesDraft by remember { mutableStateOf<NotesDraft?>(null) }
     var leaving by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val changed = draft?.edit != null || summaryDraft?.changed == true
+    val changed = draft?.edit != null || notesDraft?.changed == true
     val leave: (() -> Unit) -> Unit = { then ->
-        if (draft?.edit != null || summaryDraft?.changed == true) {
+        if (draft?.edit != null || notesDraft?.changed == true) {
             leaving = then
         } else {
             draft = null
-            summaryDraft = null
+            notesDraft = null
             then()
         }
     }
@@ -231,7 +230,7 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                     return@onPreviewKeyEvent false
                 }
                 val detail = model.detail
-                if (detail != null && detail.hasTranscript && draft == null && summaryDraft == null) {
+                if (detail != null && detail.hasTranscript && draft == null && notesDraft == null) {
                     findOpen = true
                     findRequest++
                 } else {
@@ -271,8 +270,8 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                         draft = draft?.takeIf { it.original.recordingId == detail.recordingId },
                         onDraft = { draft = it },
                         // Only over the recording it was opened on: the tray can open another one under it.
-                        summaryDraft = summaryDraft?.takeIf { it.recordingId == detail.recordingId },
-                        onSummaryDraft = { summaryDraft = it },
+                        notesDraft = notesDraft?.takeIf { it.recordingId == detail.recordingId },
+                        onNotesDraft = { notesDraft = it },
                         onLeaveEditor = leave,
                         findOpen = findOpen,
                         onFindOpen = { findOpen = it },
@@ -295,10 +294,10 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
             onDiscard = {
                 leaving = null
                 draft = null
-                summaryDraft = null
+                notesDraft = null
                 then()
             },
-            body = if (summaryDraft != null) Str.SUMMARY_DISCARD_BODY else Str.EDIT_DISCARD_BODY,
+            body = if (notesDraft != null) Str.NOTES_DISCARD_BODY else Str.EDIT_DISCARD_BODY,
         )
     }
 }
@@ -368,7 +367,7 @@ private fun Sidebar(
             items(found, key = { "hit-${it.recordingId}" }) { hit ->
                 // The hit's time is drawn in the format the recording's own length picks, when the list knows it.
                 val length = model.recents.firstOrNull { it.id == hit.recordingId }?.durationSec
-                SearchResultRow(hit, strings[Str.UNTITLED], strings[Str.SUMMARY_TAB], length) { onOpenHit(hit) }
+                SearchResultRow(hit, strings[Str.UNTITLED], strings[Str.NOTES_TAB], length) { onOpenHit(hit) }
             }
             if (hits != null && found.isEmpty()) {
                 item { EmptyList(strings[Str.SEARCH_EMPTY], Modifier.fillParentMaxSize(), hint = strings[Str.SEARCH_EMPTY_HINT]) }
@@ -517,9 +516,9 @@ private fun Detail(
     /** docs/08 "Editing": the editor's draft while it is open, and how it is opened and left. */
     draft: TranscriptDraft?,
     onDraft: (TranscriptDraft?) -> Unit,
-    /** docs/08 "Summaries": the summary editor's draft, which takes the summary's place while it is open. */
-    summaryDraft: SummaryDraft?,
-    onSummaryDraft: (SummaryDraft?) -> Unit,
+    /** docs/09 "AI view": Edit notes' draft, which takes the notes' place while it is open. */
+    notesDraft: NotesDraft?,
+    onNotesDraft: (NotesDraft?) -> Unit,
     onLeaveEditor: (() -> Unit) -> Unit,
     findOpen: Boolean,
     onFindOpen: (Boolean) -> Unit,
@@ -533,7 +532,7 @@ private fun Detail(
     val canSeek = !detail.writing && !model.recording && !model.playbackBlocked && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val onSeek: (Double) -> Unit = { if (!model.recording && !model.playbackBlocked) player.seek(detail.audio, it) }
-    // A summary's or an answer's time reads `Play from`, and does (2026-10-10): the seek, then playback from there.
+    // A note's or an answer's time reads `Play from`, and does (2026-10-10): the seek, then playback from there.
     val onPlay: (Double) -> Unit = { at ->
         if (!model.recording && !model.playbackBlocked) {
             player.seek(detail.audio, at)
@@ -589,28 +588,24 @@ private fun Detail(
         )
         // The core refuses an edit while a transcription of the recording is queued or running.
         if (editRefused) RefusedLine(strings[Str.DETAIL_TRANSCRIBING])
-    } else if (summaryDraft != null) {
+    } else if (notesDraft != null) {
         EditorHeader(
-            title = strings[Str.SUMMARY_EDIT],
-            changed = summaryDraft.changed,
+            title = strings[Str.NOTES_EDIT],
+            changed = notesDraft.changed,
             save = editSave,
             onCancel = { onLeaveEditor {} },
             onSave = {
-                if (!summaryDraft.changed) {
-                    onSummaryDraft(null)
+                if (!notesDraft.changed) {
+                    onNotesDraft(null)
                 } else {
                     scope.launch {
                         editSave = InlineSave.SAVING
-                        when (model.editSummary(summaryDraft.recordingId, summaryDraft.text)) {
-                            is SummaryState.Ready -> {
-                                editSave = InlineSave.SAVED
-                                delay(SAVED_MS)
-                                onSummaryDraft(null)
-                            }
-                            // Not saved — a new summary is being made over it, or the save failed and was logged; the
-                            // draft stays for another try.
-                            else -> Unit
+                        if (model.editNotes(notesDraft.recordingId, notesDraft.overviewEdit, notesDraft.itemEdits)) {
+                            editSave = InlineSave.SAVED
+                            delay(SAVED_MS)
+                            onNotesDraft(null)
                         }
+                        // Not saved — the save failed and was logged; the draft stays for another try.
                         editSave = null
                     }
                 }
@@ -635,14 +630,16 @@ private fun Detail(
                             {
                                 detail.transcript?.let {
                                     // The editor is the transcript's: it opens over the Transcript view.
-                                    model.showSummary(false)
+                                    model.showNotes(false)
                                     onDraft(TranscriptDraft(it))
                                 }
                             },
-                            { summary ->
-                                // And this one the summary's, over the Summary view.
-                                model.showSummary(true)
-                                onSummaryDraft(SummaryDraft(detail.recordingId, summary.text))
+                            {
+                                // And this one the notes', over the Notes view.
+                                detail.notes?.let {
+                                    model.showNotes(true)
+                                    onNotesDraft(NotesDraft(detail.recordingId, it))
+                                }
                             },
                             strings,
                         )
@@ -650,7 +647,7 @@ private fun Detail(
                 }
             },
         )
-        // docs/09 "Summary view": what a fill of this recording is filling in, from this window or the title dialog, the
+        // docs/09 "AI view": what a fill of this recording is filling in, from this window or the title dialog, the
         // title's line first — gone when the run ends.
         val run = model.fills.firstOrNull { it.recordingId == detail.recordingId }
         val filling = FillHalf.entries.filter { it.runs(run) }
@@ -669,16 +666,14 @@ private fun Detail(
             }
         }
     }
-    // docs/08 "Summaries": Transcript | Summary, once there is a summary to choose — or notes (docs/08 "Organizing"),
-    // which are shown there — never over the transcript's editor. Over the summary's they stay, and going to the
-    // transcript leaves it the way leaving any editor does.
-    val summaryChips = !detail.loading &&
-        showsSummaryChips(detail.summary, detail.showingSummary, editing = draft != null, notes = detail.notes?.isEmpty == false)
-    val summaryShown = summaryChips && detail.showingSummary
-    if (summaryChips) {
-        SummaryChips(
-            detail.showingSummary,
-            { show -> if (!show && summaryDraft != null) onLeaveEditor { model.showSummary(false) } else model.showSummary(show) },
+    // docs/09 "AI view": Transcript | Notes, once there are notes or Organize was chosen — never over the transcript's
+    // editor. Over the notes' they stay, and going to the transcript leaves it the way leaving any editor does.
+    val notesChips = !detail.loading && showsNotesChips(detail.notes, detail.showingNotes, editing = draft != null)
+    val notesShown = notesChips && detail.showingNotes
+    if (notesChips) {
+        NotesChips(
+            detail.showingNotes,
+            { show -> if (!show && notesDraft != null) onLeaveEditor { model.showNotes(false) } else model.showNotes(show) },
             strings,
         )
     }
@@ -696,7 +691,7 @@ private fun Detail(
             onFindOpen(true)
         }
     }
-    val finding = findOpen && draft == null && summaryDraft == null && document != null && !summaryShown
+    val finding = findOpen && draft == null && notesDraft == null && document != null && !notesShown
     val matches = remember(document, findQuery, finding) { if (finding) findMatches(document!!.blocks, findQuery) else emptyList() }
     var currentMatch by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
     LaunchedEffect(matches) {
@@ -724,7 +719,7 @@ private fun Detail(
         HairLine()
     }
     // docs/10 "Re-transcription": the old text stays readable under a line that says the new one is coming.
-    if (detail.retranscribing && draft == null && detail.hasTranscript && !summaryShown) {
+    if (detail.retranscribing && draft == null && detail.hasTranscript && !notesShown) {
         LoadingText(
             strings[if (detail.retranscribingLocal) Str.PROCESSING_LOCAL_RUNNING else Str.TRANSCRIPT_TRANSCRIBING_AGAIN],
             MaterialTheme.typography.bodySmall,
@@ -734,10 +729,10 @@ private fun Detail(
     }
     when {
         detail.loading -> Placeholder(strings[Str.DETAIL_LOADING])
-        summaryDraft != null -> SummaryEditor(
-            summaryDraft, summaryEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
+        notesDraft != null -> NotesEditor(
+            notesDraft, notesEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
         )
-        summaryShown -> SummaryPane(model, detail, canSeek, onPlay, strings, Modifier.fillMaxSize())
+        notesShown -> NotesPane(model, detail, canSeek, onPlay, strings, Modifier.fillMaxSize())
         draft != null -> TranscriptEditor(
             draft = draft,
             canSeek = canSeek,
@@ -812,14 +807,11 @@ private fun Detail(
             save(name)
         })
     }
-    if (model.summaryReplaceAsked) {
-        SummaryReplaceDialog(strings, theme, onCancel = { model.answerSummaryReplace(false) }, onReplace = { model.answerSummaryReplace(true) })
-    }
     if (model.askingAbout == detail.recordingId) AskDialog(model, detail, canSeek, onPlay, strings, theme)
 }
 
 /**
- * docs/08 "Editing" · "Summaries": an editor's header — what is being edited, and at the end Cancel and Save while
+ * docs/08 "Editing" · docs/09 "AI view": an editor's header — what is being edited, and at the end Cancel and Save while
  * there are changes, Done alone while there are none. Save says `Saving…`, then the check, before the editor closes.
  */
 @Composable

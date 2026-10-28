@@ -284,6 +284,8 @@ fun SettingsScreen(
             ProcessingPanel()
 
             ChatGptSection()
+            // docs/09 "AI view": what the notes are asked for belongs to no provider, so it is a section of its own.
+            NotesSection()
 
             // docs/15 "Policy pages the user opens": Recly's own privacy policy, in the browser, right
             // before About as on the iPhone. Only the policy: the iPhone's "Allowed destinations" is

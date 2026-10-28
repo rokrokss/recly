@@ -90,8 +90,7 @@ import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
-import recly.core.chatgpt.SummaryFormat
-import recly.core.chatgpt.SummaryState
+import recly.core.notes.NoteEdit
 import recly.core.notes.NoteLine
 import recly.core.processing.ProcessingTranscription
 import recly.core.recording.ExportFormat
@@ -146,17 +145,20 @@ class DetailActions(
     val onCloseFind: () -> Unit = {},
     /** The page of a recording whose upload waits for Drive offers the connection itself (UX decisions of 2026-10-08). */
     val onConnectDrive: () -> Unit = {},
-    /** docs/09 "Summary view": whether Summarize is offered, and why not; the models name the summary's. */
+    /** docs/09 "AI view": whether the ChatGPT items are offered, and why not; the models name an answer's. */
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
     /**
-     * Summarize in [format] — null: Settings' format. [onFailure] runs when the summary could not even start, so the page
-     * stops waiting for it.
+     * docs/09 "AI view": More → Organize or Organize again, and Retry under its failure — back when the pass is over,
+     * whose failure the notes then carry. The run is the core's and goes on if the page closes.
      */
-    val onSummarize: (format: SummaryFormat?, onFailure: () -> Unit) -> Unit = { _, _ -> },
-    /** docs/09 "Summary view": the summary as the user rewrote it; answers what the recording has now. */
-    val onEditSummary: suspend (String) -> SummaryState = { SummaryState.None },
-    /** docs/08 "Summaries": what More → Summarize as offers. */
-    val summaryFormats: List<SummaryFormat> = emptyList(),
+    val onOrganize: suspend () -> Unit = {},
+    /**
+     * docs/09 "AI view": Edit notes' Save — the overview (null: as it was) and the items the user changed; true when
+     * anything changed, null when the save could not be made.
+     */
+    val onEditNotes: suspend (overview: String?, items: List<NoteEdit>) -> Boolean? = { _, _ -> null },
+    /** docs/08 "Organizing" — "Copy and share": the notes as text, for Copy all under them. */
+    val notesText: suspend () -> String? = { null },
     /** docs/08 "Ask": the presets that make sense for the recording, the question, and letting its answer go. */
     val askPresets: suspend () -> List<AskPreset> = { emptyList() },
     val onAsk: (AskPreset?, String?) -> Unit = { _, _ -> },
@@ -287,10 +289,10 @@ fun RecordingDetailScreen(
         }
     }
 
-    // docs/09 "Summary view": the summary editor's draft, while it is open, and where leaving it with changes goes once
-    // the user has said Discard — back to the summary, or to the transcript chip they pressed.
-    var summaryDraft by remember(detail.recordingId) { mutableStateOf<SummaryDraft?>(null) }
-    var summaryLeaving by remember(detail.recordingId) { mutableStateOf<DetailView?>(null) }
+    // docs/09 "AI view": the notes editor's draft, while it is open, and where leaving it with changes goes once the
+    // user has said Discard — back to the notes, or to the transcript chip they pressed.
+    var notesDraft by remember(detail.recordingId) { mutableStateOf<NotesDraft?>(null) }
+    var notesLeaving by remember(detail.recordingId) { mutableStateOf<DetailView?>(null) }
 
     // docs/09 "Transcript reader": following the playhead, until the user scrolls the transcript.
     var following by remember(detail.recordingId) { mutableStateOf(true) }
@@ -334,76 +336,74 @@ fun RecordingDetailScreen(
         }, onCancel = { speakerNaming = null })
     }
     var highlightMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
-    // docs/09 "Summary view": which of the two the page shows — the transcript whenever it opens, unless a search found
-    // the summary alone.
-    var view by remember(detail.recordingId) { mutableStateOf(if (detail.openSummary) DetailView.SUMMARY else DetailView.TRANSCRIPT) }
-    var askedSummary by remember(detail.recordingId) { mutableStateOf(false) }
-    val summaryFailed = { askedSummary = false; view = DetailView.TRANSCRIPT }
-    // The format last asked for on this page — Settings' while null — which Retry under a failure asks for again.
-    var summaryFormat by remember(detail.recordingId) { mutableStateOf<SummaryFormat?>(null) }
-    val summarize = { format: SummaryFormat? ->
-        askedSummary = true
-        view = DetailView.SUMMARY
-        summaryFormat = format
-        actions.onSummarize(format, summaryFailed)
-    }
-    // Summarize again or Summarize as over an edited summary: the question first, holding the format asked for.
-    var replacing by remember(detail.recordingId) { mutableStateOf<SummarizeRequest?>(null) }
-    replacing?.let { request ->
-        ReplaceSummaryDialog(onCancel = { replacing = null }, onReplace = { replacing = null; summarize(request.format) })
-    }
-    val requestSummary = { format: SummaryFormat? ->
-        if (asksBeforeReplacing(detail.summary)) replacing = SummarizeRequest(format) else summarize(format)
+    // docs/09 "AI view": which of the two the page shows — the transcript whenever it opens, unless a search found the
+    // notes alone.
+    var view by remember(detail.recordingId) { mutableStateOf(if (detail.openNotes) DetailView.NOTES else DetailView.TRANSCRIPT) }
+    var askedNotes by remember(detail.recordingId) { mutableStateOf(false) }
+    // Organize asked from this page and not back yet: its `Organizing…` from the tap, before the core says so.
+    var organizingHere by remember(detail.recordingId) { mutableStateOf(false) }
+    // Organize asks nothing — what the user edited or deleted stays — and shows the notes it is making.
+    val organize = {
+        askedNotes = true
+        view = DetailView.NOTES
+        if (!organizingHere) {
+            organizingHere = true
+            scope.launch {
+                try { actions.onOrganize() } finally { organizingHere = false }
+            }
+        }
     }
     // docs/08 "Ask": the panel, while it is open; its answer lives in the core for as long as it is.
     var asking by remember(detail.recordingId) { mutableStateOf(false) }
-    val leaveSummaryEditor = { to: DetailView ->
-        if (summaryDraft?.changed == true) summaryLeaving = to else { summaryDraft = null; view = to }
+    val leaveNotesEditor = { to: DetailView ->
+        if (notesDraft?.changed == true) notesLeaving = to else { notesDraft = null; view = to }
     }
-    BackHandler(enabled = summaryDraft != null) { leaveSummaryEditor(DetailView.SUMMARY) }
+    BackHandler(enabled = notesDraft != null) { leaveNotesEditor(DetailView.NOTES) }
     // D7: the tabs, the List tab tapped again and every other way off the page ask the same question Back does.
     val unsaved = when {
         draft?.changed == true -> R.string.edit_discard_body
-        summaryDraft?.changed == true -> R.string.summary_discard_body
+        notesDraft?.changed == true -> R.string.notes_discard_body
         else -> null
     }
     val reportUnsaved by rememberUpdatedState(onUnsaved)
     LaunchedEffect(unsaved) { reportUnsaved(unsaved) }
     DisposableEffect(Unit) { onDispose { reportUnsaved(null) } }
-    summaryLeaving?.let { to ->
-        DiscardDialog(onKeep = { summaryLeaving = null }, onDiscard = { summaryLeaving = null; summaryDraft = null; view = to },
-            body = R.string.summary_discard_body)
+    notesLeaving?.let { to ->
+        DiscardDialog(onKeep = { notesLeaving = null }, onDiscard = { notesLeaving = null; notesDraft = null; view = to },
+            body = R.string.notes_discard_body)
     }
-    val saveSummary = saveSummary@{
-        val editing = summaryDraft ?: return@saveSummary
+    val saveNotes = saveNotes@{
+        val editing = notesDraft ?: return@saveNotes
         if (!editing.changed) {
-            summaryDraft = null
-            return@saveSummary
+            notesDraft = null
+            return@saveNotes
         }
         saving = SavePhase.SAVING
         scope.launch {
             val started = SystemClock.elapsedRealtime()
-            val result = actions.onEditSummary(editing.text)
+            val result = actions.onEditNotes(editing.overviewEdit(), editing.edits())
             val work = SystemClock.elapsedRealtime() - started
             delay(processingHoldMs(work))
-            // Anything but Ready means a summary of it started meanwhile: the draft stays for the user to keep or leave.
-            if (result is SummaryState.Ready) {
-                saving = SavePhase.DONE
-                delay(doneBadgeMs(work))
-                summaryDraft = null
+            // A save that could not be made keeps the draft for the user to try again or leave; one that changed nothing
+            // (the notes went meanwhile) has nothing to show a ✓ for.
+            if (result != null) {
+                if (result) {
+                    saving = SavePhase.DONE
+                    delay(doneBadgeMs(work))
+                }
+                notesDraft = null
             }
             saving = SavePhase.IDLE
         }
     }
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    // docs/08 "Organizing": the notes, when there is anything in them, head the Summary view.
-    val notes = detail.notes?.takeIf { showsNotes(it, overview = true) }
-    val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null, typing = keyboardVisible && summaryDraft != null,
-        notes = notes != null)
+    val organizing = organizingHere || detail.notes?.organizing == true
+    val chips = showsNotesChips(hasNotes(detail.notes), askedNotes, editing = draft != null, typing = keyboardVisible && notesDraft != null)
+    val notesText by produceState<String?>(null, detail.notes) { value = actions.notesText() }
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
-    // docs/09 "Summary view": a citation plays where a time button for that second would — and, as its `Play from`
+    // docs/09 "AI view": a citation plays where a time button for that second would — and, as its `Play from`
     // says, starts playing there; the transcript's time buttons only move the playhead.
     val canSeekTo = { atSec: Double -> canSeek && atSec < detail.audio.totalSec }
     val playFrom: (Double) -> Unit = { atSec ->
@@ -427,8 +427,8 @@ fun RecordingDetailScreen(
         if (!keyboardVisible) {
             if (draft != null) {
                 ScreenHeader(title = stringResource(R.string.detail_edit))
-            } else if (summaryDraft != null) {
-                ScreenHeader(title = stringResource(R.string.summary_edit))
+            } else if (notesDraft != null) {
+                ScreenHeader(title = stringResource(R.string.notes_edit))
             } else ScreenHeader(
                 title = detail.title ?: stringResource(R.string.jobs_untitled),
                 // One row: the title on one line, the two icons at its end (UX decisions of 2026-10-08).
@@ -443,15 +443,14 @@ fun RecordingDetailScreen(
                         // `Still recording` — the core refuses to rename or edit one. Not before the load has said
                         // which of the two this is.
                         if (!detail.loading) {
-                            MoreButton(detail, transcription, player.positionSec, actions.chatGpt, actions.summaryFormats, MoreActions(
+                            MoreButton(detail, transcription, player.positionSec, actions.chatGpt, MoreActions(
                                 onRename = { renaming = true },
                                 onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
                                 onRetranscribe = { askAgain = true },
                                 onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
-                                onSummarize = { requestSummary(null) },
-                                onSummarizeAs = { requestSummary(it) },
-                                onEditSummary = {
-                                    savedSummary(detail.summary)?.let { summaryDraft = SummaryDraft.of(it); view = DetailView.SUMMARY }
+                                onOrganize = organize,
+                                onEditNotes = {
+                                    detail.notes?.takeIf(::hasNotes)?.let { notesDraft = NotesDraft.of(it); view = DetailView.NOTES }
                                 },
                                 onAsk = { asking = true },
                                 onFill = { half ->
@@ -463,14 +462,14 @@ fun RecordingDetailScreen(
                                         }
                                     }
                                 },
-                            ), fill = actions.fill)
+                            ), fill = actions.fill, organizing = organizing)
                         }
                     }
                 },
             )
         }
         HairLine()
-        // docs/09 "Summary view": what a fill of this recording is filling in, from this page or the title sheet, the
+        // docs/09 "AI view": what a fill of this recording is filling in, from this page or the title sheet, the
         // title's line first — gone when the run ends.
         val filling = FillHalf.entries.filter { it.runs(actions.fill) }
         if (filling.isNotEmpty() && !detail.loading) {
@@ -496,13 +495,13 @@ fun RecordingDetailScreen(
         }
         if (chips && !detail.loading) {
             FillRow(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s)) {
-                // While the summary is being edited the chips stay (until the keyboard is up); going to the
+                // While the notes are being edited the chips stay (until the keyboard is up); going to the
                 // transcript leaves the editor.
                 BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT,
-                    { if (summaryDraft != null) leaveSummaryEditor(DetailView.TRANSCRIPT) else view = DetailView.TRANSCRIPT },
+                    { if (notesDraft != null) leaveNotesEditor(DetailView.TRANSCRIPT) else view = DetailView.TRANSCRIPT },
                     modifier = Modifier.testTag("view-transcript"))
-                BlueprintChip(stringResource(R.string.summary_tab), view == DetailView.SUMMARY, { view = DetailView.SUMMARY },
-                    modifier = Modifier.testTag("view-summary"))
+                BlueprintChip(stringResource(R.string.notes_title), view == DetailView.NOTES, { view = DetailView.NOTES },
+                    modifier = Modifier.testTag("view-notes"))
             }
             HairLine()
         }
@@ -510,28 +509,15 @@ fun RecordingDetailScreen(
         // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             val editing = draft
-            val summaryEditing = summaryDraft
+            val notesEditing = notesDraft
             when {
                 editing != null -> TranscriptEditor(editing, { draft = it }, canSeek, seek, Modifier.fillMaxSize(), detail.audio.totalSec,
                     scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
-                summaryEditing != null ->
-                    SummaryEditor(summaryEditing.text, { summaryDraft = summaryEditing.copy(text = it) }, Modifier.fillMaxSize())
-                chips && view == DetailView.SUMMARY -> {
-                    val block: (@Composable () -> Unit)? = notes?.let { shown ->
-                        @Composable {
-                            NotesBlock(shown, overview = true, scaleSec = scale, onDelete = { actions.onDeleteNote(it.id) },
-                                lines = actions.noteLines, canPlay = canSeekTo, onPlay = playFrom)
-                        }
-                    }
-                    // No summary asked for: the notes are the view.
-                    if (block != null && detail.summary is SummaryState.None && !askedSummary) {
-                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { block() }
-                    } else {
-                        SummaryPane(detail.summary, models, { actions.onSummarize(summaryFormat, summaryFailed) },
-                            Modifier.fillMaxSize(), canSeekTo, playFrom, header = block)
-                    }
-                }
+                notesEditing != null -> NotesEditor(notesEditing, { notesDraft = it }, Modifier.fillMaxSize())
+                chips && view == DetailView.NOTES -> NotesPane(detail.notes, organizing, notesText, onRetry = organize, scaleSec = scale,
+                    onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canPlay = canSeekTo, onPlay = playFrom,
+                    modifier = Modifier.fillMaxSize())
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list — whatever
                 // the transcript's own state says, a step that never ran included.
                 transcript == null && detail.waitingForDrive -> Notice(
@@ -612,13 +598,14 @@ fun RecordingDetailScreen(
         // docs/09 "Editing and speakers": the editor's footer and its answers sit under the fields, above
         // the keyboard — the note says what a save does to the files in storage.
         draft?.let { editing ->
-            EditFooter(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent), editing.changed, saving,
+            EditFooter(listOf(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent)), editing.changed, saving,
                 onCancel = { leaveEditor() }, onSave = save)
         }
-        // docs/09 "Summary view": the summary editor's, in the same place; its note says where the saved summary goes.
-        summaryDraft?.let { editing ->
-            EditFooter(stringResource(summaryEditNote(detail.storage)), editing.changed, saving,
-                onCancel = { leaveSummaryEditor(DetailView.SUMMARY) }, onSave = saveSummary)
+        // docs/09 "AI view": the notes editor's, in the same place; its notes say what an emptied item becomes and where
+        // the saved notes go.
+        notesDraft?.let { editing ->
+            EditFooter(listOf(stringResource(R.string.notes_edit_empty), stringResource(notesEditNote(detail.storage))), editing.changed, saving,
+                onCancel = { leaveNotesEditor(DetailView.NOTES) }, onSave = saveNotes)
         }
 
         // A take still being written to has nothing whole to play yet, and nothing to say about it.
@@ -629,19 +616,16 @@ fun RecordingDetailScreen(
     }
 }
 
-/** A summary the user asked for: in [format], or Settings' format while null. */
-private data class SummarizeRequest(val format: SummaryFormat?)
-
 /** A save's window, shown on its button or beside a badge: `Saving…`, then `✓` (docs/09 trend 2). */
 internal enum class SavePhase { IDLE, SAVING, DONE }
 
-/** An editor's footer: what a save does, then end-aligned `Cancel` · `Save` — `Done` alone while nothing changed. */
+/** An editor's footer: what a save does, a line each, then end-aligned `Cancel` · `Save` — `Done` alone while nothing changed. */
 @Composable
-private fun EditFooter(note: String, changed: Boolean, saving: SavePhase, onCancel: () -> Unit, onSave: () -> Unit) {
+private fun EditFooter(notes: List<String>, changed: Boolean, saving: SavePhase, onCancel: () -> Unit, onSave: () -> Unit) {
     HairLine()
     Column(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.s)) {
-        Text(note, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        notes.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
             // Nothing changed: `Done` alone — there is nothing for Cancel to throw away.
             if (changed || saving != SavePhase.IDLE) {

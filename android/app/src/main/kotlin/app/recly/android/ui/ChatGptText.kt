@@ -7,16 +7,11 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,10 +50,7 @@ import app.recly.android.R
 import app.recly.android.core.CoreMessages
 import app.recly.android.core.coreMessage
 import app.recly.android.ui.component.BlueprintButton
-import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
-import app.recly.android.ui.component.HairLine
-import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -71,35 +63,36 @@ import recly.core.chatgpt.ChatGptModel
 import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
-import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryCitation
 import recly.core.chatgpt.SummaryCitations
-import recly.core.chatgpt.SummaryFormat
-import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import recly.core.recording.SearchHit
-import recly.core.storage.StorageKind
 
-/** The detail's two views once a summary is in play (docs/09 "Summary view"). */
-internal enum class DetailView { TRANSCRIPT, SUMMARY }
+/** The detail's two views once the recording has notes, or Organize was asked (docs/09 "AI view"). */
+internal enum class DetailView { TRANSCRIPT, NOTES }
 
 /**
- * Why the More menu's Summarize cannot run now, or null when it can — in the order the reasons are checked
- * (docs/09 "Detail header and More menu"). [busyReason] is what the menu already says while a transcription
- * of the recording is queued or running. A take still being written says `Still recording` before any of these.
+ * Why the More menu's Organize cannot run now, or null when it can — in the order the reasons are checked
+ * (docs/09 "AI view"). [busyReason] is what the menu already says while a transcription of the recording is queued
+ * or running; [organizing] is a pass of its notes being worked on here. A take still being written says `Still
+ * recording` before any of these.
  */
 @StringRes
-internal fun summarizeReason(
+internal fun organizeReason(
     hasTranscript: Boolean,
     transcribing: Boolean,
     @StringRes busyReason: Int,
     connection: ChatGptConnection,
-    summary: SummaryState,
+    organizing: Boolean,
 ): Int? = askReason(hasTranscript, transcribing, busyReason, connection)
-    ?: if (summary is SummaryState.Running) R.string.summary_running else null
+    ?: if (organizing) R.string.notes_organizing else null
 
-/** Why More → Ask about this recording cannot open now: Summarize's reasons, but a summary being written is none (docs/08 "Ask"). */
+/** Why More → Edit notes cannot open now: the notes are being organized here, and would change under the editor. */
+@StringRes
+internal fun editNotesReason(organizing: Boolean): Int? = if (organizing) R.string.notes_organizing else null
+
+/** Why More → Ask about this recording cannot open now: Organize's reasons, but notes being organized are none (docs/08 "Ask"). */
 @StringRes
 internal fun askReason(hasTranscript: Boolean, transcribing: Boolean, @StringRes busyReason: Int, connection: ChatGptConnection): Int? = when {
     !hasTranscript -> R.string.detail_no_transcript
@@ -137,7 +130,7 @@ enum class FillHalf(
 }
 
 /**
- * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "Summary view"), in this order: Ask's
+ * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "AI view"), in this order: Ask's
  * reasons, then a fill of [half] running ([running] — `observeFills()`, the title sheet's too), then nothing of it
  * missing — [needed] is [FillHalf.needed] for the recording as it is now, which a fill that is running may be about
  * to change. A take still being written says `Still recording` before any of these.
@@ -199,29 +192,10 @@ internal fun fillAsk(offered: Boolean, title: String, titleBox: Boolean, namesBo
     return if (askTitle || namesBox) FillAsk(askTitle, namesBox) else null
 }
 
-/** docs/08 "Summaries": each format under its name in Settings, in Summarize as and in the summary's footer. */
-@StringRes
-internal fun SummaryFormat.formatLabel(): Int = when (this) {
-    SummaryFormat.AUTO -> R.string.summary_format_general
-    SummaryFormat.ONE_ON_ONE -> R.string.summary_format_one_on_one
-    SummaryFormat.LECTURE -> R.string.summary_format_lecture
-    SummaryFormat.INTERVIEW -> R.string.summary_format_interview
-    SummaryFormat.CUSTOM -> R.string.summary_format_custom
-}
+/** docs/09 "AI view": a hit found in the notes alone opens on the notes — there is nothing in the transcript to find. */
+internal fun opensOnNotes(hit: SearchHit): Boolean = hit.notes != null && hit.snippets.isEmpty() && !hit.matchesInTitle
 
-/** The format the footer names: none for General, which every summary is unless asked otherwise. */
-internal fun footerFormat(summary: Summary): SummaryFormat? = summary.summaryFormat.takeIf { it != SummaryFormat.AUTO }
-
-/** "ChatGPT · <model>", then the format, then "Edited" — each where there is one, on the one separator. */
-internal fun footerLine(written: String, format: String?, edited: String?): String = listOfNotNull(written, format, edited).joinToString(" · ")
-
-/** The format Summarize as marks `✓`: the one the recording's summary was written in, if it has one. */
-internal fun currentFormat(summary: SummaryState): SummaryFormat? = savedSummary(summary)?.summaryFormat
-
-/** docs/09 "Search": a hit found in the summary alone opens on the summary — there is nothing in the transcript to find. */
-internal fun opensOnSummary(hit: SearchHit): Boolean = hit.summary != null && hit.snippets.isEmpty() && !hit.matchesInTitle
-
-/** One stretch of a summary or an answer: plain text, or a [citation] — `[HH:MM:SS]` or `[MM:SS]` — that plays from its time. */
+/** One stretch of an answer: plain text, or a [citation] — `[HH:MM:SS]` or `[MM:SS]` — that plays from its time. */
 internal data class TextRun(val start: Int, val end: Int, val citation: SummaryCitation? = null)
 
 /** [text] cut at every citation the core reads in it ([SummaryCitations]), so the runs cover it end to end in order. */
@@ -239,58 +213,6 @@ internal fun textRuns(text: String): List<TextRun> = buildList {
 internal fun citationTime(text: String, citation: SummaryCitation): String =
     text.substring(citation.offset + 1, citation.offset + citation.length - 1)
 
-/** "Summarize again" once there is a summary to replace. */
-internal fun hasSummary(summary: SummaryState): Boolean = when (summary) {
-    SummaryState.None -> false
-    is SummaryState.Ready -> true
-    is SummaryState.Running -> summary.previous != null
-    is SummaryState.Failed -> summary.previous != null
-}
-
-/** The summary the recording keeps: what Edit summary opens, and what Summarize again would replace. */
-internal fun savedSummary(summary: SummaryState): Summary? = when (summary) {
-    SummaryState.None -> null
-    is SummaryState.Ready -> summary.summary
-    is SummaryState.Running -> summary.previous
-    is SummaryState.Failed -> summary.previous
-}
-
-/** Edit summary is offered once there is a summary; it waits while a new one is being written. */
-@StringRes
-internal fun editSummaryReason(summary: SummaryState): Int? = if (summary is SummaryState.Running) R.string.summary_running else null
-
-/** "Summarize again" asks first when the summary it would replace is one the user edited. */
-internal fun asksBeforeReplacing(summary: SummaryState): Boolean = savedSummary(summary)?.editedAt != null
-
-/**
- * The summary editor's note: Drive and iCloud carry a saved summary to the other devices; a local folder, or a
- * recording not uploaded yet, keeps it here — the transcript editor's own rule (docs/09 "Editing and speakers").
- */
-@StringRes
-internal fun summaryEditNote(storage: StorageKind?): Int = when (storage) {
-    StorageKind.DRIVE, StorageKind.ICLOUD -> R.string.summary_edit_note_shared
-    StorageKind.FOLDER, null -> R.string.summary_edit_note_local
-}
-
-/** docs/09 "Summary view": the summary editor's working copy. */
-internal data class SummaryDraft(val original: String, val text: String) {
-    /** Whether Save writes anything: the core keeps the summary as it is for blank or unchanged text. */
-    val changed: Boolean get() = text.trim().let { it.isNotEmpty() && it != original.trim() }
-
-    companion object {
-        fun of(summary: Summary) = SummaryDraft(summary.text, summary.text)
-    }
-}
-
-/**
- * Transcript | Summary, once there is a summary or the user has just asked for one — never while editing the
- * transcript, nor while the summary editor has the keyboard up ([typing], N6): the text keeps that room, and
- * the chips are back when the keyboard goes. docs/08 "Organizing": the recording's notes ([notes]) are in the
- * Summary view too, above any summary, so they bring the chips with them.
- */
-internal fun showsSummaryChips(summary: SummaryState, asked: Boolean, editing: Boolean, typing: Boolean = false, notes: Boolean = false): Boolean =
-    !editing && !typing && (asked || notes || summary !is SummaryState.None)
-
 /** The reasons whose own sentence is the whole notice: each says what to do. */
 private val SPOKEN = setOf(
     CoreMessage.CHATGPT_SIGN_IN_REQUIRED,
@@ -305,95 +227,24 @@ internal fun spokenReason(reason: String): CoreMessage? = CoreMessageRef.parse(r
 /** What goes under a generic failure line: the code's diagnostic, never translated — or the text as it came. */
 internal fun reasonDetail(reason: String): String? = CoreMessageRef.parse(reason).let { if (it == null) reason else it.detail ?: it.arg }
 
-/** The one button under a failed summary. */
-internal enum class SummaryRecovery { MANAGE_USAGE, RETRY, NONE }
+/** The one button under failed notes or a failed answer. */
+internal enum class ChatGptRecovery { MANAGE_USAGE, RETRY, NONE }
 
-internal fun summaryRecovery(reason: String): SummaryRecovery = when (CoreMessageRef.parse(reason)?.message) {
-    CoreMessage.CHATGPT_USAGE_LIMIT -> SummaryRecovery.MANAGE_USAGE
+internal fun chatGptRecovery(reason: String): ChatGptRecovery = when (CoreMessageRef.parse(reason)?.message) {
+    CoreMessage.CHATGPT_USAGE_LIMIT -> ChatGptRecovery.MANAGE_USAGE
     // The sentence says where to sign in; there is nothing to press here. Nor for a plan without access: asking again
     // gets the same answer.
-    CoreMessage.CHATGPT_SIGN_IN_REQUIRED, CoreMessage.CHATGPT_PLAN_REQUIRED -> SummaryRecovery.NONE
-    else -> SummaryRecovery.RETRY
+    CoreMessage.CHATGPT_SIGN_IN_REQUIRED, CoreMessage.CHATGPT_PLAN_REQUIRED -> ChatGptRecovery.NONE
+    else -> ChatGptRecovery.RETRY
 }
 
-/** The model a summary or an answer names: the plan's name for it when written, else the current list's, else its id. */
+/** The model an answer names: the plan's name for it when written, else the current list's, else its id. */
 internal fun modelLabel(modelName: String?, model: String, models: List<ChatGptModel>): String =
     modelName ?: models.firstOrNull { it.id == model }?.label ?: model
 
 /**
- * docs/09 "Summary view": the summary of the open recording, or where it is. The text is ChatGPT's plain text
- * with its own line breaks; [models] names the model it was written with. A citation in it plays from its time
- * through [onSeek] — the transcript's time buttons' own seek — where [canSeek] allows it.
- *
- * [header] — docs/08 "Organizing": the recording's notes — scrolls with the text, above it, whatever state the summary
- * is in; the lines that say a summary is running or failed stay over both.
- */
-@Composable
-internal fun SummaryPane(
-    state: SummaryState,
-    models: List<ChatGptModel>,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
-    canSeek: (Double) -> Boolean = { false },
-    onSeek: (Double) -> Unit = {},
-    header: (@Composable () -> Unit)? = null,
-) {
-    val palette = blueprint
-    when (state) {
-        // None only for the moment between the tap and the run starting. The summary it replaces keeps its footer, so
-        // nothing under it moves when the new one arrives.
-        SummaryState.None, is SummaryState.Running -> Column(modifier) {
-            LoadingText(stringResource(R.string.summary_running), MaterialTheme.typography.bodySmall, palette.textMuted,
-                Modifier.padding(horizontal = Space.m, vertical = Space.s).testTag("summary-running"))
-            HairLine()
-            val previous = (state as? SummaryState.Running)?.previous
-            if (previous != null) PreviousSummary(previous, models, canSeek, onSeek, header) else header?.let { HeaderOnly(it) }
-        }
-
-        is SummaryState.Ready -> Column(modifier) {
-            SummaryText(state.summary, Modifier.weight(1f), canSeek, onSeek, header)
-            HairLine()
-            SummaryFooter(state.summary, models)
-        }
-
-        is SummaryState.Failed -> {
-            val previous = state.previous
-            if (previous == null && header == null) {
-                ChatGptFailure(state.reason, R.string.summary_failed, onRetry, modifier.fillMaxSize(), retryTag = "summary-retry")
-            } else {
-                Column(modifier) {
-                    ChatGptFailure(state.reason, R.string.summary_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "summary-retry")
-                    HairLine()
-                    if (previous != null) PreviousSummary(previous, models, canSeek, onSeek, header) else header?.let { HeaderOnly(it) }
-                }
-            }
-        }
-    }
-}
-
-/** The summary still kept under a running or failed one: its text and its footer, as when it was Ready. */
-@Composable
-private fun ColumnScope.PreviousSummary(
-    summary: Summary,
-    models: List<ChatGptModel>,
-    canSeek: (Double) -> Boolean,
-    onSeek: (Double) -> Unit,
-    header: (@Composable () -> Unit)?,
-) {
-    SummaryText(summary, Modifier.weight(1f), canSeek, onSeek, header)
-    HairLine()
-    SummaryFooter(summary, models)
-}
-
-/** The pane's [SummaryPane] header with no summary under it yet: the rest of the pane, scrolling. */
-@Composable
-private fun ColumnScope.HeaderOnly(header: @Composable () -> Unit) {
-    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) { header() }
-}
-
-/**
- * A summary or an answer that could not be written, as a centred notice: the reason's own sentence where it says
- * what to do, otherwise [generic] with the detail as it came — and the one button that helps (docs/09 "Summary view").
+ * Notes or an answer that could not be written, as a centred notice: the reason's own sentence where it says
+ * what to do, otherwise [generic] with the detail as it came — and the one button that helps (docs/09 "AI view").
  */
 @Composable
 internal fun ChatGptFailure(reason: String, @StringRes generic: Int, onRetry: () -> Unit, modifier: Modifier, retryTag: String) {
@@ -401,47 +252,20 @@ internal fun ChatGptFailure(reason: String, @StringRes generic: Int, onRetry: ()
     val spoken = spokenReason(reason)
     val text = if (spoken != null) coreMessage(spoken).text() else stringResource(generic)
     val detail = if (spoken != null) null else reasonDetail(reason)
-    val button: (@Composable () -> Unit)? = when (summaryRecovery(reason)) {
-        SummaryRecovery.MANAGE_USAGE -> {
+    val button: (@Composable () -> Unit)? = when (chatGptRecovery(reason)) {
+        ChatGptRecovery.MANAGE_USAGE -> {
             { BlueprintButton(stringResource(R.string.chatgpt_manage_usage), { context.openUrl(CHATGPT_USAGE_URL) }, tone = ButtonTone.PRIMARY) }
         }
-        SummaryRecovery.RETRY -> {
+        ChatGptRecovery.RETRY -> {
             { BlueprintButton(stringResource(R.string.action_retry), onRetry, tone = ButtonTone.QUIET, modifier = Modifier.testTag(retryTag)) }
         }
-        SummaryRecovery.NONE -> null
+        ChatGptRecovery.NONE -> null
     }
     Notice(text, detail = detail, button = button, modifier = modifier)
 }
 
 /**
- * docs/09 "Summary view": the whole summary as one plain text field, as the transcript editor's fields are — the
- * Blueprint field, growing with the text while the pane scrolls, in the direction of its own words.
- */
-@Composable
-internal fun SummaryEditor(text: String, onText: (String) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.verticalScroll(rememberScrollState()).padding(Space.m)) {
-        BlueprintField(text, onText, Modifier.fillMaxWidth(), textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
-            fieldModifier = Modifier.testTag("summary-editor"), maxLines = Int.MAX_VALUE)
-    }
-}
-
-/** The text as ChatGPT wrote it, selectable, in the transcript's body type — under [header], which scrolls with it. */
-@Composable
-private fun SummaryText(summary: Summary, modifier: Modifier, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit, header: (@Composable () -> Unit)? = null) {
-    if (header == null) {
-        SelectionContainer(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-            CitedText(summary.text, canSeek, onSeek, Modifier.testTag("summary-text"))
-        }
-    } else {
-        Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-            header()
-            SelectionContainer { CitedText(summary.text, canSeek, onSeek, Modifier.testTag("summary-text")) }
-        }
-    }
-}
-
-/**
- * docs/09 "Summary view": a summary's or an answer's text with every citation in it a way to play from its time —
+ * docs/09 "AI view": an answer's text with every citation in it a way to play from its time —
  * the citation in monospace and the accent, with no underline (a dotted one is a web page). Each citation is a target
  * on every line it sits on, its glyphs grown to at least [MinTouch] each way; where two targets overlap — a citation
  * on each of two lines — a tap plays the one whose glyphs are nearest it ([citationAt], the iPhone and Mac's rule).
@@ -449,7 +273,7 @@ private fun SummaryText(summary: Summary, modifier: Modifier, canSeek: (Double) 
  * selectable text and a long press anywhere selects as before. A citation the player cannot reach now ([canSeek]) is
  * drawn muted and is no target. For a screen reader each citation is its own `Play from {time}` button.
  *
- * The words take their direction from themselves: an English summary in an Arabic app still reads left to right.
+ * The words take their direction from themselves: an English answer in an Arabic app still reads left to right.
  * [padding] is inside the tap layer, so a target reaches into it.
  */
 @Composable
@@ -506,7 +330,7 @@ internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Doub
         targets.distinctBy { it.run }.forEach { target ->
             val cited = runs[target.run].citation ?: return@forEach
             val area = target.area(reach)
-            val label = stringResource(R.string.summary_play_from, citationTime(text, cited))
+            val label = stringResource(R.string.citation_play_from, citationTime(text, cited))
             Box(
                 Modifier
                     .align(AbsoluteAlignment.TopLeft)
@@ -522,7 +346,7 @@ internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Doub
     }
 }
 
-/** docs/09 "Summary view": a citation's target — its glyphs on one line of the text, by its place among the text's runs. */
+/** docs/09 "AI view": a citation's target — its glyphs on one line of the text, by its place among the text's runs. */
 internal data class CitationTarget(val run: Int, val glyphs: Rect) {
     /** At least [reach] each way, centred on the glyphs, so it reaches over the lines above and below: [citationAt] decides. */
     fun area(reach: Float): Rect {
@@ -555,21 +379,6 @@ internal fun citationTargets(layout: TextLayoutResult, runs: List<TextRun>): Lis
             if (from < to) add(CitationTarget(index, layout.getPathForRange(from, to).getBounds()))
         }
     }
-}
-
-/** "ChatGPT · <model> · <format> · Edited" — each part where there is one — and Copy all for the summary. */
-@Composable
-private fun SummaryFooter(summary: Summary, models: List<ChatGptModel>) {
-    val label = modelLabel(summary.modelName, summary.model, models)
-    CopyFooter(
-        footerLine(
-            stringResource(R.string.summary_model, label),
-            footerFormat(summary)?.let { stringResource(it.formatLabel()) },
-            if (summary.editedAt == null) null else stringResource(R.string.summary_edited),
-        ),
-        summary.text,
-        Modifier.testTag("summary-copy"),
-    )
 }
 
 /** Who wrote the text above it, and Copy all, which says `✓ Copied` for a moment as the transcript's does. */

@@ -11,7 +11,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import okio.Path.Companion.toPath
-import recly.core.chatgpt.SummaryState
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
 import recly.core.job.StepRun
@@ -25,18 +24,22 @@ import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Step
 import recly.core.model.Track
+import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteKind
 import recly.core.notes.NoteLine
+import recly.core.notes.NoteSection
+import recly.core.notes.NoteSectionItems
 import recly.core.notes.NotesStage
 import recly.core.notes.RecordingNotes
 import recly.core.recording.RecordingRecord
+import recly.core.storage.StorageKind
 
 /**
- * docs/08 "Organizing" on the phone: which groups a recording's notes show and in what order, when there is no block at
- * all, what a row says, which line under it is the note's own, that a job with only its notes left is a done row, and
- * that a start from the record screen asks about organizing first — the decisions the screens make, as the pure steps
- * they apply.
+ * docs/08 "Organizing" · docs/09 "AI view" on the phone: which groups a recording's notes show and in what order, when
+ * there is no block at all, what a row says, which line under it is the note's own, when the chips are there, what Edit
+ * notes saves and says, how My sections are saved, that a job with only its notes left is a done row, and that a start
+ * from the record screen asks about organizing first — the decisions the screens make, as the pure steps they apply.
  */
 class NotesTest {
 
@@ -49,6 +52,99 @@ class NotesTest {
             listOf(R.string.notes_decisions, R.string.notes_todos, R.string.notes_questions),
             noteGroups(notes.copy(todos = listOf(item("t", NoteKind.TODO)))).map { it.header },
         )
+    }
+
+    @Test
+    fun `key points come first and the user's sections last, under their own names`() {
+        val notes = notes(decisions = listOf(item("d", NoteKind.DECISION)), questions = listOf(item("q", NoteKind.QUESTION))).copy(
+            points = listOf(item("p", NoteKind.POINT)),
+            sections = listOf(
+                NoteSectionItems("s1", "Risks", listOf(item("r", NoteKind.SECTION))),
+                NoteSectionItems("s2", "Empty", emptyList()),
+                NoteSectionItems("s3", "Budget", listOf(item("b", NoteKind.SECTION))),
+            ),
+        )
+
+        val groups = noteGroups(notes)
+        assertEquals(listOf(R.string.notes_key_points, R.string.notes_decisions, R.string.notes_questions, null, null), groups.map { it.header })
+        assertEquals(listOf(null, null, null, "Risks", "Budget"), groups.map { it.name })
+        // The record screen has no key points: they come after Stop. The user's sections still follow Questions.
+        assertEquals(listOf(R.string.notes_decisions, R.string.notes_questions, null, null), noteGroups(notes, keyPoints = false).map { it.header })
+    }
+
+    @Test
+    fun `key points alone are notes on the detail, and nothing on the record screen`() {
+        val points = notes().copy(points = listOf(item("p", NoteKind.POINT)))
+
+        assertTrue(showsNotes(points, overview = true))
+        assertTrue(hasNotes(points))
+        assertFalse(showsNotes(points, overview = false))
+        assertFalse(hasNotes(notes()))
+        assertFalse(hasNotes(null))
+    }
+
+    @Test
+    fun `the chips are there once there are notes or Organize was asked, never while the transcript is edited`() {
+        assertTrue(showsNotesChips(notes = true, asked = false, editing = false))
+        assertTrue(showsNotesChips(notes = false, asked = true, editing = false))
+        assertFalse(showsNotesChips(notes = false, asked = false, editing = false))
+        assertFalse(showsNotesChips(notes = true, asked = true, editing = true))
+        // The notes editor's keyboard takes the chips' room until it goes.
+        assertFalse(showsNotesChips(notes = true, asked = false, editing = false, typing = true))
+    }
+
+    @Test
+    fun `Edit notes sends only what changed, and an emptied item to be deleted`() {
+        val notes = notes(
+            overview = "The team moved the launch.",
+            todos = listOf(item("t1", NoteKind.TODO, text = "Send the quote"), item("t2", NoteKind.TODO, text = "Book the room")),
+        ).copy(points = listOf(item("p1", NoteKind.POINT, text = "Launch on Friday")))
+        val draft = NotesDraft.of(notes)
+
+        assertFalse(draft.changed)
+        assertEquals(null, draft.overviewEdit())
+        assertEquals(emptyList(), draft.edits())
+        // Spaces the core trims away change nothing.
+        assertFalse(draft.type("t1", "  Send the quote ").copy(overview = "The team moved the launch. ").changed)
+
+        val edited = draft.type("t1", "Send the signed quote").type("p1", "").copy(overview = "")
+        assertTrue(edited.changed)
+        assertEquals("", edited.overviewEdit(), "an emptied overview is removed")
+        assertEquals(listOf(NoteEdit("p1", ""), NoteEdit("t1", "Send the signed quote")), edited.edits())
+    }
+
+    @Test
+    fun `notes without an overview send none`() {
+        val draft = NotesDraft.of(notes(todos = listOf(item("t", NoteKind.TODO))))
+
+        assertEquals(null, draft.copy(overview = "A new overview").overviewEdit())
+    }
+
+    @Test
+    fun `the editor's note says the notes travel only with Drive or iCloud`() {
+        assertEquals(R.string.notes_edit_note_shared, notesEditNote(StorageKind.DRIVE))
+        assertEquals(R.string.notes_edit_note_shared, notesEditNote(StorageKind.ICLOUD))
+        assertEquals(R.string.notes_edit_note_local, notesEditNote(StorageKind.FOLDER))
+        // Not uploaded yet: there is no folder for them to go to.
+        assertEquals(R.string.notes_edit_note_local, notesEditNote(null))
+    }
+
+    @Test
+    fun `under an item's field, its owner and deadline as they are, or nothing`() {
+        assertEquals("Minji · Friday", ownerAndDue(item("t", NoteKind.TODO, owner = "Minji", due = "Friday")))
+        assertEquals("Friday", ownerAndDue(item("t", NoteKind.TODO, due = "Friday")))
+        assertEquals(null, ownerAndDue(item("t", NoteKind.TODO, owner = " ")))
+    }
+
+    @Test
+    fun `My sections saves the named ones, in order, and a new one keeps the id it was given`() {
+        val drafts = listOf(SectionDraft(0, "s1", " Risks ", "What could slip"), SectionDraft(1, "", "", "half written"), SectionDraft(2, "", "Budget", ""))
+
+        assertEquals(listOf(NoteSection("s1", "Risks", "What could slip"), NoteSection("", "Budget", "")), keptSections(drafts))
+        val kept = listOf(NoteSection("s1", "Risks", "What could slip"), NoteSection("new", "Budget", ""))
+        assertEquals(listOf("s1", "", "new"), withIds(drafts, sent = listOf(0, 2), kept = kept).map { it.id })
+        // A section removed before the save came back is not given anything.
+        assertEquals(listOf("s1"), withIds(drafts.take(1), sent = listOf(0, 2), kept = kept).map { it.id })
     }
 
     @Test
@@ -141,13 +237,6 @@ class NotesTest {
     fun `a start that need not ask about organizing is the start it was`() {
         assertEquals(RecordingUiState().startAsked(askConsent = false), RecordingUiState().startAsked(askConsent = false, askNotes = false))
         assertFalse(RecordingUiState().startAsked(askConsent = false).notesConsentPrompt)
-    }
-
-    @Test
-    fun `notes bring the Transcript and Summary chips with them`() {
-        assertTrue(showsSummaryChips(SummaryState.None, asked = false, editing = false, notes = true))
-        assertFalse(showsSummaryChips(SummaryState.None, asked = false, editing = true, notes = true))
-        assertFalse(showsSummaryChips(SummaryState.None, asked = false, editing = false, notes = false))
     }
 
     private fun notes(

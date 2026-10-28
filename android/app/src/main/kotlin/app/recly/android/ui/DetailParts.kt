@@ -74,7 +74,6 @@ import kotlinx.coroutines.launch
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.FillRun
-import recly.core.chatgpt.SummaryFormat
 import recly.core.processing.ProcessingTranscription
 import recly.core.processing.TranscriptionMode
 import recly.core.recording.ExportFormat
@@ -89,22 +88,22 @@ internal class MoreActions(
     val onEdit: () -> Unit,
     val onRetranscribe: () -> Unit,
     val onAddHighlight: () -> Unit,
-    val onSummarize: () -> Unit,
-    val onSummarizeAs: (SummaryFormat) -> Unit,
-    val onEditSummary: () -> Unit,
+    /** docs/09 "AI view": Organize or Organize again, which asks nothing; and Edit notes. */
+    val onOrganize: () -> Unit,
+    val onEditNotes: () -> Unit,
     val onAsk: () -> Unit,
     /** docs/08 "Titles and speaker names": Fill in title or Fill in speaker names. */
     val onFill: (FillHalf) -> Unit,
 )
 
 /**
- * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again ─ Summarize · Summarize as… · Edit
- * summary · Ask about this recording… · Fill in title · Fill in speaker names ─ Add highlight at the playhead, in that order and in those three groups, a hairline
- * between them. An item that cannot run is shown disabled with its reason under it — every one of them `Still recording`
- * while the recorder is writing into this take; the ChatGPT items are not there at all where ChatGPT is not offered, and
- * Edit summary not before there is a summary, and a group left empty has no line of its own. The menu is as tall as the
- * window lets it be, so no item is out of sight. Summarize as… turns the menu into the list of [formats] under a heading
- * that goes back, as Change speaker does. [fill] is the recording's fill asking ChatGPT now (`observeFills()`), if any.
+ * docs/09 "Detail header and More menu" · "AI view": Rename · Edit transcript · Transcribe again ─ Organize (Organize
+ * again once there are notes) · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names ─ Add
+ * highlight at the playhead, in that order and in those three groups, a hairline between them. An item that cannot run is
+ * shown disabled with its reason under it — every one of them `Still recording` while the recorder is writing into this
+ * take; the ChatGPT items are not there at all where ChatGPT is not offered, and Edit notes not while the recording has
+ * none. The menu is as tall as the window lets it be, so no item is out of sight. [fill] is the recording's fill asking
+ * ChatGPT now (`observeFills()`), if any; [organizing] is a pass of its notes running here.
  */
 @Composable
 internal fun MoreButton(
@@ -112,12 +111,11 @@ internal fun MoreButton(
     transcription: ProcessingTranscription?,
     playheadSec: Double,
     chatGpt: ChatGptConnection,
-    formats: List<SummaryFormat>,
     actions: MoreActions,
     fill: FillRun? = null,
+    organizing: Boolean = false,
 ) {
     var open by remember { mutableStateOf(false) }
-    var choosingFormat by remember { mutableStateOf(false) }
     val transcript = detail.transcript?.takeIf { t -> t.segments.any { it.text.isNotBlank() } }
     // Disabled exactly as before while a job may still rewrite the transcript; what the reason says is
     // why (UX decisions of 2026-10-08): transcribing, waiting for Drive, or not uploaded yet.
@@ -127,18 +125,7 @@ internal fun MoreButton(
     val tallest = LocalConfiguration.current.screenHeightDp.dp
     Box {
         GlyphButton(Glyph.MORE, stringResource(R.string.detail_more), { open = true }, Modifier.testTag("detail-more"))
-        if (open && choosingFormat) BlueprintMenu(onDismissRequest = { open = false; choosingFormat = false }, maxHeight = tallest) {
-            MenuBack(stringResource(R.string.summary_as), { choosingFormat = false }, Modifier.testTag("summarize-as-back"))
-            val current = currentFormat(detail.summary)
-            // Each line runs a summary, so it is a button; the format the summary was written in keeps its `✓`.
-            formats.forEach { format ->
-                MenuOption(stringResource(format.formatLabel()), format == current, onSelect = {
-                    open = false
-                    choosingFormat = false
-                    actions.onSummarizeAs(format)
-                }, role = Role.Button, modifier = Modifier.testTag("summarize-as-${format.name.lowercase()}"))
-            }
-        } else if (open) BlueprintMenu(onDismissRequest = { open = false }, maxHeight = tallest) {
+        if (open) BlueprintMenu(onDismissRequest = { open = false }, maxHeight = tallest) {
             fun pick(action: () -> Unit): () -> Unit = { open = false; action() }
             MenuAction(stringResource(R.string.detail_rename), pick(actions.onRename), enabled = writing == null, reason = writing,
                 modifier = Modifier.testTag("more-rename"))
@@ -158,22 +145,19 @@ internal fun MoreButton(
             MenuAction(stringResource(R.string.detail_retranscribe), pick(actions.onRetranscribe), enabled = againReason == null, reason = againReason,
                 modifier = Modifier.testTag("more-retranscribe"))
             val offered = chatGpt !is ChatGptConnection.Unavailable
-            if (offered || hasSummary(detail.summary)) HairLine()
             if (offered) {
-                val summarizeReason = writing ?: summarizeReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, detail.summary)
+                HairLine()
+                val notes = hasNotes(detail.notes)
+                val organizeReason = writing ?: organizeReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, organizing)
                     ?.let { stringResource(it) }
-                MenuAction(stringResource(if (hasSummary(detail.summary)) R.string.summary_again else R.string.summary_summarize),
-                    pick(actions.onSummarize), enabled = summarizeReason == null, reason = summarizeReason,
-                    modifier = Modifier.testTag("more-summarize"))
-                MenuAction(stringResource(R.string.summary_as), { choosingFormat = true }, enabled = summarizeReason == null,
-                    reason = summarizeReason, modifier = Modifier.testTag("more-summarize-as"))
-            }
-            if (hasSummary(detail.summary)) {
-                val editReason = writing ?: editSummaryReason(detail.summary)?.let { stringResource(it) }
-                MenuAction(stringResource(R.string.summary_edit), pick(actions.onEditSummary), enabled = editReason == null,
-                    reason = editReason, modifier = Modifier.testTag("more-edit-summary"))
-            }
-            if (offered) {
+                MenuAction(stringResource(if (notes) R.string.notes_organize_again else R.string.notes_organize),
+                    pick(actions.onOrganize), enabled = organizeReason == null, reason = organizeReason,
+                    modifier = Modifier.testTag("more-organize"))
+                if (notes) {
+                    val editReason = writing ?: editNotesReason(organizing)?.let { stringResource(it) }
+                    MenuAction(stringResource(R.string.notes_edit), pick(actions.onEditNotes), enabled = editReason == null,
+                        reason = editReason, modifier = Modifier.testTag("more-edit-notes"))
+                }
                 val askReason = writing ?: askReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt)?.let { stringResource(it) }
                 MenuAction(stringResource(R.string.ask_menu), pick(actions.onAsk), enabled = askReason == null,
                     reason = askReason, modifier = Modifier.testTag("more-ask"))
@@ -202,8 +186,8 @@ private data class ShareRow(val glyph: Glyph, val label: Int, val format: Int?, 
 private val SHARE_ROWS = listOf(
     ShareRow(Glyph.DOCUMENT, R.string.share_transcript, R.string.share_transcript_format, ExportFormat.TXT),
     ShareRow(Glyph.DOCUMENT, R.string.share_notes, R.string.share_notes_format, ExportFormat.MD),
-    // docs/08 "Exports": the summary alone, as the text ChatGPT wrote — the .md above carries it too.
-    ShareRow(Glyph.DOCUMENT, R.string.summary_tab, R.string.share_transcript_format, ExportFormat.SUMMARY),
+    // docs/08 "Exports": the notes alone, as `notes.text` — the .md above carries them too.
+    ShareRow(Glyph.DOCUMENT, R.string.notes_title, R.string.share_transcript_format, ExportFormat.NOTES),
     ShareRow(Glyph.SUBTITLES, R.string.share_subtitles, R.string.share_subtitles_format, ExportFormat.SRT),
     ShareRow(Glyph.SUBTITLES, R.string.share_web_subtitles, R.string.share_web_subtitles_format, ExportFormat.VTT),
     ShareRow(Glyph.AUDIO, R.string.share_audio, R.string.share_audio_format, ExportFormat.AUDIO),
@@ -234,16 +218,16 @@ internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) ->
             Text(stringResource(R.string.detail_share), Modifier.padding(horizontal = Space.m, vertical = Space.s),
                 style = MaterialTheme.typography.titleMedium, color = palette.text)
             HairLine()
-            // The summary is not a row where ChatGPT is not offered, as it is not in More.
-            SHARE_ROWS.filter { it.export != ExportFormat.SUMMARY || chatGpt !is ChatGptConnection.Unavailable }.forEach { row ->
+            // The notes are not a row where ChatGPT is not offered, as they are not in More.
+            SHARE_ROWS.filter { it.export != ExportFormat.NOTES || chatGpt !is ChatGptConnection.Unavailable }.forEach { row ->
                 val format = row.export
                 val noAudio = detail.audio.isEmpty && detail.driveFetch == DriveFetch.IDLE
                 val reason = when {
                     // D14: a take still being written has nothing whole to hand over — every row says so, Audio too.
                     detail.writing -> stringResource(R.string.detail_still_recording)
-                    format == ExportFormat.SUMMARY && (savedSummary(detail.summary) == null || format in unavailable) ->
-                        stringResource(R.string.share_no_summary)
-                    format == ExportFormat.SUMMARY -> null
+                    format == ExportFormat.NOTES && (!hasNotes(detail.notes) || format in unavailable) ->
+                        stringResource(R.string.share_no_notes)
+                    format == ExportFormat.NOTES -> null
                     format == ExportFormat.AUDIO && (noAudio || format in unavailable) -> stringResource(R.string.player_no_audio)
                     format != ExportFormat.AUDIO && transcript == null -> stringResource(R.string.detail_no_transcript)
                     else -> null
@@ -330,7 +314,7 @@ private fun mimeOf(format: ExportFormat): String = when (format) {
     ExportFormat.SRT -> "application/x-subrip"
     ExportFormat.VTT -> "text/vtt"
     ExportFormat.AUDIO -> "audio/mp4"
-    ExportFormat.SUMMARY -> "text/plain"
+    ExportFormat.NOTES -> "text/plain"
 }
 
 /** docs/09 "Playback": the speeds the chip offers. */
@@ -474,7 +458,7 @@ internal fun RetranscribeDialog(transcription: ProcessingTranscription, edited: 
 }
 
 /**
- * docs/09 "Editing and speakers": leaving the editor with changes in it — the transcript's, or the summary's with its
+ * docs/09 "Editing and speakers": leaving the editor with changes in it — the transcript's, or the notes' with their
  * own [body]. Discard is not red — nothing saved is lost.
  */
 @Composable
@@ -487,20 +471,6 @@ internal fun DiscardDialog(onKeep: () -> Unit, onDiscard: () -> Unit, @StringRes
             BlueprintButton(stringResource(R.string.edit_discard), onDiscard, modifier = Modifier.testTag("edit-discard"))
         },
     ) { BlueprintDialogText(stringResource(body)) }
-}
-
-/** docs/09 "Summary view": "Summarize again" over a summary the user edited. Replace is not red — no recording is deleted. */
-@Composable
-internal fun ReplaceSummaryDialog(onCancel: () -> Unit, onReplace: () -> Unit) {
-    BlueprintDialog(
-        title = stringResource(R.string.summary_replace_title),
-        onDismissRequest = onCancel,
-        actions = {
-            BlueprintButton(stringResource(R.string.action_cancel), onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch,
-                modifier = Modifier.testTag("summary-replace-cancel"))
-            BlueprintButton(stringResource(R.string.summary_replace), onReplace, tone = ButtonTone.PRIMARY, modifier = Modifier.testTag("summary-replace"))
-        },
-    ) { BlueprintDialogText(stringResource(R.string.summary_replace_body)) }
 }
 
 /**

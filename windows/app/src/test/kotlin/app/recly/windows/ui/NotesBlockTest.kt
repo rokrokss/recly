@@ -17,50 +17,97 @@ import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Density
-import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
+import app.recly.windows.i18n.WORD_JOINER
 import app.recly.windows.ui.theme.ReclyDesktopTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import recly.core.chatgpt.SummaryState
+import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteKind
 import recly.core.notes.NoteLine
+import recly.core.notes.NoteSectionItems
 import recly.core.notes.NotesStage
 import recly.core.notes.RecordingNotes
 
 /**
- * docs/08 "Organizing" on the PC: the notes block in the Summary view — the groups it shows and hides, what a row
- * says, which line under an opened row is the note's, and the row's click, time and context menu.
+ * docs/08 "Organizing" on the PC: the notes block in the Notes chip's body — the groups it shows and hides, what a row
+ * says, which line under an opened row is the note's, and the row's click, time and context menu; and what Edit notes
+ * sends when it is saved.
  */
 class NotesBlockTest {
 
     private fun item(id: String, kind: NoteKind, atSec: Double = 75.0, owner: String? = null, due: String? = null, quote: String = "") =
         NoteItem(id, kind, "Send the quote", owner, due, atSec, quote, provisional = false)
 
+    private val base = StringTable.of(StringTable.BASE)
+
     private fun notes(
         overview: String? = null,
         decisions: List<NoteItem> = emptyList(),
         todos: List<NoteItem> = emptyList(),
         questions: List<NoteItem> = emptyList(),
-    ) = RecordingNotes("rec-1", NotesStage.FINAL, overview, decisions, todos, questions, organizing = false)
+        points: List<NoteItem> = emptyList(),
+        sections: List<NoteSectionItems> = emptyList(),
+    ) = RecordingNotes("rec-1", NotesStage.FINAL, overview, decisions, todos, questions, organizing = false, points = points, sections = sections)
 
     private fun line(atSec: Double, text: String, name: String? = null, me: Boolean = false) =
         NoteLine(atSec, atSec + 4, "S1", name, me, text, provisional = false)
 
     @Test
-    fun `the groups come in their order, and a group with nothing is not there`() {
+    fun `the groups come in their order, the user's sections last, and a group with nothing is not there`() {
+        val point = item("p", NoteKind.POINT)
         val decision = item("d", NoteKind.DECISION)
         val question = item("q", NoteKind.QUESTION)
+        val risk = item("r", NoteKind.SECTION).copy(section = "s1")
 
         assertEquals(
-            listOf(Str.NOTES_DECISIONS to listOf(decision), Str.NOTES_QUESTIONS to listOf(question)),
-            noteGroups(notes(decisions = listOf(decision), questions = listOf(question))),
+            listOf("Key points" to listOf(point), "Decisions" to listOf(decision), "Questions" to listOf(question), "Risks" to listOf(risk)),
+            noteGroups(
+                notes(
+                    points = listOf(point),
+                    decisions = listOf(decision),
+                    questions = listOf(question),
+                    sections = listOf(NoteSectionItems("s1", "Risks", listOf(risk)), NoteSectionItems("s2", "Budget", emptyList())),
+                ),
+                base,
+            ),
         )
-        assertEquals(emptyList(), noteGroups(notes(overview = "We met.")))
+        assertEquals(emptyList(), noteGroups(notes(overview = "We met."), base))
+    }
+
+    @Test
+    fun `Edit notes sends only what changed, trimmed, and an emptied item to be deleted`() {
+        val decision = item("d", NoteKind.DECISION).copy(text = "Ship on Friday")
+        val todo = item("t", NoteKind.TODO)
+        val draft = NotesDraft("rec-1", notes(overview = "We met.", decisions = listOf(decision), todos = listOf(todo)))
+        assertFalse(draft.changed)
+
+        draft.overview = " We met. "
+        draft.texts["d"] = "Ship on Friday "
+        assertFalse(draft.changed, "whitespace alone is no edit")
+
+        draft.overview = "We met on Monday."
+        draft.texts["d"] = " Ship on Monday"
+        draft.texts["t"] = "  "
+        assertEquals("We met on Monday.", draft.overviewEdit)
+        assertEquals(listOf(NoteEdit("d", "Ship on Monday"), NoteEdit("t", "")), draft.itemEdits)
+        assertTrue(draft.changed)
+
+        draft.overview = ""
+        assertEquals("", draft.overviewEdit, "an emptied overview is removed")
+    }
+
+    @Test
+    fun `the headings handed to the core are the language's words without the joiners drawing puts in`() {
+        val korean = notesHeadings(StringTable.of(StringTable.KOREAN))
+        assertEquals("정리", korean.notes)
+        assertEquals("핵심", korean.keyPoints)
+        assertFalse(korean.toString().contains(WORD_JOINER))
+        assertEquals("Key points", notesHeadings(base).keyPoints)
     }
 
     @Test
@@ -111,13 +158,6 @@ class NotesBlockTest {
         assertEquals(1, notedLine(lines, 75.0, ""))
         assertNull(notedLine(lines, 10.0, ""))
         assertNull(notedLine(emptyList(), 10.0, "x"))
-    }
-
-    @Test
-    fun `the Summary chips are there for notes alone`() {
-        assertTrue(showsSummaryChips(SummaryState.None, summaryChosen = false, editing = false, notes = true))
-        assertFalse(showsSummaryChips(SummaryState.None, summaryChosen = false, editing = true, notes = true))
-        assertFalse(showsSummaryChips(SummaryState.None, summaryChosen = false, editing = false, notes = false))
     }
 
     @Test

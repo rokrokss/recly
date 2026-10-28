@@ -142,10 +142,10 @@ object TranscriptNormalizer {
      * A recording with highlights (docs/03 "Metadata") also lists them: their clock times in the front
      * matter, and a "Highlights" section before the lines — each time with the words being said then.
      *
-     * The share sheet's copy also carries the recording's [summary] (docs/08 "Exports"), as a "Summary" section
-     * before a "Transcript" one; the file in the recording's folder is written without it.
+     * The share sheet's copy also carries the recording's [notes] (docs/08 "Exports") — their own section, already in
+     * Markdown — before a "Transcript" one; the file in the recording's folder is written without them.
      */
-    fun markdown(transcript: Transcript, meta: RecordingMeta, summary: String? = null): String = buildString {
+    fun markdown(transcript: Transcript, meta: RecordingMeta, notes: String? = null): String = buildString {
         append("---\n")
         meta.title?.takeIf { it.isNotBlank() }?.let { append("title: ").append(recJson.encodeToString(it)).append('\n') }
         append("recordingId: ").append(meta.recordingId).append('\n')
@@ -164,25 +164,12 @@ object TranscriptNormalizer {
                 append('\n')
             }
         }
-        summary?.trim()?.takeIf { it.isNotEmpty() }?.let { notes ->
-            append("\n## Summary\n\n").append(markdownLines(notes)).append('\n')
+        notes?.trim()?.takeIf { it.isNotEmpty() }?.let {
+            append('\n').append(it).append('\n')
             append("\n## Transcript\n")
         }
         val lines = text(transcript).trimEnd('\n')
         if (lines.isNotEmpty()) append('\n').append(lines.replace("\n", "\n\n")).append('\n')
-    }
-
-    /** A summary's plain lines as Markdown: "- " items stay one list, every other line is a paragraph of its own. */
-    private fun markdownLines(text: String): String {
-        val out = StringBuilder()
-        var inList = false
-        for (line in text.lines().map(String::trimEnd).filter(String::isNotBlank)) {
-            val item = line.trimStart().startsWith("- ")
-            if (out.isNotEmpty()) out.append(if (item && inList) "\n" else "\n\n")
-            out.append(line)
-            inList = item
-        }
-        return out.toString()
     }
 
     /**

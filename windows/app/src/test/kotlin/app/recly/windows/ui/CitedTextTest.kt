@@ -29,7 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/09 "Summary view": a time in a summary plays the recording from there — pressed on its words, or on the
+ * docs/09 "AI view": a time in an answer plays the recording from there — pressed on its words, or on the
  * invisible target of at least 44 each way centred on them — while the line keeps its height and the words around
  * it do nothing.
  */
@@ -52,7 +52,7 @@ class CitedTextTest {
                         CitedText("[00:31] Ship the release on Friday.", canSeek, { seeks += it }, StringTable.of(StringTable.BASE), seekable)
                     }
                     Text("next line", Modifier.onGloballyPositioned { below = it.boundsInRoot() })
-                    // The same words with no time in them: the height a line of the summary has.
+                    // The same words with no time in them: the height a line of the answer has.
                     Text("Ship the release on Friday.", Modifier.onGloballyPositioned { plain = it.boundsInRoot() }, style = MaterialTheme.typography.bodyMedium)
                 }
             }

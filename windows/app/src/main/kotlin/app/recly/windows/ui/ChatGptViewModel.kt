@@ -34,18 +34,18 @@ import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
 import recly.core.chatgpt.Summaries
-import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryCitations
-import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryPreferences
-import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import recly.core.notes.NoteSection
 import recly.core.notes.Notes
+import recly.core.notes.NotesPreferences
+import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
 import recly.core.storage.StorageKind
 
-/** What the ChatGPT section says under its rows, besides the account itself (docs/09 "Summary view"). */
+/** What the ChatGPT section says under its rows, besides the account itself (docs/09 "AI view"). */
 sealed interface ChatGptNotice {
     /** [reason] is a `CoreMessage` wire code — or, for a sign-in this shell could not even start, its diagnostic. */
     data class SignInFailed(val reason: String) : ChatGptNotice
@@ -53,6 +53,12 @@ sealed interface ChatGptNotice {
     /** Signed out here, but OpenAI did not confirm the revocation. Not a failure: nothing is left on this PC. */
     data object RevokeUnconfirmed : ChatGptNotice
 }
+
+/**
+ * One of Settings → Notes' My sections as the window edits it (docs/09 "AI view"). [key] is the window's own, so a
+ * section keeps its fields while the core gives it its [id]; an empty [id] is one not kept yet.
+ */
+data class SectionDraft(val key: Int, val id: String, val name: String, val description: String)
 
 /**
  * docs/15 §10 "Sign in with ChatGPT", the shell's half: the loopback and the browser. The core owns the
@@ -63,9 +69,12 @@ sealed interface ChatGptNotice {
  */
 class ChatGptViewModel(
     private val account: ChatGptAccount,
-    /** Settings → ChatGPT's format, My format and About you are the summaries' own (docs/08 "Summaries"). */
+    /** Settings → Notes' About you and the title dialog's boxes are the requests' own (docs/08 "AI requests"). */
     private val summaries: Summaries,
-    /** docs/08 "Organizing": the consent the sign-in asks for, and a recording start while it is missing. */
+    /**
+     * docs/08 "Organizing": the consent the sign-in asks for, a recording start while it is missing, and Settings →
+     * Notes' instructions and sections.
+     */
     private val notes: Notes,
     private val receiver: LoopbackReceiver,
     private val scope: CoroutineScope,
@@ -79,12 +88,30 @@ class ChatGptViewModel(
         // Set by the off-screen shots alone, which draw the signed-in rows without signing in.
         internal set
 
-    /** What every summary on this PC is asked for: its format, My format's words and About you — kept signed out too. */
+    /** About you, which notes and answers on this PC send, and how the title dialog's boxes were left — kept signed out too. */
     var preferences: SummaryPreferences by mutableStateOf(SummaryPreferences())
         private set
 
     /** One save at a time, in the order they were made: each one carries every field as it was then. */
     private val saving = Mutex()
+
+    /**
+     * docs/09 "AI view": Settings → Notes' instructions as last typed — shown at once, the core's trimmed copy once
+     * it has kept them — and My sections as the window edits them ([sections]).
+     */
+    var notesInstructions: String by mutableStateOf("")
+        private set
+
+    /** My sections, in order: the kept ones and any just added that has no name yet. */
+    var sections: List<SectionDraft> by mutableStateOf(emptyList())
+        private set
+
+    /** What the core holds now, so a save that would change nothing sends nothing. */
+    private var notesKept: NotesPreferences? = null
+
+    private var nextSectionKey = 0
+
+    private val notesSaving = Mutex()
 
     /** The loopback is open and the browser is where the user is: the status line and its Cancel. */
     var listening: Boolean by mutableStateOf(false)
@@ -131,6 +158,21 @@ class ChatGptViewModel(
                 throw e
             } catch (e: Exception) {
                 logger.log(Logger.Level.ERROR, "shell.chatgpt.preferences.failed", error = e)
+            }
+        }
+        // Read once: Settings → Notes is the only place this PC changes them, and it holds its own edits.
+        scope.launch {
+            try {
+                val stored = notes.preferences()
+                notesSaving.withLock {
+                    notesKept = stored
+                    notesInstructions = stored.instructions
+                    sections = stored.sections.map { SectionDraft(nextSectionKey++, it.id, it.name, it.description) }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.log(Logger.Level.ERROR, "shell.notes.preferences.failed", error = e)
             }
         }
         refresh()
@@ -216,7 +258,7 @@ class ChatGptViewModel(
         action = ProcessingState.IDLE
     }
 
-    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "Summary view"). */
+    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "AI view"). */
     fun signOut() {
         notice = null
         scope.launch {
@@ -244,12 +286,6 @@ class ChatGptViewModel(
         }
     }
 
-    /** Settings → Summary format: saved the moment it is chosen, like the model. */
-    fun selectFormat(format: SummaryFormat) = savePreferences { it.copy(format = format) }
-
-    /** My format's words, once the field is left; empty is allowed, and puts the format back to General. */
-    fun saveCustomFormat(text: String) = savePreferences { it.copy(customFormat = text) }
-
     fun saveAboutMe(text: String) = savePreferences { it.copy(aboutMe = text) }
 
     /**
@@ -276,6 +312,73 @@ class ChatGptViewModel(
                     throw e
                 } catch (e: Exception) {
                     logger.log(Logger.Level.ERROR, "shell.chatgpt.preferences.failed", error = e)
+                }
+            }
+        }
+    }
+
+    /** Settings → Notes instructions, once the field is left; empty is allowed. */
+    fun saveNotesInstructions(text: String) {
+        if (text == notesInstructions) return
+        notesInstructions = text
+        saveNotes()
+    }
+
+    /**
+     * Add section: an empty one at the end, while there are fewer than [NotesPreferences.SECTIONS_MAX] — kept only
+     * once it has a name. The key of the one added, for its name to take the cursor; null when there is no room.
+     */
+    fun addSection(): Int? {
+        if (sections.size >= NotesPreferences.SECTIONS_MAX) return null
+        val key = nextSectionKey++
+        sections = sections + SectionDraft(key, "", "", "")
+        return key
+    }
+
+    /**
+     * A section's editing ended — the cursor left it, Return in its name, the window put behind another or closed —
+     * with its fields as they are: saved, or gone from the list without a name. A section removed meanwhile is left
+     * alone.
+     */
+    fun endSection(key: Int, name: String, description: String) {
+        val at = sections.indexOfFirst { it.key == key }
+        if (at < 0) return
+        sections = if (name.isBlank()) {
+            sections - sections[at]
+        } else {
+            sections.toMutableList().also { it[at] = it[at].copy(name = name, description = description) }
+        }
+        saveNotes()
+    }
+
+    /** Remove: saved at once, without asking. */
+    fun removeSection(key: Int) {
+        val section = sections.firstOrNull { it.key == key } ?: return
+        sections = sections - section
+        saveNotes()
+    }
+
+    /**
+     * Sends the instructions and the named sections as they are when its turn comes, one save at a time, and gives a
+     * new section the id the core gave it — under the key it was edited by, so its fields stay where they are.
+     */
+    private fun saveNotes() {
+        scope.launch {
+            notesSaving.withLock {
+                val sent = sections.filter { it.name.isNotBlank() }
+                val wanted = NotesPreferences(notesInstructions, sent.map { NoteSection(it.id, it.name, it.description) })
+                if (wanted == notesKept) return@withLock
+                try {
+                    val kept = notes.setPreferences(wanted)
+                    notesKept = kept
+                    // In the order sent: the core keeps every named section, and only cuts them to its limits.
+                    val byKey = sent.map { it.key }.zip(kept.sections).toMap()
+                    sections = sections.map { draft -> byKey[draft.key]?.let { draft.copy(id = it.id, name = it.name, description = it.description) } ?: draft }
+                    if (notesInstructions == wanted.instructions) notesInstructions = kept.instructions
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.log(Logger.Level.ERROR, "shell.notes.preferences.failed", error = e)
                 }
             }
         }
@@ -355,7 +458,7 @@ class ChatGptViewModel(
     }
 }
 
-/** A sign-in the user cancelled in the browser says nothing (docs/09 "Summary view"). */
+/** A sign-in the user cancelled in the browser says nothing (docs/09 "AI view"). */
 internal fun cancelled(reason: String): Boolean = CoreMessageRef.parse(reason)?.message == CoreMessage.SIGN_IN_CANCELLED
 
 /**
@@ -383,94 +486,67 @@ internal fun chatGptDiagnostic(reason: String): String? {
 internal fun signInFailureLine(reason: String): UiMessage? =
     chatGptSentence(reason) ?: chatGptDiagnostic(reason)?.let(UiMessage::Text)
 
-/** The one button under a failed summary's notice (docs/09 "Summary view"). */
-enum class SummaryRecovery { MANAGE_USAGE, NONE, RETRY }
+/** The one button under a failed Organize's or Ask's notice (docs/09 "AI view"). */
+enum class ChatGptRecovery { MANAGE_USAGE, NONE, RETRY }
 
 /**
- * What a failed summary's centred notice says, and the button under it. [attention] is a sentence that says where to
+ * What a failed request's centred notice says, and the button under it. [attention] is a sentence that says where to
  * go — said in the warning tone, not the failure's red.
  */
-data class SummaryFailure(val headline: UiMessage, val detail: String?, val recovery: SummaryRecovery, val attention: Boolean = false)
+data class ChatGptFailure(val headline: UiMessage, val detail: String?, val recovery: ChatGptRecovery, val attention: Boolean = false)
 
-/** [failed] is the headline when the reason has no sentence of its own: `Could not summarize`, or Ask's `Could not answer`. */
-internal fun summaryFailure(reason: String, failed: Str = Str.SUMMARY_FAILED): SummaryFailure {
+/** [failed] is the headline when the reason has no sentence of its own: `Could not organize`, or Ask's `Could not answer`. */
+internal fun chatGptFailure(reason: String, failed: Str): ChatGptFailure {
     val sentence = chatGptSentence(reason)
     val recovery = when (CoreMessageRef.parse(reason)?.message) {
-        CoreMessage.CHATGPT_USAGE_LIMIT -> SummaryRecovery.MANAGE_USAGE
+        CoreMessage.CHATGPT_USAGE_LIMIT -> ChatGptRecovery.MANAGE_USAGE
         // The sentence says where: Settings.
-        CoreMessage.CHATGPT_SIGN_IN_REQUIRED -> SummaryRecovery.NONE
+        CoreMessage.CHATGPT_SIGN_IN_REQUIRED -> ChatGptRecovery.NONE
         // An account apps cannot use stays one however often it is asked (2026-10-10).
-        CoreMessage.CHATGPT_PLAN_REQUIRED -> SummaryRecovery.NONE
-        else -> SummaryRecovery.RETRY
+        CoreMessage.CHATGPT_PLAN_REQUIRED -> ChatGptRecovery.NONE
+        else -> ChatGptRecovery.RETRY
     }
     return if (sentence != null) {
-        SummaryFailure(sentence, null, recovery, attention = true)
+        ChatGptFailure(sentence, null, recovery, attention = true)
     } else {
-        SummaryFailure(failed.message(), chatGptDiagnostic(reason), recovery)
+        ChatGptFailure(failed.message(), chatGptDiagnostic(reason), recovery)
     }
 }
 
-/** More → Summarize, or Summarize again once the recording has a summary to replace. */
-internal fun summarizeLabel(summary: SummaryState): Str = when (summary) {
-    is SummaryState.Ready -> Str.SUMMARY_AGAIN
-    is SummaryState.Running -> if (summary.previous != null) Str.SUMMARY_AGAIN else Str.SUMMARY_SUMMARIZE
-    is SummaryState.Failed -> if (summary.previous != null) Str.SUMMARY_AGAIN else Str.SUMMARY_SUMMARIZE
-    SummaryState.None -> Str.SUMMARY_SUMMARIZE
-}
-
-/** The summary Summarize again would replace: the one on show, or the one still kept under a run or a failure. */
-internal fun SummaryState.saved(): Summary? = when (this) {
-    is SummaryState.Ready -> summary
-    is SummaryState.Running -> previous
-    is SummaryState.Failed -> previous
-    SummaryState.None -> null
-}
-
-/** Summarize again over a summary the user edited asks before replacing it (docs/08 "Summaries"). */
-internal fun summarizeAsksFirst(summary: SummaryState): Boolean = summary.saved()?.editedAt != null
+/** More → Organize, or Organize again once the recording has notes (docs/09 "AI view"). */
+internal fun organizeLabel(notes: RecordingNotes?): Str = if (notes?.isEmpty == false) Str.NOTES_ORGANIZE_AGAIN else Str.NOTES_ORGANIZE
 
 /**
- * More → Edit summary: offered once the recording has a summary, and disabled with `Summarizing…` while a new
- * one is being made over it. Null when there is nothing to offer.
+ * Why More → Organize cannot run now, or null when it can. One reason, in this order: a take still being written has
+ * no transcript yet either, and says so first, as Rename does; then no transcript; then a job of the recording not
+ * settled yet — [busy] is its reason, the one Edit transcript gives (D16) — which may still replace the text; then
+ * the ChatGPT sign-in; then the recording being organized already ([organizing], `RecordingNotes.organizing`).
  */
-internal data class SummaryEditItem(val summary: Summary, val blocked: Str?)
-
-internal fun summaryEditItem(summary: SummaryState): SummaryEditItem? = when (summary) {
-    is SummaryState.Ready -> SummaryEditItem(summary.summary, null)
-    is SummaryState.Running -> summary.previous?.let { SummaryEditItem(it, Str.SUMMARY_RUNNING) }
-    // A failed run keeps the summary under it, and that one can still be edited.
-    is SummaryState.Failed -> summary.previous?.let { SummaryEditItem(it, null) }
-    else -> null
-}
-
-/**
- * What saving the edit changes: the text, trimmed as the core keeps it. An emptied field is not an edit — the core
- * keeps the summary as it was — so it neither offers Save nor asks before it is left.
- */
-internal fun summaryEdited(original: String, text: String): Boolean = text.trim().let { it.isNotEmpty() && it != original.trim() }
-
-/** The editor's note: Drive and iCloud carry the summary to the other devices; a local folder, or no folder yet, does not. */
-internal fun summaryEditNote(storage: StorageKind?): Str =
-    if (storage == StorageKind.DRIVE || storage == StorageKind.ICLOUD) Str.SUMMARY_EDIT_NOTE_SHARED else Str.SUMMARY_EDIT_NOTE_LOCAL
-
-/**
- * Why More → Summarize cannot run now, or null when it can. One reason, in this order: a take still being
- * written has no transcript yet either, and says so first, as Rename does; then no transcript; then a job of the
- * recording not settled yet — [busy] is its reason, the one Edit transcript gives (D16) — which may still replace
- * the text; then the ChatGPT sign-in; then a summary already running.
- */
-internal fun summarizeBlocked(
+internal fun organizeBlocked(
     writing: Boolean,
     hasTranscript: Boolean,
     busy: Str?,
     connection: ChatGptConnection,
-    summary: SummaryState,
-): Str? = askBlocked(writing, hasTranscript, busy, connection)
-    ?: if (summary is SummaryState.Running) Str.SUMMARY_RUNNING else null
+    organizing: Boolean,
+): Str? = askBlocked(writing, hasTranscript, busy, connection) ?: Str.NOTES_ORGANIZING.takeIf { organizing }
 
 /**
- * Why More → Ask about this recording cannot run now (docs/08 "Ask"): Summarize's reasons, but a summary being made
- * is none — a question is asked beside it.
+ * Why More → Edit notes cannot open now (docs/09 "AI view") — an item offered only while the recording has notes:
+ * the take still being written, then the notes being organized, which would land under the editor.
+ */
+internal fun editNotesBlocked(notes: RecordingNotes, writing: Boolean): Str? = when {
+    writing -> Str.DETAIL_STILL_RECORDING
+    notes.organizing -> Str.NOTES_ORGANIZING
+    else -> null
+}
+
+/** The editor's note: Drive and iCloud carry the notes to the other devices; a local folder, or no folder yet, does not. */
+internal fun notesEditNote(storage: StorageKind?): Str =
+    if (storage == StorageKind.DRIVE || storage == StorageKind.ICLOUD) Str.NOTES_EDIT_NOTE_SHARED else Str.NOTES_EDIT_NOTE_LOCAL
+
+/**
+ * Why More → Ask about this recording cannot run now (docs/08 "Ask"): Organize's reasons, but the notes being made
+ * are none — a question is asked beside them.
  */
 internal fun askBlocked(
     writing: Boolean,
@@ -514,7 +590,7 @@ enum class FillHalf(
 }
 
 /**
- * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "Summary view"), in this order: Ask's
+ * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "AI view"), in this order: Ask's
  * reasons, then a fill of [half] running ([running] — `observeFills()`, the title dialog's too), then nothing of it
  * missing — [needed] is [FillHalf.needed] for the recording as it is now, which a fill that is running may be about
  * to change.
@@ -557,41 +633,18 @@ internal fun fillNotice(result: FillResult?, half: FillHalf, busy: Str): FillNot
 }
 
 /**
- * The Transcript | Summary chips: once the recording has a summary, or right after Summarize was chosen, or once it
- * has [notes] (docs/08 "Organizing" — they are shown where the summary is) — and never while the transcript is being edited.
+ * The Transcript | Notes chips (docs/09 "AI view"): once the recording has notes, or Organize was chosen
+ * ([notesChosen]), or the last Organize of it failed — and never while the transcript is being edited.
  */
-internal fun showsSummaryChips(summary: SummaryState, summaryChosen: Boolean, editing: Boolean, notes: Boolean = false): Boolean =
-    !editing && (summary != SummaryState.None || summaryChosen || notes)
+internal fun showsNotesChips(notes: RecordingNotes?, notesChosen: Boolean, editing: Boolean): Boolean =
+    !editing && (notesChosen || notes?.isEmpty == false || notes?.failure != null)
 
 /**
- * The footer's model: the plan's name for it when it was written ([Summary.modelName], kept with it so it reads the
- * same signed out), else OpenAI's name for it while the plan lists it, otherwise its id.
+ * The footer's model under an answer: the plan's name for it when it was written (kept with it so it reads the same
+ * signed out), else OpenAI's name for it while the plan lists it, otherwise its id.
  */
-internal fun summaryModelLabel(model: String, modelName: String?, connection: ChatGptConnection): String =
+internal fun chatGptModelLabel(model: String, modelName: String?, connection: ChatGptConnection): String =
     modelName ?: (connection as? ChatGptConnection.SignedIn)?.models?.firstOrNull { it.id == model }?.label ?: model
-
-/** docs/08 "Summaries": a format's name, in Settings and in More → Summarize as. */
-internal fun summaryFormatLabel(format: SummaryFormat): Str = when (format) {
-    SummaryFormat.AUTO -> Str.SUMMARY_FORMAT_AUTO
-    SummaryFormat.ONE_ON_ONE -> Str.SUMMARY_FORMAT_ONE_ON_ONE
-    SummaryFormat.LECTURE -> Str.SUMMARY_FORMAT_LECTURE
-    SummaryFormat.INTERVIEW -> Str.SUMMARY_FORMAT_INTERVIEW
-    SummaryFormat.CUSTOM -> Str.SUMMARY_FORMAT_CUSTOM
-}
-
-/**
- * The line under a summary (docs/09 "Summary view"): `ChatGPT · <model>`, then the format unless it is General, then
- * `Edited` once the user has changed it — one separator throughout.
- */
-internal fun summaryFooter(strings: Strings, model: String, format: SummaryFormat, edited: Boolean): String =
-    buildList {
-        add(strings[Str.SUMMARY_MODEL, model])
-        if (format != SummaryFormat.AUTO) add(strings[summaryFormatLabel(format)])
-        if (edited) add(strings[Str.SUMMARY_EDITED])
-    }.joinToString(FOOTER_SEPARATOR)
-
-/** The footer's own join, the one [Str.SUMMARY_MODEL] puts between ChatGPT and the model. */
-private const val FOOTER_SEPARATOR = " · "
 
 /** docs/08 "Ask": a preset's chip. Translate names the app's language the way the language list does. */
 internal fun askPresetLabel(preset: AskPreset, strings: Strings): String = when (preset) {
@@ -606,7 +659,7 @@ internal fun askPresetLabel(preset: AskPreset, strings: Strings): String = when 
 }
 
 /**
- * One piece of a summary or an answer as the detail draws it: plain text, or a citation — its text as written,
+ * One piece of an answer as the detail draws it: plain text, or a citation — its text as written,
  * brackets and all, the time inside them for a screen reader, and the second it plays from.
  */
 internal data class CitationRun(val text: String, val time: String? = null, val atSec: Double? = null)

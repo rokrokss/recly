@@ -15,6 +15,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -27,6 +28,7 @@ import okio.Path
 import okio.Path.Companion.toPath
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptHarness
+import recly.core.chatgpt.SummaryPreferences
 import recly.core.db.RecDatabase
 import recly.core.job.EnqueueResult
 import recly.core.job.JobStatus
@@ -39,6 +41,7 @@ import recly.core.model.RecordingMeta
 import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Track
+import recly.core.model.isoUtc
 import recly.core.model.recJson
 import recly.core.platform.SecureStore
 import recly.core.processing.ExternalTranscription
@@ -694,5 +697,349 @@ class NotesTest {
         assertEquals(StepStatus.SKIPPED, organizeStep(waiting.id).status, "the closed step never ran")
         assertEquals(2, responses().size, "the limit, then the transcription again's notes")
         assertEquals("Alpha again.", notes.get(meta.recordingId).overview)
+    }
+
+    // --- Key points, the user's own sections and what Settings add ---
+
+    /** One conversation of two speakers, S1 then S2. */
+    private val meeting = listOf(SttSegment(0.0, 30.0, "spk-a", speech("alpha")), SttSegment(30.0, 60.0, "spk-b", speech("able")))
+
+    @Test
+    fun `after Stop the notes have key points and the user's own sections`() = runBlocking {
+        ready()
+        val risks = notes.setPreferences(NotesPreferences(sections = listOf(NoteSection("", "Risks", "anything that could go wrong")))).sections.single()
+        engine.answer = { meeting }
+        answer(
+            conversation(
+                "Alpha.",
+                item("point", "Alpha costs twice as much", "00:00:00", "alpha5 alpha6 alpha7"),
+                item("section1", "Alpha may slip", "00:00:30", "able1 able2 able3"),
+                item("section2", "Nobody asked for this", "00:00:30", "able5 able6 able7"),
+                item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3"),
+            ),
+        )
+        val meta = f.recordAndRun()
+
+        val asked = instructions(0)
+        assertTrue("key points, decisions, to-dos and open questions, and the items of the user's own sections" in asked, asked)
+        assertTrue("\"point\" for a key point" in asked, asked)
+        assertTrue("\"section1\" for the user's own section \"Risks\" (anything that could go wrong)" in asked, asked)
+        assertFalse(NotesPrompts.MARKED in input(0), "no marks, no heading")
+        val final = notes.get(meta.recordingId)
+        assertEquals(listOf(NoteKind.POINT to "Alpha costs twice as much"), final.points.map { it.kind to it.text })
+        assertEquals(listOf("Ship alpha"), final.decisions.map { it.text })
+        val section = final.sections.single()
+        assertEquals(risks.id to "Risks", section.id to section.name)
+        assertEquals(listOf(Triple(NoteKind.SECTION, "Alpha may slip", risks.id)), section.items.map { Triple(it.kind, it.text, it.section) })
+        assertEquals(1, f.logger.fieldsOf("organize.final.done").single()["dropped"], "a section the user does not have")
+        assertEquals(listOf(StoredSection(risks.id, "Risks", "anything that could go wrong")), stored(meta).sections)
+
+        // Renamed in Settings later, the section keeps the name its items were made under.
+        notes.setPreferences(NotesPreferences(sections = listOf(risks.copy(name = "Threats"))))
+        assertEquals("Risks", notes.get(meta.recordingId).sections.single().name)
+    }
+
+    @Test
+    fun `the user's instructions, About you and the moments they marked go with the request`() = runBlocking {
+        ready()
+        notes.setPreferences(NotesPreferences(instructions = "  Use short sentences.  "))
+        f.core.summaries.setPreferences(SummaryPreferences(aboutMe = "Product manager"))
+        engine.answer = { meeting }
+        answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
+        val meta = f.record()
+        assertTrue(f.core.recordings.setHighlights(meta.recordingId, listOf(35.0)))
+        f.core.enqueue(meta.recordingId)
+        f.drain()
+
+        val asked = instructions(0)
+        assertTrue(
+            "The user's own instructions for their notes follow. Follow them where they do not change the JSON format, the kinds or the evidence rules:\n" +
+                "Use short sentences.\n" in asked,
+            asked,
+        )
+        assertTrue("About the person who made the recording, to judge what matters to them: Product manager\n" in asked, asked)
+        assertTrue("After the transcript, ${NotesPrompts.MARKED} lists moments the user marked as important" in asked, asked)
+        assertTrue(input(0).endsWith("\n${NotesPrompts.MARKED}\n- [00:00:35] ${speech("able")}\n"), input(0))
+        assertEquals(listOf("Ship alpha"), notes.get(meta.recordingId).decisions.map { it.text })
+    }
+
+    @Test
+    fun `Settings keep the instructions and up to three named sections, trimmed, and give a new section its id`() = runBlocking {
+        assertEquals(NotesPreferences(), notes.preferences())
+        val kept = notes.setPreferences(
+            NotesPreferences(
+                instructions = "  " + "x".repeat(1100) + "  ",
+                sections = listOf(
+                    NoteSection("", "  Risks\nand issues  ", "  " + "d".repeat(250)),
+                    NoteSection("01J9SECT10N000000000000000", "Hiring", "Who to hire"),
+                    NoteSection("", "   ", "a section without a name is dropped"),
+                    NoteSection("", "n".repeat(50), ""),
+                    NoteSection("", "Fourth", "one too many"),
+                ),
+            ),
+        )
+
+        assertEquals("x".repeat(NotesPreferences.INSTRUCTIONS_MAX), kept.instructions)
+        assertEquals(listOf("Risks and issues", "Hiring", "n".repeat(NotesPreferences.SECTION_NAME_MAX)), kept.sections.map { it.name })
+        assertEquals(listOf(NotesPreferences.DESCRIPTION_MAX, 11, 0), kept.sections.map { it.description.length })
+        assertEquals("01J9SECT10N000000000000000", kept.sections[1].id, "a section kept keeps its id")
+        assertTrue(kept.sections[0].id.isNotBlank() && kept.sections[2].id.isNotBlank() && kept.sections[0].id != kept.sections[2].id)
+        assertEquals(kept, notes.preferences())
+        assertEquals(kept, notes.observePreferences().first())
+        val kv = RecDatabase(f.driver).recQueries
+        assertEquals(kept.instructions, kv.kvGet(Notes.PREF_INSTRUCTIONS).executeAsOneOrNull(), "kept on this device")
+        assertTrue(kept.sections[0].id in kv.kvGet(Notes.PREF_SECTIONS).executeAsOne())
+
+        assertEquals(NotesPreferences(), notes.setPreferences(NotesPreferences(instructions = "   ")))
+        assertNull(kv.kvGet(Notes.PREF_INSTRUCTIONS).executeAsOneOrNull())
+        assertNull(kv.kvGet(Notes.PREF_SECTIONS).executeAsOneOrNull())
+    }
+
+    @Test
+    fun `the notes as text are the overview, then each group in the detail's order, under the app's headings`() {
+        fun noteItem(kind: NoteKind, text: String, atSec: Double, owner: String? = null, due: String? = null, section: String? = null) =
+            NoteItem("01J9N0TE000000000000000000", kind, text, owner, due, atSec, "quote", provisional = false, section = section)
+        val risks = "01J9SECT10N000000000000000"
+        val all = RecordingNotes(
+            "01J9ABCDEF0123456789ABCDEF", NotesStage.FINAL, "We met.\nWe shipped.",
+            decisions = listOf(noteItem(NoteKind.DECISION, "Ship on Friday", 1.0)),
+            todos = listOf(noteItem(NoteKind.TODO, "Send the deck", 65.0, owner = "Mina", due = "Monday")),
+            questions = listOf(noteItem(NoteKind.QUESTION, "Who pays?", 3723.0)),
+            organizing = false,
+            points = listOf(noteItem(NoteKind.POINT, "Costs doubled", 30.0)),
+            sections = listOf(
+                NoteSectionItems(risks, "Risks", listOf(noteItem(NoteKind.SECTION, "May slip", 40.0, section = risks))),
+                NoteSectionItems("01J9SECT20N000000000000000", "Empty", emptyList()),
+            ),
+        )
+
+        assertEquals(
+            "We met.\nWe shipped.\n\n" +
+                "Key points\n- Costs doubled [00:00:30]\n\n" +
+                "Decisions\n- Ship on Friday [00:00:01]\n\n" +
+                "To-dos\n- Send the deck — Mina · Monday [00:01:05]\n\n" +
+                "Questions\n- Who pays? [01:02:03]\n\n" +
+                "Risks\n- May slip [00:00:40]\n",
+            NotesText.plain(all, NotesHeadings()),
+        )
+        assertEquals(
+            "## Notes\n\nWe met.  \nWe shipped.\n\n" +
+                "### Key points\n\n- Costs doubled [00:00:30]\n\n" +
+                "### Decisions\n\n- Ship on Friday [00:00:01]\n\n" +
+                "### To-dos\n\n- Send the deck — Mina · Monday [00:01:05]\n\n" +
+                "### Questions\n\n- Who pays? [01:02:03]\n\n" +
+                "### Risks\n\n- May slip [00:00:40]\n",
+            NotesText.markdown(all, NotesHeadings()),
+        )
+        val korean = NotesHeadings(notes = "노트", keyPoints = "핵심", decisions = "결정", todos = "할 일", questions = "질문")
+        assertTrue(NotesText.plain(all, korean)!!.startsWith("We met.\nWe shipped.\n\n핵심\n- Costs doubled"))
+        assertTrue("\n\n질문\n- Who pays? [01:02:03]\n\nRisks\n" in NotesText.plain(all, korean)!!, "a section is headed by its own name")
+        assertTrue(NotesText.markdown(all, korean)!!.startsWith("## 노트\n\n"))
+
+        val decisionsOnly = RecordingNotes("01J9ABCDEF0123456789ABCDEF", NotesStage.PROVISIONAL, null, all.decisions, emptyList(), emptyList(), false)
+        assertEquals("Decisions\n- Ship on Friday [00:00:01]\n", NotesText.plain(decisionsOnly, NotesHeadings()))
+        val nothing = decisionsOnly.copy(decisions = emptyList(), sections = all.sections.drop(1))
+        assertNull(NotesText.plain(nothing, NotesHeadings()))
+        assertNull(NotesText.markdown(nothing, NotesHeadings()))
+    }
+
+    // --- Edit notes and Organize again ---
+
+    /** A recording organized after Stop: a decision, a to-do of S2's, a question and a key point. */
+    private suspend fun organized(): RecordingMeta {
+        ready()
+        engine.answer = { meeting }
+        answer(
+            conversation(
+                "Alpha.",
+                item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3"),
+                item("todo", "Order able parts", "00:00:30", "able1 able2 able3", owner = "S2"),
+                item("question", "Who owns alpha?", "00:00:05", "alpha8 alpha9 alpha10"),
+                item("point", "Alpha is late", "00:00:10", "alpha15 alpha16 alpha17"),
+            ),
+        )
+        return f.recordAndRun()
+    }
+
+    @Test
+    fun `Edit notes changes an item and the overview, and an emptied item is deleted for good`() = runBlocking {
+        val meta = organized()
+        val first = notes.get(meta.recordingId)
+        f.clock.advance(1.minutes)
+        val now = f.clock.now().isoUtc()
+
+        assertTrue(
+            notes.edit(
+                meta.recordingId, "  My overview  ",
+                listOf(NoteEdit(first.decisions.single().id, "  Ship alpha on Friday  "), NoteEdit(first.todos.single().id, "   ")),
+            ),
+        )
+
+        val edited = notes.get(meta.recordingId)
+        assertEquals("My overview", edited.overview)
+        assertEquals(listOf(first.decisions.single().id to "Ship alpha on Friday"), edited.decisions.map { it.id to it.text })
+        assertEquals(emptyList(), edited.todos)
+        assertEquals(first.questions, edited.questions, "an item not edited is as it was")
+        val file = stored(meta)
+        val decision = file.items.single { it.kind == NoteKind.DECISION }
+        assertEquals("Ship alpha", decision.text, "the model's words stay, to know the item by")
+        assertEquals("Ship alpha on Friday" to now, decision.userText to decision.editedAt)
+        assertEquals(now, file.overviewEditedAt)
+        assertEquals(listOf(NoteKind.TODO to "Order able parts"), file.tombstones.map { it.kind to it.text })
+        assertEquals(
+            mapOf<String, Any?>("recordingId" to meta.recordingId, "items" to 1, "deleted" to 1, "overview" to true),
+            f.logger.fieldsOf("organize.edited").single(),
+        )
+
+        assertFalse(notes.edit(meta.recordingId, "My overview", listOf(NoteEdit(decision.id, "Ship alpha on Friday"))), "nothing changed, nothing written")
+        assertFalse(notes.edit(meta.recordingId, null, listOf(NoteEdit("01J9NOSUCHITEM000000000000", "Anything"))))
+        assertTrue(notes.edit(meta.recordingId, "", emptyList()))
+        assertNull(notes.get(meta.recordingId).overview, "an emptied overview is removed")
+        assertEquals(listOf("Ship alpha on Friday"), notes.get(meta.recordingId).decisions.map { it.text })
+    }
+
+    @Test
+    fun `Organize again keeps what the user edited and deleted`() = runBlocking {
+        val meta = organized()
+        val first = notes.get(meta.recordingId)
+        val decision = first.decisions.single()
+        val question = first.questions.single()
+        assertTrue(
+            notes.edit(
+                meta.recordingId, "My overview",
+                listOf(NoteEdit(decision.id, "Ship alpha on Friday"), NoteEdit(question.id, "Who owns alpha now?"), NoteEdit(first.todos.single().id, "")),
+            ),
+        )
+        answer(
+            conversation(
+                "Alpha again.",
+                item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3"),
+                item("todo", "Order able parts", "00:00:30", "able1 able2 able3", owner = "S2"),
+                item("todo", "Book a room", "00:00:50", "able40 able41 able42", owner = "S2"),
+            ),
+        )
+
+        assertNull(notes.organizeAgain(meta.recordingId))
+
+        assertEquals(2, responses().size)
+        assertTrue("organize.again.start" in f.logger.events)
+        val again = notes.get(meta.recordingId)
+        assertNull(again.failure)
+        assertFalse(again.organizing)
+        assertEquals("My overview", again.overview, "the user's overview stays theirs")
+        assertEquals(listOf(decision.id to "Ship alpha on Friday"), again.decisions.map { it.id to it.text }, "made again, it keeps the user's words")
+        assertEquals(listOf("Book a room"), again.todos.map { it.text }, "the deleted item stays deleted")
+        assertEquals(listOf(question.id to "Who owns alpha now?"), again.questions.map { it.id to it.text }, "not made again, an edited item is kept")
+        assertFalse(again.questions.single().provisional)
+        assertEquals(emptyList(), again.points, "an item the user left alone goes with the pass that made it")
+        assertEquals(listOf("Alpha again."), stored(meta).conversations.map { it.summary })
+    }
+
+    @Test
+    fun `an edited item passes its words only to one that says the same, and words put back make it the model's again`() = runBlocking {
+        val meta = organized()
+        val first = notes.get(meta.recordingId)
+        val decision = first.decisions.single()
+        val question = first.questions.single()
+        assertTrue(notes.edit(meta.recordingId, null, listOf(NoteEdit(decision.id, "Ship alpha on Friday"), NoteEdit(question.id, "Who owns alpha now?"))))
+        assertTrue(notes.edit(meta.recordingId, null, listOf(NoteEdit(question.id, question.text))))
+        val reverted = stored(meta).items.single { it.id == question.id }
+        assertEquals(null to null, reverted.userText to reverted.editedAt, "the model's own words again: not the user's any more")
+        answer(
+            conversation(
+                "Alpha again.",
+                item("decision", "Cancel the beta launch", "00:00:00", "alpha1 alpha2 alpha3"),
+            ),
+        )
+
+        assertNull(notes.organizeAgain(meta.recordingId))
+
+        val again = notes.get(meta.recordingId)
+        assertEquals(
+            setOf(decision.id to "Ship alpha on Friday", "Cancel the beta launch"),
+            again.decisions.map { if (it.id == decision.id) it.id to it.text else it.text }.toSet(),
+            "a different decision at the same moment shows its own words, beside the user's",
+        )
+        assertEquals(emptyList(), again.questions, "a put-back item goes with the pass that made it, like one never edited")
+    }
+
+    @Test
+    fun `an item the user edited while recording is theirs through the final pass`() = runBlocking {
+        ready()
+        val meta = startRecording()
+        engine.answer = { listOf(SttSegment(0.0, 30.0, null, speech("alpha"))) }
+        answer(items(item("todo", "Book the alpha room", "00:00:10", "alpha10 alpha11 alpha12")))
+        file(meta, 1)
+        val todo = notes.get(meta.recordingId).todos.single()
+        assertTrue(notes.edit(meta.recordingId, null, listOf(NoteEdit(todo.id, "Book the bravo room"))))
+        assertEquals(listOf("Book the bravo room"), notes.get(meta.recordingId).todos.map { it.text })
+        assertEquals(NotesStage.PROVISIONAL, notes.get(meta.recordingId).stage)
+
+        engine.answer = { listOf(SttSegment(0.0, 30.0, "spk-a", speech("alpha"))) }
+        answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
+        stop(meta, 1)
+        f.drain(6)
+
+        val final = notes.get(meta.recordingId)
+        assertEquals(NotesStage.FINAL, final.stage)
+        assertEquals(listOf("Ship alpha"), final.decisions.map { it.text })
+        assertEquals(listOf(todo.id to "Book the bravo room"), final.todos.map { it.id to it.text }, "not made again, and kept")
+        assertFalse(final.todos.single().provisional)
+    }
+
+    @Test
+    fun `Organize again needs the sign-in but not the consent to organizing, and its failure shows until the next try`() = runBlocking {
+        engine.answer = { meeting }
+        val meta = f.recordAndRun()
+        val signIn = CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()
+
+        assertEquals(signIn, notes.organizeAgain(meta.recordingId))
+
+        assertEquals(signIn, notes.get(meta.recordingId).failure)
+        assertEquals(signIn, notes.observe(meta.recordingId).first().failure)
+        assertEquals(NotesStage.NONE, notes.get(meta.recordingId).stage)
+        assertFalse(notes.get(meta.recordingId).organizing)
+        assertEquals(0, responses().size)
+        assertEquals("CHATGPT_SIGN_IN_REQUIRED", f.logger.fieldsOf("organize.again.failed").single()["reason"])
+
+        ready(consent = false)
+        assertTrue(notes.needsConsent())
+        answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
+        assertNull(notes.organizeAgain(meta.recordingId))
+        val again = notes.observe(meta.recordingId).first()
+        assertNull(again.failure, "the next try clears it")
+        assertEquals(NotesStage.FINAL, again.stage)
+        assertEquals(listOf("Ship alpha"), again.decisions.map { it.text })
+        assertTrue(notes.needsConsent(), "asking once is not agreeing to organize every recording")
+    }
+
+    @Test
+    fun `only final notes go up to the recording's folder, not the provisional ones`() = runBlocking {
+        ready()
+        val meta = startRecording()
+        engine.answer = { listOf(SttSegment(0.0, 30.0, null, speech("alpha"))) }
+        answer(items(item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3 alpha4")))
+        file(meta, 1)
+        assertTrue(notes.edit(meta.recordingId, null, listOf(NoteEdit(notes.get(meta.recordingId).decisions.single().id, "Ship alpha now"))))
+        f.core.awaitPushes()
+        assertEquals(emptyMap(), f.core.recordings.pendingNotes(), "provisional notes, edited or not, stay on this device")
+
+        engine.answer = { listOf(SttSegment(0.0, 30.0, "spk-a", speech("alpha"))) }
+        answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3 alpha4")))
+        stop(meta, 1)
+        f.drain(6)
+        f.core.awaitPushes()
+
+        fun inFolder() = NotesFolder.decode(f.drive.byName(NotesFolder.name(MetaWriter.baseName(meta)))!!.content.decodeToString())
+        assertEquals(NotesStage.FINAL, notes.get(meta.recordingId).stage)
+        assertEquals(stored(meta), inFolder())
+        assertEquals(1, f.logger.events.count { it == "remote.notes.pushed" })
+        assertEquals(emptyMap(), f.core.recordings.pendingNotes())
+
+        f.clock.advance(1.minutes)
+        assertTrue(notes.edit(meta.recordingId, "My overview", emptyList()))
+        f.core.awaitPushes()
+        assertEquals("My overview", inFolder()?.overview, "an edit of final notes goes up too")
+        assertEquals(2, f.logger.events.count { it == "remote.notes.pushed" })
     }
 }

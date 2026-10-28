@@ -8,15 +8,15 @@ import UIKit
 
 /// docs/08 "Exports": what the detail's Share offers, in the order the sheet lists them.
 public enum ShareFormat: CaseIterable, Identifiable, Sendable {
-    case transcript, notes, summary, subtitles, webSubtitles, audio
+    case transcript, markdown, notes, subtitles, webSubtitles, audio
 
     public var id: Self { self }
 
     public var title: String {
         switch self {
         case .transcript: return RecKitStrings.localized("Transcript")
-        case .notes: return RecKitStrings.localized("Transcript for notes")
-        case .summary: return RecKitStrings.localized("Summary")
+        case .markdown: return RecKitStrings.localized("Transcript for notes")
+        case .notes: return RecKitStrings.localized("Notes")
         case .subtitles: return RecKitStrings.localized("Subtitles")
         case .webSubtitles: return RecKitStrings.localized("Subtitles for the web")
         case .audio: return RecKitStrings.localized("Audio")
@@ -26,8 +26,8 @@ public enum ShareFormat: CaseIterable, Identifiable, Sendable {
     /// The format under the name — what an app on the other end will be handed.
     public var detail: String {
         switch self {
-        case .transcript, .summary: return RecKitStrings.localized("Text · .txt")
-        case .notes: return RecKitStrings.localized("Markdown · .md")
+        case .transcript, .notes: return RecKitStrings.localized("Text · .txt")
+        case .markdown: return RecKitStrings.localized("Markdown · .md")
         case .subtitles: return RecKitStrings.localized("SubRip · .srt")
         case .webSubtitles: return RecKitStrings.localized("WebVTT · .vtt")
         case .audio: return RecKitStrings.localized("M4A")
@@ -37,20 +37,20 @@ public enum ShareFormat: CaseIterable, Identifiable, Sendable {
     public var export: ExportFormat {
         switch self {
         case .transcript: return .txt
-        case .notes: return .md
-        case .summary: return .summary
+        case .markdown: return .md
+        case .notes: return .notes
         case .subtitles: return .srt
         case .webSubtitles: return .vtt
         case .audio: return .audio
         }
     }
 
-    /// The audio needs none, and the summary has its own reason (`No summary yet`).
-    public var needsTranscript: Bool { self != .audio && self != .summary }
+    /// The audio needs none, and the notes have their own reason (`No notes yet`).
+    public var needsTranscript: Bool { self != .audio && self != .notes }
 
     var glyph: String {
         switch self {
-        case .transcript, .notes, .summary: return "doc.text"
+        case .transcript, .markdown, .notes: return "doc.text"
         case .subtitles, .webSubtitles: return "captions.bubble"
         case .audio: return "waveform"
         }
@@ -76,11 +76,10 @@ struct ReasonedMenuItem: View {
     }
 }
 
-/// docs/09 "Detail header and More menu": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again ─ Summarize · Summarize as… · Edit summary · Ask about this recording… · Fill in title · Fill in speaker
-/// names ─ Add highlight — with the ones
-/// that cannot run now shown off, and why. The three groups are parted by a hairline, and a group with nothing in
-/// it (no ChatGPT, no summary) takes its divider with it (2026-10-10, 2.2). On the Mac a fourth group is the
+/// docs/09 "Detail header and More menu" · "AI view": the detail's More menu — Rename · Edit transcript · Transcribe
+/// again ─ Organize · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names ─ Add highlight —
+/// with the ones that cannot run now shown off, and why. The three groups are parted by a hairline, and a group with
+/// nothing in it (no ChatGPT) takes its divider with it (2026-10-10, 2.2). On the Mac a fourth group is the
 /// recording's folder — Open in Drive, or Show in Finder — where the shell hands the page one, and the last is the
 /// red Delete (2026-10-15), which only the Mac hands in: the phone's list row has its own.
 struct DetailMoreMenu: View {
@@ -89,21 +88,14 @@ struct DetailMoreMenu: View {
     let rename: () -> Void
     let edit: () -> Void
     let transcribeAgain: () -> Void
-    /// Summarize, as Settings' format (nil) or as the one picked under `Summarize as…`.
-    let summarize: (SummaryFormat?) -> Void
-    let editSummary: () -> Void
+    let organize: () -> Void
+    let editNotes: () -> Void
     let askAbout: () -> Void
     let addHighlight: () -> Void
     @Environment(\.locale) private var locale
-    #if os(iOS)
-    /// `Summarize as…` asks for the format in a list of its own, where Android's menu turns into one. Not inside
-    /// the menu: SwiftUI cannot tell that an open menu closed, so a menu turned into the formats opened on them
-    /// again the next time (checked on iOS 26.5, 2026-10-15).
-    @State private var choosingFormat = false
-    #endif
 
     var body: some View {
-        let menu = Menu {
+        Menu {
             items
         } label: {
             BlueprintIconLabel("ellipsis.circle")
@@ -114,18 +106,6 @@ struct DetailMoreMenu: View {
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("More")))
         .accessibilityIdentifier("detail-more")
-        #if os(iOS)
-        menu.confirmationDialog(
-            RecKitStrings.localized("Summarize as…"),
-            isPresented: $choosingFormat,
-            titleVisibility: .visible
-        ) {
-            formatButtons
-            Button(RecKitStrings.localized("Cancel"), role: .cancel) {}
-        }
-        #else
-        menu
-        #endif
     }
 
     @ViewBuilder
@@ -133,30 +113,16 @@ struct DetailMoreMenu: View {
         ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
         ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
         ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
-        if model.summaryOffered || model.summaryEditable { Divider() }
-        // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
-        if model.summaryOffered {
-            ReasonedMenuItem(title: model.summarizeTitle, reason: model.summarizeReason) { summarize(nil) }
-            // Off, it is a plain item with its reason: the phone draws a disabled submenu as if it were on.
-            if let reason = model.summarizeReason {
-                ReasonedMenuItem(title: RecKitStrings.localized("Summarize as…"), reason: reason) {}
-            } else {
-                #if os(iOS)
-                // The phone's list: the menu closes and the formats are asked for on their own.
-                Button(RecKitStrings.localized("Summarize as…")) { choosingFormat = true }
-                    .accessibilityIdentifier("more-summarize-as")
-                #else
-                // A submenu on the desktop — the speaker menu's one-of-many — with the current summary's ✓.
-                Menu(RecKitStrings.localized("Summarize as…")) { formatButtons }
-                #endif
+        // docs/08 "Organizing" · docs/09 "AI view": asked for here, one recording at a time; not offered where ChatGPT
+        // is not.
+        if model.chatGptOffered {
+            Divider()
+            ReasonedMenuItem(title: model.organizeTitle, reason: model.organizeReason, action: organize)
+            // The notes in the user's own words, while there are some. No ChatGPT is asked.
+            if model.notesEditable {
+                ReasonedMenuItem(title: RecKitStrings.localized("Edit notes"), reason: model.editNotesReason, action: editNotes)
             }
-        }
-        // docs/08 "Summaries": the summary in the user's own words, once there is one. No ChatGPT is asked.
-        if model.summaryEditable {
-            ReasonedMenuItem(title: RecKitStrings.localized("Edit summary"), reason: model.editSummaryReason, action: editSummary)
-        }
-        // docs/08 "Ask": one question about the recording, in a panel of its own.
-        if model.summaryOffered {
+            // docs/08 "Ask": one question about the recording, in a panel of its own.
             ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
             // docs/08 "Titles and speaker names": what the recording lacks, from the plan — the title and the names
             // apart. They open nothing: the title shows in the header and the names in the transcript.
@@ -186,16 +152,6 @@ struct DetailMoreMenu: View {
         if let delete = model.delete {
             Divider()
             ReasonedMenuItem(title: RecKitStrings.localized("Delete"), reason: model.deleteReason, role: .destructive, action: delete)
-        }
-    }
-
-    @ViewBuilder
-    private var formatButtons: some View {
-        ForEach(model.summaryFormats, id: \.self) { format in
-            let label = ChatGptText.formatLabel(format)
-            Button(model.summaryFormat == format ? "\(BlueprintChip.selectionMark) \(label)" : label) {
-                summarize(format)
-            }
         }
     }
 }
@@ -369,7 +325,7 @@ public struct FindBar: View {
 }
 
 /// docs/10 "Search" · docs/09 "Search": one recording a search found — when, the title with its matches in the
-/// accent, up to two lines of transcript with the matches marked, the summary's line under `Summary · `, and
+/// accent, up to two lines of transcript with the matches marked, the notes' line under `Notes · `, and
 /// the moment of the first transcript match. The phone's list and the Mac's window list draw the same row.
 public struct SearchResultRow: View {
     private let hit: SearchHit
@@ -404,13 +360,13 @@ public struct SearchResultRow: View {
                             .foregroundStyle(blueprint.palette.textMuted)
                             .lineLimit(1)
                     }
-                    if let summary = hit.summary {
-                        let (text, ranges) = Self.summaryLine(summary)
+                    if let notes = hit.notes {
+                        let (text, ranges) = Self.notesLine(notes)
                         Text(Self.marked(text, ranges: ranges, tint: blueprint.palette.text, background: blueprint.palette.accent.opacity(0.16)))
                             .font(blueprint.fonts.sans(TypeSize.small))
                             .foregroundStyle(blueprint.palette.textMuted)
                             .lineLimit(1)
-                            .accessibilityIdentifier("search-result-summary")
+                            .accessibilityIdentifier("search-result-notes")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -455,11 +411,11 @@ public struct SearchResultRow: View {
 
     private static let lead = 24
 
-    /// The summary's line as the row shows it: `Summary · ` and the line cut like a snippet, its ranges moved
-    /// past the label.
-    static func summaryLine(_ match: SummaryMatch) -> (String, [SearchRange]) {
+    /// The notes' line as the row shows it: `Notes · ` and the line cut like a snippet, its ranges moved past the
+    /// label.
+    static func notesLine(_ match: NotesMatch) -> (String, [SearchRange]) {
         let (text, ranges) = around(SearchSnippet(atSec: 0, text: match.text, ranges: match.ranges))
-        let label = RecKitStrings.localized("Summary") + " · "
+        let label = RecKitStrings.localized("Notes") + " · "
         let shift = Int32(label.utf16.count)
         return (label + text, ranges.map { SearchRange(offset: $0.offset + shift, length: $0.length) })
     }
@@ -482,8 +438,8 @@ public struct SearchResultRow: View {
 }
 
 extension SearchHit {
-    /// docs/10 "Search": the hit is in the summary and nowhere else, so its recording opens on the summary.
-    public var onlyInSummary: Bool { summary != nil && snippets.isEmpty && !matchesInTitle }
+    /// docs/10 "Search": the hit is in the notes and nowhere else, so its recording opens on the notes.
+    public var onlyInNotes: Bool { notes != nil && snippets.isEmpty && !matchesInTitle }
 }
 
 /// docs/08 "Exports" · docs/09 "Share / export" (phones): the Share sheet — one row per format, and Copy all.
@@ -515,7 +471,7 @@ struct DetailShareSheet: View {
     }
 
     private func reason(_ format: ShareFormat) -> String? {
-        if format == .summary { return model.summaryExportReason }
+        if format == .notes { return model.notesExportReason }
         if format.needsTranscript, model.transcript == nil { return RecKitStrings.localized("No transcript yet") }
         if format == .audio { return model.audioExportReason }
         return nil

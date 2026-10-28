@@ -878,7 +878,7 @@ private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modi
 
 /**
  * docs/09 "Search": one row per recording found — when, the title with its matches tinted, up to two lines
- * of the first transcript match, and that match's time at the end; then the summary's first matching line. A tap
+ * of the first transcript match, and that match's time at the end; then the notes' first matching line. A tap
  * opens it there.
  */
 @Composable
@@ -924,14 +924,14 @@ private fun SearchResults(
                             Text(tinted(it.text, it.ranges, tint, palette.text), style = MaterialTheme.typography.bodySmall, color = palette.textMuted,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
-                        // The summary's first matching line, after what it is: "Summary · …".
-                        hit.summary?.let {
-                            val label = stringResource(R.string.summary_tab) + " · "
+                        // The notes' first matching line, after what it is: "Notes · …".
+                        hit.notes?.let {
+                            val label = stringResource(R.string.notes_title) + " · "
                             Text(buildAnnotatedString {
                                 withStyle(SpanStyle(color = palette.textMuted)) { append(label) }
                                 append(tinted(it.text, it.ranges, tint, palette.text))
                             }, style = MaterialTheme.typography.bodySmall, color = palette.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.testTag("hit-summary-${hit.recordingId}"))
+                                modifier = Modifier.testTag("hit-notes-${hit.recordingId}"))
                         }
                     }
                     snippet?.let {

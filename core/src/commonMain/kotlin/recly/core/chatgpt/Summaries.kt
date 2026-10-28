@@ -11,7 +11,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
@@ -21,7 +20,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.addJsonObject
@@ -35,7 +33,6 @@ import recly.core.chatgpt.ChatGptAccount.Companion.string
 import recly.core.db.RecDatabase
 import recly.core.message.CoreMessage
 import recly.core.model.Highlight
-import recly.core.model.isoUtc
 import recly.core.platform.CoreDeps
 import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
@@ -49,60 +46,17 @@ import recly.core.transcribe.TranscriptNormalizer
 import recly.core.transcribe.providerJson
 
 /**
- * Meeting notes ChatGPT wrote from one recording's transcript (docs/08 "Summaries"). [createdAt] and [editedAt]
- * are ISO UTC; [editedAt] is set once the user has changed the text.
- */
-@Serializable
-data class Summary(
-    val recordingId: String,
-    val text: String,
-    val model: String,
-    val createdAt: String,
-    val editedAt: String? = null,
-    /** [SummaryFormat.wire] of the format it was written in; absent for [SummaryFormat.AUTO]. */
-    val format: String? = null,
-    /** The plan's name for [model] when it was written (`GPT-5.4`), so the footer reads the same signed out. */
-    val modelName: String? = null,
-) {
-    val summaryFormat: SummaryFormat get() = SummaryFormat.of(format)
-}
-
-/** docs/08 "Summaries": the shape a summary takes. [CUSTOM] follows [SummaryPreferences.customFormat]. */
-enum class SummaryFormat(val wire: String) {
-    AUTO("auto"),
-    ONE_ON_ONE("one_on_one"),
-    LECTURE("lecture"),
-    INTERVIEW("interview"),
-    CUSTOM("custom"),
-    ;
-
-    companion object {
-        fun of(wire: String?): SummaryFormat = entries.firstOrNull { it.wire == wire } ?: AUTO
-    }
-}
-
-/**
- * docs/08 "Summaries": what this device asks every summary for — Settings → ChatGPT. [format] is the one Summarize
- * uses; [customFormat] is My format's instructions; [aboutMe] tells ChatGPT who the notes are for.
- * [fillTitleAfterStop] and [fillNamesAfterStop] are how the title sheet's two boxes of docs/08 "Titles and speaker
- * names" were left last, each off until the user ticks it. Local to this device, like the model, and kept while signed
- * out.
+ * docs/08 "AI requests": what this device tells ChatGPT about the user — Settings → Notes. [aboutMe] tells it
+ * who the notes and answers are for. [fillTitleAfterStop] and [fillNamesAfterStop] are how the title sheet's two boxes
+ * of docs/08 "Titles and speaker names" were left last, each off until the user ticks it. Local to this device, like the
+ * model, and kept while signed out.
  */
 data class SummaryPreferences(
-    val format: SummaryFormat = SummaryFormat.AUTO,
-    val customFormat: String = "",
     val aboutMe: String = "",
     val fillTitleAfterStop: Boolean = false,
     val fillNamesAfterStop: Boolean = false,
 ) {
-    /** The formats on offer: My format only once it has words. */
-    val formats: List<SummaryFormat> get() = SummaryFormat.entries.filter { it != SummaryFormat.CUSTOM || customFormat.isNotBlank() }
-
-    /** [format], or Auto when it is My format without words. */
-    val effectiveFormat: SummaryFormat get() = if (format in formats) format else SummaryFormat.AUTO
-
     companion object {
-        const val CUSTOM_MAX: Int = 1000
         const val ABOUT_MAX: Int = 300
     }
 }
@@ -118,7 +72,7 @@ data class AskAnswer(
     val question: String?,
     val text: String,
     val model: String,
-    /** The plan's name for [model], as on a [Summary]. */
+    /** The plan's name for [model] (`GPT-5.4`), so the footer reads the same signed out. */
     val modelName: String? = null,
 )
 
@@ -133,11 +87,11 @@ sealed class AskState {
     data class Failed(val reason: String, val preset: AskPreset?, val question: String?) : AskState()
 }
 
-/** A `[HH:MM:SS]` or `[MM:SS]` in a summary or an answer: [length] characters from [offset], pointing at [atSec]. */
+/** A `[HH:MM:SS]` or `[MM:SS]` in an answer: [length] characters from [offset], pointing at [atSec]. */
 data class SummaryCitation(val offset: Int, val length: Int, val atSec: Double)
 
 /**
- * docs/09 "Summary view": the one rule every shell reads citations by, so the same text has the same taps
+ * docs/09 "AI view": the one rule every shell reads citations by, so the same text has the same taps
  * everywhere. Minutes and seconds above 59 are not times and are left as text.
  */
 object SummaryCitations {
@@ -156,23 +110,10 @@ object SummaryCitations {
     }.toList()
 }
 
-/** What the detail's summary view shows. */
-sealed class SummaryState {
-    data object None : SummaryState()
-
-    /** [previous] stays on screen under the status line until the new summary replaces it. */
-    data class Running(val previous: Summary?) : SummaryState()
-
-    data class Ready(val summary: Summary) : SummaryState()
-
-    /** [reason] is a [CoreMessage] wire code; [previous] is still the recording's summary. */
-    data class Failed(val reason: String, val previous: Summary?) : SummaryState()
-}
-
 /**
- * docs/08 "Summaries": a summary is something the user asks for, one recording at a time — never a
- * step of the processing plan (ADR-001). Only the transcript's text goes to the user's own ChatGPT plan
- * (docs/15 §10); the result is kept beside the recording's parts on this device and is not uploaded.
+ * docs/08 "AI requests": the requests to the user's own ChatGPT plan — Ask about this recording, on request, and
+ * the one request, language and preferences the notes (docs/08 "Organizing") and the fills (docs/08 "Titles and
+ * speaker names") are made with. Only text goes (docs/15 §10).
  */
 class Summaries internal constructor(
     private val db: RecDatabase,
@@ -181,107 +122,23 @@ class Summaries internal constructor(
     private val recordings: RecordingRepository,
     private val transcript: suspend (String) -> Transcript?,
     private val consents: TransferConsents,
-    /** A summary was made or edited here: it is to go up to the recording's folder (docs/08 "Summaries"). */
-    private val published: suspend (String) -> Unit = {},
-    /** The recording's folder copy, for a recording opened here before a pull brought it ([SummaryFile]). */
-    private val fetch: suspend (String) -> String? = { null },
 ) {
-    /** The runs in progress and the failures of this process; a saved summary is read from its file. */
-    private val runs = MutableStateFlow<Map<String, SummaryState>>(emptyMap())
-    private val saved = MutableStateFlow(0L)
-    private val started = mutableMapOf<String, Deferred<SummaryState>>()
     private val startLock = Mutex()
 
-    /** A summary goes on when the screen that asked for it closes. */
+    /** An answer goes on when the screen that asked for it closes. */
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val prefs = MutableStateFlow<SummaryPreferences?>(null)
 
-    /** The app's language, which a shell changes while it runs (docs/08 "Summaries" — the language rule). */
+    /** The app's language, which a shell changes while it runs (docs/08 "AI requests" — the language rule). */
     private val locale = MutableStateFlow(deps.locale)
 
-    /** The app's language changed: later summaries and questions follow it, and so does which Ask presets are on offer. */
+    /** The app's language changed: later notes and questions follow it, and so does which Ask presets are on offer. */
     fun setLocale(tag: String) {
         if (tag.isNotBlank()) locale.value = tag
     }
     private val asks = MutableStateFlow<Map<String, AskState>>(emptyMap())
     private val askRuns = mutableMapOf<String, Deferred<AskState>>()
-
-    fun observe(recordingId: String): Flow<SummaryState> =
-        combine(runs, saved, account.observe()) { all, _, connection -> all[recordingId]?.takeUnless { stale(it, connection) } }
-            .map { it ?: current(recordingId) }
-            .distinctUntilChanged()
-
-    @Throws(Throwable::class)
-    suspend fun state(recordingId: String): SummaryState =
-        runs.value[recordingId]?.takeUnless { stale(it, account.observe().value) } ?: current(recordingId)
-
-    /** "Sign in to ChatGPT" is said until the user has; after that the recording shows what it has. */
-    private fun stale(state: SummaryState, connection: ChatGptConnection): Boolean =
-        state is SummaryState.Failed && connection is ChatGptConnection.SignedIn &&
-            state.reason.startsWith(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.name)
-
-    /**
-     * Summarizes [recordingId] — or joins the summary of it already running — and answers how it ended.
-     * On iPhone a destination the user has not allowed answers [CoreMessage.TRANSFER_CONSENT_REQUIRED]
-     * before anything is sent (docs/15 "iPhone providers").
-     */
-    @Throws(Throwable::class)
-    suspend fun summarize(recordingId: String): SummaryState = summarize(recordingId, null)
-
-    /**
-     * Summarize as [format] — More → Summarize as — or, null, as Settings says ([SummaryPreferences.effectiveFormat]).
-     * A format that is not on offer is Auto.
-     */
-    @Throws(Throwable::class)
-    suspend fun summarize(recordingId: String, format: SummaryFormat?): SummaryState {
-        // Asked before the run starts, so the screen goes straight to the permission dialog.
-        if (consents.missing(listOf(TransferTargets.chatGptSummary())).isNotEmpty()) {
-            return SummaryState.Failed(CoreMessage.TRANSFER_CONSENT_REQUIRED.code(), saved(recordingId))
-        }
-        val preferences = preferences()
-        val chosen = format?.takeIf { it in preferences.formats } ?: preferences.effectiveFormat
-        val run = startLock.withLock {
-            started[recordingId]?.takeIf { it.isActive } ?: scope.async { run(recordingId, chosen, preferences) }.also { started[recordingId] = it }
-        }
-        return run.await()
-    }
-
-    private suspend fun run(recordingId: String, format: SummaryFormat, preferences: SummaryPreferences): SummaryState {
-        val previous = saved(recordingId)
-        runs.update { it + (recordingId to SummaryState.Running(previous)) }
-        val outcome = try {
-            SummaryState.Ready(save(create(recordingId, format, preferences)))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: ChatGptFailure) {
-            SummaryState.Failed(e.reason, previous)
-        } catch (e: Exception) {
-            SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(detail = e.message ?: e::class.simpleName), previous)
-        }
-        if (outcome is SummaryState.Failed) {
-            deps.logger.log(Logger.Level.WARN, "summary.failed", mapOf("recordingId" to recordingId, "reason" to outcome.reason.substringBefore('|')))
-            runs.update { it + (recordingId to outcome) }
-        } else {
-            deps.logger.log(Logger.Level.INFO, "summary.done", mapOf("recordingId" to recordingId))
-            runs.update { it - recordingId }
-            saved.value++
-        }
-        startLock.withLock { started.remove(recordingId) }
-        return outcome
-    }
-
-    private suspend fun create(recordingId: String, format: SummaryFormat, preferences: SummaryPreferences): Summary {
-        val source = source(recordingId)
-        val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
-        deps.logger.log(Logger.Level.INFO, "summary.start", mapOf("recordingId" to recordingId, "model" to model, "format" to format.wire))
-        val instructions = instructions(source.language, format, preferences, source.hasMe, source.marked.isNotEmpty())
-        val text = complete(model, instructions, source.input())
-        return Summary(
-            recordingId, text, model, deps.clock.now().isoUtc(),
-            format = format.wire.takeIf { format != SummaryFormat.AUTO }, modelName = account.modelLabel(model),
-        )
-    }
 
     /** What a request about one recording is made from (docs/15 §10): its transcript lines and the moments the user marked. */
     private class Source(val transcript: String, val language: String, val hasMe: Boolean, val marked: List<String>) {
@@ -301,15 +158,15 @@ class Summaries internal constructor(
         )
     }
 
-    /** Each highlight as its time and the words said then — `[00:12:34] the words` (docs/08 "Summaries"). */
+    /** Each highlight as its time and the words said then — `[00:12:34] the words` (docs/08 "Ask"). */
     private fun marked(transcript: Transcript, highlights: List<Highlight>): List<String> = highlights.map { highlight ->
         val words = TranscriptNormalizer.spokenAt(transcript, highlight.atSec)
         "[${TranscriptNormalizer.clock(highlight.atSec)}]" + (words?.let { " $it" } ?: "")
     }
 
     /**
-     * One request to the plan's Responses API; its text, trimmed and never empty. Also the notes' request (docs/08
-     * "Organizing"): the same endpoint, `store: false`, the same error mapping.
+     * One request to the plan's Responses API; its text, trimmed and never empty — every request of docs/08 "AI
+     * requests": the same endpoint, `store: false`, the same error mapping.
      */
     internal suspend fun complete(model: String, instructions: String, input: String, timeoutSec: Int = 600, effort: String? = null): String {
         val body = buildJsonObject {
@@ -350,21 +207,21 @@ class Summaries internal constructor(
         return text
     }
 
-    /** The language a summary of a transcript in [transcriptLanguage] is written in, named for the model ([SummaryLanguage]). */
+    /** The language notes on a transcript in [transcriptLanguage] are written in, named for the model ([SummaryLanguage]). */
     internal fun language(transcriptLanguage: String): String = SummaryLanguage.of(transcriptLanguage, locale.value)
 
     // --- Titles and speaker names (docs/08 "Titles and speaker names") ---
 
     /**
      * One request for what a fill asks: a title when [title], and a name for each of [speakers] — the transcript's
-     * lines, as a summary sends them, and nothing else. [trigger] is what asked, for the log. Throws [ChatGptFailure];
+     * lines, as a question sends them, and nothing else. [trigger] is what asked, for the log. Throws [ChatGptFailure];
      * what ChatGPT could not tell is absent from the answer.
      */
     internal suspend fun fill(transcript: Transcript, title: Boolean, speakers: List<String>, trigger: String): FillAnswer {
         val text = TranscriptNormalizer.text(transcript).takeIf { it.isNotBlank() }
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
         // The first of the models measured for this that the plan offers, at the effort measured (docs/08 "Titles and speaker
-        // names"); otherwise the one a summary uses, at its own default effort.
+        // names"); otherwise the one the notes use, at its own default effort.
         val offered = account.offered()
         val chosen = FILL_MODELS.firstOrNull { (id, _) -> id in offered }
         val model = chosen?.first ?: account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
@@ -382,7 +239,7 @@ class Summaries internal constructor(
         return FillAnswer.parse(answer, title, speakers)
     }
 
-    // --- Preferences (Settings → ChatGPT) ---
+    // --- Preferences (About you in Settings → Notes; the fills' boxes in the title sheet) ---
 
     /** What Settings shows; read from this device's store the first time. */
     fun observePreferences(): Flow<SummaryPreferences> = flow {
@@ -393,28 +250,22 @@ class Summaries internal constructor(
     @Throws(Throwable::class)
     suspend fun preferences(): SummaryPreferences = prefs.value ?: withContext(deps.io) {
         SummaryPreferences(
-            format = SummaryFormat.of(db.recQueries.kvGet(PREF_FORMAT).executeAsOneOrNull()),
-            customFormat = db.recQueries.kvGet(PREF_CUSTOM).executeAsOneOrNull().orEmpty(),
             aboutMe = db.recQueries.kvGet(PREF_ABOUT).executeAsOneOrNull().orEmpty(),
             fillTitleAfterStop = db.recQueries.kvGet(PREF_FILL_TITLE_AFTER_STOP).executeAsOneOrNull() == ON,
             fillNamesAfterStop = db.recQueries.kvGet(PREF_FILL_NAMES_AFTER_STOP).executeAsOneOrNull() == ON,
         )
     }.also { loaded -> prefs.compareAndSet(null, loaded) }
 
-    /** Kept trimmed and cut to [SummaryPreferences.CUSTOM_MAX] and [SummaryPreferences.ABOUT_MAX] characters; answers what was kept. */
+    /** Kept trimmed and cut to [SummaryPreferences.ABOUT_MAX] characters; answers what was kept. */
     @Throws(Throwable::class)
     suspend fun setPreferences(preferences: SummaryPreferences): SummaryPreferences {
         val kept = SummaryPreferences(
-            format = preferences.format,
-            customFormat = preferences.customFormat.trim().take(SummaryPreferences.CUSTOM_MAX),
             aboutMe = preferences.aboutMe.trim().take(SummaryPreferences.ABOUT_MAX),
             fillTitleAfterStop = preferences.fillTitleAfterStop,
             fillNamesAfterStop = preferences.fillNamesAfterStop,
         )
         withContext(deps.io) {
             db.recQueries.transaction {
-                db.recQueries.kvSet(PREF_FORMAT, kept.format.wire)
-                if (kept.customFormat.isEmpty()) db.recQueries.kvDelete(PREF_CUSTOM) else db.recQueries.kvSet(PREF_CUSTOM, kept.customFormat)
                 if (kept.aboutMe.isEmpty()) db.recQueries.kvDelete(PREF_ABOUT) else db.recQueries.kvSet(PREF_ABOUT, kept.aboutMe)
                 if (kept.fillTitleAfterStop) db.recQueries.kvSet(PREF_FILL_TITLE_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_TITLE_AFTER_STOP)
                 if (kept.fillNamesAfterStop) db.recQueries.kvSet(PREF_FILL_NAMES_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_NAMES_AFTER_STOP)
@@ -494,65 +345,7 @@ class Summaries internal constructor(
         return outcome
     }
 
-    /**
-     * docs/08 "Summaries": the user's own words over ChatGPT's — kept here at once and carried to the
-     * recording's folder, so the other devices show the edit. Answers what the recording now has: the summary
-     * as it was when the text is unchanged or empty, the current state while a summary of it is running.
-     */
-    @Throws(Throwable::class)
-    suspend fun edit(recordingId: String, text: String): SummaryState {
-        if (startLock.withLock { started[recordingId]?.isActive == true }) return state(recordingId)
-        val current = saved(recordingId) ?: return SummaryState.None
-        val trimmed = text.trim()
-        if (trimmed.isEmpty() || trimmed == current.text) return SummaryState.Ready(current)
-        val edited = save(current.copy(text = trimmed, editedAt = deps.clock.now().isoUtc()))
-        runs.update { it - recordingId }
-        deps.logger.log(Logger.Level.INFO, "summary.edited", mapOf("recordingId" to recordingId))
-        return SummaryState.Ready(edited)
-    }
-
-    /** A pull wrote a newer summary from a folder: whoever shows one reads it again. */
-    internal fun changed() {
-        saved.value++
-    }
-
-    /** Kept here, then [published] for the folder. */
-    internal suspend fun save(summary: Summary): Summary {
-        recordings.summaryWrite {
-            recordings.saveSummary(summary.recordingId, providerJson.encodeToString(Summary.serializer(), summary))
-        }
-        saved.value++
-        published(summary.recordingId)
-        return summary
-    }
-
-    /** Recordings whose folder was already asked for a summary this run, found or not. */
-    private val fetched = mutableSetOf<String>()
-
-    private suspend fun current(recordingId: String): SummaryState {
-        saved(recordingId)?.let { return SummaryState.Ready(it) }
-        // Another device's summary of a recording that no pull has brought yet: its folder is asked once.
-        if (!startLock.withLock { fetched.add(recordingId) }) return SummaryState.None
-        val json = try {
-            fetch(recordingId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            null
-        } ?: return SummaryState.None
-        val summary = SummaryFile.decode(json)?.takeIf { it.recordingId == recordingId } ?: return SummaryState.None
-        recordings.summaryWrite {
-            if (saved(recordingId) == null) recordings.saveSummary(recordingId, json)
-        }
-        return saved(recordingId)?.let { SummaryState.Ready(it) } ?: SummaryState.Ready(summary)
-    }
-
-    private suspend fun saved(recordingId: String): Summary? =
-        recordings.summary(recordingId)?.let(SummaryFile::decode)?.takeIf { it.recordingId == recordingId }
-
     internal companion object {
-        const val PREF_FORMAT = "summary/prefs/format"
-        const val PREF_CUSTOM = "summary/prefs/custom"
         const val PREF_ABOUT = "summary/prefs/about"
         const val PREF_FILL_TITLE_AFTER_STOP = "summary/prefs/fill_title_after_stop"
         const val PREF_FILL_NAMES_AFTER_STOP = "summary/prefs/fill_names_after_stop"
@@ -574,27 +367,6 @@ class Summaries internal constructor(
         /** The heading the marked moments follow the transcript under (docs/15 §10). */
         const val MARKED_HEADING = "Moments the user marked as important:"
         const val QUESTION_HEADING = "Question:"
-
-        /**
-         * Plain text with "- " lists, because no shell renders Markdown (docs/09 "Summary view"), all of it in
-         * [language] — the headings too ([SummaryLanguage]) — shaped by [format], every point with the time it
-         * comes from so a tap can play it (docs/08 "Summaries").
-         */
-        fun instructions(
-            language: String,
-            format: SummaryFormat = SummaryFormat.AUTO,
-            preferences: SummaryPreferences = SummaryPreferences(),
-            hasMe: Boolean = false,
-            marked: Boolean = false,
-        ): String = buildString {
-            append("You write notes from a recording's transcript.\n")
-            append(common(language))
-            append(shape(format, preferences.customFormat))
-            append("After each key point, decision, action item and any other list item, add the time it was said as [HH:MM:SS], copied from the transcript line it comes from.\n")
-            append("For an action item whose owner the transcript does not name, write the word for \"unassigned\" in $language instead of guessing.\n")
-            append(context(language, preferences, hasMe, marked))
-            append("Call people what the transcript calls them. Do not add anything the transcript does not say.")
-        }
 
         /**
          * docs/08 "Titles and speaker names": a JSON object with a `title` when [title] and a `speakers` object for
@@ -640,43 +412,13 @@ Use plain text. No Markdown: no #, no **, no tables. Start list items with "- ".
 
         private fun context(language: String, preferences: SummaryPreferences, hasMe: Boolean, marked: Boolean) = buildString {
             if (hasMe) append("\"${TranscriptNormalizer.ME}\" in the transcript is the person who made the recording; refer to them with the word for \"me\" in $language.\n")
-            if (marked) append("After the transcript, the user lists moments they marked as important, each with its time and the words said then. Make sure the notes cover what was said around each of them.\n")
+            if (marked) append("After the transcript, the user lists moments they marked as important, each with its time and the words said then. Give what was said around each of them its due weight in the answer.\n")
             preferences.aboutMe.trim().takeIf { it.isNotEmpty() }?.let {
                 append("About the person who made the recording, to judge what matters to them: ").append(it).append('\n')
             }
         }
 
-        private fun shape(format: SummaryFormat, custom: String): String = when (format) {
-            SummaryFormat.AUTO -> """Write these sections in this order, each a heading on its own line followed by its content, and leave out a section that would be empty:
-Summary: three to five sentences.
-Key points: a list.
-Decisions: a list.
-Action items: a list, each "owner: task", with the due date when the transcript gives one.
-"""
-            SummaryFormat.ONE_ON_ONE -> """This is a one-on-one conversation. Write these sections in this order, each a heading on its own line followed by its content, and leave out a section that would be empty:
-Summary: two or three sentences.
-Updates: what each person reported, a list grouped by person.
-Feedback: feedback given or asked for, a list.
-Decisions: a list.
-Action items: a list, each "owner: task", with the due date when the transcript gives one.
-"""
-            SummaryFormat.LECTURE -> """This is a lecture or a talk. Write these sections in this order, each a heading on its own line followed by its content, and leave out a section that would be empty:
-Summary: three to five sentences.
-Key ideas: a list, each with one sentence explaining it.
-Examples: the examples given, a list.
-Questions: the questions asked and their answers, a list.
-To review: terms and topics worth going over again, a list.
-"""
-            SummaryFormat.INTERVIEW -> """This is an interview. Write these sections in this order, each a heading on its own line followed by its content, and leave out a section that would be empty:
-Summary: three to five sentences.
-Questions and answers: a list, each question asked followed by the answer in one or two sentences.
-Notable quotes: short quotes worth keeping, in the speaker's exact words, a list.
-Follow-ups: a list.
-"""
-            SummaryFormat.CUSTOM -> "Follow the user's own instructions for what to write and how to lay it out:\n" + custom.trim() + "\n"
-        }
-
-        /** What each preset asks, in English like the rest of the instructions; the answer comes in the summary's language. */
+        /** What each preset asks, in English like the rest of the instructions; the answer comes in the notes' language. */
         fun presetQuestion(preset: AskPreset): String = when (preset) {
             AskPreset.FOLLOW_UP_EMAIL -> "Draft a short follow-up email to the other participants: a subject line first, then thanks, what was decided, who does what by when, and the open questions. Put a placeholder such as [name] where the transcript does not give a name."
             AskPreset.ACTION_ITEMS -> "List only the action items, each \"owner: task\", with the due date when the transcript gives one."
@@ -725,7 +467,7 @@ internal data class FillAnswer(val title: String?, val speakers: Map<String, Str
 /**
  * The Responses API's server-sent events, read whole: [recly.core.platform.Transport] hands back the body
  * once the stream has ended. Text comes from `response.output_text.delta`; a stream that
- * ends without `response.completed` is a failure, not a short summary.
+ * ends without `response.completed` is a failure, not a short answer.
  */
 internal object ResponseStream {
     fun text(body: String): String {
@@ -772,7 +514,7 @@ internal object ResponseStream {
 }
 
 /**
- * docs/08 "Summaries": the language a summary is written in, named for the model. The transcript's own
+ * docs/08 "AI requests": the language notes are written in, named for the model. The transcript's own
  * language when the recording was transcribed in one; the app's language when it was not (`auto`, a mix such
  * as `ko-en`) — so every language Recly speaks gets notes in it, headings included, instead of the model's guess.
  */
@@ -819,20 +561,4 @@ internal object SummaryLanguage {
         "bn" to "Bengali", "ur" to "Urdu", "sw" to "Swahili", "vi" to "Vietnamese", "fa" to "Persian",
         "th" to "Thai", "id" to "Indonesian", "nl" to "Dutch", "uk" to "Ukrainian",
     )
-}
-
-/**
- * docs/08 "Summaries", docs/03 "Drive layout": a summary in the recording's folder — `{base}.summary.json`, the
- * same JSON as the copy kept here — and the folder's `summaryAt`, the version the folder holds: when it was last
- * edited, or made. Drive and iCloud carry it to the user's other devices; a local folder does not.
- */
-internal object SummaryFile {
-    const val STAMP: String = "summaryAt"
-    const val MIME: String = "application/json"
-
-    fun name(base: String): String = "$base.summary.json"
-
-    fun decode(json: String): Summary? = runCatching { providerJson.decodeFromString(Summary.serializer(), json) }.getOrNull()
-
-    fun version(summary: Summary): String = summary.editedAt ?: summary.createdAt
 }

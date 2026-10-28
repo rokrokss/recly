@@ -298,7 +298,7 @@ class AutoFillTest {
     }
 
     @Test
-    fun `the fill uses its own model and effort when the plan offers it, else the summary's model as it is`() = runBlocking {
+    fun `the fill uses its own model and effort when the plan offers it, else the notes' model as it is`() = runBlocking {
         val f = Fixture()
         f.recordings.create(f.meta, f.dir)
         f.h.signIn(models = """{"models":[{"slug":"gpt-a","display_name":"GPT A","visibility":"list"},
@@ -459,7 +459,7 @@ class AutoFillTest {
     }
 
     @Test
-    fun `on iPhone More answers as Summarize does before ChatGPT is allowed`() = runBlocking {
+    fun `on iPhone More answers as Ask does before ChatGPT is allowed`() = runBlocking {
         val f = Fixture(requireTransferConsent = true)
         f.ready(requested = false)
         assertEquals(FillResult.Failed(CoreMessage.TRANSFER_CONSENT_REQUIRED.code()), f.fill.manual(ID, title = false, names = true))

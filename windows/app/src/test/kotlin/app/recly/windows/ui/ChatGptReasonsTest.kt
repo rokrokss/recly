@@ -16,15 +16,16 @@ import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.AskState
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
-import recly.core.chatgpt.Summary
-import recly.core.chatgpt.SummaryFormat
-import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.model.Track
+import recly.core.notes.NoteItem
+import recly.core.notes.NoteKind
+import recly.core.notes.NotesStage
+import recly.core.notes.RecordingNotes
+import recly.core.recording.NotesMatch
 import recly.core.recording.SearchHit
 import recly.core.recording.SearchRange
 import recly.core.recording.SearchSnippet
-import recly.core.recording.SummaryMatch
 import recly.core.storage.StorageKind
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptProvider
@@ -32,23 +33,30 @@ import recly.core.transcribe.TranscriptSegment
 import recly.core.transcribe.TranscriptSpeaker
 
 /**
- * docs/09 "Summary view" · "Recording detail": what the More menu's Summarize and Edit summary say, when the
- * Transcript | Summary chips are there, and how a failed sign-in or summary is worded.
+ * docs/09 "AI view" · "Recording detail": what the More menu's Organize and Edit notes say, when the
+ * Transcript | Notes chips are there, and how a failed sign-in, Organize or answer is worded.
  */
 class ChatGptReasonsTest {
 
     private val signedIn = ChatGptConnection.SignedIn("me@example.com", listOf(ChatGptModel("gpt-x", "GPT X")), "gpt-x")
-    private val summary = Summary("r1", "- one\n- two", "gpt-x", "2026-10-09T10:00:00Z")
+    private val item = NoteItem("n1", NoteKind.DECISION, "Ship on Friday", null, null, 31.0, "ship on Friday", provisional = false)
+
+    private fun notes(
+        items: List<NoteItem> = emptyList(),
+        overview: String? = null,
+        organizing: Boolean = false,
+        failure: String? = null,
+    ) = RecordingNotes("r1", NotesStage.FINAL, overview, items, emptyList(), emptyList(), organizing, failure = failure)
 
     @Test
-    fun `Summarize says the one reason it cannot run, in order`() {
+    fun `Organize says the one reason it cannot run, in order`() {
         fun blocked(
             writing: Boolean = false,
             hasTranscript: Boolean = true,
             busy: Str? = null,
             connection: ChatGptConnection = signedIn,
-            summary: SummaryState = SummaryState.None,
-        ) = summarizeBlocked(writing, hasTranscript, busy, connection, summary)
+            organizing: Boolean = false,
+        ) = organizeBlocked(writing, hasTranscript, busy, connection, organizing)
 
         assertNull(blocked())
         // A take still being written has no transcript either; it says what it is first, as Rename does.
@@ -60,57 +68,65 @@ class ChatGptReasonsTest {
         assertEquals(Str.DRIVE_PENDING, blocked(busy = Str.DRIVE_PENDING))
         assertEquals(Str.CORE_CHATGPT_SIGN_IN_REQUIRED, blocked(connection = ChatGptConnection.SignedOut))
         assertEquals(Str.CORE_CHATGPT_SIGN_IN_REQUIRED, blocked(connection = ChatGptConnection.Expired("me@example.com")))
-        assertEquals(Str.SUMMARY_RUNNING, blocked(summary = SummaryState.Running(previous = null)))
-        // A failed or finished summary can be asked for again.
-        assertNull(blocked(summary = SummaryState.Failed(CoreMessage.CHATGPT_USAGE_LIMIT.code(), previous = null)))
-        assertNull(blocked(summary = SummaryState.Ready(summary)))
+        assertEquals(Str.NOTES_ORGANIZING, blocked(organizing = true))
+        // Signed out says so before the notes being made, which are this PC's own pass.
+        assertEquals(Str.CORE_CHATGPT_SIGN_IN_REQUIRED, blocked(connection = ChatGptConnection.SignedOut, organizing = true))
         // The reason is the core's own sentence for it.
         assertEquals("Sign in to ChatGPT in Settings", StringTable.of(StringTable.BASE)[Str.CORE_CHATGPT_SIGN_IN_REQUIRED])
     }
 
     @Test
-    fun `Summarize again once there is a summary to replace`() {
-        assertEquals(Str.SUMMARY_SUMMARIZE, summarizeLabel(SummaryState.None))
-        assertEquals(Str.SUMMARY_SUMMARIZE, summarizeLabel(SummaryState.Running(previous = null)))
-        assertEquals(Str.SUMMARY_SUMMARIZE, summarizeLabel(SummaryState.Failed("PROVIDER_ERROR", previous = null)))
-        assertEquals(Str.SUMMARY_AGAIN, summarizeLabel(SummaryState.Ready(summary)))
-        assertEquals(Str.SUMMARY_AGAIN, summarizeLabel(SummaryState.Running(previous = summary)))
-        assertEquals(Str.SUMMARY_AGAIN, summarizeLabel(SummaryState.Failed("PROVIDER_ERROR", previous = summary)))
+    fun `Organize again once the recording has notes`() {
+        assertEquals(Str.NOTES_ORGANIZE, organizeLabel(null))
+        assertEquals(Str.NOTES_ORGANIZE, organizeLabel(notes()))
+        assertEquals(Str.NOTES_ORGANIZE, organizeLabel(notes(organizing = true)))
+        assertEquals(Str.NOTES_ORGANIZE_AGAIN, organizeLabel(notes(listOf(item))))
+        assertEquals(Str.NOTES_ORGANIZE_AGAIN, organizeLabel(notes(overview = "We met.")))
+        assertEquals("Organize again", base[Str.NOTES_ORGANIZE_AGAIN])
     }
 
     @Test
-    fun `the chips are there once there is a summary or one was asked for, and never over the editor`() {
-        assertFalse(showsSummaryChips(SummaryState.None, summaryChosen = false, editing = false))
-        assertTrue(showsSummaryChips(SummaryState.None, summaryChosen = true, editing = false))
-        assertTrue(showsSummaryChips(SummaryState.Ready(summary), summaryChosen = false, editing = false))
-        assertTrue(showsSummaryChips(SummaryState.Failed("PROVIDER_ERROR", null), summaryChosen = false, editing = false))
-        assertFalse(showsSummaryChips(SummaryState.Ready(summary), summaryChosen = true, editing = true))
+    fun `Edit notes waits while the take is written or the notes are made`() {
+        assertNull(editNotesBlocked(notes(listOf(item)), writing = false))
+        assertEquals(Str.DETAIL_STILL_RECORDING, editNotesBlocked(notes(listOf(item), organizing = true), writing = true))
+        assertEquals(Str.NOTES_ORGANIZING, editNotesBlocked(notes(listOf(item), organizing = true), writing = false))
     }
 
     @Test
-    fun `a failed summary is its own sentence where it has one, and Could not summarize otherwise`() {
-        val limit = summaryFailure(CoreMessage.CHATGPT_USAGE_LIMIT.code())
+    fun `the chips are there once there are notes or Organize was chosen, and never over the transcript's editor`() {
+        assertFalse(showsNotesChips(null, notesChosen = false, editing = false))
+        assertFalse(showsNotesChips(notes(), notesChosen = false, editing = false))
+        assertTrue(showsNotesChips(notes(), notesChosen = true, editing = false))
+        assertTrue(showsNotesChips(null, notesChosen = true, editing = false))
+        assertTrue(showsNotesChips(notes(listOf(item)), notesChosen = false, editing = false))
+        assertTrue(showsNotesChips(notes(failure = CoreMessage.PROVIDER_ERROR.code()), notesChosen = false, editing = false))
+        assertFalse(showsNotesChips(notes(listOf(item)), notesChosen = true, editing = true))
+    }
+
+    @Test
+    fun `a failed Organize is its own sentence where it has one, and Could not organize otherwise`() {
+        val limit = chatGptFailure(CoreMessage.CHATGPT_USAGE_LIMIT.code(), Str.NOTES_FAILED)
         assertEquals(coreSentence(CoreMessage.CHATGPT_USAGE_LIMIT), limit.headline.text(base))
-        assertEquals(SummaryRecovery.MANAGE_USAGE, limit.recovery)
+        assertEquals(ChatGptRecovery.MANAGE_USAGE, limit.recovery)
         assertNull(limit.detail)
 
         // The sentence says where to go; there is nothing to press — nor where asking again cannot help (2026-10-10).
-        assertEquals(SummaryRecovery.NONE, summaryFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()).recovery)
-        assertEquals(SummaryRecovery.NONE, summaryFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code()).recovery)
-        assertEquals(SummaryRecovery.RETRY, summaryFailure(CoreMessage.PROVIDER_REGION_RESTRICTED.code()).recovery)
+        assertEquals(ChatGptRecovery.NONE, chatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code(), Str.NOTES_FAILED).recovery)
+        assertEquals(ChatGptRecovery.NONE, chatGptFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code(), Str.NOTES_FAILED).recovery)
+        assertEquals(ChatGptRecovery.RETRY, chatGptFailure(CoreMessage.PROVIDER_REGION_RESTRICTED.code(), Str.NOTES_FAILED).recovery)
         // A sentence of its own is something to attend to, in the warning tone; the rest failed.
         assertTrue(limit.attention)
-        assertTrue(summaryFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code()).attention)
-        assertFalse(summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500")).attention)
+        assertTrue(chatGptFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code(), Str.NOTES_FAILED).attention)
+        assertFalse(chatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500"), Str.NOTES_FAILED).attention)
 
         // PROVIDER_ERROR has no sentence of its own here: the headline is the screen's, with the detail under it.
-        val provider = summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500: upstream"))
-        assertEquals(Str.SUMMARY_FAILED.message(), provider.headline)
+        val provider = chatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500: upstream"), Str.NOTES_FAILED)
+        assertEquals(Str.NOTES_FAILED.message(), provider.headline)
         assertEquals("HTTP 500: upstream", provider.detail)
-        assertEquals(SummaryRecovery.RETRY, provider.recovery)
+        assertEquals(ChatGptRecovery.RETRY, provider.recovery)
 
-        val step = summaryFailure(CoreMessage.STEP_FAILED.code("no transcript"))
-        assertEquals(Str.SUMMARY_FAILED.message(), step.headline)
+        val step = chatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"), Str.NOTES_FAILED)
+        assertEquals(Str.NOTES_FAILED.message(), step.headline)
         assertEquals("no transcript", step.detail)
     }
 
@@ -128,55 +144,26 @@ class ChatGptReasonsTest {
 
     @Test
     fun `the footer names the model the way the plan does, or by its id`() {
-        assertEquals("GPT X", summaryModelLabel("gpt-x", null, signedIn))
-        assertEquals("gpt-old", summaryModelLabel("gpt-old", null, signedIn))
-        assertEquals("gpt-x", summaryModelLabel("gpt-x", null, ChatGptConnection.SignedOut))
-        // The name kept with the summary reads the same signed out, and over a plan that names it otherwise now.
-        assertEquals("GPT-5.4", summaryModelLabel("gpt-5.4", "GPT-5.4", ChatGptConnection.SignedOut))
-        assertEquals("GPT X (2026)", summaryModelLabel("gpt-x", "GPT X (2026)", signedIn))
+        assertEquals("GPT X", chatGptModelLabel("gpt-x", null, signedIn))
+        assertEquals("gpt-old", chatGptModelLabel("gpt-old", null, signedIn))
+        assertEquals("gpt-x", chatGptModelLabel("gpt-x", null, ChatGptConnection.SignedOut))
+        // The name kept with the answer reads the same signed out, and over a plan that names it otherwise now.
+        assertEquals("GPT-5.4", chatGptModelLabel("gpt-5.4", "GPT-5.4", ChatGptConnection.SignedOut))
+        assertEquals("GPT X (2026)", chatGptModelLabel("gpt-x", "GPT X (2026)", signedIn))
         assertEquals("ChatGPT · GPT X", base[Str.SUMMARY_MODEL, "GPT X"])
     }
 
     @Test
-    fun `Edit summary is offered over a summary, and waits while a new one is made`() {
-        assertEquals(SummaryEditItem(summary, null), summaryEditItem(SummaryState.Ready(summary)))
-        assertEquals(SummaryEditItem(summary, Str.SUMMARY_RUNNING), summaryEditItem(SummaryState.Running(summary)))
-        assertNull(summaryEditItem(SummaryState.Running(null)))
-        assertNull(summaryEditItem(SummaryState.None))
-        assertNull(summaryEditItem(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
-        assertEquals(SummaryEditItem(summary, null), summaryEditItem(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), summary)))
-    }
-
-    @Test
-    fun `Summarize again asks first only over a summary the user edited`() {
-        val edited = summary.copy(editedAt = "2026-10-09T11:00:00Z")
-        assertFalse(summarizeAsksFirst(SummaryState.None))
-        assertFalse(summarizeAsksFirst(SummaryState.Ready(summary)))
-        assertTrue(summarizeAsksFirst(SummaryState.Ready(edited)))
-        // Summarize again after a failure replaces the summary still kept under it (Retry does not ask).
-        assertTrue(summarizeAsksFirst(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), edited)))
-        assertFalse(summarizeAsksFirst(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
-    }
-
-    @Test
-    fun `an edit is text that differs once trimmed, and an emptied field is none`() {
-        assertFalse(summaryEdited("- one", "- one"))
-        assertFalse(summaryEdited("- one", "  - one\n"))
-        assertFalse(summaryEdited("- one", "   "))
-        assertTrue(summaryEdited("- one", "- one\n- two"))
-    }
-
-    @Test
     fun `the editor's note says whether the other devices will show the edit`() {
-        assertEquals(Str.SUMMARY_EDIT_NOTE_SHARED, summaryEditNote(StorageKind.DRIVE))
-        assertEquals(Str.SUMMARY_EDIT_NOTE_SHARED, summaryEditNote(StorageKind.ICLOUD))
-        assertEquals(Str.SUMMARY_EDIT_NOTE_LOCAL, summaryEditNote(StorageKind.FOLDER))
+        assertEquals(Str.NOTES_EDIT_NOTE_SHARED, notesEditNote(StorageKind.DRIVE))
+        assertEquals(Str.NOTES_EDIT_NOTE_SHARED, notesEditNote(StorageKind.ICLOUD))
+        assertEquals(Str.NOTES_EDIT_NOTE_LOCAL, notesEditNote(StorageKind.FOLDER))
         // Not uploaded yet: nothing has reached a folder another device reads.
-        assertEquals(Str.SUMMARY_EDIT_NOTE_LOCAL, summaryEditNote(null))
+        assertEquals(Str.NOTES_EDIT_NOTE_LOCAL, notesEditNote(null))
     }
 
     @Test
-    fun `Ask waits for what Summarize waits for, but not for a summary being made`() {
+    fun `Ask waits for what Organize waits for, but not for the notes being made`() {
         assertNull(askBlocked(writing = false, hasTranscript = true, busy = null, connection = signedIn))
         assertEquals(Str.DETAIL_STILL_RECORDING, askBlocked(writing = true, hasTranscript = false, busy = null, connection = signedIn))
         assertEquals(Str.DETAIL_NO_TRANSCRIPT, askBlocked(writing = false, hasTranscript = false, busy = null, connection = signedIn))
@@ -185,23 +172,11 @@ class ChatGptReasonsTest {
             Str.CORE_CHATGPT_SIGN_IN_REQUIRED,
             askBlocked(writing = false, hasTranscript = true, busy = null, connection = ChatGptConnection.SignedOut),
         )
-        // Summarize as… is Summarize's own item, with its reasons, the running summary among them.
-        assertEquals(Str.SUMMARY_RUNNING, summarizeBlocked(false, true, null, signedIn, SummaryState.Running(summary)))
-        assertNull(askBlocked(writing = false, hasTranscript = true, busy = null, connection = signedIn))
+        assertEquals(Str.NOTES_ORGANIZING, organizeBlocked(false, true, null, signedIn, organizing = true))
     }
 
     @Test
-    fun `the footer adds the format unless it is General, then Edited`() {
-        assertEquals("ChatGPT · GPT X", summaryFooter(base, "GPT X", SummaryFormat.AUTO, edited = false))
-        assertEquals("ChatGPT · GPT X · Lecture", summaryFooter(base, "GPT X", SummaryFormat.LECTURE, edited = false))
-        assertEquals("ChatGPT · GPT X · My format · Edited", summaryFooter(base, "GPT X", SummaryFormat.CUSTOM, edited = true))
-        assertEquals("ChatGPT · GPT X · Edited", summaryFooter(base, "GPT X", SummaryFormat.AUTO, edited = true))
-        assertEquals(SummaryFormat.ONE_ON_ONE, summary.copy(format = "one_on_one").summaryFormat)
-        assertEquals("ChatGPT · GPT X · 1:1", summaryFooter(StringTable.of(StringTable.KOREAN), "GPT X", SummaryFormat.ONE_ON_ONE, edited = false))
-    }
-
-    @Test
-    fun `a summary is cut at its times, and nothing else is`() {
+    fun `an answer is cut at its times, and nothing else is`() {
         val text = "- Ship on Friday [00:00:31]\n- Notes by Thursday [1:05][00:02]. [99:99] is not one"
         val runs = citationRuns(text)
 
@@ -225,11 +200,11 @@ class ChatGptReasonsTest {
 
     @Test
     fun `a failed answer says Could not answer where the reason has no sentence`() {
-        val failed = summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500"), Str.ASK_FAILED)
+        val failed = chatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500"), Str.ASK_FAILED)
         assertEquals("Could not answer", failed.headline.text(base))
         assertEquals("HTTP 500", failed.detail)
-        assertEquals(SummaryRecovery.RETRY, failed.recovery)
-        assertEquals(SummaryRecovery.MANAGE_USAGE, summaryFailure(CoreMessage.CHATGPT_USAGE_LIMIT.code(), Str.ASK_FAILED).recovery)
+        assertEquals(ChatGptRecovery.RETRY, failed.recovery)
+        assertEquals(ChatGptRecovery.MANAGE_USAGE, chatGptFailure(CoreMessage.CHATGPT_USAGE_LIMIT.code(), Str.ASK_FAILED).recovery)
     }
 
     @Test
@@ -245,19 +220,19 @@ class ChatGptReasonsTest {
     }
 
     @Test
-    fun `a hit found in the summary alone opens on the summary, with Summary in front of its line`() {
-        val match = SummaryMatch("Ship the release on Friday", listOf(SearchRange(9, 7)))
-        fun hit(title: Boolean = false, snippets: Boolean = false, summary: SummaryMatch? = match) = SearchHit(
+    fun `a hit found in the notes alone opens on the notes, with Notes in front of its line`() {
+        val match = NotesMatch("Ship the release on Friday", listOf(SearchRange(9, 7)))
+        fun hit(title: Boolean = false, snippets: Boolean = false, notes: NotesMatch? = match) = SearchHit(
             "r1", "Weekly", "2026-10-09T10:00:00Z", title, if (title) listOf(SearchRange(0, 6)) else emptyList(),
-            if (snippets) listOf(SearchSnippet(31.0, "the release", listOf(SearchRange(4, 7)))) else emptyList(), summary,
+            if (snippets) listOf(SearchSnippet(31.0, "the release", listOf(SearchRange(4, 7)))) else emptyList(), notes,
         )
-        assertTrue(opensOnSummary(hit()))
-        assertFalse(opensOnSummary(hit(title = true)))
-        assertFalse(opensOnSummary(hit(snippets = true)))
-        assertFalse(opensOnSummary(hit(title = true, summary = null)))
+        assertTrue(opensOnNotes(hit()))
+        assertFalse(opensOnNotes(hit(title = true)))
+        assertFalse(opensOnNotes(hit(snippets = true)))
+        assertFalse(opensOnNotes(hit(title = true, notes = null)))
 
-        val line = summarySnippet("Summary", match)
-        assertEquals("Summary · Ship the release on Friday", line.text)
+        val line = notesSnippet(base[Str.NOTES_TAB], match)
+        assertEquals("Notes · Ship the release on Friday", line.text)
         assertEquals("release", line.text.substring(line.ranges.single().offset, line.ranges.single().offset + line.ranges.single().length))
     }
 

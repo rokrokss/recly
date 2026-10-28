@@ -28,14 +28,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * docs/08 "Summaries": Settings → My format and About you have no Save — what was typed is saved when the editing
+ * docs/08 "AI requests": Settings → Notes instructions and About you have no Save — what was typed is saved when the editing
  * ends: the field left for another, Return in the one-line field, the window put behind another, the window closed.
  */
 class PreferenceFieldTest {
 
     @Test
     fun `a preference is saved when its editing ends, and not while it is typed`() {
-        val custom = mutableListOf<String>()
+        val instructions = mutableListOf<String>()
         val about = mutableListOf<String>()
         var windowFocused by mutableStateOf(true)
         var first = Rect.Zero
@@ -49,10 +49,10 @@ class PreferenceFieldTest {
                 ReclyDesktopTheme(dark = false, highContrast = false) {
                     Column {
                         Column(Modifier.onGloballyPositioned { first = it.boundsInRoot() }) {
-                            PreferenceField("", { custom += it }, "My format", "Sections", "Used when", max = 10, returnSaves = false, lines = 2..8)
+                            PreferenceField("", { instructions += it }, "Notes instructions", "Write", "Used every time", max = 10, returnSaves = false, lines = 2..8)
                         }
                         Column(Modifier.onGloballyPositioned { second = it.boundsInRoot() }) {
-                            PreferenceField("", { about += it }, "About you", "e.g.", "Summaries use this", max = 300, returnSaves = true, lines = 1..3)
+                            PreferenceField("", { about += it }, "About you", "e.g.", "Notes and answers use this", max = 300, returnSaves = true, lines = 1..3)
                         }
                     }
                 }
@@ -85,10 +85,10 @@ class PreferenceFieldTest {
             // Below the field's label, in its box.
             click(Offset(first.left + 40f, first.top + 40f))
             type("Risks, owners and more")
-            assertEquals(emptyList(), custom.filter { it.isNotEmpty() }, "saved while it was typed")
-            // Into the next field: My format is left, kept to its 10 characters.
+            assertEquals(emptyList(), instructions.filter { it.isNotEmpty() }, "saved while it was typed")
+            // Into the next field: Notes instructions is left, kept to its 10 characters.
             click(Offset(second.left + 40f, second.top + 30f))
-            assertEquals("Risks, own", custom.last())
+            assertEquals("Risks, own", instructions.last())
             type("PM")
             press(Key.Enter, java.awt.event.KeyEvent.VK_ENTER)
             assertEquals("PM", about.last(), "Return in the field where Return saves")

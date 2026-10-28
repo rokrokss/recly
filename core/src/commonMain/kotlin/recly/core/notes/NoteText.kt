@@ -159,9 +159,12 @@ internal object SameItem {
 
     fun matches(kind: NoteKind, text: String, atSec: Double, otherKind: NoteKind, otherText: String, otherAtSec: Double): Boolean {
         if (kind != otherKind) return false
-        if (NoteText.ratio(NoteText.normalize(text), NoteText.normalize(otherText)) >= TEXT_RATIO) return true
+        if (sameText(text, otherText)) return true
         return kotlin.math.abs(atSec - otherAtSec) <= SAME_MOMENT_SEC
     }
+
+    fun sameText(text: String, otherText: String): Boolean =
+        NoteText.ratio(NoteText.normalize(text), NoteText.normalize(otherText)) >= TEXT_RATIO
 }
 
 /**

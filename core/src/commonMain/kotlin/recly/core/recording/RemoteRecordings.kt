@@ -12,7 +12,8 @@ import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.jsonObject
-import recly.core.chatgpt.SummaryFile
+import recly.core.notes.NotesFile
+import recly.core.notes.NotesFolder
 import recly.core.drive.DriveFolderMarker
 import recly.core.drive.DriveNotFound
 import recly.core.drive.string
@@ -102,8 +103,8 @@ class RemoteRecordings(
     private val icloudChosen: suspend () -> Boolean = { false },
     /** A transcript on this device was replaced by a newer one from its folder ([refreshTranscripts]). */
     private val transcriptsChanged: () -> Unit = {},
-    /** The same for a summary ([refreshSummaries]). */
-    private val summariesChanged: () -> Unit = {},
+    /** The same for a recording's notes ([refreshNotes]). */
+    private val notesChanged: () -> Unit = {},
 ) {
     private val mutex = Mutex()
     private var lastPulledAt: Instant? = null
@@ -227,22 +228,22 @@ class RemoteRecordings(
     }
 
     /**
-     * docs/08 "Summaries": a summary made or edited here, carried to the recording's folder as
-     * `{base}.summary.json`, and the folder's `summaryAt` moved on, so the other devices take it in at their next
-     * pull. A local folder is this device's alone: there is no one to carry it to.
+     * docs/08 "Organizing": final notes written here — a pass, an edit, a deletion — carried to the recording's folder as
+     * `{base}.notes.json`, and the folder's `notesAt` moved on, so the other devices take them in at their next pull.
+     * A local folder is this device's alone: there is no one to carry them to.
      */
-    suspend fun pushSummaries(): Unit = pushing.withLock {
-        push(recordings.pendingSummaries(), "remote.summary.pushed", "remote.summary.push.failed", recordings::summaryPushed) { record, folderId, _ ->
+    suspend fun pushNotes(): Unit = pushing.withLock {
+        push(recordings.pendingNotes(), "remote.notes.pushed", "remote.notes.push.failed", recordings::notesPushed) { record, folderId, _ ->
             if (StorageKind.ofId(folderId) == StorageKind.FOLDER) return@push true
-            val json = recordings.summary(record.id) ?: return@push true
-            val summary = SummaryFile.decode(json) ?: return@push true
+            val json = recordings.readFile(record.id, NotesFile.name(MetaWriter.baseName(record.meta))) ?: return@push true
+            val notes = NotesFolder.decode(json)?.takeIf { it.isFinal } ?: return@push true
             results.write(
-                record.dir, folderId, SummaryFile.name(MetaWriter.baseName(record.meta)), json.encodeToByteArray(),
-                SummaryFile.MIME, local = false,
+                record.dir, folderId, NotesFolder.name(MetaWriter.baseName(record.meta)), json.encodeToByteArray(),
+                NotesFolder.MIME, local = false,
             )
-            val version = SummaryFile.version(summary)
-            api.updateAppProperties(folderId, mapOf(SummaryFile.STAMP to version))
-            recordings.setSummarySeen(record.id, version)
+            val version = NotesFolder.version(notes)
+            api.updateAppProperties(folderId, mapOf(NotesFolder.STAMP to version))
+            recordings.setNotesSeen(record.id, version)
             true
         }
     }
@@ -363,7 +364,7 @@ class RemoteRecordings(
                     pending = properties.string(DriveFolderMarker.PENDING),
                     pendingAt = properties.string(DriveFolderMarker.PENDING_AT),
                     transcriptAt = properties.string(TranscriptMarks.FOLDER_STAMP),
-                    summaryAt = properties.string(SummaryFile.STAMP),
+                    notesAt = properties.string(NotesFolder.STAMP),
                 )
             }
             .sortedByDescending { it.createdTime }
@@ -506,9 +507,9 @@ class RemoteRecordings(
         pushTitles()
         pushMeta()
         pushTranscripts()
-        pushSummaries()
+        pushNotes()
         refreshTranscripts(folders, ::covered)
-        refreshSummaries(folders, ::covered)
+        refreshNotes(folders, ::covered)
         return PullSummary(adopted, dropped, retitled)
     }
 
@@ -582,60 +583,62 @@ class RemoteRecordings(
     }
 
     /**
-     * docs/08 "Summaries": the summaries on this device kept up with their folders — a folder whose `summaryAt`
-     * names a version newer than the copy here (made or edited on another device) has its `{base}.summary.json`
-     * read again. None while an edit of this device's is on its way out; at most [REFRESH_PER_PASS] a pass.
-     * Never throws: what is not read now is read by a later pass, or when the recording is opened.
+     * docs/08 "Organizing": the notes on this device kept up with their folders — a folder whose `notesAt` names a
+     * version newer than the copy here (made, organized again or edited on another device) has its `{base}.notes.json`
+     * read again. None while notes of this device's are on their way out; at most [REFRESH_PER_PASS] a pass. Never
+     * throws: what is not read now is read by a later pass, or when the recording is opened.
      */
-    private suspend fun refreshSummaries(folders: Map<String, List<Folder>>, covered: (String) -> Boolean) {
+    private suspend fun refreshNotes(folders: Map<String, List<Folder>>, covered: (String) -> Boolean) {
         try {
-            val seen = recordings.summarySeen()
-            val editing = recordings.pendingSummaries().keys
+            val seen = recordings.notesSeen()
+            val editing = recordings.pendingNotes().keys
             var fetched = 0
             var changed = false
             for (row in recordings.list(Int.MAX_VALUE)) {
                 if (fetched >= REFRESH_PER_PASS) break
                 val folderId = row.driveFolderId ?: continue
                 if (!covered(folderId) || row.id in editing) continue
-                val stamp = folders[row.id]?.firstOrNull { it.id == folderId }?.summaryAt ?: continue
+                val stamp = folders[row.id]?.firstOrNull { it.id == folderId }?.notesAt ?: continue
                 if (stamp == seen[row.id]) continue
-                val local = recordings.summary(row.id)?.let(SummaryFile::decode)?.let(SummaryFile::version)
+                val name = NotesFile.name(MetaWriter.baseName(row.meta))
+                val local = localNotes(row.id, name)?.let(NotesFolder::version)
                 if (local != null && local >= stamp) {
-                    recordings.setSummarySeen(row.id, stamp)
+                    recordings.setNotesSeen(row.id, stamp)
                     continue
                 }
                 fetched++
-                val file = api.findChild(folderId, SummaryFile.name(MetaWriter.baseName(row.meta))) ?: continue
+                val file = api.findChild(folderId, NotesFolder.name(MetaWriter.baseName(row.meta))) ?: continue
                 val json = try {
                     api.download(file.id).decodeToString()
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
-                    deps.logger.log(Logger.Level.WARN, "remote.summary.read.failed", mapOf("recordingId" to row.id), e)
+                    deps.logger.log(Logger.Level.WARN, "remote.notes.read.failed", mapOf("recordingId" to row.id), e)
                     continue
                 }
-                val summary = SummaryFile.decode(json)?.takeIf { it.recordingId == row.id } ?: continue
-                val written = recordings.summaryWrite {
-                    // An edit made here since the pass began is newer than what the folder had: it stays and goes up.
-                    val newer = recordings.summary(row.id)?.let(SummaryFile::decode)
-                        ?.let { SummaryFile.version(it) >= SummaryFile.version(summary) } == true
-                    if (row.id in recordings.pendingSummaries() || newer) return@summaryWrite false
-                    recordings.saveSummary(row.id, json)
-                    recordings.setSummarySeen(row.id, stamp)
+                val notes = NotesFolder.decode(json)?.takeIf { it.recordingId == row.id && it.isFinal } ?: continue
+                val written = recordings.notesWrite {
+                    // Notes written here since the pass began are newer than what the folder had: they stay and go up.
+                    val newer = localNotes(row.id, name)?.let { NotesFolder.version(it) >= NotesFolder.version(notes) } == true
+                    if (row.id in recordings.pendingNotes() || newer) return@notesWrite false
+                    recordings.writeFile(row.id, name, json)
+                    recordings.setNotesSeen(row.id, stamp)
                     true
                 }
                 if (written) {
                     changed = true
-                    deps.logger.log(Logger.Level.INFO, "remote.summary.read", mapOf("recordingId" to row.id))
+                    deps.logger.log(Logger.Level.INFO, "remote.notes.read", mapOf("recordingId" to row.id))
                 }
             }
-            if (changed) summariesChanged()
+            if (changed) notesChanged()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
-            deps.logger.log(Logger.Level.WARN, "remote.summary.read.failed", emptyMap(), e)
+            deps.logger.log(Logger.Level.WARN, "remote.notes.read.failed", emptyMap(), e)
         }
     }
+
+    private suspend fun localNotes(recordingId: String, name: String): NotesFile? = recordings.readFile(recordingId, name)?.let(NotesFolder::decode)
 
     /** The version of the transcript copy at [path] — when it was last edited or made — or null when there is none. */
     private suspend fun localVersion(path: okio.Path): String? {
@@ -767,8 +770,8 @@ class RemoteRecordings(
         val pendingAt: String?,
         /** The version of the transcript in it (`appProperties.transcriptAt`, docs/08 "Result files"). */
         val transcriptAt: String?,
-        /** The version of the summary in it (`appProperties.summaryAt`, docs/08 "Summaries"). */
-        val summaryAt: String? = null,
+        /** The version of the notes in it (`appProperties.notesAt`, docs/08 "Organizing"). */
+        val notesAt: String? = null,
     )
 
     private class Adoptable(val folder: Folder, val meta: RecordingMeta, val fileIds: Map<Pair<Int, Track>, String>)

@@ -45,7 +45,7 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 import recly.core.recording.SearchHit
 import recly.core.recording.SearchRange
-import recly.core.recording.SummaryMatch
+import recly.core.recording.NotesMatch
 
 /**
  * docs/10 "Search": a field on the input border — the accent while it has the focus, as every field (2026-10-10) —
@@ -109,11 +109,11 @@ internal fun SearchField(
 
 /**
  * docs/10 "Search": one recording a search found — its time, its title and up to two transcript lines with
- * the matches tinted, the summary line that matched under them after [summaryLabel], and the time of the first
+ * the matches tinted, the notes' line that matched under them after [notesLabel], and the time of the first
  * transcript hit at the end.
  */
 @Composable
-internal fun SearchResultRow(hit: SearchHit, untitled: String, summaryLabel: String, totalSec: Double?, onOpen: () -> Unit) {
+internal fun SearchResultRow(hit: SearchHit, untitled: String, notesLabel: String, totalSec: Double?, onOpen: () -> Unit) {
     val palette = blueprint
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
         Row(
@@ -134,12 +134,12 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, summaryLabel: Str
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // The transcript's and the summary's words, in the direction they take (2026-10-10).
+                // The transcript's and the notes' words, in the direction they take (2026-10-10).
                 val words = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content)
                 hit.snippets.take(SNIPPET_LINES).forEach { snippet ->
                     Text(tinted(snippet.text, snippet.ranges), style = words, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                hit.summary?.let { summarySnippet(summaryLabel, it) }?.let { line ->
+                hit.notes?.let { notesSnippet(notesLabel, it) }?.let { line ->
                     Text(tinted(line.text, line.ranges), style = words, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
@@ -200,13 +200,13 @@ private fun FindArrow(mark: String, label: String, enabled: Boolean, onClick: ()
     }
 }
 
-/** A hit found in the summary alone — not in the title, not in the transcript — opens on the summary (docs/10 "Search"). */
-internal fun opensOnSummary(hit: SearchHit): Boolean = hit.summary != null && hit.snippets.isEmpty() && !hit.matchesInTitle
+/** A hit found in the notes alone — not in the title, not in the transcript — opens on the notes (docs/10 "Search"). */
+internal fun opensOnNotes(hit: SearchHit): Boolean = hit.notes != null && hit.snippets.isEmpty() && !hit.matchesInTitle
 
-/** The summary's line as a snippet: `Summary · ` in front, and the matches moved along by it. */
-internal fun summarySnippet(label: String, match: SummaryMatch): SummaryMatch {
-    val prefix = label + SUMMARY_SEPARATOR
-    return SummaryMatch(prefix + match.text, match.ranges.map { it.copy(offset = it.offset + prefix.length) })
+/** The notes' line as a snippet: `Notes · ` in front, and the matches moved along by it. */
+internal fun notesSnippet(label: String, match: NotesMatch): NotesMatch {
+    val prefix = label + NOTES_SEPARATOR
+    return NotesMatch(prefix + match.text, match.ranges.map { it.copy(offset = it.offset + prefix.length) })
 }
 
 /** The core's match ranges as the accent at 16 % behind the text, which stays the body colour. */
@@ -221,4 +221,4 @@ private fun tinted(text: String, ranges: List<SearchRange>): AnnotatedString {
 
 private const val SNIPPET_LINES = 2
 
-private const val SUMMARY_SEPARATOR = " · "
+private const val NOTES_SEPARATOR = " · "

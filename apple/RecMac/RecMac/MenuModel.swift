@@ -690,9 +690,11 @@ final class MenuModel: ObservableObject {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
-                // docs/08 "Summaries": summaries and questions after this one are written in the new
+                // docs/08 "AI requests": summaries and questions after this one are written in the new
                 // language, and Translate offers it — the core opened with the old one.
                 self.bridge?.core.summaries.setLocale(tag: AppLanguage.resolvedCode)
+                // docs/08 "Organizing": the notes' text says its groups in the new language too.
+                self.bridge?.core.notes.setHeadings(headings: NoteGroups.headings)
                 Task { await self.notifier.relocalize() }
                 // A job alert already standing in Notification Center was painted once and is still
                 // in the old language; posting it again under the same identifier replaces it.
@@ -1167,13 +1169,13 @@ final class MenuModel: ObservableObject {
 
     /// docs/10 "Search": a search result opens at its first transcript hit, with every match of the
     /// query marked and the find bar over the transcript — unless only the title matched — or on the
-    /// summary, when only the summary did.
+    /// notes, when only the notes did.
     func showDetail(_ hit: SearchHit) {
         let title = hit.title ?? ""
         guard showDetail(recordingId: hit.recordingId, title: title.isEmpty ? RecKitStrings.localized("Untitled") : title)
         else { return }
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: searchQuery, atSec: first.atSec) }
-        detail?.opensOnSummary = hit.onlyInSummary
+        detail?.opensOnNotes = hit.onlyInNotes
     }
 
     /// Every way a recording is put in the Details window — a row, a search hit, the popover's Details — comes

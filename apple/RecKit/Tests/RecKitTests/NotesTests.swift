@@ -27,15 +27,61 @@ final class NoteGroupsTests: XCTestCase {
             questions: [Self.item("q1", .question)]
         )
         let groups = NoteGroups.of(notes)
-        XCTAssertEqual(groups.map(\.titleKey), ["Decisions", "To-dos", "Questions"])
+        XCTAssertEqual(groups.map(\.title), ["Decisions", "To-dos", "Questions"])
+        XCTAssertEqual(groups.map(\.kind), [.decision, .todo, .question])
         XCTAssertEqual(groups[1].items.map(\.id), ["t1", "t2"], "the core's order, newest first, is kept")
-        XCTAssertEqual(groups.map { RecKitStrings.localized($0.titleKey) }, ["Decisions", "To-dos", "Questions"])
     }
 
     func testAGroupWithNoItemsIsNotThere() {
         let notes = Self.notes(questions: [Self.item("q1", .question)])
-        XCTAssertEqual(NoteGroups.of(notes).map(\.titleKey), ["Questions"])
+        XCTAssertEqual(NoteGroups.of(notes).map(\.title), ["Questions"])
         XCTAssertFalse(NoteGroups.isEmpty(notes, showsOverview: false))
+    }
+
+    /// docs/09 "Notes view": Key points first, then Decisions · To-dos · Questions, then the user's sections under their
+    /// own names in the order the notes were made with — an empty one gone like any group.
+    func testKeyPointsLeadAndTheUsersSectionsFollowUnderTheirNames() {
+        let notes = Self.notes(
+            points: [Self.item("p1", .point)],
+            decisions: [Self.item("d1", .decision)],
+            questions: [Self.item("q1", .question)],
+            sections: [
+                NoteSectionItems(id: "s1", name: "Risks", items: [Self.item("r1", .section, section: "s1")]),
+                NoteSectionItems(id: "s2", name: "Empty", items: []),
+                NoteSectionItems(id: "s3", name: "Next steps", items: [Self.item("n1", .section, section: "s3")]),
+            ]
+        )
+        let groups = NoteGroups.of(notes)
+        XCTAssertEqual(groups.map(\.title), ["Key points", "Decisions", "Questions", "Risks", "Next steps"])
+        XCTAssertEqual(groups.suffix(2).map(\.id), ["section-s1", "section-s3"])
+        XCTAssertEqual(Set(groups.map(\.id)).count, groups.count, "each group is its own in a list")
+        XCTAssertEqual(groups[3].items.map(\.id), ["r1"])
+        XCTAssertEqual(groups[3].sectionId, "s1")
+    }
+
+    /// docs/09 "Notes view" — "The record screen": no key points, which come after Stop, but the user's sections after
+    /// Questions; key points alone are no block there.
+    func testTheRecordScreenLeavesTheKeyPointsOut() {
+        let notes = Self.notes(
+            points: [Self.item("p1", .point)],
+            todos: [Self.item("t1", .todo)],
+            sections: [NoteSectionItems(id: "s1", name: "Risks", items: [Self.item("r1", .section, section: "s1")])]
+        )
+        XCTAssertEqual(NoteGroups.of(notes, keyPoints: false).map(\.title), ["To-dos", "Risks"])
+        let pointsOnly = Self.notes(points: [Self.item("p1", .point)])
+        XCTAssertTrue(NoteGroups.isEmpty(pointsOnly, showsOverview: false))
+        XCTAssertFalse(NoteGroups.isEmpty(pointsOnly, showsOverview: true))
+    }
+
+    /// docs/08 "Organizing" — "Copy and share": the headings the core writes the notes' text under, in the app's
+    /// language.
+    func testTheHeadingsAreTheAppsWords() {
+        XCTAssertEqual(NoteGroups.headings.notes, "Notes")
+        XCTAssertEqual(NoteGroups.headings.keyPoints, "Key points")
+        XCTAssertEqual(NoteGroups.headings.todos, "To-dos")
+        AppLanguage.current = .ko
+        XCTAssertEqual(NoteGroups.headings.notes, "정리")
+        XCTAssertEqual(NoteGroups.headings.keyPoints, "핵심")
     }
 
     /// No empty state: with no item and no overview the block is absent.
@@ -97,9 +143,13 @@ final class NoteGroupsTests: XCTestCase {
 
     static func notes(
         overview: String? = nil,
+        points: [NoteItem] = [],
         decisions: [NoteItem] = [],
         todos: [NoteItem] = [],
-        questions: [NoteItem] = []
+        questions: [NoteItem] = [],
+        sections: [NoteSectionItems] = [],
+        failure: String? = nil,
+        model: String? = nil
     ) -> RecordingNotes {
         RecordingNotes(
             recordingId: "01J9REC0000000000000000000",
@@ -108,7 +158,11 @@ final class NoteGroupsTests: XCTestCase {
             decisions: decisions,
             todos: todos,
             questions: questions,
-            organizing: false
+            organizing: false,
+            points: points,
+            sections: sections,
+            failure: failure,
+            model: model
         )
     }
 
@@ -119,9 +173,10 @@ final class NoteGroupsTests: XCTestCase {
         owner: String? = nil,
         due: String? = nil,
         atSec: Double = 0,
-        quote: String = ""
+        quote: String = "",
+        section: String? = nil
     ) -> NoteItem {
-        NoteItem(id: id, kind: kind, text: text, owner: owner, due: due, atSec: atSec, quote: quote, provisional: true)
+        NoteItem(id: id, kind: kind, text: text, owner: owner, due: due, atSec: atSec, quote: quote, provisional: true, section: section)
     }
 
     static func line(at start: Double, end: Double, _ text: String, id: String? = nil, name: String? = nil, me: Bool = false) -> NoteLine {
@@ -302,9 +357,9 @@ final class RecordingNotesTests: XCTestCase {
         try await waitFor { model.notes?.stage == .final }
 
         XCTAssertTrue(model.hasNotes)
-        XCTAssertTrue(model.hasSummaryView, "the Summary chip stands for the notes alone")
+        XCTAssertTrue(model.hasNotesView, "the Notes chip stands once there are notes")
         XCTAssertEqual(NoteGroups.overview(model.notes, shown: true), "The launch moved to Friday.")
-        XCTAssertEqual(NoteGroups.of(model.notes).map(\.titleKey), ["Decisions", "To-dos"])
+        XCTAssertEqual(NoteGroups.of(model.notes).map(\.title), ["Decisions", "To-dos"])
         let todo = try XCTUnwrap(model.notes?.todos.first)
         XCTAssertEqual(NoteGroups.text(todo), "Send the release notes — Minji", "the owner comes resolved to the name given")
         XCTAssertEqual(NoteGroups.due(todo), "Thursday")
@@ -316,8 +371,53 @@ final class RecordingNotesTests: XCTestCase {
 
         model.deleteNote(todo)
         try await waitFor { model.notes?.todos.isEmpty == true }
-        XCTAssertEqual(NoteGroups.of(model.notes).map(\.titleKey), ["Decisions"], "the emptied group goes with its header")
+        XCTAssertEqual(NoteGroups.of(model.notes).map(\.title), ["Decisions"], "the emptied group goes with its header")
     }
+
+    /// docs/09 "AI view" — "Editing": Save hands the core the overview and the items whose words changed — an emptied
+    /// one is deleted — and the page shows the notes as they were kept; Copy all copies the core's text of them.
+    @MainActor
+    func testEditingTheNotesKeepsTheUsersWordsAndDeletesAnEmptiedItem() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        try await writeTranscript(bridge, id)
+        try await writeNotes(bridge, id)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        let follow = Task { await model.followNotes() }
+        addTeardownBlock { follow.cancel(); await follow.value }
+        try await waitFor { model.notes?.stage == .final }
+        XCTAssertEqual(model.organizeTitle, "Organize again")
+        XCTAssertTrue(model.notesEditable)
+        XCTAssertNil(model.notesExportReason)
+
+        var draft = NotesDraft(model.notes)
+        XCTAssertEqual(draft.groups.map(\.title), ["Decisions", "To-dos"])
+        XCTAssertEqual(draft.overview, "The launch moved to Friday.")
+        XCTAssertFalse(draft.changed)
+        let decision = try XCTUnwrap(model.notes?.decisions.first)
+        let todo = try XCTUnwrap(model.notes?.todos.first)
+        XCTAssertEqual(NotesDraft.meta(todo), "Minji · Thursday", "the owner and the due date, under the field")
+        XCTAssertNil(NotesDraft.meta(decision))
+        draft.overview = "The launch moved to Friday, after the review.  "
+        draft.texts[decision.id] = "Launch on Friday"
+        draft.texts[todo.id] = "  "
+        XCTAssertTrue(draft.changed)
+        let edits = draft.edits
+        XCTAssertEqual(edits.overview, "The launch moved to Friday, after the review.")
+        XCTAssertEqual(edits.items.map(\.itemId), [decision.id, todo.id])
+        XCTAssertEqual(edits.items.map(\.text), ["Launch on Friday", ""])
+
+        let saved = await model.editNotes(overview: edits.overview, edits: edits.items)
+        XCTAssertTrue(saved)
+        try await waitFor { model.notes?.todos.isEmpty == true }
+        XCTAssertEqual(model.notes?.overview, "The launch moved to Friday, after the review.")
+        XCTAssertEqual(model.notes?.decisions.map(\.text), ["Launch on Friday"])
+        XCTAssertEqual(NoteGroups.of(model.notes).map(\.title), ["Decisions"])
+
+        let text = try await bridge.core.notes.text(recordingId: id)
+        XCTAssertTrue(text?.contains("Launch on Friday") == true, text ?? "nil")
+    }
+
 
     /// docs/08 "Organizing": a job whose only unfinished step is its notes — waiting out a usage limit here — reads as
     /// done, with nothing to explain or retry; the same job with its upload left reads as the wait it is.

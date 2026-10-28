@@ -718,13 +718,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     }
 
     /// The same for a search hit: the page opens on the first match, with the find bar (docs/10 "Search") —
-    /// unless only the title matched, when there is nothing in the text to find — or on the summary, when
-    /// only the summary matched.
+    /// unless only the title matched, when there is nothing in the text to find — or on the notes, when
+    /// only the notes matched.
     func detail(for hit: SearchHit, query: String) -> RecordingDetailModel? {
         let title = hit.title?.isEmpty == false ? hit.title! : RecKitStrings.localized("Untitled")
         let detail = detail(id: hit.recordingId, title: title)
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: query, atSec: first.atSec) }
-        detail?.opensOnSummary = hit.onlyInSummary
+        detail?.opensOnNotes = hit.onlyInNotes
         return detail
     }
 
@@ -1075,9 +1075,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
-                // docs/08 "Summaries": summaries and questions after this one are written in the new
+                // docs/08 "AI requests": summaries and questions after this one are written in the new
                 // language, and Translate offers it — the core opened with the old one.
                 self.bridge?.core.summaries.setLocale(tag: AppLanguage.resolvedCode)
+                // docs/08 "Organizing": the notes' text says its groups in the new language too.
+                self.bridge?.core.notes.setHeadings(headings: NoteGroups.headings)
                 // [watchReceiver] is the only proof there is a `WCSession` to publish on: it is
                 // set exactly when `isSupported()` was true.
                 if self.watchReceiver != nil { self.publishLanguageToWatch() }

@@ -2,15 +2,14 @@
 import ReclyCore
 import SwiftUI
 
-/// docs/09 "Summary view" · docs/15 §10: the ChatGPT section, after Recording processing — the plan the user
-/// already pays for, used for summaries, on the same rows and buttons the Drive account has. Nothing at
-/// all where ChatGPT is not offered.
+/// docs/09 "AI view" · docs/15 §10: the ChatGPT section, after Recording processing — the plan the user
+/// already pays for, on the same rows and buttons the Drive account has: its sign-in, its usage and its model, and
+/// nothing about what the notes are asked for, which is Settings → Notes' ([NotesSection]) — so another AI provider
+/// can take this section's place (2026-10-28). Nothing at all where ChatGPT is not offered.
 public struct ChatGptSection: View {
     @ObservedObject private var model: ChatGptSettingsModel
     /// Told before a sign-in starts, so a shell drawn on two surfaces knows which one to welcome on.
     private let onSignIn: (() -> Void)?
-    /// My format was just chosen with nothing in it: its field takes the focus as it appears (2026-10-10, 3.1).
-    @State private var focusMyFormat = false
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
@@ -37,65 +36,8 @@ public struct ChatGptSection: View {
                 }
             }
             failure
-            // docs/08 "Summaries": what every summary is asked for — under Model, signed in or out.
-            SectionRow(title: loc("Summary format")) { formatPicker }
-            // 2026-10-10 (3.1): My format's words only while My format is the format — until it has some, the note
-            // says what summaries use meanwhile.
-            if model.preferences.format == .custom {
-                SectionBlock {
-                    PreferenceField(
-                        title: loc("My format"),
-                        text: $model.customFormat,
-                        placeholder: loc("Sections and instructions, e.g. Summary, Risks, Next steps with owners."),
-                        note: loc(model.customFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? "Write your format here; until then summaries use General."
-                            : "Used when the summary format is My format."),
-                        limit: Int(SummaryPreferences.companion.CUSTOM_MAX),
-                        lines: 2...8,
-                        multiline: true,
-                        identifier: "chatgpt-my-format",
-                        focusRequested: $focusMyFormat,
-                        done: model.savePreferences
-                    )
-                }
-            }
-            SectionBlock {
-                PreferenceField(
-                    title: loc("About you"),
-                    text: $model.aboutMe,
-                    placeholder: loc("e.g. Product manager; I care about deadlines and decisions."),
-                    note: loc("Summaries and answers use this to judge what matters to you."),
-                    limit: Int(SummaryPreferences.companion.ABOUT_MAX),
-                    lines: 1...3,
-                    multiline: false,
-                    identifier: "chatgpt-about-you",
-                    focusRequested: .constant(false),
-                    done: model.savePreferences
-                )
-            }
-            SectionFootnote(loc("Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
+            SectionFootnote(loc("Notes and questions send the transcript text, the moments you highlighted and your notes settings to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
         }
-    }
-
-    /// The format Summarize uses, as a dropdown on both platforms (2026-10-10, A-A8). Every format is offered —
-    /// My format too, whose words are written once it is chosen (3.1) — and the one shown is the one saved.
-    private var formatPicker: some View {
-        let options = SummaryFormat.allCases.map(FormatOption.init)
-        let current = FormatOption(format: model.preferences.format)
-        return BlueprintDropdown(loc("Summary format"), options: options, selection: Binding(get: { current }, set: { option in
-            model.selectFormat(option.format)
-            if option.format == .custom, model.customFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                focusMyFormat = true
-            }
-        })) {
-            ChatGptText.formatLabel($0.format)
-        }
-        .accessibilityIdentifier("chatgpt-summary-format")
-    }
-
-    private struct FormatOption: Hashable, Identifiable {
-        let format: SummaryFormat
-        var id: SummaryFormat { format }
     }
 
     @ViewBuilder
@@ -123,7 +65,7 @@ public struct ChatGptSection: View {
         case .signedOut, .unavailable:
             SectionRow(
                 title: loc("Use your ChatGPT plan"),
-                subtitle: loc("Summarize recordings with the plan you already have. Recly charges nothing for it.")
+                subtitle: loc("Organize recordings with the plan you already have. Recly charges nothing for it.")
             ) { continueButton }
         }
     }
@@ -177,94 +119,7 @@ public struct ChatGptSection: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// One of the section's two fields (docs/09 "Summary view"): its name, the box, and what it is for under it —
-/// the vocabulary row's shape. Saved when editing ends — the focus leaves, the screen goes — with no Cancel · Save;
-/// empty is allowed. Each grows over [lines] and then scrolls. My format is written in lines: Return is a new line
-/// in it, on the Mac too (2026-10-10, A-A6). About you is one paragraph that wraps: Return saves it.
-private struct PreferenceField: View {
-    let title: String
-    @Binding var text: String
-    let placeholder: String
-    let note: String
-    /// The core keeps no more than this (`SummaryPreferences`), so the field takes no more.
-    let limit: Int
-    let lines: ClosedRange<Int>
-    let multiline: Bool
-    let identifier: String
-    /// Set by the section when the field is to take the focus as it appears — once, then cleared.
-    @Binding var focusRequested: Bool
-    let done: () -> Void
-    @Environment(\.blueprint) private var blueprint
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Space.s) {
-            Text(verbatim: title)
-                .font(blueprint.fonts.bodySmall)
-                .foregroundStyle(blueprint.palette.text)
-            field
-                .textFieldStyle(.plain)
-                .font(blueprint.fonts.bodySmall)
-                .foregroundStyle(blueprint.palette.text)
-                .fieldBox(focused: focused, inset: EdgeInsets())
-                .onChange(of: text) { _, typed in
-                    if typed.count > limit { text = String(typed.prefix(limit)) }
-                    // A paragraph: the phone's Return, which a wrapping field takes as a new line, ends the
-                    // editing instead (the Mac's submits).
-                    if !multiline, typed.contains(where: \.isNewline) {
-                        text = typed.filter { !$0.isNewline }
-                        focused = false
-                    }
-                }
-                .onChange(of: focused) { _, now in if !now { done() } }
-                .onSubmit(done)
-                .onDisappear(perform: done)
-                .onAppear { if focusRequested { takeFocus() } }
-                .onChange(of: focusRequested) { _, requested in if requested { takeFocus() } }
-                .accessibilityLabel(Text(verbatim: title))
-                .accessibilityIdentifier(identifier)
-            Text(verbatim: note)
-                .font(blueprint.fonts.sans(TypeSize.small))
-                .foregroundStyle(blueprint.palette.textMuted)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private var field: some View {
-        #if os(macOS)
-        if multiline {
-            // A field's 12 × 8, less the inset the text view keeps of its own.
-            GrowingTextEditor(text: $text, placeholder: placeholder, lines: lines, focused: $focused)
-                .padding(FieldInset.textView)
-        } else {
-            TextField("", text: $text, axis: .vertical)
-                .lineLimit(lines)
-                .fieldPlaceholder(placeholder, empty: text.isEmpty)
-                .focused($focused)
-                .padding(FieldInset.field)
-        }
-        #else
-        TextField("", text: $text, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette), axis: .vertical)
-            .lineLimit(lines)
-            .submitLabel(multiline ? .return : .done)
-            .focused($focused)
-            .padding(FieldInset.field)
-        #endif
-    }
-
-    /// A moment after the field appears, once whatever opened it — the format's menu — has closed.
-    private func takeFocus() {
-        focusRequested = false
-        Task {
-            try? await Task.sleep(for: .milliseconds(150))
-            focused = true
-        }
-    }
-}
-
-/// The one-time confirmation after the first sign-in on a device (docs/09 "Summary view"). The shells present it
+/// The one-time confirmation after the first sign-in on a device (docs/09 "AI view"). The shells present it
 /// where their other questions go.
 public struct ChatGptWelcomeDialog: View {
     private let done: () -> Void
@@ -282,7 +137,7 @@ public struct ChatGptWelcomeDialog: View {
             BlueprintButton(RecKitStrings.localized("Got it"), tone: .primary, action: done)
                 .accessibilityIdentifier("chatgpt-welcome-done")
         } content: {
-            BlueprintDialogText(RecKitStrings.localized("Summaries in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings."))
+            BlueprintDialogText(RecKitStrings.localized("Notes in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings."))
         }
     }
 }

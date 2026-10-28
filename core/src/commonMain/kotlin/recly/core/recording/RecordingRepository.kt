@@ -586,39 +586,39 @@ class RecordingRepository(
         queries.kvSet(SEEN_PREFIX + recordingId, version)
     }
 
-    /** docs/08 "Summaries": the summaries made or edited here that the recording's folder has not received. */
-    suspend fun pendingSummaries(): Map<String, String> = locked {
-        queries.kvSelectPrefix(SUMMARY_PREFIX).executeAsList()
-            .associate { it.key.removePrefix(SUMMARY_PREFIX) to it.value_ }
+    /** docs/08 "Organizing": the final notes written here that the recording's folder has not received. */
+    suspend fun pendingNotes(): Map<String, String> = locked {
+        queries.kvSelectPrefix(NOTES_PREFIX).executeAsList()
+            .associate { it.key.removePrefix(NOTES_PREFIX) to it.value_ }
     }
 
-    internal suspend fun summaryPending(recordingId: String): String = locked {
-        pendingStamp().also { queries.kvSet(SUMMARY_PREFIX + recordingId, it) }
+    internal suspend fun notesPending(recordingId: String): String = locked {
+        pendingStamp().also { queries.kvSet(NOTES_PREFIX + recordingId, it) }
     }
 
-    suspend fun summaryPushed(recordingId: String, stamp: String): Unit = locked {
-        queries.kvDeleteIfValue(SUMMARY_PREFIX + recordingId, stamp)
+    suspend fun notesPushed(recordingId: String, stamp: String): Unit = locked {
+        queries.kvDeleteIfValue(NOTES_PREFIX + recordingId, stamp)
     }
 
-    /** The folder's `summaryAt` this device took in, per recording. */
-    internal suspend fun summarySeen(): Map<String, String> = locked {
-        queries.kvSelectPrefix(SUMMARY_SEEN_PREFIX).executeAsList().associate { it.key.removePrefix(SUMMARY_SEEN_PREFIX) to it.value_ }
+    /** The folder's `notesAt` this device took in, per recording. */
+    internal suspend fun notesSeen(): Map<String, String> = locked {
+        queries.kvSelectPrefix(NOTES_SEEN_PREFIX).executeAsList().associate { it.key.removePrefix(NOTES_SEEN_PREFIX) to it.value_ }
     }
 
-    internal suspend fun setSummarySeen(recordingId: String, version: String): Unit = locked {
-        queries.kvSet(SUMMARY_SEEN_PREFIX + recordingId, version)
+    internal suspend fun setNotesSeen(recordingId: String, version: String): Unit = locked {
+        queries.kvSet(NOTES_SEEN_PREFIX + recordingId, version)
     }
 
     /**
-     * One writer of a recording's summary at a time — a new one, an edit, a copy read from its folder — so a
-     * copy read from the folder never lands over an edit made meanwhile (docs/08 "Summaries").
+     * One writer of a recording's notes at a time — a pass, an edit, a copy read from its folder — so a copy read
+     * from the folder never lands over an edit made meanwhile (docs/08 "Organizing").
      */
-    private val summaryWrites = Mutex()
+    private val notesWrites = Mutex()
 
-    internal suspend fun <T> summaryWrite(block: suspend () -> T): T = summaryWrites.withLock { block() }
+    internal suspend fun <T> notesWrite(block: suspend () -> T): T = notesWrites.withLock { block() }
 
     private fun forgetPending(recordingId: String) {
-        for (prefix in listOf(TITLE_PREFIX, META_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, SUMMARY_PREFIX, SUMMARY_SEEN_PREFIX, FILL_PREFIX)) {
+        for (prefix in listOf(TITLE_PREFIX, META_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, NOTES_PREFIX, NOTES_SEEN_PREFIX, FILL_PREFIX)) {
             queries.kvDelete(prefix + recordingId)
         }
     }
@@ -1037,30 +1037,6 @@ class RecordingRepository(
     }
 
     /**
-     * The summary saved for this recording (docs/08 "Summaries"), as the JSON the core wrote, or null.
-     * Like the waveform it sits beside the parts, is not uploaded, survives the 7-day audio cleanup and
-     * goes with the recording.
-     */
-    @Throws(Throwable::class)
-    suspend fun summary(recordingId: String): String? = locked {
-        val record = record(recordingId) ?: return@locked null
-        val file = record.dir / SUMMARY_FILE
-        if (!deps.fileSystem.exists(file)) return@locked null
-        deps.fileSystem.read(file) { readUtf8() }
-    }
-
-    /** Written whole and moved into place under the lock [delete] takes, as [saveWaveform] is. */
-    @Throws(Throwable::class)
-    suspend fun saveSummary(recordingId: String, json: String): Unit = locked {
-        val record = record(recordingId) ?: return@locked
-        val file = record.dir / SUMMARY_FILE
-        val temp = record.dir / "$SUMMARY_FILE.tmp"
-        deps.fileSystem.createDirectories(record.dir)
-        deps.fileSystem.write(temp) { writeUtf8(json) }
-        deps.fileSystem.atomicMove(temp, file)
-    }
-
-    /**
      * A file of the core's own beside the parts — the notes and the transcripts made while recording (docs/08
      * "Organizing") — as text, or null when it, or the recording, is not there. Read under the lock [delete] takes.
      */
@@ -1071,7 +1047,7 @@ class RecordingRepository(
         deps.fileSystem.read(file) { readUtf8() }
     }
 
-    /** Written whole and moved into place, as [saveSummary] is; false when the recording is gone and nothing was written. */
+    /** Written whole and moved into place, as [saveWaveform] is; false when the recording is gone and nothing was written. */
     internal suspend fun writeFile(recordingId: String, name: String, text: String): Boolean = locked {
         val record = record(recordingId) ?: return@locked false
         val temp = record.dir / "$name.tmp"
@@ -1151,14 +1127,11 @@ class RecordingRepository(
         /** `kv` rows: `transcript/seen/{recordingId}` → the folder's `transcriptAt` this device took in. */
         private const val SEEN_PREFIX: String = "transcript/seen/"
 
-        /** Beside the parts: the summary of this recording, `Summary` as JSON (docs/08 "Summaries"). */
-        internal const val SUMMARY_FILE: String = "summary.v1.json"
+        /** `kv` rows: `notes/pending/{recordingId}` → a stamp; final notes the folder has not received. */
+        private const val NOTES_PREFIX: String = "notes/pending/"
 
-        /** `kv` rows: `summary/pending/{recordingId}` → a stamp; a summary the folder has not received. */
-        private const val SUMMARY_PREFIX: String = "summary/pending/"
-
-        /** `kv` rows: `summary/seen/{recordingId}` → the folder's `summaryAt` this device took in. */
-        private const val SUMMARY_SEEN_PREFIX: String = "summary/seen/"
+        /** `kv` rows: `notes/seen/{recordingId}` → the folder's `notesAt` this device took in. */
+        private const val NOTES_SEEN_PREFIX: String = "notes/seen/"
 
         /**
          * `kv` rows: `summary/fill/requested/{recordingId}` → `title`, `names` or `title,names`; what the title sheet asked

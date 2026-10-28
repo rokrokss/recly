@@ -53,6 +53,7 @@ import app.recly.android.ui.theme.dotGrid
 import app.recly.android.work.WorkScheduler
 import app.recly.recording.RecorderState
 import kotlinx.coroutines.launch
+import recly.core.notes.NotesHeadings
 
 /**
  * What the phone app is: record, watch the queue, and the settings — the account and what happens
@@ -111,11 +112,23 @@ class MainActivity : ComponentActivity() {
         // and nothing having happened. The notification itself stays up until the queue says the
         // reason is gone (docs/10 rule 3), so the tap is never the last chance to act on it.
         consumeFix(intent)
-        // N9 (UX decisions of 2026-10-11): the core is not recreated with the activities, and its summaries and
-        // Ask presets follow the app's language however it changed — the in-app picker or the system's per-app
-        // language screen. Either one recreates this activity, so this is where the core is told.
+        // N9 (UX decisions of 2026-10-11): the core is not recreated with the activities, and its notes and Ask
+        // presets follow the app's language however it changed — the in-app picker or the system's per-app language
+        // screen. Either one recreates this activity, so this is where the core is told — the notes' headings for
+        // Copy all and Share → Notes with it (docs/08 "Organizing" — "Copy and share").
         val locale = coreLocaleTag(resources.configuration.locales[0])
-        lifecycleScope.launch { CoreModule.get(applicationContext).core.summaries.setLocale(locale) }
+        val headings = NotesHeadings(
+            notes = getString(R.string.notes_title),
+            keyPoints = getString(R.string.notes_key_points),
+            decisions = getString(R.string.notes_decisions),
+            todos = getString(R.string.notes_todos),
+            questions = getString(R.string.notes_questions),
+        )
+        lifecycleScope.launch {
+            val core = CoreModule.get(applicationContext).core
+            core.summaries.setLocale(locale)
+            core.notes.setHeadings(headings)
+        }
         // And the watch app, which shows itself in the language this app is in — the same moments tell it.
         WatchLanguage.publish(applicationContext, AppLanguage.effective(resources.configuration.locales[0]).tag)
         setContent {
@@ -330,7 +343,7 @@ class MainActivity : ComponentActivity() {
         // docs/03 "Storage location": and the local folder may have been moved, deleted or had its grant
         // taken back while the app was away — the folder picker itself is one such trip.
         settingsModel.refreshStorage()
-        // docs/15 §10: and what this device holds of ChatGPT, which the detail's Summarize needs as much as Settings.
+        // docs/15 §10: and what this device holds of ChatGPT, which the detail's Organize needs as much as Settings.
         ChatGptSignIn.get(this).refresh()
     }
 
@@ -495,9 +508,9 @@ private fun JobsTab(
                 onCloseFind = model::closeFind,
                 onConnectDrive = onConnectDrive,
                 chatGpt = state.chatGpt,
-                onSummarize = { format, onFailure -> model.summarize(detail.recordingId, format, onFailure) },
-                onEditSummary = { model.editSummary(detail.recordingId, it) },
-                summaryFormats = state.summaryPreferences.formats,
+                onOrganize = { model.organize(detail.recordingId) },
+                onEditNotes = { overview, items -> model.editNotes(detail.recordingId, overview, items) },
+                notesText = { model.notesText(detail.recordingId) },
                 askPresets = { model.askPresets(detail.recordingId) },
                 onAsk = { preset, question -> model.ask(detail.recordingId, preset, question) },
                 onClearAsk = { model.clearAsk(detail.recordingId) },

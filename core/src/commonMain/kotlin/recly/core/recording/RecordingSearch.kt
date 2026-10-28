@@ -17,12 +17,12 @@ data class SearchRange(val offset: Int, val length: Int)
 /** One segment of a transcript that matches: where it starts in the recording, its words, and the matches in them. */
 data class SearchSnippet(val atSec: Double, val text: String, val ranges: List<SearchRange>)
 
-/** The line of a recording's summary that matches, cut like a [SearchSnippet], with the matches in it. */
-data class SummaryMatch(val text: String, val ranges: List<SearchRange>)
+/** The line of a recording's notes that matches — the overview's, or an item's — cut like a [SearchSnippet], with the matches in it. */
+data class NotesMatch(val text: String, val ranges: List<SearchRange>)
 
 /**
  * One recording a search found: by its title ([titleRanges] mark the matches there), its transcript
- * ([snippets], at most [RecordingSearch.SNIPPETS]), its summary ([summary], the first line that matches), or
+ * ([snippets], at most [RecordingSearch.SNIPPETS]), its notes ([notes], the first line that matches), or
  * any of them.
  */
 data class SearchHit(
@@ -32,12 +32,12 @@ data class SearchHit(
     val matchesInTitle: Boolean,
     val titleRanges: List<SearchRange>,
     val snippets: List<SearchSnippet>,
-    val summary: SummaryMatch? = null,
+    val notes: NotesMatch? = null,
 )
 
 /**
  * docs/10 "Search": the titles of every row in the list, the transcripts held on this device —
- * this device's own, and other devices' once read (opened, or cached by a pull) — and their summaries. Case is ignored, and
+ * this device's own, and other devices' once read (opened, or cached by a pull) — and their notes. Case is ignored, and
  * so are the accents of Latin letters and the width of full-width Latin, so `resume` finds `Résumé` and
  * `ＡＢＣ` finds `abc`; the query is one phrase.
  *
@@ -54,7 +54,7 @@ class RecordingSearch internal constructor(
 
     private val mutex = Mutex()
     private val cache = mutableMapOf<String, Cached>()
-    private val summaries = mutableMapOf<String, Cached>()
+    private val notes = mutableMapOf<String, Cached>()
 
     suspend fun search(query: String, limit: Int): List<SearchHit> {
         val needle = fold(query.trim())
@@ -71,10 +71,10 @@ class RecordingSearch internal constructor(
                     .take(SNIPPETS)
                     .map { snippet(it, needle) }
                     .toList()
-                val summary = summaryLines(row).firstOrNull { needle in it.folded }?.let { snippet(it, needle) }
-                    ?.let { SummaryMatch(it.text, it.ranges) }
-                if (titleRanges.isEmpty() && snippets.isEmpty() && summary == null) continue
-                hits += SearchHit(row.id, title, row.meta.startedAt, titleRanges.isNotEmpty(), titleRanges, snippets, summary)
+                val noted = noteLines(row).firstOrNull { needle in it.folded }?.let { snippet(it, needle) }
+                    ?.let { NotesMatch(it.text, it.ranges) }
+                if (titleRanges.isEmpty() && snippets.isEmpty() && noted == null) continue
+                hits += SearchHit(row.id, title, row.meta.startedAt, titleRanges.isNotEmpty(), titleRanges, snippets, noted)
             }
             hits
         }
@@ -124,25 +124,20 @@ class RecordingSearch internal constructor(
         return segments
     }
 
-    /** The summary's non-blank lines as it is on disk now: from memory while the file is unchanged. */
-    private suspend fun summaryLines(row: RecordingRecord): List<Segment> {
-        val path = row.dir / RecordingRepository.SUMMARY_FILE
-        val stamp = withContext(deps.io) { deps.fileSystem.metadataOrNull(path) }
+    /** The notes' lines — the overview's, then each item's words as shown — as they are on disk now: from memory while the file is unchanged. */
+    private suspend fun noteLines(row: RecordingRecord): List<Segment> {
+        val name = recly.core.notes.NotesFile.name(MetaWriter.baseName(row.meta))
+        val stamp = withContext(deps.io) { deps.fileSystem.metadataOrNull(row.dir / name) }
             ?.let { it.size to it.lastModifiedAtMillis }
         if (stamp == null) {
-            mutex.withLock { summaries.remove(row.id) }
+            mutex.withLock { notes.remove(row.id) }
             return emptyList()
         }
-        mutex.withLock { summaries[row.id]?.takeIf { it.stamp == stamp }?.let { return it.segments } }
-        val text = recordings.summary(row.id)?.let(recly.core.chatgpt.SummaryFile::decode)?.text.orEmpty()
-        // A line is shown as its words: "- " is how the plain text marks a list, and a [HH:MM:SS] is a tap in the
-        // summary, not words to find.
-        val lines = text.lines().map { line ->
-            var words = line.trim().removePrefix("- ")
-            recly.core.chatgpt.SummaryCitations.parse(words).asReversed().forEach { words = words.removeRange(it.offset, it.offset + it.length) }
-            words.replace(Regex(" {2,}"), " ").replace(Regex(" ([.,;:!?])"), "$1").trim()
-        }.filter(String::isNotEmpty).map { Segment(0.0, it, fold(it)) }
-        mutex.withLock { summaries[row.id] = Cached(stamp, lines) }
+        mutex.withLock { notes[row.id]?.takeIf { it.stamp == stamp }?.let { return it.segments } }
+        val file = recordings.readFile(row.id, name)?.let(recly.core.notes.NotesFolder::decode)
+        val lines = (file?.overview?.lines().orEmpty() + file?.items.orEmpty().map { it.shown })
+            .map(String::trim).filter(String::isNotEmpty).map { Segment(0.0, it, fold(it)) }
+        mutex.withLock { notes[row.id] = Cached(stamp, lines) }
         return lines
     }
 

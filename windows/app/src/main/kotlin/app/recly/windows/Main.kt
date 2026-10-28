@@ -276,7 +276,7 @@ fun main(args: Array<String>) {
             )
         }
 
-        // docs/09 "Summary view": from here like the rename — the settings window may be closed under it.
+        // docs/09 "AI view": from here like the rename — the settings window may be closed under it.
         model.chatGpt?.takeIf { it.welcome }?.let { chatGpt ->
             ChatGptWelcomeDialog(
                 strings = strings,

@@ -1,10 +1,10 @@
 import Foundation
 import ReclyCore
 
-/// The words the ChatGPT section and the summary view make out of a [CoreMessage] code.
+/// The words the ChatGPT section, the notes and the answers make out of a [CoreMessage] code.
 public enum ChatGptText {
     /// The codes whose sentence is the whole answer, because it says what the user can do (docs/09
-    /// "Summary view").
+    /// "AI view").
     static let ownSentence: Set<CoreMessage> = [
         .chatgptSignInRequired, .chatgptUsageLimit, .chatgptPlanRequired, .providerRegionRestricted,
     ]
@@ -16,14 +16,14 @@ public enum ChatGptText {
     /// Whether [reason] is the user's own cancel, which nothing reports.
     public static func cancelled(_ reason: String) -> Bool { message(reason) == .signInCancelled }
 
-    /// The notice of a failed summary: the sentence of a code the user can act on, else nil (the screen
-    /// says "Could not summarize").
+    /// The notice of a failed Organize or answer: the sentence of a code the user can act on, else nil (the screen
+    /// says "Could not organize").
     public static func sentence(_ reason: String) -> String? {
         guard let message = message(reason), ownSentence.contains(message) else { return nil }
         return CoreMessages.text(reason).sentence
     }
 
-    /// The second line under "Could not sign in to ChatGPT" / "Could not summarize": what the core
+    /// The second line under "Could not sign in to ChatGPT" / "Could not organize": what the core
     /// attached — the provider's code, the reason — or, for a code with a sentence of its own, that.
     public static func detail(_ reason: String) -> String? {
         guard let ref = CoreMessageRef.companion.parse(code: reason) else { return reason }
@@ -31,30 +31,16 @@ public enum ChatGptText {
         return ref.detail ?? ref.arg
     }
 
-    /// A summary's model as the plan names it, else its id.
+    /// A model as the plan names it, else its id.
     public static func modelLabel(_ id: String, connection: ChatGptConnection) -> String {
         (connection as? ChatGptConnection.SignedIn)?.models.first { $0.id == id }?.label ?? id
     }
 
-    /// The line under a summary: `ChatGPT · <model>`, then `· <format>` when it was not General, and `· Edited`
-    /// once the user changed it. The model is the plan's name for it when the summary was written (`GPT-5.4`),
-    /// which outlives the plan's list; else what the list calls it now, else its id.
-    public static func summaryFooter(_ summary: Summary, connection: ChatGptConnection) -> String {
-        var line = RecKitStrings.localized("ChatGPT · %@", summary.modelName ?? modelLabel(summary.model, connection: connection))
-        if summary.summaryFormat != .auto { line += " · " + formatLabel(summary.summaryFormat) }
-        if summary.editedAt != nil { line += " · " + RecKitStrings.localized("Edited") }
-        return line
-    }
-
-    /// docs/09 "Summary view": a summary format as Settings and `Summarize as…` name it.
-    public static func formatLabel(_ format: SummaryFormat) -> String {
-        switch format {
-        case .auto: return RecKitStrings.localized("General")
-        case .oneOnOne: return RecKitStrings.localized("One-on-one")
-        case .lecture: return RecKitStrings.localized("Lecture")
-        case .interview: return RecKitStrings.localized("Interview")
-        case .custom: return RecKitStrings.localized("My format")
-        }
+    /// docs/09 "AI view": the line under a recording's notes, `ChatGPT · <model>` — the plan's name for the model they were
+    /// made with as the core keeps it (`GPT-5.4`), which outlives the plan's list, else what the list calls it now.
+    /// Nothing says the notes were edited.
+    public static func notesFooter(_ model: String, connection: ChatGptConnection) -> String {
+        RecKitStrings.localized("ChatGPT · %@", modelLabel(model, connection: connection))
     }
 
     /// docs/09 "Ask": a preset's chip. Translate names the app's language as the App language list does.
@@ -69,7 +55,7 @@ public enum ChatGptText {
         }
     }
 
-    /// The text of a summary or an answer cut at its citations (docs/09 "Summary view"): plain runs, and the
+    /// The text of an answer cut at its citations (docs/09 "AI view"): plain runs, and the
     /// `[HH:MM:SS]` ranges `SummaryCitations` finds, each with the second it plays from. The core counts in
     /// UTF-16 code units, as Kotlin strings do; a range that does not fall on the text is left as text.
     public static func runs(_ text: String) -> [CitationRun] {
@@ -97,7 +83,7 @@ public enum ChatGptText {
     }
 }
 
-/// One piece of a summary's text: words, or a citation that plays the recording from [atSec].
+/// One piece of an answer's text: words, or a citation that plays the recording from [atSec].
 public enum CitationRun: Equatable, Sendable {
     case text(String)
     case citation(String, atSec: Double)

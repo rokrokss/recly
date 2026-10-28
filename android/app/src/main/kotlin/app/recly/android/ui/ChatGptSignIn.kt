@@ -32,9 +32,10 @@ import recly.core.chatgpt.ChatGptResult
 import recly.core.chatgpt.SummaryPreferences
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import recly.core.notes.NotesPreferences
 import recly.core.platform.Logger
 
-/** What the ChatGPT section says besides the connection itself (docs/09 "Summary view"). */
+/** What the ChatGPT section says besides the connection itself (docs/09 "AI view"). */
 data class ChatGptUiState(
     /** The loopback is open and the browser has the sign-in: Cancel is offered. */
     val signingIn: Boolean = false,
@@ -137,7 +138,7 @@ class ChatGptSignIn private constructor(private val context: Context) {
         job?.cancel()
     }
 
-    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "Summary view"). */
+    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "AI view"). */
     fun signOut() {
         // Signed out, neither the organizing question nor the welcome to the plan has anything left to say.
         _state.update { it.copy(failure = null, revokeUnconfirmed = false, notesConsent = false, welcome = false) }
@@ -152,9 +153,9 @@ class ChatGptSignIn private constructor(private val context: Context) {
     }
 
     /**
-     * Settings → ChatGPT's Summary format, My format and About you (docs/08 "Summaries"): [change] is applied to what
-     * is stored at the time, one save after another, so a field saved as the format changes keeps both. Here rather than
-     * on the screen, so a field saved as the screen goes still is.
+     * Settings → Notes' About you (docs/08 "AI requests"): [change] is applied to what is stored at the time, one save
+     * after another, so a save never undoes the one before it. Here rather than on the screen, so a field saved as the
+     * screen goes still is.
      */
     fun updatePreferences(change: (SummaryPreferences) -> SummaryPreferences) {
         scope.launch {
@@ -163,6 +164,22 @@ class ChatGptSignIn private constructor(private val context: Context) {
                     val summaries = CoreModule.get(context).core.summaries
                     summaries.setPreferences(change(summaries.preferences()))
                 }
+            }
+        }
+    }
+
+    /**
+     * Settings → Notes' instructions and sections (docs/08 "Organizing" — "Settings"), the same way: [change] on what is
+     * stored at the time, and [kept] told what the core kept — trimmed, a section without a name dropped, a new one with
+     * its id.
+     */
+    fun updateNotesPreferences(change: (NotesPreferences) -> NotesPreferences, kept: (NotesPreferences) -> Unit = {}) {
+        scope.launch {
+            preferencesLock.withLock {
+                runCatching {
+                    val notes = CoreModule.get(context).core.notes
+                    notes.setPreferences(change(notes.preferences()))
+                }.onSuccess { withContext(Dispatchers.Main) { kept(it) } }
             }
         }
     }
@@ -201,7 +218,7 @@ class ChatGptSignIn private constructor(private val context: Context) {
         const val RETURN_SCHEME = "app.recly"
         const val RETURN_HOST = "chatgpt"
 
-        /** docs/09 "Summary view": then the listener closes, as Cancel does. */
+        /** docs/09 "AI view": then the listener closes, as Cancel does. */
         private val TIMEOUT = 5.minutes
 
         /** The diagnostic under "Could not sign in to ChatGPT" when no browser took the page — Windows' own words. */
@@ -215,7 +232,7 @@ class ChatGptSignIn private constructor(private val context: Context) {
     }
 }
 
-/** Where ChatGPT shows and limits what Recly uses of the plan (docs/09 "Summary view"). */
+/** Where ChatGPT shows and limits what Recly uses of the plan (docs/09 "AI view"). */
 internal const val CHATGPT_USAGE_URL = "https://chatgpt.com/settings/usage"
 
 /**

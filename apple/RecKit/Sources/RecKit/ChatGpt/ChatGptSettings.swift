@@ -24,7 +24,7 @@ public protocol ChatGptBrowser: AnyObject {
     @MainActor func close()
 }
 
-/// docs/09 "Summary view" · docs/15 §10: the ChatGPT section's state and the sign-in it runs. The tokens never
+/// docs/09 "AI view" · docs/15 §10: the ChatGPT section's state and the sign-in it runs. The tokens never
 /// pass through here — the core exchanges the code and keeps them; this owns the socket, the browser and
 /// the five minutes the user has to finish.
 @MainActor
@@ -42,7 +42,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// The authorization page is open and the loopback is waiting for it — "Finish signing in in your browser".
     @Published public private(set) var waitingForBrowser = false
     @Published public private(set) var failure: Failure?
-    /// The first sign-in on this device, confirmed once (docs/09 "Summary view").
+    /// The first sign-in on this device, confirmed once (docs/09 "AI view").
     @Published public var welcome = false
     /// docs/08 "Organizing": the consent question after a sign-in, while the core says it is unanswered. Asked before
     /// the welcome.
@@ -50,14 +50,16 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// docs/08 "Organizing": signed in and not agreed (`notes.observeNeedsConsent()`) — a start from the app's own
     /// screen asks first.
     @Published public private(set) var needsOrganizeConsent = false
-    /// docs/08 "Summaries": this device's summary format, My format, About you and how the title sheet's two ChatGPT
-    /// boxes were left ("Titles and speaker names"), as saved — shown and editable signed in or out.
-    @Published public private(set) var preferences = SummaryPreferences(
-        format: .auto, customFormat: "", aboutMe: "", fillTitleAfterStop: false, fillNamesAfterStop: false
-    )
-    /// My format and About you as their fields hold them; saved when editing ends ([savePreferences]).
-    @Published public var customFormat = ""
+    /// docs/08 "AI requests": this device's About you and how the title sheet's two ChatGPT boxes were left ("Titles
+    /// and speaker names"), as saved — shown and editable signed in or out.
+    @Published public private(set) var preferences = SummaryPreferences(aboutMe: "", fillTitleAfterStop: false, fillNamesAfterStop: false)
+    /// About you as its field holds it; saved when editing ends ([savePreferences]).
     @Published public var aboutMe = ""
+    /// docs/08 "Organizing" — "Settings": what this device asks every recording's notes for, as saved — Settings → Notes.
+    @Published public private(set) var notesPreferences = NotesPreferences(instructions: "", sections: [])
+    /// Notes instructions and My sections as their fields hold them; saved when editing ends ([saveNotes]).
+    @Published public var instructions = ""
+    @Published public var sections: [NoteSectionDraft] = []
     /// docs/15 "iPhone providers": the ChatGPT destination the title sheet's boxes wait on before either is ticked —
     /// asked about only where the core requires the permission, so never on the Mac.
     @Published public private(set) var fillConsent: [TransferTarget] = []
@@ -74,6 +76,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     private var loopback: ChatGptLoopback?
     private var observer: Task<Void, Never>?
     private var preferencesObserver: Task<Void, Never>?
+    private var notesObserver: Task<Void, Never>?
     private var consentObserver: Task<Void, Never>?
     private var organizeObserver: Task<Void, Never>?
     private let logger = Logger(subsystem: CoreBridge.appName, category: "chatgpt")
@@ -114,11 +117,17 @@ public final class ChatGptSettingsModel: ObservableObject {
                 self?.needsOrganizeConsent = needs.boolValue
             }
         }
+        notesObserver = Task { [weak self] in
+            for await preferences in core.notes.observePreferences() {
+                self?.adoptNotes(preferences)
+            }
+        }
     }
 
     deinit {
         observer?.cancel()
         preferencesObserver?.cancel()
+        notesObserver?.cancel()
         consentObserver?.cancel()
         organizeObserver?.cancel()
     }
@@ -194,26 +203,13 @@ public final class ChatGptSettingsModel: ObservableObject {
         Task { try? await core.chatGpt.selectModel(id: id) }
     }
 
-    // MARK: - Summary preferences (docs/08 "Summaries")
+    // MARK: - About you and the title sheet's boxes (docs/08 "AI requests")
 
-    /// What the section shows: the saved format over the fields as they are typed, so `My format` is offered
-    /// once it has words and General stands in for it once they are gone (`effectiveFormat`).
+    /// The saved boxes with About you as its field holds it.
     public var shownPreferences: SummaryPreferences {
         SummaryPreferences(
-            format: preferences.format, customFormat: customFormat, aboutMe: aboutMe,
-            fillTitleAfterStop: preferences.fillTitleAfterStop, fillNamesAfterStop: preferences.fillNamesAfterStop
+            aboutMe: aboutMe, fillTitleAfterStop: preferences.fillTitleAfterStop, fillNamesAfterStop: preferences.fillNamesAfterStop
         )
-    }
-
-    /// Saved at once, like the model — with the fields as they are, so a pick made while one is being typed in
-    /// keeps what was typed. Shown at once too: a field that ends its editing as the menu closes saves with the
-    /// format just picked, not the one before it.
-    public func selectFormat(_ format: SummaryFormat) {
-        preferences = SummaryPreferences(
-            format: format, customFormat: preferences.customFormat, aboutMe: preferences.aboutMe,
-            fillTitleAfterStop: preferences.fillTitleAfterStop, fillNamesAfterStop: preferences.fillNamesAfterStop
-        )
-        save(shownPreferences)
     }
 
     /// docs/08 "Titles and speaker names": the title sheet's `Fill in the title with ChatGPT` as it shows — ticked only
@@ -231,7 +227,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     }
 
     /// docs/08 "Titles and speaker names": the title sheet's `Fill in the title with ChatGPT`, as the next sheet starts
-    /// it — remembered apart from the names' box. Saved at once, like the format; see [switchFill].
+    /// it — remembered apart from the names' box. Saved at once; see [switchFill].
     public func setFillTitleAfterStop(_ on: Bool) {
         switchFill(on) { [weak self] in self?.showFill(title: on) }
     }
@@ -262,10 +258,10 @@ public final class ChatGptSettingsModel: ObservableObject {
         }
     }
 
-    /// One box shown at once and saved, the other as it was and the fields as they are — as [selectFormat] saves them.
+    /// One box shown at once and saved, the other as it was and About you as its field holds it.
     private func showFill(title: Bool? = nil, names: Bool? = nil) {
         preferences = SummaryPreferences(
-            format: preferences.format, customFormat: preferences.customFormat, aboutMe: preferences.aboutMe,
+            aboutMe: preferences.aboutMe,
             fillTitleAfterStop: title ?? preferences.fillTitleAfterStop,
             fillNamesAfterStop: names ?? preferences.fillNamesAfterStop
         )
@@ -294,11 +290,11 @@ public final class ChatGptSettingsModel: ObservableObject {
         next?()
     }
 
-    /// The fields' end of editing — focus gone, Return, the screen closed. Nothing to do when what they hold is
-    /// what is saved.
+    /// About you's end of editing — focus gone, Return, the screen closed. Nothing to do when what it holds is what is
+    /// saved.
     public func savePreferences() {
         let next = shownPreferences
-        guard Self.trimmed(next.customFormat) != preferences.customFormat || Self.trimmed(next.aboutMe) != preferences.aboutMe else { return }
+        guard Self.trimmed(next.aboutMe) != preferences.aboutMe else { return }
         save(next)
     }
 
@@ -321,8 +317,80 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// being typed are not taken away.
     private func adopt(_ saved: SummaryPreferences) {
         preferences = saved
-        if Self.trimmed(customFormat) != saved.customFormat { customFormat = saved.customFormat }
         if Self.trimmed(aboutMe) != saved.aboutMe { aboutMe = saved.aboutMe }
+    }
+
+    // MARK: - Settings → Notes (docs/08 "Organizing" — "Settings")
+
+    /// `Add section`, while there are fewer than [NotesPreferences.SECTIONS_MAX]: an empty section at the end, kept in
+    /// the list until editing leaves it without a name. Answers its key, for the name field to take the focus.
+    @discardableResult
+    public func addSection() -> UUID? {
+        guard sections.count < Int(NotesPreferences.companion.SECTIONS_MAX) else { return nil }
+        let section = NoteSectionDraft()
+        sections.append(section)
+        return section.key
+    }
+
+    /// `Remove`: gone from the list and saved at once.
+    public func removeSection(_ key: UUID) {
+        sections.removeAll { $0.key == key }
+        saveNotes()
+    }
+
+    /// The notes fields' end of editing — focus gone, Return, the screen closed. [leaving] is the section editing has
+    /// just left, which goes from the list if it has no name; [droppingNameless] takes every such one, as the screen
+    /// goes. Nothing is saved when what the fields hold is what is saved.
+    public func saveNotes(leaving: UUID? = nil, droppingNameless: Bool = false) {
+        sections.removeAll { section in
+            (droppingNameless || section.key == leaving) && Self.trimmed(section.name).isEmpty
+        }
+        guard shownNotes != notesPreferences else { return }
+        let previous = notesSaving
+        notesSaving = Task {
+            await previous?.value
+            // Read once the save before has given its new sections their ids, so a section is not sent twice without one.
+            let next = shownNotes
+            guard next != notesPreferences else { return }
+            do {
+                adoptNotes(try await core.notes.setPreferences(preferences: next))
+            } catch {
+                logger.error("shell.notes.preferences.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
+
+    private var notesSaving: Task<Void, Never>?
+
+    /// What the fields hold, as the core would keep it: trimmed, a section without a name left out.
+    var shownNotes: NotesPreferences {
+        NotesPreferences(
+            instructions: Self.trimmed(instructions),
+            sections: sections.compactMap { section in
+                let name = Self.trimmed(section.name)
+                return name.isEmpty ? nil : NoteSection(id: section.sectionId, name: name, description: Self.trimmed(section.description))
+            }
+        )
+    }
+
+    /// The saved notes preferences. A field keeps its own text while that is the saved text, trimmed, as About you does;
+    /// a section given a name takes the id the core gave it; a section still without a name stays in the list while
+    /// editing is in it. With nothing named in the list — the first read — the saved sections are the list.
+    func adoptNotes(_ saved: NotesPreferences) {
+        notesPreferences = saved
+        if Self.trimmed(instructions) != saved.instructions { instructions = saved.instructions }
+        let named = sections.indices.filter { !Self.trimmed(sections[$0].name).isEmpty }
+        if named.isEmpty {
+            sections = saved.sections.map(NoteSectionDraft.init) + sections
+            return
+        }
+        // A name typed while a save was on its way: the save that ends its editing settles the list.
+        guard named.count == saved.sections.count else { return }
+        for (index, kept) in zip(named, saved.sections) {
+            sections[index].sectionId = kept.id
+            if Self.trimmed(sections[index].name) != kept.name { sections[index].name = kept.name }
+            if Self.trimmed(sections[index].description) != kept.description_ { sections[index].description = kept.description_ }
+        }
     }
 
     private static func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -393,6 +461,27 @@ public final class ChatGptSettingsModel: ObservableObject {
             failure = .signIn(CoreMessage.providerError.code(arg: nil, detail: error.localizedDescription))
             signInState = .failed
         }
+    }
+}
+
+/// One of My sections as Settings → Notes holds it while it is edited (docs/08 "Organizing" — "Settings"). [key] is the
+/// row's own, for the list and the focus; [sectionId] is the core's, empty until the section is first saved.
+public struct NoteSectionDraft: Identifiable, Equatable {
+    public let key = UUID()
+    public var sectionId: String
+    public var name: String
+    public var description: String
+
+    public var id: UUID { key }
+
+    public init(sectionId: String = "", name: String = "", description: String = "") {
+        self.sectionId = sectionId
+        self.name = name
+        self.description = description
+    }
+
+    init(_ saved: NoteSection) {
+        self.init(sectionId: saved.id, name: saved.name, description: saved.description_)
     }
 }
 

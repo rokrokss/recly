@@ -16,8 +16,8 @@ import recly.core.platform.CoreDeps
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptNormalizer
 
-/** What a share sheet can be handed (docs/08 "Exports"). [SUMMARY] is the recording's summary as plain text. */
-enum class ExportFormat { TXT, MD, SRT, VTT, AUDIO, SUMMARY }
+/** What a share sheet can be handed (docs/08 "Exports"). [NOTES] is the recording's notes as plain text. */
+enum class ExportFormat { TXT, MD, SRT, VTT, AUDIO, NOTES }
 
 /**
  * docs/08 "Exports": one file for the share sheet, made on demand in a directory of its own under
@@ -34,8 +34,10 @@ internal class RecordingExport(
     private val recordings: RecordingRepository,
     private val transcript: suspend (String) -> Transcript?,
     private val audio: suspend (String) -> RecordingAudio,
-    /** The recording's summary text (docs/08 "Summaries"), or null. */
-    private val summary: suspend (String) -> String? = { null },
+    /** The recording's notes as plain text, or null (docs/08 "Organizing"). */
+    private val notes: suspend (String) -> String? = { null },
+    /** The same as a Markdown section, for [ExportFormat.MD]. */
+    private val notesMarkdown: suspend (String) -> String? = { null },
 ) {
     private val mutex = Mutex()
     private var cleaned = false
@@ -44,10 +46,10 @@ internal class RecordingExport(
         val record = recordings.get(recordingId) ?: return null
         val content = when (format) {
             ExportFormat.TXT -> transcript(recordingId)?.let(TranscriptNormalizer::text)
-            ExportFormat.MD -> transcript(recordingId)?.let { TranscriptNormalizer.markdown(it, record.meta, summary(recordingId)) }
+            ExportFormat.MD -> transcript(recordingId)?.let { TranscriptNormalizer.markdown(it, record.meta, notesMarkdown(recordingId)) }
             ExportFormat.SRT -> transcript(recordingId)?.let(TranscriptNormalizer::srt)
             ExportFormat.VTT -> transcript(recordingId)?.let(TranscriptNormalizer::vtt)
-            ExportFormat.SUMMARY -> summary(recordingId)?.trim()?.takeIf { it.isNotEmpty() }?.let { it + "\n" }
+            ExportFormat.NOTES -> notes(recordingId)?.trim()?.takeIf { it.isNotEmpty() }?.let { it + "\n" }
             ExportFormat.AUDIO -> null
         }
         val parts = if (format == ExportFormat.AUDIO) {
@@ -64,8 +66,8 @@ internal class RecordingExport(
         }
         val extension = when (format) {
             ExportFormat.AUDIO -> "m4a"
-            // `2026-08-26 Weekly meeting.summary.txt`, beside the transcript's `.txt`.
-            ExportFormat.SUMMARY -> "summary.txt"
+            // `2026-08-26 Weekly meeting.notes.txt`, beside the transcript's `.txt`.
+            ExportFormat.NOTES -> "notes.txt"
             else -> format.name.lowercase()
         }
         val out = dir / fileName(record.meta, extension)

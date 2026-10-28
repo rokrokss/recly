@@ -11,6 +11,12 @@ import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.runBlocking
 import okio.Path.Companion.toPath
 import recly.core.job.Retention
+import recly.core.model.recJson
+import recly.core.notes.NoteEvidence
+import recly.core.notes.NoteKind
+import recly.core.notes.NotesFile
+import recly.core.notes.NotesHeadings
+import recly.core.notes.StoredNote
 import recly.core.testing.CoreFixture
 import recly.core.testing.SEEDED_AUDIO
 import recly.core.testing.testMeta
@@ -45,19 +51,34 @@ class RecordingExportTest {
     }
 
     @Test
-    fun `the summary goes out as text of its own and inside the Markdown`() = runBlocking {
+    fun `the notes go out as text of their own and inside the Markdown, under the app's headings`() = runBlocking {
         val meta = f.recordAndRun(title = "Weekly")
-        assertNull(f.core.exportFile(meta.recordingId, ExportFormat.SUMMARY), "no summary yet")
-        f.core.summaries.save(recly.core.chatgpt.Summary(meta.recordingId, "Summary\nWe ship.\nAction items\n- Mina: notes [00:00:01]\n- Joon: deck", "gpt-a", "2026-08-26T02:00:00.000Z"))
+        assertNull(f.core.exportFile(meta.recordingId, ExportFormat.NOTES), "no notes yet")
+        fun note(id: String, kind: NoteKind, text: String, atSec: Double, due: String? = null) = StoredNote(
+            id, kind, text, due = due, evidence = NoteEvidence(atSec, "hello 1"), provisional = false, createdAt = "2026-08-26T02:00:00.000Z",
+        )
+        val notes = NotesFile(
+            recordingId = meta.recordingId, stage = NotesFile.FINAL, overview = "We ship.",
+            items = listOf(
+                note("01J9N0TE000000000000000001", NoteKind.TODO, "Send the deck", 65.0, due = "Monday"),
+                note("01J9N0TE000000000000000002", NoteKind.DECISION, "Ship on Friday", 1.0),
+            ),
+            createdAt = "2026-08-26T02:00:00.000Z", updatedAt = "2026-08-26T02:00:00.000Z", finalizedAt = "2026-08-26T02:00:00.000Z",
+        )
+        f.fs.write(f.dirOf(meta) / NotesFile.name(MetaWriter.baseName(meta))) { writeUtf8(recJson.encodeToString(NotesFile.serializer(), notes)) }
 
-        val text = f.core.exportFile(meta.recordingId, ExportFormat.SUMMARY)!!.toPath()
-        assertEquals("2026-08-26 Weekly.summary.txt", text.name)
-        assertEquals("Summary\nWe ship.\nAction items\n- Mina: notes [00:00:01]\n- Joon: deck\n", f.fs.read(text) { readUtf8() })
+        val text = f.core.exportFile(meta.recordingId, ExportFormat.NOTES)!!.toPath()
+        assertEquals("2026-08-26 Weekly.notes.txt", text.name)
+        assertEquals("We ship.\n\nDecisions\n- Ship on Friday [00:00:01]\n\nTo-dos\n- Send the deck · Monday [00:01:05]\n", f.fs.read(text) { readUtf8() })
         val md = f.fs.read(f.core.exportFile(meta.recordingId, ExportFormat.MD)!!.toPath()) { readUtf8() }
         assertTrue(
-            "\n## Summary\n\nSummary\n\nWe ship.\n\nAction items\n\n- Mina: notes [00:00:01]\n- Joon: deck\n\n## Transcript\n\n[00:00:00] hello 1" in md,
+            "\n## Notes\n\nWe ship.\n\n### Decisions\n\n- Ship on Friday [00:00:01]\n\n### To-dos\n\n- Send the deck · Monday [00:01:05]\n\n## Transcript\n\n[00:00:00] hello 1" in md,
             md,
         )
+
+        f.core.notes.setHeadings(NotesHeadings(notes = "노트", decisions = "결정", todos = "할 일"))
+        assertTrue(f.fs.read(f.core.exportFile(meta.recordingId, ExportFormat.NOTES)!!.toPath()) { readUtf8() }.startsWith("We ship.\n\n결정\n"))
+        assertTrue("\n## 노트\n\nWe ship.\n\n### 결정\n" in f.fs.read(f.core.exportFile(meta.recordingId, ExportFormat.MD)!!.toPath()) { readUtf8() })
     }
 
     @Test

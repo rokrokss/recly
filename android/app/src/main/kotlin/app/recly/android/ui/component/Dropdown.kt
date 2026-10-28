@@ -173,7 +173,7 @@ fun BlueprintMenu(onDismissRequest: () -> Unit, maxHeight: Dp = MENU_MAX_HEIGHT,
 /**
  * One line of the open list, [MinTouch] tall whatever the label does. `selectable`, so a reader
  * hears "<label>, radio button, selected" — the same fact the chips put in their semantics. [role] is
- * [Role.Button] for a line that runs something rather than choosing a value (Summarize as, New speaker).
+ * [Role.Button] for a line that runs something rather than choosing a value (New speaker).
  */
 @Composable
 fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace: Boolean = false, role: Role = Role.RadioButton,
@@ -206,7 +206,7 @@ fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace
 
 /**
  * The first line of a list a menu item turned the menu into — `‹` in the [MenuOption]s' mark column, then that item's
- * words — which goes back to the menu (Summarize as, Change speaker). A heading for a screen reader, and a button.
+ * words — which goes back to the menu (Change speaker). A heading for a screen reader, and a button.
  */
 @Composable
 fun MenuBack(label: String, onBack: () -> Unit, modifier: Modifier = Modifier) {

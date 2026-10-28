@@ -91,7 +91,7 @@ internal fun askedPreset(state: AskState): AskPreset? = when (state) {
  * docs/08 "Ask": one question about the open recording, in a full-height sheet over the detail — the Share sheet's
  * paper and corners. The presets that make sense for it ([presets]) ask at once; the field asks the user's own. While
  * one runs the inputs wait under `Asking…`; the answer is selectable text whose citations play from their time
- * ([canSeek], [onSeek] — the transcript's own seek), with `ChatGPT · <model>` and Copy all; a failure is the summary's
+ * ([canSeek], [onSeek] — the transcript's own seek), with `ChatGPT · <model>` and Copy all; a failure is the notes'
  * notice, its Retry asking the same again. Nothing is kept: closing is [onClose], which lets the answer go — so only
  * the ✕ and Back close the sheet, never a drag that could throw an answer away.
  */
@@ -177,7 +177,7 @@ internal fun AskPanel(
                             CitedText(answer.text, canSeek, onSeek, Modifier.testTag("ask-answer"))
                         }
                         HairLine()
-                        CopyFooter(stringResource(R.string.summary_model, modelLabel(answer.modelName, answer.model, models)), answer.text,
+                        CopyFooter(stringResource(R.string.chatgpt_footer, modelLabel(answer.modelName, answer.model, models)), answer.text,
                             Modifier.testTag("ask-copy"))
                     }
                     is AskState.Failed -> ChatGptFailure(state.reason, R.string.ask_failed, { onAsk(state.preset, state.question) },

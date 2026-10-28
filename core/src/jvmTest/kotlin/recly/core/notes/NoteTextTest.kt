@@ -127,7 +127,7 @@ class NoteTextTest {
               {"kind":"todo","text":"No time","quote":"x"}
             ]} ``` done""",
         )
-        val items = NotesAnswer.items(json) { it.replace("[phone#1]", "010-1234-5678") }
+        val items = NotesAnswer.items(json, { it.replace("[phone#1]", "010-1234-5678") })
         assertEquals(4, items.size)
         assertEquals(Extracted(NoteKind.TODO, "Call 010-1234-5678", "S2", "Friday", 65.0, "I'll call"), items[0])
         assertEquals(Extracted(NoteKind.DECISION, "Ship", null, null, 3723.0, "we ship"), items[1], "an owner and a due date only for a to-do")
@@ -135,5 +135,24 @@ class NoteTextTest {
         assertEquals(null, items[3].owner, "a name is not a speaker label")
         assertEquals(7, NotesAnswer.offered(json))
         assertEquals(listOf(90.0, 3600.0), NotesAnswer.boundaries(NotesAnswer.parse("""{"boundaries":["00:01:30","1:00:00","late"]}""")))
+    }
+
+    @Test
+    fun `key points are read after Stop only, and a section kind only for a section the user has`() {
+        val json = NotesAnswer.parse(
+            """{"items":[
+              {"kind":"point","text":"Costs doubled","at":"00:00:01","quote":"costs doubled"},
+              {"kind":"section1","text":"May slip","at":"00:00:02","quote":"it may slip"},
+              {"kind":"section2","text":"No such section","at":"00:00:03","quote":"nothing"}
+            ]}""",
+        )
+        val ask = NotesAsk(sections = listOf(NoteSection("01J9SECT10N000000000000000", "Risks", "")))
+        assertEquals(
+            listOf(Extracted(NoteKind.SECTION, "May slip", null, null, 2.0, "it may slip", section = "01J9SECT10N000000000000000")),
+            NotesAnswer.items(json, { it }, ask),
+            "while recording, key points wait for the final pass",
+        )
+        assertEquals(listOf(NoteKind.POINT, NoteKind.SECTION), NotesAnswer.items(json, { it }, ask, points = true).map { it.kind })
+        assertEquals(listOf(NoteKind.POINT), NotesAnswer.items(json, { it }, points = true).map { it.kind }, "no sections, no section items")
     }
 }

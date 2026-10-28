@@ -236,41 +236,46 @@ class ReclyCore(
 
     private val exports = recly.core.recording.RecordingExport(
         deps, recordings, { results(it).transcript }, { audio(it, null) },
-        summary = { recordingId -> recordings.summary(recordingId)?.let(recly.core.chatgpt.SummaryFile::decode)?.text },
+        notes = { recordingId -> notes.text(recordingId) },
+        notesMarkdown = { recordingId -> notes.markdown(recordingId) },
     )
 
     /**
      * docs/08 "Exports": one file of the recording for a share sheet — its transcript as text, Markdown
-     * (with the summary, when there is one), SubRip or WebVTT, its summary as text, or its audio as one `.m4a` —
+     * (with the notes, when there are any), SubRip or WebVTT, its notes as text, or its audio as one `.m4a` —
      * written to a cache directory and named for people (`2026-08-26 Weekly meeting.srt`). Null when there is
-     * nothing in that format: no transcript, no summary, or audio that is neither here nor fetchable. The files
+     * nothing in that format: no transcript, no notes, or audio that is neither here nor fetchable. The files
      * are removed by a later export.
      */
     @Throws(Throwable::class)
     suspend fun exportFile(recordingId: String, format: recly.core.recording.ExportFormat): String? =
         exports.export(recordingId, format)
 
-    /** docs/15 §10: the user's ChatGPT sign-in — Settings' connection row and the model a summary uses. */
+    /** docs/15 §10: the user's ChatGPT sign-in — Settings' connection row and the model the notes use. */
     val chatGpt: recly.core.chatgpt.ChatGptAccount = recly.core.chatgpt.ChatGptAccount(db, deps)
 
-    /** docs/08 "Summaries": a recording's meeting notes, made on request with [chatGpt]. */
+    /**
+     * docs/08 "AI requests": what the app asks the user's ChatGPT plan, on request — Ask about this recording — and
+     * the request, language and preferences the notes and the fills share.
+     */
     val summaries: recly.core.chatgpt.Summaries = recly.core.chatgpt.Summaries(
         db, deps, chatGpt, recordings, { results(it).transcript }, transferConsents,
-        published = { recordingId ->
-            recordings.summaryPending(recordingId)
-            pushes.launch { remote.pushSummaries() }
-        },
-        fetch = { recordingId -> summaryInFolder(recordingId) },
     )
 
     /**
-     * docs/08 "Organizing": a recording's decisions, to-dos and open questions, organized through the user's ChatGPT
-     * plan while it is recorded and again after Stop — for a user signed in to ChatGPT who agreed ([recly.core.notes.Notes.consent]).
+     * docs/08 "Organizing": a recording's notes — overview, key points, decisions, to-dos, questions and the user's own
+     * sections — organized through the user's ChatGPT plan while it is recorded and again after Stop, for a user signed
+     * in to ChatGPT who agreed ([recly.core.notes.Notes.consent]), and again on request.
      */
     val notes: recly.core.notes.Notes = recly.core.notes.Notes(
         db, deps, chatGpt, summaries, recordings, processingSettings, localTranscription, transferConsents,
         transcript = { results(it).transcript },
         transcriptChanges = { recordingId -> observeResults(recordingId) },
+        published = { recordingId ->
+            recordings.notesPending(recordingId)
+            pushes.launch { remote.pushNotes() }
+        },
+        fetch = { recordingId -> notesInFolder(recordingId) },
     )
 
     init {
@@ -299,11 +304,11 @@ class ReclyCore(
         if (resumed > 0) deps.logger.log(Logger.Level.INFO, "organize.resumed", mapOf("jobs" to resumed))
     }
 
-    /** docs/08 "Summaries": the copy in the recording's Drive or iCloud folder, for a recording opened before a pull. */
-    private suspend fun summaryInFolder(recordingId: String): String? {
+    /** docs/08 "Organizing": the copy in the recording's Drive or iCloud folder, for a recording opened before a pull. */
+    private suspend fun notesInFolder(recordingId: String): String? {
         val record = recordings.get(recordingId) ?: return null
         val folderId = record.driveFolderId?.takeIf { StorageKind.ofId(it) != StorageKind.FOLDER } ?: return null
-        val file = storage.findChild(folderId, recly.core.chatgpt.SummaryFile.name(recly.core.recording.MetaWriter.baseName(record.meta))) ?: return null
+        val file = storage.findChild(folderId, recly.core.notes.NotesFolder.name(recly.core.recording.MetaWriter.baseName(record.meta))) ?: return null
         return storage.download(file.id).decodeToString()
     }
 
@@ -317,7 +322,7 @@ class ReclyCore(
         deps,
         icloudChosen = { processingSettings.storage() == StorageKind.ICLOUD },
         transcriptsChanged = { resultChanges.value++ },
-        summariesChanged = { summaries.changed() },
+        notesChanged = { notes.changed() },
     )
 
     /**
@@ -351,7 +356,7 @@ class ReclyCore(
      * (`FillNeeds`) — a title only when it has none, names only for unnamed speakers other than `me` who speak — in one
      * request, and applies it: the title as [rename] carries one, the names as an [editTranscript] does, so the folder's
      * transcript is marked edited. [recly.core.chatgpt.FillResult.Busy] while a job of it has not settled, like an
-     * edit; on iPhone, `Failed(TRANSFER_CONSENT_REQUIRED)` before anything is sent, like `summaries.summarize`. One run
+     * edit; on iPhone, `Failed(TRANSFER_CONSENT_REQUIRED)` before anything is sent, like `notes.organizeAgain`. One run
      * per recording: asking for what the run going asks for answers that run; asking for the other half runs after it.
      * The detail's two items are [fillTitle] and [fillNames]; while either runs, [observeFills] has it.
      */

@@ -56,7 +56,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var silences: [SilentRange] = []
     /// docs/10 "Search": the find the page was opened with, or that ⌘F started; nil when there is none.
     @Published public var find: TranscriptFind?
-    /// An edit — of the transcript or of the summary — on its way to the core: `Saving…`, then ✓ for a
+    /// An edit — of the transcript or of the notes — on its way to the core: `Saving…`, then ✓ for a
     /// moment.
     @Published public private(set) var saving: ProcessingState = .idle
     /// The current processing settings' transcription mode, for the More menu's reasons.
@@ -75,17 +75,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// docs/03: the recording's whole length as its meta has it — what every time on this page is
     /// shaped by (2026-10-08 §3). Nil until it is read, and for a recording still being written.
     @Published public private(set) var metaLengthSec: Double?
-    /// docs/08 "Summaries": this recording's meeting notes as the core has them — none, being written,
-    /// written, or a failure with the last one kept.
-    @Published public private(set) var summary: SummaryState = SummaryState.None.shared
-    /// docs/15 §10: the ChatGPT sign-in, for the More menu's reason and the name of a summary's model.
+    /// docs/15 §10: the ChatGPT sign-in, for the More menu's reason and the name of the notes' model.
     @Published public private(set) var chatGpt: ChatGptConnection = ChatGptConnection.SignedOut.shared
-    /// A Summarize this page asked for has not answered yet.
-    @Published public private(set) var summarizing = false
-    /// docs/15 "iPhone providers": the destination a summary — or a question — waits on the user's permission for.
+    /// An Organize this page asked for has not answered yet.
+    @Published public private(set) var organizeAsked = false
+    /// docs/15 "iPhone providers": the destination an Organize, a question or a fill waits on the user's permission for.
     @Published public private(set) var summaryConsent: [TransferTarget] = []
-    /// docs/08 "Summaries": the formats `Summarize as…` offers — Settings' list, My format once it has words.
-    @Published public private(set) var summaryFormats: [SummaryFormat] = [.auto, .oneOnOne, .lecture, .interview]
     /// docs/08 "Ask": the one question about this recording — none, being answered, answered or failed. Kept by
     /// the core in this process only.
     @Published public private(set) var ask: AskState = AskState.None.shared
@@ -99,10 +94,10 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// What the last Fill in title or Fill in speaker names came to when it changed nothing, under the header for a
     /// few seconds.
     @Published public private(set) var fillNotice: FillNotice?
-    /// docs/08 "Organizing": the recording's decisions, to-dos and open questions as the core has them; nil until read.
+    /// docs/08 "Organizing": the recording's notes as the core has them; nil until read.
     @Published public private(set) var notes: RecordingNotes?
-    /// docs/10 "Search": the page opens on the summary — a search hit whose only match is in it.
-    public var opensOnSummary = false
+    /// docs/10 "Search": the page opens on the notes — a search hit whose only match is in them.
+    public var opensOnNotes = false
 
     public enum Retranscribing: Sendable { case external, local }
 
@@ -119,7 +114,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         var runningKey: String { self == .title ? "Filling in the title…" : "Filling in speaker names…" }
     }
 
-    /// docs/09 "Summary view": what a Fill in title or Fill in speaker names that changed nothing says under the
+    /// docs/09 "AI view": what a Fill in title or Fill in speaker names that changed nothing says under the
     /// header — kept as keys and a code, so a line still standing follows a language change.
     public enum FillNotice: Equatable, Sendable {
         /// Refused before anything was sent: the More menu's own reason, as its key.
@@ -196,11 +191,11 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var icloud: Bool { audioRecord?.storage == .icloud }
     /// docs/03 "Storage location": the audio comes back from the local folder picked on this device.
     public var folder: Bool { audioRecord?.storage == .folder }
-    /// docs/08 "Summaries": an edited summary stays on this device — the recording's storage is the local
-    /// folder, or it is in no storage yet.
-    public var summaryStaysHere: Bool { Self.summaryStaysHere(storage: audioRecord?.storage) }
+    /// docs/09 "AI view" — "Editing": edited notes stay on this device — the recording's storage is the local folder, or
+    /// it is in no storage yet.
+    public var notesStayHere: Bool { Self.notesStayHere(storage: audioRecord?.storage) }
 
-    static func summaryStaysHere(storage: StorageKind?) -> Bool { storage == nil || storage == .folder }
+    static func notesStayHere(storage: StorageKind?) -> Bool { storage == nil || storage == .folder }
 
     public init(core: ReclyCore_, recordingId: String, title: String, playbackGate: RecordingPlaybackGate? = nil) {
         self.core = core
@@ -404,9 +399,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// speakers": leaving an editor with changes asks, by every route).
     @Published public internal(set) var unsavedEdits: UnsavedEdits?
 
-    public enum UnsavedEdits: Sendable { case transcript, summary }
+    public enum UnsavedEdits: Sendable { case transcript, notes }
 
-    /// The transcript is what the page is showing — not an editor, not the summary — so a find has something to
+    /// The transcript is what the page is showing — not an editor, not the notes — so a find has something to
     /// look in (the Mac's ⌘F).
     @Published public internal(set) var findable = false
     /// Bumped by ⌘F to put the cursor in the find bar's field, every press.
@@ -513,41 +508,56 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// reason, whatever else would also stand in its way.
     static var stillRecording: String { RecKitStrings.localized("Still recording") }
 
-    // MARK: - Summary (docs/08 "Summaries" · docs/09 "Summary view")
+    // MARK: - Organize · Edit notes (docs/08 "Organizing" · docs/09 "AI view")
 
-    /// Summarize is in the More menu wherever ChatGPT is offered (docs/15 "China mainland App Store").
-    public var summaryOffered: Bool { !(chatGpt is ChatGptConnection.Unavailable) }
+    /// The More menu's ChatGPT items — Organize, Edit notes, Ask and the fills — are there wherever ChatGPT is offered
+    /// (docs/15 "China mainland App Store").
+    public var chatGptOffered: Bool { !(chatGpt is ChatGptConnection.Unavailable) }
 
-    /// `Summarize`, or `Summarize again` once there is a summary to replace.
-    public var summarizeTitle: String {
-        RecKitStrings.localized(Self.hasSummary(summary) ? "Summarize again" : "Summarize")
+    /// The recording is being organized here: an Organize this page asked for, or a pass the core is working on.
+    public var organizing: Bool { organizeAsked || notes?.organizing == true }
+
+    /// `Organize`, or `Organize again` once the recording has notes.
+    public var organizeTitle: String {
+        RecKitStrings.localized(hasNotes ? "Organize again" : "Organize")
     }
 
-    /// Why `Summarize` and `Summarize as…` cannot run now, or nil when they can (docs/09 "Detail header and More
-    /// menu").
-    public var summarizeReason: String? {
-        Self.summarizeReason(
+    /// Why `Organize` cannot run now, or nil when it can (docs/09 "AI view").
+    public var organizeReason: String? {
+        Self.organizeReason(
             writing: writing,
             hasTranscript: transcript != nil && availability != .empty,
             busy: transcriptionBusy ? busyReason : nil,
             connection: chatGpt,
-            summary: summary,
-            summarizing: summarizing
+            organizing: organizing
         )
     }
 
-    /// The reason's rule, apart from the page. A take still being written has no transcript either, so
-    /// it says the more useful of the two first.
-    static func summarizeReason(
-        writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, summary: SummaryState, summarizing: Bool
-    ) -> String? {
+    /// The reason's rule, apart from the page: Ask's, then a pass of this recording already running. A take still being
+    /// written has no transcript either, so it says the more useful of the two first.
+    static func organizeReason(writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, organizing: Bool) -> String? {
         if let reason = askReason(writing: writing, hasTranscript: hasTranscript, busy: busy, connection: connection) { return reason }
-        if summarizing || summary is SummaryState.Running { return RecKitStrings.localized("Summarizing…") }
-        return nil
+        return organizing ? RecKitStrings.localized("Organizing…") : nil
     }
 
-    /// Why `Ask about this recording…` cannot run now, or nil when it can: Summarize's reasons, but a summary
-    /// being written does not stand in a question's way.
+    /// `Edit notes` is in the More menu while the recording has notes.
+    public var notesEditable: Bool { hasNotes }
+
+    /// Why `Edit notes` cannot run now, or nil when it can: not while the recording records, nor while a pass writes the
+    /// notes over the ones being edited.
+    public var editNotesReason: String? { Self.editNotesReason(writing: writing, organizing: organizing) }
+
+    static func editNotesReason(writing: Bool, organizing: Bool) -> String? {
+        if writing { return stillRecording }
+        return organizing ? RecKitStrings.localized("Organizing…") : nil
+    }
+
+    /// The Transcript | Notes chips stand once the recording has notes, or while it is organized here, or after an
+    /// Organize failed — the notice is on the Notes side.
+    public var hasNotesView: Bool { hasNotes || organizing || notes?.failure != nil }
+
+    /// Why `Ask about this recording…` cannot run now, or nil when it can: Organize's reasons, but a pass being run does
+    /// not stand in a question's way.
     public var askReason: String? {
         Self.askReason(
             writing: writing,
@@ -567,7 +577,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         return nil
     }
 
-    /// Why `Fill in title` cannot run now, or nil when it can (docs/09 "Summary view"): Ask's reasons, then a run that
+    /// Why `Fill in title` cannot run now, or nil when it can (docs/09 "AI view"): Ask's reasons, then a run that
     /// asks for the title, then a title already there — by the core's own rule ([FillNeeds]).
     public var fillTitleReason: String? { fillReason(.title) }
 
@@ -604,7 +614,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         return half == .title ? run.title : run.names
     }
 
-    /// docs/09 "Summary view": the lines under the header while a fill of this recording runs — the title's first —
+    /// docs/09 "AI view": the lines under the header while a fill of this recording runs — the title's first —
     /// as keys.
     public var fillLines: [String] { Self.fillLines(fillRun) }
 
@@ -612,50 +622,15 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         [FillHalf.title, .names].filter { runs(run, $0) }.map(\.runningKey)
     }
 
-    /// The format of the summary the recording has, for the ✓ in `Summarize as…`; nil when it has none.
-    public var summaryFormat: SummaryFormat? { savedSummary?.summaryFormat }
+    /// docs/08 "Exports": the formats Share offers — `Notes` only where ChatGPT is (2026-10-10, A-A20).
+    public var shareFormats: [ShareFormat] { ShareFormat.allCases.filter { $0 != .notes || chatGptOffered } }
 
-    /// docs/08 "Exports": the formats Share offers — `Summary` only where ChatGPT is (2026-10-10, A-A20).
-    public var shareFormats: [ShareFormat] { ShareFormat.allCases.filter { $0 != .summary || summaryOffered } }
+    /// docs/09 "AI view" — "Elsewhere": why the share sheet's `Notes` cannot be had, or nil when it can.
+    public var notesExportReason: String? { Self.notesExportReason(notes) }
 
-    /// docs/08 "Exports": why the share sheet's `Summary` cannot be had, or nil when it can.
-    public var summaryExportReason: String? { Self.summaryExportReason(summary) }
-
-    static func summaryExportReason(_ state: SummaryState) -> String? {
-        hasSummary(state) ? nil : RecKitStrings.localized("No summary yet")
+    static func notesExportReason(_ notes: RecordingNotes?) -> String? {
+        NoteGroups.isEmpty(notes, showsOverview: true) ? RecKitStrings.localized("No notes yet") : nil
     }
-
-    static func hasSummary(_ state: SummaryState) -> Bool { savedSummary(state) != nil }
-
-    /// The summary the recording has: the one on screen, or the one kept under a new run or a failure.
-    public var savedSummary: Summary? { Self.savedSummary(summary) }
-
-    static func savedSummary(_ state: SummaryState) -> Summary? {
-        switch onEnum(of: state) {
-        case .none: return nil
-        case .ready(let ready): return ready.summary
-        case .running(let running): return running.previous
-        case .failed(let failed): return failed.previous
-        }
-    }
-
-    /// `Edit summary` is in the More menu once the recording has a summary (docs/08 "Summaries").
-    public var summaryEditable: Bool { Self.hasSummary(summary) }
-
-    /// Why `Edit summary` cannot run now, or nil when it can: not while a new summary is written over it.
-    public var editSummaryReason: String? { Self.editSummaryReason(writing: writing, summary: summary, summarizing: summarizing) }
-
-    static func editSummaryReason(writing: Bool = false, summary: SummaryState, summarizing: Bool) -> String? {
-        if writing { return stillRecording }
-        return summarizing || summary is SummaryState.Running ? RecKitStrings.localized("Summarizing…") : nil
-    }
-
-    /// docs/09 "Summary view": `Summarize again` over a summary the user edited asks first.
-    public var summaryEdited: Bool { Self.savedSummary(summary)?.editedAt != nil }
-
-    /// The Transcript | Summary chips stand while there is a summary, or one is on its way — or notes, which are
-    /// shown above it (docs/08 "Organizing").
-    public var hasSummaryView: Bool { summarizing || !(summary is SummaryState.None) || hasNotes }
 
     // MARK: - Notes (docs/08 "Organizing")
 
@@ -688,13 +663,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    public func followSummary() async {
-        for await state in core.summaries.observe(recordingId: recordingId) {
-            guard !Task.isCancelled else { return }
-            summary = state
-        }
-    }
-
     public func followChatGpt() async {
         for await connection in core.chatGpt.observe() {
             guard !Task.isCancelled else { return }
@@ -702,37 +670,27 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    /// Settings' formats, for `Summarize as…`.
-    public func followSummaryPreferences() async {
-        for await preferences in core.summaries.observePreferences() {
-            guard !Task.isCancelled else { return }
-            summaryFormats = preferences.formats
-        }
-    }
-
-    /// The More menu's Summarize — as [format], or nil for Settings' format. The core runs it on a scope of its
-    /// own, so it goes on when the page closes; its progress comes back through [followSummary]. On the iPhone
-    /// a destination the user has not allowed yet is asked about first ([summaryConsent]).
-    ///
-    /// - Returns: false when the core threw before any state followed — there is then no summary, running or
-    ///   failed, for the page to turn to.
-    @discardableResult
-    public func summarize(format: SummaryFormat? = nil) async -> Bool {
-        summarizing = true
-        defer { summarizing = false }
+    /// The More menu's Organize and the failure notice's Retry: the core organizes the recording again from its
+    /// transcript as it is now — what the user edited or deleted stays — and the notes arrive through [followNotes], a
+    /// failure as their `failure`. It goes on when the page closes. On the iPhone a destination the user has not allowed
+    /// yet is asked about first ([summaryConsent]), and nothing is sent before.
+    public func organize() async {
+        guard !organizeAsked else { return }
+        organizeAsked = true
+        let reason: String?
         do {
-            let state = try await core.summaries.summarize(recordingId: recordingId, format: format)
-            if case .failed(let failed) = onEnum(of: state), ChatGptText.message(failed.reason) == .transferConsentRequired {
-                askConsent { [weak self] in await self?.summarize(format: format) }
-            }
-            return true
+            reason = try await core.notes.organizeAgain(recordingId: recordingId)
         } catch {
-            logger.error("shell.chatgpt.summarize.failed error=\(String(describing: error), privacy: .private)")
-            return false
+            logger.error("shell.notes.organize.failed error=\(String(describing: error), privacy: .private)")
+            reason = nil
+        }
+        organizeAsked = false
+        if let reason, ChatGptText.message(reason) == .transferConsentRequired {
+            askConsent { [weak self] in await self?.organize() }
         }
     }
 
-    /// What the permission dialog goes on to do once it is allowed: the summary, the question or the fill it stood
+    /// What the permission dialog goes on to do once it is allowed: the Organize, the question or the fill it stood
     /// in front of.
     private var afterConsent: (() async -> Void)?
 
@@ -773,7 +731,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// The More menu's Fill in title ([FillHalf.title]) or Fill in speaker names ([FillHalf.names]): the core asks the
     /// plan for that half when the recording lacks it and applies it, and the title and the names arrive through
     /// [followCapture] and [followResults]. It goes on when the page closes. On the iPhone a destination the user has
-    /// not allowed yet is asked about first, as for a summary.
+    /// not allowed yet is asked about first, as for Organize.
     public func fill(_ half: FillHalf) async {
         guard !fillsAsked.contains(half) else { return }
         fillsAsked.insert(half)
@@ -845,7 +803,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     /// One preset, or the user's own question — the question wins. Its progress comes back through
-    /// [followAsk]; on the iPhone a destination not allowed yet is asked about first, as for a summary.
+    /// [followAsk]; on the iPhone a destination not allowed yet is asked about first, as for Organize.
     public func ask(preset: AskPreset?, question: String?) async {
         do {
             let state = try await core.summaries.ask(recordingId: recordingId, preset: preset, question: question)
@@ -869,28 +827,29 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         Self.copy(ready.answer.text)
     }
 
-    /// The text of the summary on screen, with nothing added.
-    public func copySummary() {
-        guard case .ready(let ready) = onEnum(of: summary) else { return }
-        Self.copy(ready.summary.text)
+    /// docs/09 "AI view": `Copy all` under the notes — the overview and every group with its heading, owners, due dates
+    /// and `[HH:MM:SS]`, as the core writes them (`notes.text`).
+    public func copyNotes() async {
+        do {
+            if let text = try await core.notes.text(recordingId: recordingId) { Self.copy(text) }
+        } catch {
+            logger.error("shell.notes.copy.failed error=\(String(describing: error), privacy: .private)")
+        }
     }
 
-    /// docs/08 "Summaries": the user's own text over the summary — kept here at once, and carried to the
-    /// recording's folder by the core. `Saving…` while it goes, ✓ for a moment after; false when it did not
-    /// take (a summary was being written over it).
+    /// docs/09 "AI view" — "Editing": the user's own words over the overview ([overview] nil leaves it) and the items
+    /// [edits] changes — an emptied one is deleted — kept here at once and carried to the recording's folder by the
+    /// core. `Saving…` while it goes, ✓ for a moment after; false when it did not take.
     @discardableResult
-    public func editSummary(_ text: String) async -> Bool {
+    public func editNotes(overview: String?, edits: [NoteEdit]) async -> Bool {
         guard saving != .processing else { return false }
         saving = .processing
         do {
-            let state = try await core.summaries.edit(recordingId: recordingId, text: text)
-            if state is SummaryState.Ready {
-                summary = state
-                showSaved()
-                return true
-            }
+            _ = try await core.notes.edit(recordingId: recordingId, overview: overview, items: edits)
+            showSaved()
+            return true
         } catch {
-            logger.error("shell.chatgpt.summary.edit.failed error=\(String(describing: error), privacy: .private)")
+            logger.error("shell.notes.edit.failed error=\(String(describing: error), privacy: .private)")
         }
         saving = .failed
         return false
@@ -1159,30 +1118,24 @@ public struct RecordingDetailView: View {
     /// docs/09 "Editing and speakers": the editor's draft while the page is in edit mode, nil while it is
     /// reading.
     @State private var draft: TranscriptDraft?
-    /// docs/09 "Summary view": the summary editor's text while the page edits the summary, nil while it does
-    /// not.
-    @State private var summaryDraft: SummaryDraft?
+    /// docs/09 "AI view" — "Editing": the notes editor's draft while the page edits the notes, nil while it does not.
+    @State private var notesDraft: NotesDraft?
     /// `Discard your changes?` is up, and for which editor.
     @State private var discarding: Discarding?
-    /// `Replace your edited summary?` is up, for the summary it would start — Settings' format (nil) or the
-    /// one picked under `Summarize as…`.
-    @State private var replacing: Replacement?
     /// docs/10 "Re-transcription": the confirmation's line while it is up.
     @State private var retranscribeLine: String?
     /// The speaker whose name the dialog is asking for, in reading mode.
     @State private var renamingSpeaker: String?
     @State private var speakerName = ""
-    /// docs/09 "Summary view": which of the two the page shows. It opens on the transcript.
-    @State private var showingSummary = false
+    /// docs/09 "AI view": which of the two the page shows. It opens on the transcript.
+    @State private var showingNotes = false
     /// The permission dialog's "I turned off …" answer (iPhone).
     @State private var trainingOff = false
-    /// The format the last Summarize on this page asked for, which the failure notice's Retry asks for again.
-    @State private var lastFormat: SummaryFormat?
     /// docs/09 "Ask": the panel is up, and the question typed in it.
     @State private var asking = false
     @State private var question = ""
-    /// The summary editor's text view has the cursor (the iPhone puts the chips away while the keyboard is up).
-    @FocusState private var summaryFieldFocused: Bool
+    /// The notes editor's field that has the cursor (the iPhone puts the chips away while the keyboard is up).
+    @FocusState private var notesFieldFocused: String?
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -1207,10 +1160,10 @@ public struct RecordingDetailView: View {
                         #if !os(iOS)
                         EditorButtons(changed: draft.changed, saving: model.saving == .processing, cancel: leaveEditor, save: saveDraft)
                         #endif
-                    } else if summaryDraft != nil {
-                        // docs/09 "Summary view": the summary's editor puts them where the transcript's does.
+                    } else if let notesDraft {
+                        // docs/09 "AI view" — "Editing": the notes' editor puts them where the transcript's does.
                         #if !os(iOS)
-                        EditorButtons(changed: summaryDraft?.changed == true, saving: model.saving == .processing, cancel: leaveSummaryEditor, save: saveSummary)
+                        EditorButtons(changed: notesDraft.changed, saving: model.saving == .processing, cancel: leaveNotesEditor, save: saveNotes)
                         #endif
                     } else {
                         #if os(iOS)
@@ -1230,16 +1183,16 @@ public struct RecordingDetailView: View {
                                 rename: { renaming = true },
                                 edit: {
                                     if let transcript = model.transcript {
-                                        showingSummary = false
+                                        showingNotes = false
                                         draft = TranscriptDraft(transcript)
                                     }
                                 },
                                 transcribeAgain: { Task { retranscribeLine = await model.retranscribeLine() } },
-                                summarize: summarizeAgain,
-                                editSummary: {
-                                    if let summary = model.savedSummary {
-                                        showingSummary = true
-                                        summaryDraft = SummaryDraft(summary)
+                                organize: organize,
+                                editNotes: {
+                                    if model.hasNotes {
+                                        showingNotes = true
+                                        notesDraft = NotesDraft(model.notes)
                                     }
                                 },
                                 askAbout: openAsk,
@@ -1300,7 +1253,7 @@ public struct RecordingDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("retranscribe-refusal")
             } else if let notice = model.fillNotice, !editing {
-                // docs/09 "Summary view": a Fill in title or speaker names that changed nothing says why, as a refused
+                // docs/09 "AI view": a Fill in title or speaker names that changed nothing says why, as a refused
                 // start does.
                 fillNotice(notice)
                     .padding(.horizontal, Space.m)
@@ -1309,7 +1262,7 @@ public struct RecordingDetailView: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("fill-notice")
             }
-            // docs/09 "Summary view": what ChatGPT is filling in now — the title sheet's ask or More's — the title's
+            // docs/09 "AI view": what ChatGPT is filling in now — the title sheet's ask or More's — the title's
             // line first. Apart from the lines above: a publication's fill runs whatever else the page says.
             if !model.fillLines.isEmpty, !editing {
                 VStack(alignment: .leading, spacing: Space.xs) {
@@ -1322,14 +1275,14 @@ public struct RecordingDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("filling")
             }
-            // docs/09 "Summary view": Transcript | Summary, once there is a summary or one was asked for —
-            // never over the transcript's editor; over the summary's, Transcript asks before it drops changes.
-            if !model.loading, draft == nil, model.hasSummaryView || showingSummary, !chipsYieldToKeyboard {
+            // docs/09 "AI view": Transcript | Notes, once there are notes or Organize was asked — never over the
+            // transcript's editor; over the notes', Transcript asks before it drops changes.
+            if !model.loading, draft == nil, model.hasNotesView || showingNotes, !chipsYieldToKeyboard {
                 HStack(spacing: Space.s) {
-                    BlueprintChip(loc("Transcript"), selected: !showingSummary, action: showTranscript)
+                    BlueprintChip(loc("Transcript"), selected: !showingNotes, action: showTranscript)
                         .accessibilityIdentifier("detail-transcript-tab")
-                    BlueprintChip(loc("Summary"), selected: showingSummary) { showingSummary = true }
-                        .accessibilityIdentifier("detail-summary-tab")
+                    BlueprintChip(loc("Notes"), selected: showingNotes) { showingNotes = true }
+                        .accessibilityIdentifier("detail-notes-tab")
                 }
                 .padding(.horizontal, Space.m)
                 .padding(.top, Space.s)
@@ -1337,18 +1290,20 @@ public struct RecordingDetailView: View {
             }
             if model.loading {
                 notice(loc("Loading…"))
-            } else if draft == nil, showingSummary, summaryDraft != nil {
-                SummaryEditor(
-                    text: Binding(get: { summaryDraft?.text ?? "" }, set: { summaryDraft?.text = $0 }),
-                    changed: summaryDraft?.changed == true,
-                    staysHere: model.summaryStaysHere,
+            } else if draft == nil, showingNotes, let shown = notesDraft {
+                NotesEditor(
+                    // Not `Binding($notesDraft)`: a field with the cursor still reads its draft once Discard or Save has
+                    // dropped it, and that binding's force-unwrap traps then. It reads the last draft instead, and writes
+                    // nothing back once the draft is gone.
+                    draft: Binding(get: { notesDraft ?? shown }, set: { if notesDraft != nil { notesDraft = $0 } }),
+                    staysHere: model.notesStayHere,
                     saving: model.saving == .processing,
-                    cancel: leaveSummaryEditor,
-                    save: saveSummary,
-                    focused: $summaryFieldFocused
+                    cancel: leaveNotesEditor,
+                    save: saveNotes,
+                    focused: $notesFieldFocused
                 )
-            } else if draft == nil, showingSummary {
-                SummaryPane(model: model, retry: { summarize(lastFormat) }, seekableSec: model.totalSec, onSeek: citationSeek)
+            } else if draft == nil, showingNotes {
+                NotesPane(model: model, retry: organize, seekableSec: model.totalSec, onSeek: citationSeek)
             } else if let draft {
                 TranscriptEditor(
                     draft: draft,
@@ -1438,24 +1393,9 @@ public struct RecordingDetailView: View {
                 BlueprintDialogText(retranscribeLine ?? "")
             }
         }
-        // docs/09 "Editing and speakers" · "Summary view": leaving an editor with changes in it.
+        // docs/09 "Editing and speakers" · "AI view": leaving an editor with changes in it.
         .blueprintDialogOverlay(isPresented: Binding(get: { discarding != nil }, set: { if !$0 { discarding = nil } })) {
-            DiscardEditsDialog(edits: discarding == .transcript ? .transcript : .summary, keep: { discarding = nil }, discard: discard)
-        }
-        // docs/09 "Summary view": a new summary would replace the user's own words. Not red: no recording
-        // is deleted.
-        .blueprintDialogOverlay(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
-            BlueprintDialog(title: loc("Replace your edited summary?")) {
-                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { replacing = nil }
-                BlueprintButton(loc("Replace"), tone: .primary) {
-                    let format = replacing?.format
-                    replacing = nil
-                    summarize(format)
-                }
-                .accessibilityIdentifier("summary-replace-confirm")
-            } content: {
-                BlueprintDialogText(loc("Summarizing again replaces the summary you edited."))
-            }
+            DiscardEditsDialog(edits: discarding == .transcript ? .transcript : .notes, keep: { discarding = nil }, discard: discard)
         }
         .blueprintDialogOverlay(isPresented: Binding(get: { renamingSpeaker != nil }, set: { if !$0 { renamingSpeaker = nil } })) {
             SpeakerNameDialog(name: $speakerName) {
@@ -1506,10 +1446,9 @@ public struct RecordingDetailView: View {
             player.stop()
             renaming = false
             draft = nil
-            summaryDraft = nil
-            // docs/10 "Search": a hit found only in the summary opens on it.
-            showingSummary = model.opensOnSummary
-            lastFormat = nil
+            notesDraft = nil
+            // docs/10 "Search": a hit found only in the notes opens on them.
+            showingNotes = model.opensOnNotes
             asking = false
             question = ""
             await model.load()
@@ -1519,9 +1458,7 @@ public struct RecordingDetailView: View {
         }
         .task(id: ObjectIdentifier(model)) { await model.followCapture() }
         .task(id: ObjectIdentifier(model)) { await model.followJobs() }
-        .task(id: ObjectIdentifier(model)) { await model.followSummary() }
         .task(id: ObjectIdentifier(model)) { await model.followChatGpt() }
-        .task(id: ObjectIdentifier(model)) { await model.followSummaryPreferences() }
         .task(id: ObjectIdentifier(model)) { await model.followAsk() }
         .task(id: ObjectIdentifier(model)) { await model.followFills() }
         .task(id: ObjectIdentifier(model)) { await model.followNotes() }
@@ -1945,28 +1882,14 @@ public struct RecordingDetailView: View {
         !model.deviceRecording && !model.writing && model.hasAudio && model.driveFetch != .deciding && model.driveFetch != .fetching
     }
 
-    /// docs/09 "Summary view": the More menu's Summarize and Summarize as…, and the summary's own Retry — the
-    /// page turns to the summary while the core writes it.
-    private func summarize(_ format: SummaryFormat?) {
-        showingSummary = true
-        lastFormat = format
-        Task {
-            // Nothing followed — no summary running, none failed — so there is nothing on the summary to show.
-            if await !model.summarize(format: format), !model.hasSummaryView { showingSummary = false }
-        }
+    /// docs/09 "AI view": the More menu's Organize and the failure notice's Retry — no question first; the page turns to
+    /// the notes while the core writes them.
+    private func organize() {
+        showingNotes = true
+        Task { await model.organize() }
     }
 
-    /// The More menu's Summarize: over a summary the user edited, the question first.
-    private func summarizeAgain(_ format: SummaryFormat?) {
-        if model.summaryEdited { replacing = Replacement(format: format) } else { summarize(format) }
-    }
-
-    /// What `Replace your edited summary?` goes on to start.
-    private struct Replacement: Equatable {
-        let format: SummaryFormat?
-    }
-
-    /// docs/09 "Summary view": a citation plays the recording from its second — it says `Play from` — where a
+    /// docs/09 "AI view": a citation plays the recording from its second — it says `Play from` — where a
     /// transcript time button only moves the playhead (2026-10-10, 1.2); nil, so the citations are plain text,
     /// while the recording cannot be played from a point.
     private var citationSeek: ((Double) -> Void)? {
@@ -2011,23 +1934,23 @@ public struct RecordingDetailView: View {
         Task {
             await model.answerSummaryConsent(allow: allow)
             // Declined with nothing to show: the page goes back to what it was showing.
-            if !allow, !model.hasSummaryView { showingSummary = false }
+            if !allow, !model.hasNotesView { showingNotes = false }
         }
     }
 
     private var headerTitle: String {
         if draft != nil { return loc("Edit transcript") }
-        if summaryDraft != nil { return loc("Edit summary") }
+        if notesDraft != nil { return loc("Edit notes") }
         return model.title
     }
 
     /// One of the two editors is up, and the lines that belong to reading stay off.
-    private var editing: Bool { draft != nil || summaryDraft != nil }
+    private var editing: Bool { draft != nil || notesDraft != nil }
 
     /// The editor with changes in it, if any — the transcript's first, as only one is ever up.
     private var unsavedEdits: RecordingDetailModel.UnsavedEdits? {
         if draft?.changed == true { return .transcript }
-        if summaryDraft?.changed == true { return .summary }
+        if notesDraft?.changed == true { return .notes }
         return nil
     }
 
@@ -2043,47 +1966,47 @@ public struct RecordingDetailView: View {
 
     /// The transcript is on screen to be read: what ⌘F finds in.
     private var findable: Bool {
-        !model.loading && !editing && !showingSummary && model.transcript != nil && model.availability != .empty
+        !model.loading && !editing && !showingNotes && model.transcript != nil && model.availability != .empty
     }
 
-    /// The iPhone's keyboard is up over the summary editor: the chips give it the room, as Android's do.
+    /// The iPhone's keyboard is up over the notes editor: the chips give it the room, as Android's do.
     private var chipsYieldToKeyboard: Bool {
         #if os(iOS)
-        summaryDraft != nil && summaryFieldFocused
+        notesDraft != nil && notesFieldFocused != nil
         #else
         false
         #endif
     }
 
     /// Which editor `Discard your changes?` is about — and, from the Transcript chip, where the page goes.
-    private enum Discarding { case transcript, summary, summaryForTranscript }
+    private enum Discarding { case transcript, notes, notesForTranscript }
 
     /// Cancel or Done: straight back to reading when nothing changed, else the question first.
     private func leaveEditor() {
         if draft?.changed == true { discarding = .transcript } else { draft = nil }
     }
 
-    private func leaveSummaryEditor() {
-        if summaryDraft?.changed == true { discarding = .summary } else { summaryDraft = nil }
+    private func leaveNotesEditor() {
+        if notesDraft?.changed == true { discarding = .notes } else { notesDraft = nil }
     }
 
-    /// The Transcript chip: from the summary's editor, the same question Cancel asks when there are changes.
+    /// The Transcript chip: from the notes' editor, the same question Cancel asks when there are changes.
     private func showTranscript() {
-        if summaryDraft?.changed == true {
-            discarding = .summaryForTranscript
+        if notesDraft?.changed == true {
+            discarding = .notesForTranscript
         } else {
-            summaryDraft = nil
-            showingSummary = false
+            notesDraft = nil
+            showingNotes = false
         }
     }
 
     private func discard() {
         switch discarding {
         case .transcript: draft = nil
-        case .summary: summaryDraft = nil
-        case .summaryForTranscript:
-            summaryDraft = nil
-            showingSummary = false
+        case .notes: notesDraft = nil
+        case .notesForTranscript:
+            notesDraft = nil
+            showingNotes = false
         case nil: break
         }
         discarding = nil
@@ -2094,10 +2017,11 @@ public struct RecordingDetailView: View {
         Task { if await model.edit(draft.edits) { self.draft = nil } }
     }
 
-    /// Save → `Saving…` → ✓ under the header, back on the summary.
-    private func saveSummary() {
-        guard let summaryDraft else { return }
-        Task { if await model.editSummary(summaryDraft.text) { self.summaryDraft = nil } }
+    /// Save → `Saving…` → ✓ under the header, back on the notes.
+    private func saveNotes() {
+        guard let notesDraft else { return }
+        let edits = notesDraft.edits
+        Task { if await model.editNotes(overview: edits.overview, edits: edits.items) { self.notesDraft = nil } }
     }
 
     /// Where in the recording a point of the row is. The row is the whole recording end to end, so
@@ -2170,7 +2094,7 @@ public struct RecordingDetailView: View {
 #endif
 
 #if os(iOS) || os(macOS)
-/// docs/09 "Editing and speakers" · "Summary view": leaving an editor with changes in it — from its own Cancel, or (on
+/// docs/09 "Editing and speakers" · "AI view": leaving an editor with changes in it — from its own Cancel, or (on
 /// the Mac) by picking another recording or closing the window. Keep editing is the answer Esc gives.
 public struct DiscardEditsDialog: View {
     private let edits: RecordingDetailModel.UnsavedEdits
@@ -2193,7 +2117,7 @@ public struct DiscardEditsDialog: View {
         } content: {
             BlueprintDialogText(loc(edits == .transcript
                 ? "Your edits to this transcript will be lost."
-                : "Your edits to this summary will be lost."))
+                : "Your edits to these notes will be lost."))
         }
     }
 

@@ -4,20 +4,32 @@ import ReclyCore
 import SwiftUI
 #endif
 
-/// One of the notes block's three groups (docs/08 "Organizing"): its header and its items, newest first as the core
-/// gives them.
+/// One of the notes block's groups (docs/08 "Organizing"): its header and its items, newest first as the core gives
+/// them — a built-in group, or one of the user's own sections under the name the notes were made with.
 public struct NoteGroup: Identifiable, Equatable {
     public let kind: NoteKind
     public let items: [NoteItem]
+    /// The user's section this group is ([NoteKind.section]); nil for the built-in groups.
+    public let sectionId: String?
+    public let sectionName: String?
 
-    public var id: String { titleKey }
+    init(kind: NoteKind, items: [NoteItem], sectionId: String? = nil, sectionName: String? = nil) {
+        self.kind = kind
+        self.items = items
+        self.sectionId = sectionId
+        self.sectionName = sectionName
+    }
 
-    /// The group's header, as its key.
-    public var titleKey: String {
+    public var id: String { sectionId.map { "section-\($0)" } ?? "\(kind)" }
+
+    /// The group's header: the app's word for a built-in group, the user's own name for a section.
+    public var title: String {
         switch kind {
-        case .decision: return "Decisions"
-        case .todo: return "To-dos"
-        case .question: return "Questions"
+        case .point: return RecKitStrings.localized("Key points")
+        case .decision: return RecKitStrings.localized("Decisions")
+        case .todo: return RecKitStrings.localized("To-dos")
+        case .question: return RecKitStrings.localized("Questions")
+        case .section: return sectionName ?? ""
         }
     }
 }
@@ -25,14 +37,31 @@ public struct NoteGroup: Identifiable, Equatable {
 /// docs/08 "Organizing": what the notes block makes of a recording's notes — the rules the detail and the iPhone's
 /// recording screen draw by, apart from the drawing so a test can hold them.
 public enum NoteGroups {
-    /// Decisions · To-dos · Questions, in that order. A group with no items is not there, header and all.
-    public static func of(_ notes: RecordingNotes?) -> [NoteGroup] {
+    /// docs/09 "Notes view": Key points · Decisions · To-dos · Questions, then the user's sections in the order the
+    /// notes were made with. A group with no items is not there, header and all. [keyPoints] false leaves the key
+    /// points out — the recording screen's, as they come after Stop.
+    public static func of(_ notes: RecordingNotes?, keyPoints: Bool = true) -> [NoteGroup] {
         guard let notes else { return [] }
-        return [
+        let builtIn = [
+            NoteGroup(kind: .point, items: keyPoints ? notes.points : []),
             NoteGroup(kind: .decision, items: notes.decisions),
             NoteGroup(kind: .todo, items: notes.todos),
             NoteGroup(kind: .question, items: notes.questions),
-        ].filter { !$0.items.isEmpty }
+        ]
+        let sections = notes.sections.map { NoteGroup(kind: .section, items: $0.items, sectionId: $0.id, sectionName: $0.name) }
+        return (builtIn + sections).filter { !$0.items.isEmpty }
+    }
+
+    /// docs/08 "Organizing" — "Copy and share": the groups' headings in the app's language, for the notes' text. The
+    /// shells hand them to the core at start and whenever the language changes, as they hand it the locale.
+    public static var headings: NotesHeadings {
+        NotesHeadings(
+            notes: RecKitStrings.localized("Notes"),
+            keyPoints: RecKitStrings.localized("Key points"),
+            decisions: RecKitStrings.localized("Decisions"),
+            todos: RecKitStrings.localized("To-dos"),
+            questions: RecKitStrings.localized("Questions")
+        )
     }
 
     /// The two or three lines over the whole recording, where the block shows them (the detail, not the recording
@@ -42,9 +71,10 @@ public enum NoteGroups {
         return text
     }
 
-    /// No overview to show and no item in any group: the block is not there at all — no header, no empty state.
+    /// No overview to show and no item in any group: the block is not there at all — no header, no empty state. The
+    /// detail shows the overview and the key points; the recording screen neither.
     public static func isEmpty(_ notes: RecordingNotes?, showsOverview: Bool) -> Bool {
-        overview(notes, shown: showsOverview) == nil && of(notes).isEmpty
+        overview(notes, shown: showsOverview) == nil && of(notes, keyPoints: showsOverview).isEmpty
     }
 
     /// The row's words: the item, and its owner after a dash when the speaker has a name — `Send the quote — Minji`.
@@ -81,8 +111,8 @@ public enum NoteGroups {
 }
 
 #if os(iOS) || os(macOS)
-/// docs/08 "Organizing" · docs/09: a recording's decisions, to-dos and open questions — the overview on top where it
-/// is shown, then the three groups, each a header and its rows. A row is the item, its owner and its deadline, and its
+/// docs/08 "Organizing" · docs/09 "Notes view": a recording's notes — the overview on top where it is shown, then the
+/// groups ([NoteGroups.of]), each a header and its rows. A row is the item, its owner and its deadline, and its
 /// time at the end; a tap opens the transcript around it under the row (one at a time) and a second tap closes it. The
 /// time plays the recording from there where [onSeek] is given; while recording it is a plain label. The phone deletes
 /// a row with a swipe, the Mac from its context menu, with no question: the core never brings it back.
@@ -90,7 +120,7 @@ public enum NoteGroups {
 /// Nothing at all when there is nothing to show ([NoteGroups.isEmpty]); the screen around it leaves it out then.
 public struct NotesBlock: View {
     let notes: RecordingNotes?
-    /// The overview on top — the detail's; the recording screen shows the groups alone.
+    /// The overview on top, and the key points — the detail's; the recording screen shows the other groups alone.
     let showsOverview: Bool
     /// The time as this screen draws its times.
     let stamp: (Double) -> String
@@ -140,8 +170,8 @@ public struct NotesBlock: View {
                     .contentDirection(overview)
                     .accessibilityIdentifier("notes-overview")
             }
-            ForEach(NoteGroups.of(notes)) { group in
-                SectionHeader(RecKitStrings.localized(group.titleKey))
+            ForEach(NoteGroups.of(notes, keyPoints: showsOverview)) { group in
+                SectionHeader(group.title)
                 ForEach(group.items, id: \.id) { item in
                     row(item)
                 }
@@ -192,7 +222,7 @@ public struct NotesBlock: View {
     @ViewBuilder
     private func time(_ item: NoteItem) -> some View {
         if playable {
-            // The summary citations' path: seek and play (docs/09 "Summary view").
+            // The summary citations' path: seek and play (docs/09 "AI view").
             BlueprintButton(stamp(item.atSec), tone: .quiet, mono: true) { onSeek?(item.atSec) }
                 .disabled(onSeek == nil || item.atSec >= seekableSec)
                 .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Play from %@", LedgerFormat.clock(Int(item.atSec)))))

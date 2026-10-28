@@ -154,56 +154,54 @@ class ShotsTest {
         model.dismissListMessage()
         model.selectLanguage(AppLanguage.ENGLISH)
 
-        // docs/08 "Summaries": an edited summary in a format of its own, with its times and its footer, the More menu
-        // over it, and its editor.
-        File(recordingDir, "summary.v1.json").writeText(
-            Json.encodeToString(
-                recly.core.chatgpt.Summary.serializer(),
-                recly.core.chatgpt.Summary(
-                    model.detail!!.recordingId, SUMMARY, "gpt-5.4", "2026-10-09T10:00:00Z", "2026-10-09T10:05:00Z", format = "lecture",
-                ),
-            ),
-        )
+        // docs/09 "Notes view": notes made earlier — the overview, every group and a section of the user's own, with their
+        // times — the More menu and Share over them, and Edit notes. The detail is opened again, and reads them once the
+        // window is drawn and follows it.
+        File(recordingDir, "$base.notes.v1.json").writeText(notesFile(model.detail!!.recordingId))
+        model.openDetail(model.recents.first())
+        until { model.detail?.transcript != null }
         for (ko in listOf(false, true)) {
             model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
             val lang = if (ko) "ko" else "en"
             val strings = model.localization.current
-            model.showSummary(true)
-            val summaryWindow: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
-            shot("recordings-summary-$lang", 1000, 680, ko) { summaryWindow() }
-            shot("recordings-summary-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { summaryWindow() }
-            shot("recordings-summary-export-$lang", 1000, 680, ko, clicks = listOf(EXPORT)) { summaryWindow() }
-            // docs/10 "Search": a word only the summary has — its line under the title, and the hit opening on it.
-            model.showSummary(false)
-            shot("recordings-search-summary-$lang", 1000, 680, ko, clicks = listOf(SEARCH), typed = "Thursday") { summaryWindow() }
-            val summaryHit = model.search("Thursday").first()
-            check(opensOnSummary(summaryHit)) { "the hit is not the summary's alone: $summaryHit" }
-            model.openSearchHit(summaryHit, "Thursday")
-            // The summary itself arrives once the window is drawn and follows the detail.
-            until { model.detail?.loading == false && model.detail?.showingSummary == true }
-            shot("recordings-search-summary-open-$lang", 1000, 680, ko) { summaryWindow() }
+            model.showNotes(true)
+            val notesWindow: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
+            shot("recordings-notes-$lang", 1000, 680, ko) { notesWindow() }
+            // All of it in a taller window: the user's own section last, and the model with Copy all under the notes.
+            shot("recordings-notes-tall-$lang", 1000, 1100, ko) { notesWindow() }
+            shot("recordings-notes-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { notesWindow() }
+            shot("recordings-notes-export-$lang", 1000, 680, ko, clicks = listOf(EXPORT)) { notesWindow() }
+            shot("recordings-notes-edit-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_EDIT_NOTES)) { notesWindow() }
+            shot("recordings-notes-edit-changed-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_EDIT_NOTES, NOTES_FIELD), typed = "!") {
+                notesWindow()
+            }
+            // docs/10 "Search": a word only the notes have — its line under the title, and the hit opening on them.
+            model.showNotes(false)
+            shot("recordings-search-notes-$lang", 1000, 680, ko, clicks = listOf(SEARCH), typed = "Thursday") { notesWindow() }
+            val notesHit = model.search("Thursday").first()
+            check(opensOnNotes(notesHit)) { "the hit is not the notes' alone: $notesHit" }
+            model.openSearchHit(notesHit, "Thursday")
+            until { model.detail?.loading == false && model.detail?.showingNotes == true }
+            shot("recordings-search-notes-open-$lang", 1000, 680, ko) { notesWindow() }
             model.openDetail(model.recents.first())
             until { model.detail?.transcript != null && model.detail?.find == null }
         }
         model.selectLanguage(AppLanguage.ENGLISH)
-        model.showSummary(true)
-        val summaryWindow: @Composable () -> Unit = { RecordingsWindow(model, model.localization.current) { it() } }
-        shot("recordings-summary-edit-en", 1000, 680, false, clicks = listOf(MORE, MORE_EDIT_SUMMARY)) { summaryWindow() }
-        shot("recordings-summary-edit-changed-en", 1000, 680, false, clicks = listOf(MORE, MORE_EDIT_SUMMARY, SUMMARY_FIELD), typed = "!") {
-            summaryWindow()
-        }
 
-        // Signed in, drawn without signing in (nothing here talks to OpenAI): the menu's summary items enabled, Summarize
-        // as… turned into the formats, and the settings rows under the model.
+        // Signed in, drawn without signing in (nothing here talks to OpenAI): the menu's Organize again enabled, and
+        // Settings with the model, and Notes with instructions and a section of the user's own.
         val chatGpt = model.chatGpt!!
         chatGpt.connection = ChatGptConnection.SignedIn("me@example.com", listOf(ChatGptModel("gpt-5.4", "GPT-5.4")), "gpt-5.4")
+        chatGpt.saveNotesInstructions("Short lines. Name who owns each to-do.")
+        chatGpt.endSection(chatGpt.addSection()!!, "Risks", "What could go wrong, and who is watching it.")
+        until { chatGpt.sections.singleOrNull()?.id?.isNotEmpty() == true }
         for (ko in listOf(false, true)) {
             model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
             val lang = if (ko) "ko" else "en"
             val strings = model.localization.current
             val window: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
-            shot("recordings-summary-more-signed-in-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
-            shot("recordings-summary-as-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_SUMMARIZE_AS)) { window() }
+            model.showNotes(true)
+            shot("recordings-notes-more-signed-in-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
             // docs/08 "Titles and speaker names": the title dialog's card with its two ChatGPT boxes as they were left —
             // unticked, then ticked, then with a title typed, which leaves the title box disabled and still ticked.
             val sheet: @Composable () -> Unit = {
@@ -260,9 +258,11 @@ class ShotsTest {
             }
         }
         chatGpt.connection = ChatGptConnection.SignedOut
-        File(recordingDir, "summary.v1.json").delete()
+        // The notes go with the file they were seeded as, and the detail opened again is the transcript's alone.
+        File(recordingDir, "$base.notes.v1.json").delete()
         model.selectLanguage(AppLanguage.ENGLISH)
-        model.showSummary(false)
+        model.openDetail(model.recents.first())
+        until { model.detail?.transcript != null }
 
         // Skip silence on, in the dark; and the reader following playback, then scrolled away from it.
         model.selectLanguage(AppLanguage.ENGLISH)
@@ -359,6 +359,26 @@ class ShotsTest {
         until { model.storage == StorageKind.DRIVE && !showsFolderChoice(processing.stored) }
         shot("settings-drive-en", 640, 2700, false) { SettingsWindow(model, strings) }
         model.shutdown()
+    }
+
+    /** `{base}.notes.v1.json` as the final pass writes it (`spec/notes.schema.json`), over [sample]'s lines. */
+    private fun notesFile(recordingId: String): String {
+        fun item(id: String, kind: String, text: String, atSec: Double, quote: String, extra: String = "") =
+            """{"id":"$id","kind":"$kind","text":"$text","evidence":{"atSec":$atSec,"quote":"$quote"},"provisional":false,""" +
+                """"conversation":0$extra,"createdAt":"2026-10-09T10:05:00Z"}"""
+        val items = listOf(
+            item("n1", "point", "The import button moved to the list header.", 6.0, "The import button is in the list header now"),
+            item("n2", "point", "The highlight ticks show on the waveform.", 20.0, "They did"),
+            item("n3", "decision", "Ship the release on Friday.", 31.0, "let's ship the release on Friday"),
+            item("n4", "todo", "Publish the release notes by Thursday.", 20.0, "the release notes mention the waveform change", ""","owner":"S1","due":"Thursday""""),
+            item("n5", "question", "Did the highlight ticks land on the waveform?", 11.5, "Did the highlight ticks land on the waveform"),
+            item("n6", "section", "The waveform change could be missed in the notes.", 20.0, "mention the waveform change", ""","section":"s1""""),
+        )
+        return """{"schema":1,"recordingId":"$recordingId","stage":"final",""" +
+            """"overview":"A short release review: the import button and the highlight ticks are in, and the release ships on Friday.",""" +
+            """"items":[${items.joinToString(",")}],"conversations":[{"startSec":0.0,"endSec":40.0}],"model":"gpt-5.4","modelName":"GPT-5.4",""" +
+            """"sections":[{"id":"s1","name":"Risks","description":"What could go wrong."}],""" +
+            """"createdAt":"2026-10-09T10:00:00Z","updatedAt":"2026-10-09T10:05:00Z","finalizedAt":"2026-10-09T10:05:00Z"}"""
     }
 
     private fun sample(recordingId: String) = Transcript(
@@ -466,16 +486,12 @@ class ShotsTest {
         val FLAG_REMOVE = Offset(454f, 307f)
         val FIND_NEXT = Offset(900f, 210f)
         val POPUP_HIGHLIGHT = Offset(179f, 263f)
-        val MORE_EDIT_SUMMARY = Offset(835f, 313f)
-        val MORE_SUMMARIZE_AS = Offset(835f, 265f)
-        val SUMMARY_FIELD = Offset(700f, 400f)
+        val MORE_EDIT_NOTES = Offset(835f, 265f)
+        // The decision's field in Edit notes, past the end of its words.
+        val NOTES_FIELD = Offset(900f, 513f)
         // The title dialog's field, in its 460-wide card.
         val TITLE_FIELD = Offset(230f, 90f)
         const val SETTINGS_HEIGHT = 3100
-
-        const val SUMMARY = "Summary:\nThe team reviewed the release notes and agreed to ship on Friday. [00:00:31]\n\n" +
-            "Key ideas:\n- The import button moved to the list header. [00:00:06]\n- Highlight ticks show on the waveform. [00:00:20]\n\n" +
-            "To review:\n- Mina: publish the release notes by Thursday. [00:00:20]"
 
         const val ANSWER = "- Mina: publish the release notes by Thursday [00:00:20]\n" +
             "- Unassigned: check the highlight ticks on the waveform [00:00:11]\n- Ship the release on Friday [00:00:31]"

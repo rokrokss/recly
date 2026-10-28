@@ -60,7 +60,7 @@ struct SettingsView: View {
                 .dotGridBackground()
             }
         }
-        // docs/09 "Summary view": the first sign-in on this phone, confirmed once.
+        // docs/09 "AI view": the first sign-in on this phone, confirmed once.
         .chatGptWelcome(model.chatGpt)
         // docs/15 §10: the sign-in and the plan's models as they are now, whenever Settings opens.
         .task { await model.chatGpt?.refresh() }
@@ -159,13 +159,14 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - ChatGPT (docs/15 §10)
+    // MARK: - ChatGPT (docs/15 §10) · Notes (docs/09 "AI view")
 
-    /// The same block the Mac's settings pane draws (RecKit).
+    /// The same blocks the Mac's settings pane draws (RecKit): the provider, then what the notes are asked for.
     @ViewBuilder
     private var chatGpt: some View {
         if let chatGpt = model.chatGpt {
             ChatGptSection(model: chatGpt)
+            NotesSection(model: chatGpt)
         }
     }
 

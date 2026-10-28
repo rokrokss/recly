@@ -68,11 +68,11 @@ import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 
 /**
- * docs/08 "Organizing": a recording's notes where its summary is shown, above the summary — the overview, then
- * Decisions, To-dos and Questions, each only while it has items, and nothing at all when there is nothing (no empty
- * state, no label for how far they have come). A row opens the transcript's lines around its moment under itself,
- * one row at a time ([linesAround]); its time plays from there ([onPlay]) while [canPlay]; its context menu — a right
- * click, the menu key or Shift+F10 — has Delete, which asks nothing ([onDelete]).
+ * docs/09 "Notes view": a recording's notes in the Notes chip's body — the overview, then Key points, Decisions,
+ * To-dos and Questions, then the user's own sections under their names, each only while it has items, and nothing at
+ * all when there is nothing (no empty state, no label for how far they have come). A row opens the transcript's lines
+ * around its moment under itself, one row at a time ([linesAround]); its time plays from there ([onPlay]) while
+ * [canPlay]; its context menu — a right click, the menu key or Shift+F10 — has Delete, which asks nothing ([onDelete]).
  */
 @Composable
 internal fun NotesBlock(
@@ -93,8 +93,8 @@ internal fun NotesBlock(
         notes.overview?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content), color = blueprint.text)
         }
-        noteGroups(notes).forEach { (header, items) ->
-            SectionHeader(strings[header])
+        noteGroups(notes, strings).forEach { (header, items) ->
+            SectionHeader(header)
             items.forEach { item ->
                 NoteRow(
                     item = item,
@@ -112,12 +112,18 @@ internal fun NotesBlock(
     }
 }
 
-/** The groups in their order, each with its header — a group with nothing in it is not there, header and all. */
-internal fun noteGroups(notes: RecordingNotes): List<Pair<Str, List<NoteItem>>> =
-    listOf(
-        Str.NOTES_DECISIONS to notes.decisions,
-        Str.NOTES_TODOS to notes.todos,
-        Str.NOTES_QUESTIONS to notes.questions,
+/**
+ * The groups in their order, each with its header — the built-in ones, then the user's sections under the names the
+ * notes were made with. A group with nothing in it is not there, header and all.
+ */
+internal fun noteGroups(notes: RecordingNotes, strings: Strings): List<Pair<String, List<NoteItem>>> =
+    (
+        listOf(
+            strings[Str.NOTES_KEY_POINTS] to notes.points,
+            strings[Str.NOTES_DECISIONS] to notes.decisions,
+            strings[Str.NOTES_TODOS] to notes.todos,
+            strings[Str.NOTES_QUESTIONS] to notes.questions,
+        ) + notes.sections.map { it.name to it.items }
     ).filter { it.second.isNotEmpty() }
 
 /** One note's row and, while [expanded], its lines under it; internal for `NotesBlockTest`, which clicks it. */
@@ -172,7 +178,7 @@ internal fun NoteRow(
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
                 )
-                // The transcript's time button, which plays the way a summary's time does.
+                // The transcript's time button, which plays the way an answer's time does.
                 val label = strings[Str.SUMMARY_PLAY_FROM, LedgerFormat.elapsed((item.atSec * 1000).toLong())]
                 BlueprintButton(
                     LedgerFormat.clock(item.atSec, spanSec),

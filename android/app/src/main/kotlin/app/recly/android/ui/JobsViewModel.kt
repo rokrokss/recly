@@ -38,9 +38,6 @@ import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.AskState
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.FillRun
-import recly.core.chatgpt.SummaryFormat
-import recly.core.chatgpt.SummaryPreferences
-import recly.core.chatgpt.SummaryState
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
@@ -48,6 +45,7 @@ import recly.core.job.StepRun
 import recly.core.job.StepStatus
 import recly.core.model.Step
 import recly.core.model.RecordingStatus
+import recly.core.notes.NoteEdit
 import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
@@ -189,10 +187,8 @@ data class JobsUiState(
      * 2026-10-08) — the line under a row's title. A row without one is not in the map.
      */
     val previews: Map<String, String> = emptyMap(),
-    /** docs/09 "Summary view": whether the detail offers Summarize, and why it cannot. Hidden until the core says. */
+    /** docs/09 "AI view": whether the detail offers Organize, and why it cannot. Hidden until the core says. */
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
-    /** docs/08 "Summaries": this device's formats — what More → Summarize as offers. */
-    val summaryPreferences: SummaryPreferences = SummaryPreferences(),
     /**
      * docs/08 "Titles and speaker names": the fills asking ChatGPT now, one per recording — a publication's and the
      * detail's alike. Their rows say `Filling in`, and the open detail what is being filled in.
@@ -267,13 +263,11 @@ data class DetailState(
     val waitingForDrive: Boolean = false,
     /** docs/03 "Recordings from other devices": another device is transcribing it, so its transcript is on the way. */
     val remoteTranscribing: Boolean = false,
-    /** docs/08 "Summaries": the recording's summary, or where the one asked for is. */
-    val summary: SummaryState = SummaryState.None,
     /** docs/08 "Ask": the one question about this recording, while this process holds it. */
     val ask: AskState = AskState.None,
-    /** docs/09 "Search": opened from a hit found only in the summary, so the page starts on it. */
-    val openSummary: Boolean = false,
-    /** docs/08 "Organizing": the recording's decisions, to-dos and questions as they change; null until first read. */
+    /** docs/09 "Search": opened from a hit found only in the notes, so the page starts on them. */
+    val openNotes: Boolean = false,
+    /** docs/08 "Organizing": the recording's notes as they change; null until first read. */
     val notes: RecordingNotes? = null,
 )
 
@@ -357,7 +351,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { preferences.skipSilence.collect { skip -> _state.update { it.copy(skipSilence = skip) } } }
         viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
         viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
-        viewModelScope.launch { core().summaries.observePreferences().collect { prefs -> _state.update { it.copy(summaryPreferences = prefs) } } }
         viewModelScope.launch {
             val core = core()
             var before = emptyList<FillRun>()
@@ -467,7 +460,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * A search hit opens its recording at the first transcript match, with every match tinted (docs/09 "Search").
      * A hit in the title alone opens the reading page: there is nothing in the transcript to find. A hit in the
-     * summary alone opens on the summary.
+     * notes alone opens on the notes.
      */
     fun openHit(hit: SearchHit) {
         val query = _state.value.query.trim()
@@ -475,7 +468,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         detailJob?.cancel()
         resultJob?.cancel()
         detailJob = viewModelScope.launch {
-            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find, opensOnSummary(hit))
+            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find, opensOnNotes(hit))
         }
     }
 
@@ -541,13 +534,20 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     }.await()
 
     /**
-     * docs/08 "Summaries": the More menu's Summarize, and Retry under a failed one. The run is the core's and goes
-     * on if the page closes; the page follows it through [DetailState.summary]. [onFailure]: the core could not even
-     * start it (an unreadable keychain), so the page goes back to what it showed.
+     * docs/08 "Organizing" — "Organize again": the More menu's Organize, and Retry under a failed one. The run is the
+     * core's and goes on if the page closes; the page follows it through [DetailState.notes], whose failure says how
+     * the last one ended. Back when the pass is over.
      */
-    fun summarize(recordingId: String, format: SummaryFormat?, onFailure: () -> Unit) = launch {
-        runCatching { core().summaries.summarize(recordingId, format) }.onFailure { onFailure() }
-    }
+    suspend fun organize(recordingId: String) = viewModelScope.async {
+        val core = core()
+        try {
+            core.notes.organizeAgain(recordingId)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.ERROR, "shell.notes.organize.failed", mapOf("recordingId" to recordingId), e)
+        }
+    }.await()
 
     /**
      * docs/08 "Titles and speaker names": More → Fill in title or Fill in speaker names. The run is the core's and goes on
@@ -597,10 +597,26 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         return runCatching { withContext(core.deps.io) { core.notes.linesAround(recordingId, atSec) } }.getOrDefault(emptyList())
     }
 
-    /** docs/08 "Summaries": the user's own words over ChatGPT's, saved at once; the page follows on [DetailState.summary]. */
-    suspend fun editSummary(recordingId: String, text: String): SummaryState {
+    /**
+     * docs/08 "Organizing" — "Editing": Edit notes' Save, the user's words over ChatGPT's; the page follows on
+     * [DetailState.notes]. Whether anything changed, or null when the save could not be made.
+     */
+    suspend fun editNotes(recordingId: String, overview: String?, items: List<NoteEdit>): Boolean? {
         val core = core()
-        return withContext(core.deps.io) { core.summaries.edit(recordingId, text) }
+        return try {
+            withContext(core.deps.io) { core.notes.edit(recordingId, overview, items) }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.ERROR, "shell.notes.edit.failed", mapOf("recordingId" to recordingId), e)
+            null
+        }
+    }
+
+    /** docs/08 "Organizing" — "Copy and share": the notes as text for Copy all; none when they cannot be read. */
+    suspend fun notesText(recordingId: String): String? {
+        val core = core()
+        return runCatching { withContext(core.deps.io) { core.notes.text(recordingId) } }.getOrNull()
     }
 
     /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
@@ -745,7 +761,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         detailJob = viewModelScope.launch { openDetail(item.recordingId, item.title) }
     }
 
-    private suspend fun openDetail(recordingId: String, title: String?, find: FindRequest? = null, openSummary: Boolean = false) {
+    private suspend fun openDetail(recordingId: String, title: String?, find: FindRequest? = null, openNotes: Boolean = false) {
         val core = core()
         val busy = transcribing(core, core.jobs.list(), recordingId)
         _state.update {
@@ -755,7 +771,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     title = title,
                     deviceRecording = capturing(RecorderService.state.value),
                     find = find,
-                    openSummary = openSummary,
+                    openNotes = openNotes,
                 )),
             )
         }
@@ -768,9 +784,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
         updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
         resultJob = viewModelScope.launch {
-            launch {
-                core.summaries.observe(recordingId).collect { summary -> updateDetail(recordingId) { it.copy(summary = summary) } }
-            }
             launch {
                 core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
             }

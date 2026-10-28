@@ -71,7 +71,7 @@ struct MenuPopover: View {
                 }
             }
         }
-        // docs/09 "Summary view": the welcome after a first sign-in started here, over the popover like the
+        // docs/09 "AI view": the welcome after a first sign-in started here, over the popover like the
         // dialogs above.
         .chatGptWelcome(model.chatGpt, inline: true, shown: model.chatGptSurface == .popover)
         // docs/10: the fix for a quota or a key is in the settings window, and only a view has an
@@ -501,10 +501,11 @@ struct SettingsPane: View {
                 ProcessingSettingsView(model: processing, settingsFile: false)
             }
 
-            // docs/15 §10: the user's ChatGPT plan, for summaries — the same block the phone's settings tab
-            // draws (RecKit).
+            // docs/15 §10 · docs/09 "AI view": the user's ChatGPT plan, then what the notes are asked for — the same
+            // blocks the phone's settings tab draws (RecKit).
             if let chatGpt = model.chatGpt {
                 ChatGptSection(model: chatGpt) { model.chatGptSurface = surface }
+                NotesSection(model: chatGpt)
             }
 
             // docs/09 screen principle 4: the settings file is a utility, so it comes after the
@@ -541,7 +542,7 @@ struct SettingsPane: View {
             .padding(.horizontal, Space.m)
             .padding(.vertical, Space.sm)
         }
-        // docs/09 "Summary view": the welcome after a first sign-in started in the Settings window is that
+        // docs/09 "AI view": the welcome after a first sign-in started in the Settings window is that
         // window's sheet; one started in the popover is drawn over the popover (above).
         .chatGptWelcome(surface == .settingsWindow ? model.chatGpt : nil, shown: model.chatGptSurface == .settingsWindow)
         .task { await model.chatGpt?.refresh() }

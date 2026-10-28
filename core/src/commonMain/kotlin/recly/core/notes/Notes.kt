@@ -77,13 +77,15 @@ import recly.core.transcribe.TranscriptSegment
 import recly.core.transcribe.TranscriptSpeaker
 
 /**
- * docs/08 "Organizing": a recording's decisions, to-dos and open questions, organized through the user's ChatGPT
- * plan — always, with no switch, for a user who signed in to ChatGPT and agreed once ([consent]). While recording,
- * each part is transcribed on its own as it is filed and its new items are added ([NotesStage.PROVISIONAL]); after
- * Stop the processing plan's `notes.organize` step ([OrganizeRunner]) makes the final notes from the recording's
- * transcript, conversation by conversation, and they replace the provisional ones ([NotesStage.FINAL]). Only text
- * goes to ChatGPT — the transcript's lines, with numbers and addresses left out ([Placeholders]) — never audio
- * (docs/15 §10). The notes are kept beside the recording's parts, on this device only.
+ * docs/08 "Organizing": a recording's notes — its overview, key points, decisions, to-dos, open questions and the
+ * user's own sections — organized through the user's ChatGPT plan: always, with no switch, for a user who signed in
+ * to ChatGPT and agreed once ([consent]), and again when they ask ([organizeAgain]). While recording, each part is
+ * transcribed on its own as it is filed and its new items are added ([NotesStage.PROVISIONAL]); after Stop the
+ * processing plan's `notes.organize` step ([OrganizeRunner]) makes the final notes from the recording's transcript,
+ * conversation by conversation, and they replace the provisional ones ([NotesStage.FINAL]). What the user edited or
+ * deleted stays as they left it through every pass. Only text goes to ChatGPT — the transcript's lines, with numbers
+ * and addresses left out ([Placeholders]) — never audio (docs/15 §10). The notes are kept beside the recording's
+ * parts, and final notes go to its Drive or iCloud folder ([published]).
  */
 class Notes internal constructor(
     private val db: RecDatabase,
@@ -98,6 +100,10 @@ class Notes internal constructor(
     private val transcript: suspend (String) -> Transcript?,
     /** Emits whenever the recording's transcript may have changed — a speaker named, a transcription again. */
     private val transcriptChanges: (String) -> Flow<Any?>,
+    /** Final notes were written here: they are to go up to the recording's folder (docs/08 "Organizing" — "Storage"). */
+    private val published: suspend (String) -> Unit = {},
+    /** The recording's folder copy, for a recording opened here before a pull brought it ([NotesFolder]). */
+    private val fetch: suspend (String) -> String? = { null },
 ) {
     /** The providers a part goes to (tests replace it). */
     internal var providers: (String) -> SttProvider? = SttProviders::create
@@ -111,12 +117,24 @@ class Notes internal constructor(
     /** One part at a time, in the order they were filed, so each sees the notes of the one before. */
     private val partLock = Mutex()
 
-    /** Every read-modify-write of a notes file. */
-    private val fileLock = Mutex()
-
     private val changes = MutableStateFlow(0L)
-    private val working = MutableStateFlow<Set<String>>(emptySet())
+
+    /** How many runs are organizing each recording now — a part, the final pass, Organize again. */
+    private val working = MutableStateFlow<Map<String, Int>>(emptyMap())
+
+    /** One final pass of a recording at a time: the job's and Organize again's would race to write its notes. */
+    private val finalLocks = HashMap<String, Mutex>()
+    private val finalLocksLock = Mutex()
     private val consented = MutableStateFlow<Boolean?>(null)
+
+    /** The last Organize again of each recording that failed in this process, as a `CoreMessage` wire code. */
+    private val failures = MutableStateFlow<Map<String, String>>(emptyMap())
+    private val prefs = MutableStateFlow<NotesPreferences?>(null)
+    private val headings = MutableStateFlow(NotesHeadings())
+
+    /** Recordings whose folder was already asked for notes this run, found or not. */
+    private val fetched = mutableSetOf<String>()
+    private val fetchLock = Mutex()
 
     // --- Consent ---
 
@@ -200,22 +218,24 @@ class Notes internal constructor(
      * [NotesStage.NONE] with nothing in it when it has no notes.
      */
     fun observe(recordingId: String): Flow<RecordingNotes> =
-        combine(changes, working, transcriptChanges(recordingId).onStart { emit(Unit) }) { _, busy, _ -> recordingId in busy }
-            .map { organizing ->
+        combine(changes, working, failures, transcriptChanges(recordingId).onStart { emit(Unit) }) { _, busy, failed, _ ->
+            (recordingId in busy) to failed[recordingId]
+        }
+            .map { (organizing, failure) ->
                 // Never fails, for the same reason as [observeNeedsConsent]: a notes file that cannot be read now is none.
                 try {
-                    view(recordingId, organizing)
+                    view(recordingId, organizing, failure)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    empty(recordingId, organizing)
+                    empty(recordingId, organizing, failure)
                 }
             }
             .distinctUntilChanged()
 
     /** [observe]'s value now. */
     @Throws(Throwable::class)
-    suspend fun get(recordingId: String): RecordingNotes = view(recordingId, recordingId in working.value)
+    suspend fun get(recordingId: String): RecordingNotes = view(recordingId, recordingId in working.value, failures.value[recordingId])
 
     /**
      * Removes an item for good: it is gone from the notes now and never comes back — not from a later part, not
@@ -228,14 +248,121 @@ class Notes internal constructor(
         val deleted = update(recordingId) { file ->
             val note = file?.items?.firstOrNull { it.id == itemId } ?: return@update null
             provisional = note.provisional
-            file.copy(
-                items = file.items - note,
-                tombstones = file.tombstones + NoteTombstone(note.kind, note.text, note.evidence.atSec, now),
-                updatedAt = now,
-            )
+            file.copy(items = file.items - note, tombstones = file.tombstones + tombstone(note, now), updatedAt = now)
         }
         if (deleted) deps.logger.log(Logger.Level.INFO, "organize.item.deleted", mapOf("recordingId" to recordingId, "provisional" to provisional))
         return deleted
+    }
+
+    /**
+     * Edit notes: the user's own words for the [overview] — null leaves it, empty removes it — and for [items]; an item
+     * whose words are emptied is deleted as [deleteItem] deletes it. What the user wrote is theirs from then on: no later
+     * pass changes it (docs/08 "Organizing" — "Editing"). True when anything changed.
+     */
+    @Throws(Throwable::class)
+    suspend fun edit(recordingId: String, overview: String?, items: List<NoteEdit>): Boolean {
+        val now = deps.clock.now().isoUtc()
+        var edited = 0
+        var deleted = 0
+        var overviewEdited = false
+        val changed = update(recordingId) { file ->
+            file ?: return@update null
+            val byId = items.associate { it.itemId to it.text.trim().lineSequence().joinToString(" ").take(NotesAnswer.TEXT_MAX) }
+            val gone = file.items.filter { byId[it.id]?.isEmpty() == true }
+            val kept = (file.items - gone.toSet()).map { note ->
+                val text = byId[note.id]?.takeIf { it != note.shown } ?: return@map note
+                edited++
+                // Back to the model's own words: the item is the model's again, for later passes to restate.
+                if (text == note.text) note.copy(userText = null, editedAt = null) else note.copy(userText = text, editedAt = now)
+            }
+            deleted = gone.size
+            val newOverview = overview?.trim()?.take(NotesAnswer.SUMMARY_MAX)?.takeIf { it != file.overview.orEmpty() }
+            overviewEdited = newOverview != null
+            if (edited == 0 && deleted == 0 && !overviewEdited) return@update null
+            file.copy(
+                overview = if (overviewEdited) newOverview!!.ifEmpty { null } else file.overview,
+                overviewEditedAt = if (overviewEdited) now else file.overviewEditedAt,
+                items = kept,
+                tombstones = file.tombstones + gone.map { tombstone(it, now) },
+                updatedAt = now,
+            )
+        }
+        if (changed) {
+            deps.logger.log(
+                Logger.Level.INFO, "organize.edited",
+                mapOf("recordingId" to recordingId, "items" to edited, "deleted" to deleted, "overview" to overviewEdited),
+            )
+        }
+        return changed
+    }
+
+    private fun tombstone(note: StoredNote, now: String) = NoteTombstone(note.kind, note.text, note.evidence.atSec, now, note.section)
+
+    /**
+     * The notes as text — Copy all, Share → Notes — under [NotesHeadings]: the overview, then each group's items with
+     * their owner, due date and `[HH:MM:SS]`. Null when there are none.
+     */
+    @Throws(Throwable::class)
+    suspend fun text(recordingId: String): String? = NotesText.plain(get(recordingId), headings.value)
+
+    /** The same as Markdown, for the Markdown transcript's own section (docs/08 "Exports"). */
+    internal suspend fun markdown(recordingId: String): String? = NotesText.markdown(get(recordingId), headings.value)
+
+    /** The app's words for the groups, from the shell's resources; set again when the app's language changes. */
+    fun setHeadings(headings: NotesHeadings) {
+        this.headings.value = headings
+    }
+
+    // --- Preferences (Settings → Notes) ---
+
+    /** What Settings shows; read from this device's store the first time. */
+    fun observePreferences(): Flow<NotesPreferences> = flow {
+        emit(preferences())
+        emitAll(prefs.filterNotNull())
+    }.distinctUntilChanged()
+
+    @Throws(Throwable::class)
+    suspend fun preferences(): NotesPreferences = prefs.value ?: withContext(deps.io) {
+        NotesPreferences(
+            instructions = db.recQueries.kvGet(PREF_INSTRUCTIONS).executeAsOneOrNull().orEmpty(),
+            sections = db.recQueries.kvGet(PREF_SECTIONS).executeAsOneOrNull()?.let { json ->
+                runCatching { recJson.decodeFromString<List<StoredSection>>(json) }.getOrNull()
+            }.orEmpty().map { NoteSection(it.id, it.name, it.description) },
+        )
+    }.also { loaded -> prefs.compareAndSet(null, loaded) }
+
+    /**
+     * Kept trimmed and cut to [NotesPreferences]' limits: a section without a name is dropped, at most
+     * [NotesPreferences.SECTIONS_MAX] are kept, and a new one gets its id. Answers what was kept.
+     */
+    @Throws(Throwable::class)
+    suspend fun setPreferences(preferences: NotesPreferences): NotesPreferences {
+        val kept = NotesPreferences(
+            instructions = preferences.instructions.trim().take(NotesPreferences.INSTRUCTIONS_MAX),
+            sections = preferences.sections
+                .map { NoteSection(it.id, it.name.trim().lineSequence().joinToString(" ").take(NotesPreferences.SECTION_NAME_MAX), it.description.trim().take(NotesPreferences.DESCRIPTION_MAX)) }
+                .filter { it.name.isNotEmpty() }
+                .take(NotesPreferences.SECTIONS_MAX)
+                .map { if (it.id.isBlank()) it.copy(id = ulid()) else it },
+        )
+        withContext(deps.io) {
+            db.recQueries.transaction {
+                if (kept.instructions.isEmpty()) db.recQueries.kvDelete(PREF_INSTRUCTIONS) else db.recQueries.kvSet(PREF_INSTRUCTIONS, kept.instructions)
+                if (kept.sections.isEmpty()) {
+                    db.recQueries.kvDelete(PREF_SECTIONS)
+                } else {
+                    db.recQueries.kvSet(PREF_SECTIONS, recJson.encodeToString(kept.sections.map { StoredSection(it.id, it.name, it.description) }))
+                }
+            }
+        }
+        prefs.value = kept
+        return kept
+    }
+
+    /** What a request adds from Settings: the sections and instructions here, About you from the ChatGPT settings. */
+    private suspend fun ask(): NotesAsk {
+        val preferences = preferences()
+        return NotesAsk(preferences.sections, preferences.instructions, summaries.preferences().aboutMe)
     }
 
     /**
@@ -252,8 +379,8 @@ class Notes internal constructor(
         return around(parts.flatMap { it.segments }, emptyList(), atSec, provisional = true)
     }
 
-    private suspend fun view(recordingId: String, organizing: Boolean): RecordingNotes {
-        val file = readNotes(recordingId) ?: return empty(recordingId, organizing)
+    private suspend fun view(recordingId: String, organizing: Boolean, failure: String?): RecordingNotes {
+        val file = readNotes(recordingId) ?: fetched(recordingId) ?: return empty(recordingId, organizing, failure)
         val names = if (file.items.any { !it.provisional && it.owner != null }) {
             readTranscript(recordingId)?.speakers.orEmpty().mapNotNull { speaker -> speaker.name?.trim()?.takeIf { it.isNotEmpty() }?.let { speaker.id to it } }.toMap()
         } else {
@@ -263,12 +390,14 @@ class Notes internal constructor(
             .sortedWith(compareByDescending<StoredNote> { it.evidence.atSec }.thenByDescending { it.createdAt })
             .map { note ->
                 NoteItem(
-                    id = note.id, kind = note.kind, text = note.text,
+                    id = note.id, kind = note.kind, text = note.shown,
                     // A part's own label names nobody the user can see; only a named speaker of the transcript is shown.
                     owner = note.owner?.takeUnless { note.provisional }?.let(names::get),
                     due = note.due, atSec = note.evidence.atSec, quote = note.evidence.quote, provisional = note.provisional,
+                    section = note.section,
                 )
             }
+        val sections = items.filter { it.kind == NoteKind.SECTION }.groupBy { it.section }
         return RecordingNotes(
             recordingId = recordingId,
             stage = if (file.isFinal) NotesStage.FINAL else NotesStage.PROVISIONAL,
@@ -277,11 +406,39 @@ class Notes internal constructor(
             todos = items.filter { it.kind == NoteKind.TODO },
             questions = items.filter { it.kind == NoteKind.QUESTION },
             organizing = organizing,
+            points = items.filter { it.kind == NoteKind.POINT },
+            // In the order the notes were made with; a section no item of which is left is not there.
+            sections = file.sections.mapNotNull { section -> sections[section.id]?.let { NoteSectionItems(section.id, section.name, it) } },
+            failure = failure,
+            model = file.modelName ?: file.model,
         )
     }
 
-    private fun empty(recordingId: String, organizing: Boolean) =
-        RecordingNotes(recordingId, NotesStage.NONE, null, emptyList(), emptyList(), emptyList(), organizing)
+    private fun empty(recordingId: String, organizing: Boolean, failure: String?) =
+        RecordingNotes(recordingId, NotesStage.NONE, null, emptyList(), emptyList(), emptyList(), organizing, failure = failure)
+
+    /**
+     * Another device's notes of a recording no pull has brought yet: its folder is asked once a run, and what it has is
+     * kept here — unless notes were written here meanwhile.
+     */
+    private suspend fun fetched(recordingId: String): NotesFile? {
+        if (!fetchLock.withLock { fetched.add(recordingId) }) return null
+        val json = try {
+            fetch(recordingId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        } ?: return null
+        val file = NotesFolder.decode(json)?.takeIf { it.recordingId == recordingId && it.isFinal } ?: return null
+        update(recordingId, publish = false) { current -> if (current == null) file else null }
+        return readNotes(recordingId)
+    }
+
+    /** A pull wrote newer notes from a folder: whoever shows them reads them again. */
+    internal fun changed() {
+        changes.value++
+    }
 
     private fun around(segments: List<TranscriptSegment>, speakers: List<TranscriptSpeaker>, atSec: Double, provisional: Boolean): List<NoteLine> {
         val byId = speakers.associateBy { it.id }
@@ -349,12 +506,7 @@ class Notes internal constructor(
         // The settings the recording froze when it started, as its own job will run them.
         val step = settings.recordingSnapshot(recordingId)?.let(ProcessingPlan::compile)?.steps
             ?.firstOrNull { it is Step.Transcribe || it is Step.LocalTranscribe } ?: return
-        working.update { it + recordingId }
-        try {
-            organizePart(record, part, step)
-        } finally {
-            working.update { it - recordingId }
-        }
+        busy(recordingId) { organizePart(record, part, step) }
     }
 
     private class PartSkipped(val reason: String) : Exception(reason)
@@ -464,26 +616,30 @@ class Notes internal constructor(
     /** The new items of one part, append-only: checked, then added to what is shown. */
     private suspend fun extract(record: RecordingRecord, part: Part, transcribed: Transcript, fields: Map<String, Any?>) {
         val previous = readProvisional(record.id, part.part - 1)
-        val shown = readNotes(record)?.items.orEmpty()
+        val current = readNotes(record)
+        val shown = current?.items.orEmpty()
+        // The sections a recording started with stay its sections while it records.
+        val ask = ask().let { asked -> if (current?.sections?.isNotEmpty() == true) asked.copy(sections = current.sections.map { NoteSection(it.id, it.name, it.description) }) else asked }
         val placeholders = Placeholders()
         val input = placeholders.hide(
             NotesPrompts.provisionalInput(
                 shown,
                 previous?.let { NoteLines.tail(NoteLines.of(it.segments), TAIL_CHARS) }.orEmpty(),
                 NoteLines.render(NoteLines.of(transcribed.segments)),
+                ask,
             ),
         )
         val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         deps.logger.log(Logger.Level.INFO, "organize.part.start", fields + ("model" to model) + ("hidden" to placeholders.hidden))
         val json = NotesAnswer.parse(
-            summaries.complete(model, NotesPrompts.provisional(summaries.language(transcribed.language)), input, timeoutSec = PART_REQUEST_SEC),
+            summaries.complete(model, NotesPrompts.provisional(summaries.language(transcribed.language), ask), input, timeoutSec = PART_REQUEST_SEC),
         )
         val offered = NotesAnswer.offered(json)
         val speakers = transcribed.speakers.map { it.id }.toSet()
         val evidence = transcribed.segments + previous?.segments.orEmpty()
         val start = part.startOffsetSec - EDGE_SEC
         val end = part.startOffsetSec + part.durationSec + EDGE_SEC
-        val checked = NotesAnswer.items(json, placeholders::restore)
+        val checked = NotesAnswer.items(json, placeholders::restore, ask)
             .filter { it.atSec in start..end && QuoteCheck.passes(it.quote, it.atSec, evidence) }
             .map { if (it.owner != null && it.owner !in speakers) it.copy(owner = null) else it }
         val now = deps.clock.now().isoUtc()
@@ -496,7 +652,7 @@ class Notes internal constructor(
             val file = current ?: NotesFile(recordingId = record.id, createdAt = now, updatedAt = now)
             val kept = checked.filter { item ->
                 when {
-                    file.tombstones.any { SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.atSec) } -> false.also { tombstoned++ }
+                    file.tombstones.any { deletedAs(item, it) } -> false.also { tombstoned++ }
                     file.items.any { repeats(item, it) } -> false.also { repeated++ }
                     else -> true
                 }
@@ -504,10 +660,15 @@ class Notes internal constructor(
             added = kept.size
             file.copy(
                 items = file.items + kept.map { item ->
-                    StoredNote(ulid(), item.kind, item.text, item.owner, item.due, NoteEvidence(item.atSec, item.quote), provisional = true, createdAt = now)
+                    StoredNote(
+                        ulid(), item.kind, item.text, item.owner, item.due, NoteEvidence(item.atSec, item.quote), provisional = true,
+                        section = item.section, createdAt = now,
+                    )
                 },
                 parts = (file.parts + part.part).distinct().sorted(),
                 model = model,
+                modelName = account.modelLabel(model),
+                sections = file.sections.ifEmpty { ask.sections.map { StoredSection(it.id, it.name, it.description) } },
                 updatedAt = now,
             )
         }
@@ -517,9 +678,13 @@ class Notes internal constructor(
         )
     }
 
+    /** The user deleted this item before: the same kind and section, by [SameItem]. */
+    private fun deletedAs(item: Extracted, tombstone: NoteTombstone): Boolean =
+        item.section == tombstone.section && SameItem.matches(item.kind, item.text, item.atSec, tombstone.kind, tombstone.text, tombstone.atSec)
+
     /** The model said again what is already shown — the same words, or the same moment in the same words. */
     private fun repeats(item: Extracted, shown: StoredNote): Boolean {
-        if (item.kind != shown.kind) return false
+        if (item.kind != shown.kind || item.section != shown.section) return false
         if (NoteText.ratio(NoteText.normalize(item.text), NoteText.normalize(shown.text)) >= REPEAT_RATIO) return true
         return kotlin.math.abs(item.atSec - shown.evidence.atSec) <= SameItem.SAME_MOMENT_SEC &&
             NoteText.ratio(NoteText.chars(item.quote), NoteText.chars(shown.evidence.quote)) >= QuoteCheck.THRESHOLD
@@ -552,9 +717,8 @@ class Notes internal constructor(
             Gate.ON -> Unit
         }
         val transcript = readTranscript(recordingId) ?: return skipped(recordingId, "no_transcript")
-        working.update { it + recordingId }
         try {
-            return finalPass(ctx, transcript)
+            return busy(recordingId) { onePass(recordingId) { finalPass(recordingId, transcript, ctx.state, ctx.saveState) } }
         } catch (e: CancellationException) {
             throw e
         } catch (e: StepFailure) {
@@ -563,20 +727,76 @@ class Notes internal constructor(
             throw failure(recordingId, e.reason)
         } catch (e: Exception) {
             throw failure(recordingId, CoreMessage.PROVIDER_ERROR.code(detail = e.message ?: e::class.simpleName))
-        } finally {
-            working.update { it - recordingId }
         }
     }
 
-    private suspend fun finalPass(ctx: StepContext, transcript: Transcript): StepOutcome {
-        val recordingId = ctx.recording.id
+    /**
+     * Organize again, which the user asks for from the detail: the final pass once more, from the recording's transcript
+     * now and with Settings as they are now. On request, so it needs the sign-in — and on iPhone the plan allowed as a
+     * destination — but not the consent to organizing while recording. What the user edited or deleted stays. Answers
+     * null when the notes were written, or a `CoreMessage` wire code; a failure other than the iPhone permission is also
+     * [RecordingNotes.failure] until the next try. A recording already being organized is not asked twice.
+     */
+    @Throws(Throwable::class)
+    suspend fun organizeAgain(recordingId: String): String? {
+        if (consents.missing(listOf(TransferTargets.chatGptSummary())).isNotEmpty()) return CoreMessage.TRANSFER_CONSENT_REQUIRED.code()
+        if (recordingId in working.value) return null
+        failures.update { it - recordingId }
+        val failure = busy(recordingId) {
+            try {
+                if (account.standing() != ChatGptStanding.SIGNED_IN) throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
+                val transcript = readTranscript(recordingId) ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
+                deps.logger.log(Logger.Level.INFO, "organize.again.start", mapOf("recordingId" to recordingId))
+                // On request nothing is waited for: a failure is shown, and the next try starts over.
+                onePass(recordingId) { finalPass(recordingId, transcript, null) {} }
+                null
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: ChatGptFailure) {
+                e.reason
+            } catch (e: Exception) {
+                CoreMessage.PROVIDER_ERROR.code(detail = e.message ?: e::class.simpleName)
+            }
+        }
+        if (failure != null) {
+            deps.logger.log(Logger.Level.WARN, "organize.again.failed", mapOf("recordingId" to recordingId, "reason" to failure.substringBefore('|')))
+            failures.update { it + (recordingId to failure) }
+        }
+        return failure
+    }
+
+    /** [block] counted in [working], so the recording shows `Organizing…` while any run of it is on. */
+    private suspend fun <T> busy(recordingId: String, block: suspend () -> T): T {
+        working.update { it + (recordingId to (it[recordingId] ?: 0) + 1) }
+        try {
+            return block()
+        } finally {
+            working.update { val left = (it[recordingId] ?: 1) - 1; if (left > 0) it + (recordingId to left) else it - recordingId }
+        }
+    }
+
+    private suspend fun <T> onePass(recordingId: String, block: suspend () -> T): T =
+        finalLocksLock.withLock { finalLocks.getOrPut(recordingId) { Mutex() } }.withLock { block() }
+
+    /**
+     * The final notes of [transcript]. [saved] is what a try before this one finished, and [save] keeps what this one
+     * finishes, so a try after a wait asks only what is left.
+     */
+    private suspend fun finalPass(
+        recordingId: String,
+        transcript: Transcript,
+        saved: JsonObject?,
+        save: suspend (JsonObject) -> Unit,
+    ): StepOutcome {
         val segments = transcript.segments.filter { it.text.isNotBlank() }.sortedBy { it.start }
+        val ask = ask()
         // A try after a wait goes on where the last one stopped — unless what is sent changed since: a speaker named
-        // meanwhile changes nothing sent, an edit of the words does.
-        val version = NoteLines.render(NoteLines.of(segments)).encodeUtf8().sha256().hex()
-        var state = OrganizeState.from(ctx.state)?.takeIf { it.transcript == version } ?: OrganizeState(version)
+        // meanwhile changes nothing sent, an edit of the words or of Settings does.
+        val version = (NoteLines.render(NoteLines.of(segments)) + "\u0003" + ask.version).encodeUtf8().sha256().hex()
+        var state = OrganizeState.from(saved)?.takeIf { it.transcript == version } ?: OrganizeState(version)
         val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         val language = summaries.language(transcript.language)
+        val highlights = recordings.get(recordingId)?.meta?.highlights.orEmpty()
         if (state.spans == null) {
             val spans = ConversationSplit.blocks(segments).flatMapIndexed { index, block ->
                 if (block.endSec - block.startSec <= ConversationSplit.LONG_SEC) return@flatMapIndexed listOf(block)
@@ -592,7 +812,7 @@ class Notes internal constructor(
                 }
             }
             state = state.copy(spans = spans, done = List(spans.size) { null })
-            ctx.saveState(state.toJson())
+            save(state.toJson())
         }
         val spans = state.spans!!
         val grouped = ConversationSplit.assign(segments, spans)
@@ -601,9 +821,13 @@ class Notes internal constructor(
         while (results.size < spans.size) results += null
         for (index in spans.indices) {
             if (results[index] != null) continue
-            results[index] = conversation(model, language, grouped[index], transcript)
+            val span = spans[index]
+            val marked = highlights.filter { it.atSec >= span.startSec && it.atSec <= span.endSec }.map { highlight ->
+                "[${TranscriptNormalizer.clock(highlight.atSec)}]" + (TranscriptNormalizer.spokenAt(transcript, highlight.atSec)?.let { " $it" } ?: "")
+            }
+            results[index] = conversation(model, language, grouped[index], transcript, ask, marked)
             state = state.copy(done = results.toList())
-            ctx.saveState(state.toJson())
+            save(state.toJson())
         }
         val conversations = spans.mapIndexed { index, span -> span.copy(summary = results[index]?.summary) }
         val summarized = conversations.filter { it.summary != null }
@@ -622,25 +846,41 @@ class Notes internal constructor(
         var parts = emptyList<Int>()
         update(recordingId) { current ->
             val tombstones = current?.tombstones.orEmpty()
-            // The final items replace the provisional ones; one that says the same keeps its id, so it does not jump.
+            // The final items replace the provisional ones — and an earlier final pass's; one that says the same keeps
+            // its id, so it does not jump, and the user's words for it.
             val earlier = current?.items.orEmpty().toMutableList()
             parts = current?.parts.orEmpty()
             val items = finals.mapNotNull { (conversation, item) ->
-                if (tombstones.any { SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.atSec) }) {
+                if (tombstones.any { deletedAs(item, it) }) {
                     tombstoned++
                     return@mapNotNull null
                 }
-                val same = earlier.firstOrNull { SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.evidence.atSec) }
+                // An edited item passes on the user's words only to one that says the same: by its moment alone, a
+                // different item would be hidden behind them.
+                val same = earlier.firstOrNull {
+                    item.section == it.section && if (it.editedAt != null) {
+                        item.kind == it.kind && SameItem.sameText(item.text, it.text)
+                    } else {
+                        SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.evidence.atSec)
+                    }
+                }
                     ?.also { earlier.remove(it) }
                 StoredNote(
                     id = same?.id ?: ulid(), kind = item.kind, text = item.text, owner = item.owner, due = item.due,
                     evidence = NoteEvidence(item.atSec, item.quote), provisional = false, conversation = conversation,
-                    createdAt = same?.createdAt ?: now,
+                    section = item.section, userText = same?.userText, editedAt = same?.editedAt, createdAt = same?.createdAt ?: now,
                 )
             }
+            // An item the user edited is theirs, made again or not. One from a part keeps no owner: a part's label is its own.
+            val edited = earlier.filter { it.editedAt != null }.map { if (it.provisional) it.copy(provisional = false, owner = null) else it }
+            val sections = ask.sections.map { StoredSection(it.id, it.name, it.description) }
+            val keptSections = sections + current?.sections.orEmpty().filter { old -> old.id !in sections.map { it.id } && edited.any { it.section == old.id } }
             NotesFile(
-                recordingId = recordingId, stage = NotesFile.FINAL, overview = overview, items = items, tombstones = tombstones,
-                conversations = conversations, parts = parts, model = model,
+                recordingId = recordingId, stage = NotesFile.FINAL,
+                overview = if (current?.overviewEditedAt != null) current.overview else overview,
+                items = items + edited, tombstones = tombstones,
+                conversations = conversations, parts = parts, model = model, modelName = account.modelLabel(model),
+                sections = keptSections, overviewEditedAt = current?.overviewEditedAt,
                 createdAt = current?.createdAt ?: now, updatedAt = now, finalizedAt = now,
             )
         }
@@ -661,16 +901,23 @@ class Notes internal constructor(
         }))
     }
 
-    /** One conversation's summary and items; too little said, and nothing is asked. */
-    private suspend fun conversation(model: String, language: String, segments: List<TranscriptSegment>, transcript: Transcript): ConversationResult {
+    /** One conversation's summary and items; too little said, and nothing is asked. [marked] are its highlights. */
+    private suspend fun conversation(
+        model: String,
+        language: String,
+        segments: List<TranscriptSegment>,
+        transcript: Transcript,
+        ask: NotesAsk,
+        marked: List<String>,
+    ): ConversationResult {
         if (NoteText.words(segments.joinToString(" ") { it.text }) < MIN_WORDS) return ConversationResult()
         val placeholders = Placeholders()
         val answer = summaries.complete(
-            model, NotesPrompts.conversation(language),
-            placeholders.hide(NotesPrompts.transcriptInput(NoteLines.render(NoteLines.of(segments)))),
+            model, NotesPrompts.conversation(language, ask, marked.isNotEmpty()),
+            placeholders.hide(NotesPrompts.transcriptInput(NoteLines.render(NoteLines.of(segments)), marked)),
         )
         val json = NotesAnswer.parse(answer)
-        val items = NotesAnswer.items(json, placeholders::restore)
+        val items = NotesAnswer.items(json, placeholders::restore, ask, points = true)
         val speakers = transcript.speakers.map { it.id }.toSet()
         val kept = items.filter { QuoteCheck.passes(it.quote, it.atSec, transcript.segments) }
             .map { if (it.owner != null && it.owner !in speakers) it.copy(owner = null) else it }
@@ -710,12 +957,24 @@ class Notes internal constructor(
             runCatching { recJson.decodeFromString(NotesFile.serializer(), json) }.getOrNull()?.takeIf { it.recordingId == record.id }
         }
 
-    /** [change] makes the next version of the recording's notes, or null to leave them; true when it was written. */
-    private suspend fun update(recordingId: String, change: (NotesFile?) -> NotesFile?): Boolean = fileLock.withLock {
-        val record = recordings.get(recordingId) ?: return@withLock false
-        val next = change(readNotes(record)) ?: return@withLock false
-        recordings.writeFile(recordingId, NotesFile.name(base(record)), recJson.encodeToString(NotesFile.serializer(), next))
-            .also { if (it) changes.value++ }
+    /**
+     * [change] makes the next version of the recording's notes, or null to leave them; true when it was written. Under
+     * the lock a pull's copy from the folder takes too ([RecordingRepository.notesWrite]). Final notes written here go
+     * up to the folder, unless they came from it ([publish] false).
+     */
+    private suspend fun update(recordingId: String, publish: Boolean = true, change: (NotesFile?) -> NotesFile?): Boolean {
+        var final = false
+        val written = recordings.notesWrite {
+            val record = recordings.get(recordingId) ?: return@notesWrite false
+            val next = change(readNotes(record)) ?: return@notesWrite false
+            final = next.isFinal
+            recordings.writeFile(recordingId, NotesFile.name(base(record)), recJson.encodeToString(NotesFile.serializer(), next))
+        }
+        if (written) {
+            changes.value++
+            if (final && publish) published(recordingId)
+        }
+        return written
     }
 
     private suspend fun readProvisional(recordingId: String, part: Int): Transcript? =
@@ -750,6 +1009,8 @@ class Notes internal constructor(
     internal companion object {
         const val CONSENT_KEY = "notes/consent"
         private const val ON = "1"
+        const val PREF_INSTRUCTIONS = "notes/prefs/instructions"
+        const val PREF_SECTIONS = "notes/prefs/sections"
 
         /** A part or a conversation with fewer words than this is not asked about. */
         const val MIN_WORDS = 40
