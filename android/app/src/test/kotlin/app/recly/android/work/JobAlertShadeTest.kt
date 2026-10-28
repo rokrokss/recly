@@ -31,6 +31,10 @@ class JobAlertShadeTest {
             ops += "cancel $reason"
         }
 
+        override fun emptied() {
+            ops += "emptied"
+        }
+
         /** Only the notifications: every paint cancels the six reasons it has nothing to say about. */
         fun posted(): List<String> = ops.filter { it.startsWith("notify") }
     }
@@ -80,6 +84,20 @@ class JobAlertShadeTest {
 
         assertEquals(emptyList(), shade.posted())
         assertEquals(AlertReason.entries.size, shade.ops.count { it.startsWith("cancel") })
+    }
+
+    /** The summary that holds the notices together goes with the last of them, and stays while any is up. */
+    @Test
+    fun `the last reason to leave takes the group down`() {
+        val shade = FakeShade()
+        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 1), JobAlert(AlertReason.NEEDS_SPACE, 1)))
+        assertEquals(0, shade.ops.count { it == "emptied" })
+
+        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.NEEDS_SPACE, 1)))
+        assertEquals(0, shade.ops.count { it == "emptied" })
+
+        JobAlertShade.publish(shade, emptyList())
+        assertEquals("emptied", shade.ops.last())
     }
 
     /** The race this was written for: nothing the queue has taken down comes back on a refresh. */

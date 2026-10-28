@@ -3365,7 +3365,7 @@ Rules:
 
 | Platform | Surface |
 |---|---|
-| Android phone | notification channel `jobs` (separate from the recording FGS channel, **silent · default priority**). Tap → the matching screen. The banner at the top of the list shows the same reasons (Drive connection in the compact form above) |
+| Android phone | notification channel `jobs` (separate from the recording FGS channel, **silent · low importance** — at default importance Android 16 bundles it with a `recording-alerts` notification and the bundle goes silent, taking that alert's vibration; the notices are grouped under a summary of their own, or Android 16 bundles the ongoing recording notification in with them). Tap → the matching screen. The banner at the top of the list shows the same reasons (Drive connection in the compact form above) |
 | Galaxy Watch | none — the watch does not create Jobs (ADR-002). Only transfer failures, as one line on the watch screen |
 | **iPhone** | `UNUserNotificationCenter` local notifications + a banner at the top of the list. Without permission, **banner only** |
 | Apple Watch | none (same reason as iPhone) |

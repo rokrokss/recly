@@ -58,6 +58,9 @@ interface AlertShade {
     fun notify(alert: JobAlert)
 
     fun cancel(reason: AlertReason)
+
+    /** Nothing is standing any more: what holds the notices together comes down with them. */
+    fun emptied()
 }
 
 /**
@@ -119,6 +122,7 @@ internal object JobAlertShade {
             }
         }
         standing = posted
+        if (posted.isEmpty()) shade.emptied()
     }
 
     /** Test seam: this object outlives a single test, and what is standing is per-process state. */
@@ -128,7 +132,11 @@ internal object JobAlertShade {
     }
 }
 
-/** The real shade: one notification id per [AlertReason], in the app's own `jobs` channel. */
+/**
+ * The real shade: one notification id per [AlertReason], in the app's own `jobs` channel, grouped under a summary of
+ * their own. Android 16 bundles an app's ungrouped notifications of one section once two are up, and at low importance
+ * that bundle took in the recording's ongoing notification — its Stop behind an expand while anything was waiting.
+ */
 private class SystemShade(private val context: Context) : AlertShade {
 
     private val manager: NotificationManager = context.getSystemService(NotificationManager::class.java)
@@ -136,15 +144,22 @@ private class SystemShade(private val context: Context) : AlertShade {
     override fun notify(alert: JobAlert) {
         manager.createNotificationChannel(channel())
         manager.notify(notificationId(alert.reason), notification(alert))
+        manager.notify(SUMMARY_ID, summary())
     }
 
     override fun cancel(reason: AlertReason) = manager.cancel(notificationId(reason))
 
-    /** docs/10: "silent · default priority" — it is worth seeing, and never worth waking anybody up. */
+    override fun emptied() = manager.cancel(SUMMARY_ID)
+
+    /**
+     * docs/10: "silent · low importance" — it is worth seeing, and never worth waking anybody up. Low, not default: Android 16
+     * bundles an app's alerting notifications once two are up and marks the bundle silent, so a waiting notice at default
+     * importance took the vibration off the next `recording-alerts` one (battery stop, watchdog).
+     */
     private fun channel(): NotificationChannel = NotificationChannel(
         CHANNEL_ID,
         context.getString(R.string.alert_channel),
-        NotificationManager.IMPORTANCE_DEFAULT,
+        NotificationManager.IMPORTANCE_LOW,
     ).apply {
         setShowBadge(false)
         setSound(null, null)
@@ -156,6 +171,7 @@ private class SystemShade(private val context: Context) : AlertShade {
             // The recorder's own icon, from the module that owns it: `nonTransitiveRClass` keeps a
             // library's resources in the library's own R.
             .setSmallIcon(RecordingR.drawable.ic_rec_notification)
+            .setGroup(GROUP)
             .setContentTitle(context.getString(alert.reason.label))
             .setContentText(context.getString(R.string.alert_waiting, alert.count))
             // docs/10: "A tap goes to the screen that can fix it … It does not end at 'Open app'."
@@ -173,12 +189,25 @@ private class SystemShade(private val context: Context) : AlertShade {
             // rule 3 is the only thing that cancels: a reading of the queue without the reason.
             .build()
 
+    /** Reposted with every notice, so it is in the language the notices are in. */
+    private fun summary(): Notification =
+        Notification.Builder(context, CHANNEL_ID)
+            .setSmallIcon(RecordingR.drawable.ic_rec_notification)
+            .setContentTitle(context.getString(R.string.alert_channel))
+            .setGroup(GROUP)
+            .setGroupSummary(true)
+            .build()
+
     private fun notificationId(reason: AlertReason): Int = NOTIFICATION_BASE + reason.ordinal
 
     private companion object {
         const val CHANNEL_ID = "jobs"
+        const val GROUP = "jobs"
 
         /** Well clear of the recorder's own id, which is 1 in the `recording` channel. */
         const val NOTIFICATION_BASE = 100
+
+        /** Just under the reasons' own ids. */
+        const val SUMMARY_ID = NOTIFICATION_BASE - 1
     }
 }
