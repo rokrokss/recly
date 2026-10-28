@@ -2,6 +2,7 @@
 
 package app.recly.android.ui
 
+import androidx.compose.ui.graphics.Color
 import app.recly.android.R
 import app.recly.android.work.job
 import kotlin.test.Test
@@ -69,13 +70,17 @@ class NotesTest {
 
     @Test
     fun `a row is the item, its owner after a dash, then its deadline`() {
-        assertEquals("Send the quote", noteText(item("t", NoteKind.TODO, text = "Send the quote")))
-        assertEquals("Send the quote — Minji", noteText(item("t", NoteKind.TODO, text = "Send the quote", owner = "Minji")))
+        assertEquals("Send the quote", noteText(item("t", NoteKind.TODO, text = "Send the quote"), Color.Gray).text)
+        assertEquals("Send the quote — Minji", noteText(item("t", NoteKind.TODO, text = "Send the quote", owner = "Minji"), Color.Gray).text)
         assertEquals(
             "Send the quote — Minji · Friday",
-            noteText(item("t", NoteKind.TODO, text = "Send the quote", owner = "Minji", due = "Friday")),
+            noteText(item("t", NoteKind.TODO, text = "Send the quote", owner = "Minji", due = "Friday"), Color.Gray).text,
         )
-        assertEquals("Send the quote · Friday", noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday")))
+        assertEquals("Send the quote · Friday", noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), Color.Gray).text)
+        // docs/09 "Notes view": the deadline is the muted part, as on the iPhone, the Mac and Windows.
+        val due = noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), Color.Gray).spanStyles.single()
+        assertEquals(Color.Gray, due.item.color)
+        assertEquals(" · Friday", noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), Color.Gray).text.substring(due.start, due.end))
     }
 
     @Test

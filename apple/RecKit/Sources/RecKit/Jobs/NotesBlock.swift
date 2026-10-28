@@ -160,6 +160,8 @@ public struct NotesBlock: View {
                 time(item)
             }
             .frame(minHeight: minTouch)
+            // Windows' 4 above and below: two rows' time buttons stand apart instead of stacking into one column.
+            .padding(.vertical, Space.xs)
             .contentShape(Rectangle())
             .onTapGesture { toggle(item) }
             if expanded == item.id {

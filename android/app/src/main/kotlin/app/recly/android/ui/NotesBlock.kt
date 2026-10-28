@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -34,7 +35,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.withStyle
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.ButtonTone
@@ -69,11 +74,11 @@ internal fun noteOverview(notes: RecordingNotes): String? = notes.overview?.trim
 internal fun showsNotes(notes: RecordingNotes?, overview: Boolean): Boolean =
     notes != null && ((overview && noteOverview(notes) != null) || noteGroups(notes).isNotEmpty())
 
-/** A row's words: the item, its owner after a dash (`Send the quote — Minji`), then its deadline as it was said. */
-internal fun noteText(item: NoteItem): String = buildString {
+/** A row's words: the item, its owner after a dash (`Send the quote — Minji`), then its deadline as it was said, [muted]. */
+internal fun noteText(item: NoteItem, muted: Color): AnnotatedString = buildAnnotatedString {
     append(item.text.trim())
-    item.owner?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" — ").append(it) }
-    item.due?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" · ").append(it) }
+    item.owner?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" — "); append(it) }
+    item.due?.trim()?.takeIf { it.isNotEmpty() }?.let { withStyle(SpanStyle(color = muted)) { append(" · "); append(it) } }
 }
 
 /**
@@ -193,7 +198,7 @@ private fun NoteRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    noteText(item),
+                    noteText(item, palette.textMuted),
                     Modifier.weight(1f).padding(vertical = Space.sm),
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,

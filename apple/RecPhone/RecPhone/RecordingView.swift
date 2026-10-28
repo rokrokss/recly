@@ -27,6 +27,8 @@ struct RecordingView: View {
     @State private var busyStartedAt: Date?
     /// docs/09 "Highlights": the Highlight node's 150 ms of accent after a tap.
     @State private var marking = false
+    /// How tall the live notes' rows are, which their scroll view grows to and no further. Nil until measured.
+    @State private var notesHeight: CGFloat?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -184,8 +186,13 @@ struct RecordingView: View {
         if inScroll {
             block
         } else {
-            ScrollView { block }
-                .scrollBounceBehavior(.basedOnSize)
+            // A scroll view takes all the height it is offered, which pushed the timer up against the nodes: no taller
+            // than its rows, it leaves the timer centred while they fit, as on Android, and scrolls once they do not.
+            ScrollView {
+                block.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { notesHeight = $0 }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxHeight: notesHeight)
         }
     }
 
