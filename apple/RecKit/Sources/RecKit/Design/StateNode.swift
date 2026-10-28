@@ -59,6 +59,7 @@ public struct StateNode: View {
         if let onClick = spec.onClick {
             Button { onClick() } label: { node.blueprintFocusRing() }
                 .buttonStyle(.plain)
+                .pointerCursor()
                 .focusEffectDisabled()
                 .accessibilityHint(Text(verbatim: spec.onClickLabel ?? ""))
         } else {

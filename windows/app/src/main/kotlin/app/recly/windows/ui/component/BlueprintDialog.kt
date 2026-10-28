@@ -222,6 +222,7 @@ private fun CloseMark(label: String, onClick: () -> Unit) {
         Modifier
             .size(MinTouch)
             .focusRing(RoundedCornerShape(Radius.node))
+            .pressCursor()
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
@@ -325,7 +326,7 @@ fun BlueprintRadioRow(
 ) {
     OptionRow(
         label = label,
-        modifier = modifier.focusRing().selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+        modifier = modifier.focusRing().pressCursor().selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
         mark = { SelectionMark(selected = selected, filled = false) },
     )
 }
@@ -345,7 +346,7 @@ fun BlueprintCheckRow(
 ) {
     OptionRow(
         label = label,
-        modifier = modifier.focusRing().toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckedChange),
+        modifier = modifier.focusRing().pressCursor(enabled).toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckedChange),
         mark = { if (enabled) SelectionMark(selected = checked, filled = true) else DisabledCheckMark(checked) },
         enabled = enabled,
     )
@@ -414,6 +415,7 @@ fun BlueprintDialogLink(label: String, onClick: () -> Unit, modifier: Modifier =
         modifier = modifier
             .defaultMinSize(minHeight = MinTouch)
             .focusRing()
+            .pressCursor()
             .clickable(role = Role.Button, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {

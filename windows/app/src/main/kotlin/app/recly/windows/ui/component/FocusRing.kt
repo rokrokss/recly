@@ -1,5 +1,7 @@
 package app.recly.windows.ui.component
 
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,20 +33,33 @@ import app.recly.windows.ui.theme.blueprint
  * [color] is for a control filled with the accent, where an accent ring would vanish.
  */
 fun Modifier.focusRing(shape: Shape = RectangleShape, color: Color? = null): Modifier = composed {
-    val palette = blueprint
     var focused by remember { mutableStateOf(false) }
+    onFocusChanged { focused = it.isFocused }.ring(focused, shape, color)
+}
+
+/**
+ * The same ring on a box that is not the focused node itself: a control drawn smaller than its target, whose focus
+ * comes through the target's [interaction] (`BlueprintButton`'s `compact`, the speaker badge) — so the ring is on the
+ * box that is seen rather than around the invisible target.
+ */
+fun Modifier.focusRing(interaction: InteractionSource, shape: Shape = RectangleShape, color: Color? = null): Modifier = composed {
+    val focused by interaction.collectIsFocusedAsState()
+    ring(focused, shape, color)
+}
+
+private fun Modifier.ring(focused: Boolean, shape: Shape, color: Color?): Modifier = composed {
+    val palette = blueprint
     val keyboard = LocalInputModeManager.current.inputMode == InputMode.Keyboard
     val ink = color ?: palette.accent
     val inset = palette.line
     val width = palette.selectedLine
-    onFocusChanged { focused = it.isFocused }
-        .drawWithContent {
-            drawContent()
-            if (focused && keyboard) {
-                val stroke = width.toPx()
-                val edge = inset.toPx() + stroke / 2f
-                val outline = shape.createOutline(Size(size.width - edge * 2, size.height - edge * 2), layoutDirection, this)
-                translate(edge, edge) { drawOutline(outline, ink, style = Stroke(stroke)) }
-            }
+    drawWithContent {
+        drawContent()
+        if (focused && keyboard) {
+            val stroke = width.toPx()
+            val edge = inset.toPx() + stroke / 2f
+            val outline = shape.createOutline(Size(size.width - edge * 2, size.height - edge * 2), layoutDirection, this)
+            translate(edge, edge) { drawOutline(outline, ink, style = Stroke(stroke)) }
         }
+    }
 }

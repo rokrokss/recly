@@ -51,6 +51,8 @@ import app.recly.android.core.CoreMessages
 import app.recly.android.core.coreMessage
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.ButtonTone
+import app.recly.android.ui.component.Glyph
+import app.recly.android.ui.component.GlyphButton
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -381,7 +383,10 @@ internal fun citationTargets(layout: TextLayoutResult, runs: List<TextRun>): Lis
     }
 }
 
-/** Who wrote the text above it, and Copy all, which says `✓ Copied` for a moment as the transcript's does. */
+/**
+ * Who wrote the text above it, and Copy all as the copy icon (2026-10-28), which is the check mark — `Copied` to a screen
+ * reader — for the moment the transcript's says `✓ Copied`.
+ */
 @Composable
 internal fun CopyFooter(line: String, text: String, copyModifier: Modifier = Modifier) {
     val palette = blueprint
@@ -394,12 +399,11 @@ internal fun CopyFooter(line: String, text: String, copyModifier: Modifier = Mod
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(line, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
-        BlueprintButton(
+        GlyphButton(
+            if (copied) Glyph.CHECK else Glyph.COPY,
             stringResource(if (copied) R.string.transcript_copied else R.string.transcript_copy),
-            { clipboard.setText(AnnotatedString(text)); copied = true },
-            tone = ButtonTone.QUIET,
-            leading = if (copied) stringResource(R.string.action_done) else null,
-            modifier = copyModifier,
+            { if (!copied) { clipboard.setText(AnnotatedString(text)); copied = true } },
+            copyModifier,
         )
     }
 }

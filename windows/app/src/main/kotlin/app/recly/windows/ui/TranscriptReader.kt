@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextDirection
+import app.recly.windows.ui.component.pressCursor
 import kotlin.math.roundToInt
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -208,10 +209,11 @@ private fun Group(
             Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
                 // What a screen reader hears is unchanged: hours always said.
                 val seekLabel = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((start * 1000).toLong())]
+                // At the status badge's size (2026-10-28); a press moves the playhead and leaves playing or paused as it was.
                 BlueprintButton(
                     stamp, { onSeek(start) }, enabled = canSeek,
                     modifier = Modifier.testTag("transcript-time-$index").semantics { contentDescription = seekLabel },
-                    tone = if (isActive) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true,
+                    tone = if (isActive) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true, compact = true,
                 )
                 if (markSlot) {
                     Box(Modifier.size(HIGHLIGHT_MARK), contentAlignment = Alignment.Center) {
@@ -261,6 +263,7 @@ private fun HighlightMarkButton(atSec: Double, rtl: Boolean, strings: Strings, o
             }
             .onGloballyPositioned { place = it.positionInRoot() + startFoot(it.size.width, it.size.height, rtl) }
             .focusRing(RoundedCornerShape(Radius.node))
+            .pressCursor()
             .clickable(role = Role.Button) { onMenu(place) }
             .semantics { contentDescription = label },
     )
@@ -281,6 +284,7 @@ private fun BackToPlayback(label: String, modifier: Modifier, onClick: () -> Uni
         modifier
             .defaultMinSize(minHeight = MinTouch)
             .focusRing(shape)
+            .pressCursor()
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

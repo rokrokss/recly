@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.ButtonTone
+import app.recly.android.ui.component.CompactTarget
 import app.recly.android.ui.theme.LocalReduceMotion
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
@@ -183,7 +184,7 @@ internal fun TranscriptReader(
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xs), itemVerticalAlignment = Alignment.CenterVertically) {
                         BlueprintButton(stamp, { onSeek(group.start) }, enabled = canSeek && group.start < seekableDurationSec,
                             modifier = Modifier.testTag("transcript-time-${group.index}").semantics { contentDescription = seekLabel },
-                            tone = if (now) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true)
+                            tone = if (now) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true, compact = true)
                         // docs/09 "Highlights": right after the time, before the speaker. A group holds the marks from its
                         // start to the next group's — the first one from 0 — so a mark in a pause, or before the first
                         // words, is not lost.
@@ -240,35 +241,31 @@ internal fun Modifier.activeBar(color: Color, on: Boolean): Modifier = drawBehin
 
 /**
  * docs/09 "Transcript reader": who speaks, as a quiet badge — the name in the body face, an id like `S1` in
- * monospace. A tap opens the speaker menu. The border is the whole [MinTouch] target, so the badge stands as tall
- * as the time button beside it, on the same centre line.
+ * monospace. A tap opens the speaker menu. Compact like the time button beside it (docs/09 "Component measurements" —
+ * Time and speaker button): the box at the status badge's measure, in a [MinTouch] target, so the two stand on the
+ * same centre line.
  */
 @Composable
 internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
     /** Why it is disabled, for a screen reader; the dashed edge is what the eye gets. */
     reason: String? = null) {
     val palette = blueprint
-    Box(
-        modifier
-            .then(if (reason != null) Modifier.semantics { stateDescription = reason } else Modifier)
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .focusRing(palette, Radius.badge)
-            // docs/09 "Disabled, focus and structure": the secondary edge (`inputBorder`) while it can be tapped, and
-            // a dashed `disabled` one — words too — while it cannot.
-            .then(
-                if (enabled) {
-                    Modifier.border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.badge))
-                } else {
-                    Modifier.dashedBorder(palette.line, palette.disabled, Radius.badge)
-                },
-            )
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.s),
-        contentAlignment = Alignment.Center,
+    CompactTarget(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.then(if (reason != null) Modifier.semantics { stateDescription = reason } else Modifier),
+        radius = Radius.badge,
+        // docs/09 "Disabled, focus and structure": the secondary edge (`inputBorder`) while it can be tapped, and
+        // a dashed `disabled` one — words too — while it cannot.
+        box = if (enabled) {
+            Modifier.border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.badge))
+        } else {
+            Modifier.dashedBorder(palette.line, palette.disabled, Radius.badge)
+        },
     ) {
         Text(
             label,
-            style = if (named) MaterialTheme.typography.labelLarge else mono.small,
+            style = if (named) MaterialTheme.typography.labelMedium else mono.small,
             color = if (enabled) palette.textMuted else palette.disabled,
             maxLines = 1,
         )

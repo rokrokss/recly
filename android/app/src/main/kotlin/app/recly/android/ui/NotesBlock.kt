@@ -176,8 +176,9 @@ private fun letters(text: String): String = text.lowercase().filter { it.isLette
  * reader marks the line it plays; a second tap closes it, and opening another closes the first. A swipe from the end
  * deletes the item for good, with no question; a screen reader has the same Delete as an action of the row.
  *
- * [onPlay] makes the time a button that plays from it — an answer's citations' way — where [canPlay] allows; without
- * it (while recording) the time is a label. [scaleSec] picks the time format ([clock]).
+ * [onSeek] makes the time a button that moves the playhead to it — a transcript time's way, playing or paused as it
+ * was — where [canSeek] allows; without it (while recording) the time is a label. [scaleSec] picks the time format
+ * ([clock]).
  */
 @Composable
 internal fun NotesBlock(
@@ -187,8 +188,8 @@ internal fun NotesBlock(
     onDelete: (NoteItem) -> Unit,
     lines: suspend (Double) -> List<NoteLine>,
     modifier: Modifier = Modifier,
-    canPlay: (Double) -> Boolean = { false },
-    onPlay: ((Double) -> Unit)? = null,
+    canSeek: (Double) -> Boolean = { false },
+    onSeek: ((Double) -> Unit)? = null,
 ) {
     val palette = blueprint
     var open by remember(notes.recordingId) { mutableStateOf<String?>(null) }
@@ -212,8 +213,8 @@ internal fun NotesBlock(
                         expanded = open == item.id,
                         onToggle = { open = if (open == item.id) null else item.id },
                         scaleSec = scaleSec,
-                        canPlay = canPlay,
-                        onPlay = onPlay,
+                        canSeek = canSeek,
+                        onSeek = onSeek,
                         onDelete = onDelete,
                         lines = lines,
                     )
@@ -229,8 +230,8 @@ private fun NoteRow(
     expanded: Boolean,
     onToggle: () -> Unit,
     scaleSec: Long?,
-    canPlay: (Double) -> Boolean,
-    onPlay: ((Double) -> Unit)?,
+    canSeek: (Double) -> Boolean,
+    onSeek: ((Double) -> Unit)?,
     onDelete: (NoteItem) -> Unit,
     lines: suspend (Double) -> List<NoteLine>,
 ) {
@@ -276,7 +277,7 @@ private fun NoteRow(
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
                 )
-                NoteTime(item.atSec, scaleSec, canPlay, onPlay)
+                NoteTime(item.atSec, scaleSec, canSeek, onSeek)
             }
             if (expanded) NoteLines(item, lines)
             HairLine()
@@ -284,15 +285,18 @@ private fun NoteRow(
     }
 }
 
-/** The note's time at the row's end: a quiet monospace button that plays from it, as a transcript time does, or a label. */
+/**
+ * The note's time at the row's end: a quiet, compact monospace button that moves the playhead to it, as a transcript
+ * time does (2026-10-28), or a label.
+ */
 @Composable
-private fun NoteTime(atSec: Double, scaleSec: Long?, canPlay: (Double) -> Boolean, onPlay: ((Double) -> Unit)?) {
+private fun NoteTime(atSec: Double, scaleSec: Long?, canSeek: (Double) -> Boolean, onSeek: ((Double) -> Unit)?) {
     val stamp = clock(atSec.toLong(), scaleSec)
-    if (onPlay == null) {
+    if (onSeek == null) {
         Text(stamp, style = mono.bodySmall, color = blueprint.textMuted, modifier = Modifier.clearAndSetSemantics { contentDescription = hms(atSec.toLong()) })
     } else {
-        val label = stringResource(R.string.citation_play_from, hms(atSec.toLong()))
-        BlueprintButton(stamp, { onPlay(atSec) }, enabled = canPlay(atSec), tone = ButtonTone.QUIET, monospace = true,
+        val label = stringResource(R.string.transcript_seek, hms(atSec.toLong()))
+        BlueprintButton(stamp, { onSeek(atSec) }, enabled = canSeek(atSec), tone = ButtonTone.QUIET, monospace = true, compact = true,
             modifier = Modifier.semantics { contentDescription = label })
     }
 }
@@ -333,8 +337,8 @@ internal fun NotesPane(
     scaleSec: Long?,
     onDelete: (NoteItem) -> Unit,
     lines: suspend (Double) -> List<NoteLine>,
-    canPlay: (Double) -> Boolean,
-    onPlay: (Double) -> Unit,
+    canSeek: (Double) -> Boolean,
+    onSeek: (Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shown = notes?.takeIf { showsNotes(it, overview = true) }
@@ -355,7 +359,7 @@ internal fun NotesPane(
         }
         if (shown != null) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-                NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, lines = lines, canPlay = canPlay, onPlay = onPlay)
+                NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, lines = lines, canSeek = canSeek, onSeek = onSeek)
             }
             HairLine()
             CopyFooter(notesFooter(shown.model), text.orEmpty(), Modifier.testTag("notes-copy"))

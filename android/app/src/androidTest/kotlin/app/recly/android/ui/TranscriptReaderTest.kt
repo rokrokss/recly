@@ -13,12 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
+import androidx.test.platform.app.InstrumentationRegistry
+import app.recly.android.R
 import app.recly.android.ui.theme.ReclyTheme
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import recly.core.model.Track
+import recly.core.notes.NoteItem
+import recly.core.notes.NoteKind
+import recly.core.notes.NotesStage
+import recly.core.notes.RecordingNotes
 import recly.core.transcribe.*
 
 class TranscriptReaderTest {
@@ -116,5 +125,27 @@ class TranscriptReaderTest {
         val named = transcript.copy(speakers = listOf(TranscriptSpeaker("S1", "Mina")))
         ui.setContent { ReclyTheme { TranscriptReader(named, true, {}, Modifier.fillMaxSize()) } }
         ui.onNodeWithTag("transcript-speaker-0").assertTextEquals("Mina")
+    }
+
+    /** docs/09 "Component measurements" — Time and speaker button: drawn at the badge's size, a target of the touch minimum. */
+    @Test fun timeAndSpeakerKeepTheTouchMinimum() {
+        ui.setContent { ReclyTheme { TranscriptReader(transcript, true, {}, Modifier.fillMaxSize()) } }
+        listOf("transcript-time-0", "transcript-speaker-0").forEach { tag ->
+            val target = ui.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            assertTrue(target.width >= 48.dp && target.height >= 48.dp, "$tag: $target")
+        }
+    }
+
+    /** docs/09 "AI view": a note's time is a transcript time's — `Go to`, a seek — not a citation's `Play from`. */
+    @Test fun aNoteTimeGoesToItsSecond() {
+        var target = -1.0
+        val item = NoteItem("d", NoteKind.DECISION, "Ship it", null, null, atSec = 42.0, quote = "", provisional = false)
+        val notes = RecordingNotes("reader-test", NotesStage.FINAL, null, listOf(item), emptyList(), emptyList(), organizing = false)
+        ui.setContent { ReclyTheme {
+            NotesBlock(notes, overview = true, scaleSec = 7200, onDelete = {}, lines = { emptyList() }, canSeek = { true }, onSeek = { target = it })
+        } }
+        val goTo = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.transcript_seek, hms(42))
+        ui.onNodeWithContentDescription(goTo).performClick()
+        ui.runOnIdle { assertEquals(42.0, target) }
     }
 }

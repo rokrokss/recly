@@ -27,7 +27,7 @@ import app.recly.android.ui.theme.blueprint
  * `close`, `download`), drawn as thin geometric lines on a 24-unit grid like the tab bar's glyphs —
  * the app carries no icon font.
  */
-enum class Glyph { SHARE, MORE, SEARCH, CLOSE, IMPORT, DOCUMENT, SUBTITLES, AUDIO, COPY }
+enum class Glyph { SHARE, MORE, SEARCH, CLOSE, IMPORT, DOCUMENT, SUBTITLES, AUDIO, COPY, CHECK }
 
 @Composable
 fun GlyphIcon(glyph: Glyph, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
@@ -89,6 +89,8 @@ private fun DrawScope.drawGlyph(glyph: Glyph, color: Color) {
             drawPath(Path().apply { moveTo(15f, 2f); lineTo(3f, 2f); lineTo(3f, 17f) }, color, style = line)
             drawRect(color, Offset(7f, 6f), androidx.compose.ui.geometry.Size(14f, 16f), style = line)
         }
+        // Material Symbols' `check`: Copy all's `✓ Copied`, for as long as it would have said so.
+        Glyph.CHECK -> drawPath(Path().apply { moveTo(4.5f, 11.6f); lineTo(9.5f, 16.6f); lineTo(19.4f, 6.7f) }, color, style = line)
         // Material Symbols' `download`: an arrow down into an open tray.
         Glyph.IMPORT -> {
             drawLine(color, Offset(12f, 4f), Offset(12f, 15f), 1.5f)

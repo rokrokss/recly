@@ -81,15 +81,10 @@ struct AskPanel: View {
                         .font(blueprint.fonts.sans(TypeSize.small))
                         .foregroundStyle(blueprint.palette.textMuted)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    BlueprintButton(
-                        copied ? loc("Copied") : loc("Copy all"),
-                        tone: .quiet,
-                        leading: copied ? BlueprintChip.selectionMark : nil
-                    ) {
+                    CopyAllButton(copied: copied) {
                         copy()
                         copied = true
                     }
-                    .disabled(copied)
                     .accessibilityIdentifier("ask-copy")
                 }
             }

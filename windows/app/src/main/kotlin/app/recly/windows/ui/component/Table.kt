@@ -187,7 +187,7 @@ fun SwitchRow(
 ) {
     TableRow(
         title = title,
-        modifier = modifier.focusRing().toggleable(
+        modifier = modifier.focusRing().pressCursor(enabled).toggleable(
             value = checked,
             enabled = enabled,
             role = Role.Switch,

@@ -404,7 +404,7 @@ fun RecordingDetailScreen(
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
     // docs/09 "AI view": a citation plays where a time button for that second would — and, as its `Play from`
-    // says, starts playing there; the transcript's time buttons only move the playhead.
+    // says, starts playing there; the transcript's and the notes' time buttons only move the playhead.
     val canSeekTo = { atSec: Double -> canSeek && atSec < detail.audio.totalSec }
     val playFrom: (Double) -> Unit = { atSec ->
         seek(atSec)
@@ -516,7 +516,7 @@ fun RecordingDetailScreen(
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
                 notesEditing != null -> NotesEditor(notesEditing, { notesDraft = it }, Modifier.fillMaxSize())
                 chips && view == DetailView.NOTES -> NotesPane(detail.notes, organizing, notesText, onRetry = organize, scaleSec = scale,
-                    onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canPlay = canSeekTo, onPlay = playFrom,
+                    onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canSeek = canSeekTo, onSeek = seek,
                     modifier = Modifier.fillMaxSize())
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list — whatever
                 // the transcript's own state says, a step that never ran included.

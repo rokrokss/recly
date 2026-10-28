@@ -103,7 +103,7 @@ internal fun TranscriptEditor(
                 val spoken = LedgerFormat.elapsed((segment.start * 1000).toLong())
                 Column(Modifier.padding(horizontal = Space.m), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
-                        BlueprintButton(stamp, { onSeek(segment.start) }, enabled = canSeek, tone = ButtonTone.QUIET, monospace = true,
+                        BlueprintButton(stamp, { onSeek(segment.start) }, enabled = canSeek, tone = ButtonTone.QUIET, monospace = true, compact = true,
                             modifier = Modifier.semantics { contentDescription = strings[Str.TRANSCRIPT_SEEK, spoken] })
                         val speaker = draft.speakers[index]
                         var menu by remember { mutableStateOf(false) }

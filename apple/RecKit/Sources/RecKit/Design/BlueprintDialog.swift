@@ -277,6 +277,7 @@ public struct BlueprintRadioRow: View {
             OptionRow(label: label, selected: selected, filled: false)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .focusEffectDisabled()
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
@@ -298,6 +299,7 @@ public struct BlueprintCheckRow: View {
             OptionRow(label: label, selected: isOn, filled: true)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .focusEffectDisabled()
         .accessibilityRepresentation {
             Toggle(isOn: $isOn) { Text(verbatim: label) }
@@ -391,6 +393,7 @@ public struct BlueprintDialogLink: View {
                 .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .focusEffectDisabled()
     }
 }

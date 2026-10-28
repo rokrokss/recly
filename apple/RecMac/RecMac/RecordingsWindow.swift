@@ -40,6 +40,7 @@ struct RecordingsWindow: View {
                 if let message = menu.listMessage {
                     Button { menu.dismissListMessage() } label: { Banner(message.text, tone: menu.listMessageFailed ? .danger : .warning) }
                         .buttonStyle(.plain)
+                        .pointerCursor()
                         .padding(Space.s)
                         .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Close"))) { menu.dismissListMessage() }
                         .accessibilityIdentifier("list-message")

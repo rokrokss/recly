@@ -55,11 +55,18 @@ private class FocusRingNode(var color: Color, var width: Dp, var inset: Dp, var 
 
     override fun ContentDrawScope.draw() {
         drawContent()
-        if (!focused) return
-        val edge = inset.toPx()
-        translate(edge, edge) {
-            drawRing(color, width.toPx(), (radius.toPx() - edge).coerceAtLeast(0f), Size(size.width - edge * 2, size.height - edge * 2))
-        }
+        if (focused) drawFocusRing(color, width, inset, radius)
+    }
+}
+
+/**
+ * The ring [focusRing] draws, [inset] in from the edge. Also drawn by a compact control ([CompactTarget]), whose box is
+ * smaller than the target that holds the focus.
+ */
+internal fun DrawScope.drawFocusRing(color: Color, width: Dp, inset: Dp, radius: Dp) {
+    val edge = inset.toPx()
+    translate(edge, edge) {
+        drawRing(color, width.toPx(), (radius.toPx() - edge).coerceAtLeast(0f), Size(size.width - edge * 2, size.height - edge * 2))
     }
 }
 

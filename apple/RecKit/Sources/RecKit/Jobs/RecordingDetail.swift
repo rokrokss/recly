@@ -1303,7 +1303,7 @@ public struct RecordingDetailView: View {
                     focused: $notesFieldFocused
                 )
             } else if draft == nil, showingNotes {
-                NotesPane(model: model, retry: organize, seekableSec: model.totalSec, onSeek: citationSeek)
+                NotesPane(model: model, retry: organize, seekableSec: model.totalSec, onSeek: canSeek ? { seek(toSec: $0) } : nil)
             } else if let draft {
                 TranscriptEditor(
                     draft: draft,
@@ -1890,7 +1890,8 @@ public struct RecordingDetailView: View {
     }
 
     /// docs/09 "AI view": a citation plays the recording from its second — it says `Play from` — where a
-    /// transcript time button only moves the playhead (2026-10-10, 1.2); nil, so the citations are plain text,
+    /// transcript time button only moves the playhead (2026-10-10, 1.2), as a note's does (2026-10-28); nil, so the
+    /// citations are plain text,
     /// while the recording cannot be played from a point.
     private var citationSeek: ((Double) -> Void)? {
         canSeek ? { playFrom($0) } : nil

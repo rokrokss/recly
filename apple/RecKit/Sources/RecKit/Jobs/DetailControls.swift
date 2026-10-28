@@ -103,6 +103,7 @@ struct DetailMoreMenu: View {
         .menuIndicator(.hidden)
         .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
+        .pointerCursor()
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("More")))
         .accessibilityIdentifier("detail-more")
@@ -176,6 +177,7 @@ struct HighlightMenu<Label: View>: View {
         }
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
+        .pointerCursor()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Highlight %@", LedgerFormat.clock(Int(atSec)))))
         .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(atSec)))), go)
         .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Remove highlight")), remove)
@@ -183,8 +185,8 @@ struct HighlightMenu<Label: View>: View {
 }
 
 /// docs/09 "Transcript reader": who is speaking, as a quiet badge — the name when the user gave one, else the
-/// id in mono. Told apart by the label only: no speaker has a colour (2026-10-02). The box is the time
-/// button's — one height, one corner — so the two stand on one line (2026-10-09).
+/// id in mono. Told apart by the label only: no speaker has a colour (2026-10-02). The box is the compact time
+/// button's — one height, one corner — so the two stand on one line (2026-10-09, 2026-10-28).
 struct SpeakerBadge: View {
     let text: String
     let mono: Bool
@@ -192,17 +194,17 @@ struct SpeakerBadge: View {
 
     var body: some View {
         Text(verbatim: text)
-            .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.small, weight: .medium))
+            .font(mono ? blueprint.fonts.mono(TypeSize.small) : blueprint.fonts.sans(TypeSize.small, weight: .medium))
             .foregroundStyle(blueprint.palette.textMuted)
             .lineLimit(1)
-            // The time button's box: a button's 8 at the sides.
+            // The compact time button's box: the status badge's 8 × 4.
             .padding(.horizontal, Space.s)
-            .frame(minWidth: minTouch, minHeight: minTouch)
+            .padding(.vertical, Space.xs)
             .overlay {
                 // 2026-10-08 §12: the secondary colour, so the badge reads as one against the page.
                 RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.textMuted, lineWidth: blueprint.line)
             }
-            .contentShape(Rectangle())
+            .modifier(TouchTarget())
     }
 }
 
@@ -231,6 +233,7 @@ struct SpeakerMenu<Label: View>: View {
         }
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
+        .pointerCursor()
     }
 }
 
@@ -385,6 +388,7 @@ public struct SearchResultRow: View {
             .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .focusEffectDisabled()
         .overlay(alignment: .bottom) { HairLine() }
         .accessibilityElement(children: .combine)
@@ -505,6 +509,7 @@ struct DetailShareSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .disabled(reason != nil || preparing != nil)
         .overlay(alignment: .bottom) { HairLine() }
         .background(blueprint.palette.surface)
@@ -544,6 +549,7 @@ struct DetailShareSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .disabled(model.document == nil)
         .overlay(alignment: .bottom) { HairLine() }
         .background(blueprint.palette.surface)

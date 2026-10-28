@@ -150,6 +150,7 @@ private struct AlertLine<Action: View>: View {
             .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .focusEffectDisabled()
         // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and
         // a code read out as three separate things (the same rule as `LedgerRow`).

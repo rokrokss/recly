@@ -124,7 +124,7 @@ public struct NotesBlock: View {
     let showsOverview: Bool
     /// The time as this screen draws its times.
     let stamp: (Double) -> String
-    /// The time is a button that plays from it — the detail; a label while recording.
+    /// The time is a button that moves the playhead to it — the detail; a label while recording.
     let playable: Bool
     /// How far the recording here can be played: a time past it is off.
     let seekableSec: Double
@@ -196,6 +196,7 @@ public struct NotesBlock: View {
             .padding(.vertical, Space.xs)
             .contentShape(Rectangle())
             .onTapGesture { toggle(item) }
+            .pointerCursor()
             if expanded == item.id {
                 around(item)
             }
@@ -222,10 +223,11 @@ public struct NotesBlock: View {
     @ViewBuilder
     private func time(_ item: NoteItem) -> some View {
         if playable {
-            // The summary citations' path: seek and play (docs/09 "AI view").
-            BlueprintButton(stamp(item.atSec), tone: .quiet, mono: true) { onSeek?(item.atSec) }
+            // The transcript time button's path: it moves the playhead and leaves playing or paused as it was
+            // (docs/09 "AI view", 2026-10-28).
+            BlueprintButton(stamp(item.atSec), tone: .quiet, mono: true, compact: true) { onSeek?(item.atSec) }
                 .disabled(onSeek == nil || item.atSec >= seekableSec)
-                .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Play from %@", LedgerFormat.clock(Int(item.atSec)))))
+                .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(item.atSec)))))
         } else {
             Text(verbatim: stamp(item.atSec))
                 .font(blueprint.fonts.monoBodySmall)

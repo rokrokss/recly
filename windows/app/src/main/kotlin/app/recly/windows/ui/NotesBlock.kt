@@ -57,6 +57,7 @@ import app.recly.windows.ui.component.BlueprintMenuRow
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.SectionHeader
 import app.recly.windows.ui.component.focusRing
+import app.recly.windows.ui.component.pressCursor
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -71,18 +72,18 @@ import recly.core.notes.RecordingNotes
  * docs/09 "Notes view": a recording's notes in the Notes chip's body — the overview, then Key points, Decisions,
  * To-dos and Questions, then the user's own sections under their names, each only while it has items, and nothing at
  * all when there is nothing (no empty state, no label for how far they have come). A row opens the transcript's lines
- * around its moment under itself, one row at a time ([linesAround]); its time plays from there ([onPlay]) while
- * [canPlay]; its context menu — a right click, the menu key or Shift+F10 — has Delete, which asks nothing ([onDelete]).
+ * around its moment under itself, one row at a time ([linesAround]); its time moves the playhead there ([onSeek]) while
+ * [canSeek]; its context menu — a right click, the menu key or Shift+F10 — has Delete, which asks nothing ([onDelete]).
  */
 @Composable
 internal fun NotesBlock(
     notes: RecordingNotes,
-    canPlay: Boolean,
-    onPlay: (Double) -> Unit,
+    canSeek: Boolean,
+    onSeek: (Double) -> Unit,
     linesAround: suspend (Double) -> List<NoteLine>,
     onDelete: (NoteItem) -> Unit,
     strings: Strings,
-    /** A time past it is not playable, as a transcript time past it is off. */
+    /** A time past it is off, as a transcript time past it is. */
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
     /** The recording's length, which picks the format of every time drawn ([LedgerFormat.clock]). */
     spanSec: Double? = null,
@@ -100,8 +101,8 @@ internal fun NotesBlock(
                     item = item,
                     expanded = open == item.id,
                     onToggle = { open = if (open == item.id) null else item.id },
-                    playable = canPlay && item.atSec < seekableDurationSec,
-                    onPlay = onPlay,
+                    seekable = canSeek && item.atSec < seekableDurationSec,
+                    onSeek = onSeek,
                     linesAround = linesAround,
                     onDelete = onDelete,
                     strings = strings,
@@ -132,8 +133,8 @@ internal fun NoteRow(
     item: NoteItem,
     expanded: Boolean,
     onToggle: () -> Unit,
-    playable: Boolean,
-    onPlay: (Double) -> Unit,
+    seekable: Boolean,
+    onSeek: (Double) -> Unit,
     linesAround: suspend (Double) -> List<NoteLine>,
     onDelete: (NoteItem) -> Unit,
     strings: Strings,
@@ -167,6 +168,7 @@ internal fun NoteRow(
                             .also { if (it) menuAt = Offset(0f, size.height.toFloat()) }
                     }
                     .focusRing()
+                    .pressCursor()
                     .clickable(role = Role.Button, onClick = onToggle)
                     .padding(vertical = Space.xs),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -178,15 +180,17 @@ internal fun NoteRow(
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
                 )
-                // The transcript's time button, which plays the way an answer's time does.
-                val label = strings[Str.SUMMARY_PLAY_FROM, LedgerFormat.elapsed((item.atSec * 1000).toLong())]
+                // The transcript's time button, at the status badge's size, which only moves the playhead as the
+                // transcript's does (2026-10-28): playing or paused stays as it was. An answer's time still plays.
+                val label = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((item.atSec * 1000).toLong())]
                 BlueprintButton(
                     LedgerFormat.clock(item.atSec, spanSec),
-                    { onPlay(item.atSec) },
+                    { onSeek(item.atSec) },
                     modifier = Modifier.semantics { contentDescription = label },
                     tone = ButtonTone.QUIET,
-                    enabled = playable,
+                    enabled = seekable,
                     monospace = true,
+                    compact = true,
                 )
             }
             menuAt?.let { at ->

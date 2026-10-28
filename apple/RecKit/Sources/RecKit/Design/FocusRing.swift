@@ -39,6 +39,37 @@ extension View {
 /// press, no focus stop, and "dimmed" to VoiceOver. Pressed, the label dims for the moment of the press, as a link does.
 struct BlueprintPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.opacity(configuration.isPressed ? 0.6 : 1)
+        configuration.label.opacity(configuration.isPressed ? 0.6 : 1).pointerCursor()
+    }
+}
+
+/// docs/09 "Disabled, focus and structure" (2026-10-28): on the Mac a control that can be pressed shows the pointing
+/// hand under the pointer; a disabled one keeps the arrow. The phone has no pointer.
+private struct PointerCursor: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        if #available(macOS 15.0, *) {
+            content.pointerStyle(isEnabled ? .link : nil)
+        } else {
+            content.onContinuousHover { phase in
+                switch phase {
+                case .active: if isEnabled { NSCursor.pointingHand.set() }
+                case .ended: NSCursor.arrow.set()
+                }
+            }
+        }
+        #else
+        content
+        #endif
+    }
+}
+
+extension View {
+    /// The pointing hand over a control the app draws itself: its label, or the `Button` or `Menu` with the plain
+    /// style around it.
+    public func pointerCursor() -> some View {
+        modifier(PointerCursor())
     }
 }

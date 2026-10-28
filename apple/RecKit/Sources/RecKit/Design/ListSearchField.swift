@@ -41,6 +41,7 @@ public struct ListSearchField: View {
                         .blueprintFocusRing()
                 }
                 .buttonStyle(.plain)
+                .pointerCursor()
                 .focusEffectDisabled()
                 .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Close search")))
                 .accessibilityIdentifier("list-search-clear")

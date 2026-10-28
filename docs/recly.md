@@ -2496,6 +2496,7 @@ The principle in one line: **intent, not decoration**.
   |---|---|
   | Button | padding 8 × 4, height at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
+  | Time and speaker button | drawn at the status badge's size — padding 8 × 4, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge |
   | State node | padding 12 × 8, label up to two lines from the start edge |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum |
   | Section header | 8 below |
@@ -2974,8 +2975,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   organized here, the square loader and `Organizing…` over the notes there are; a failure of `Organize` (`RecordingNotes.failure`): a
   centred notice — the `CoreMessage` sentence, or `Could not organize` with the detail — and one centred button: `Manage usage`
   (primary) for the usage limit, `Retry` (quiet) for the rest, none when the sentence already says to sign in or that the plan cannot be
-  used; the notes there are stay under it. Under the notes, `ChatGPT · <model>` (secondary, 12) and a quiet `Copy all`, which copies
-  `notes.text` — the overview and every group with its heading, owners, due dates and `[HH:MM:SS]`.
+  used; the notes there are stay under it. Under the notes, `ChatGPT · <model>` (secondary, 12) and the copy icon (2026-10-28; until then a
+  quiet worded button) — `Copy all` to a screen reader, a check mark and `Copied` for a moment after it — which copies `notes.text` — the overview and every group with its heading, owners, due dates and `[HH:MM:SS]`.
 - **Editing** (2026-10-28). More → `Edit notes`, right after `Organize again`, only while the recording has notes (disabled
   `Organizing…` while it is organized, `Still recording` while it records; absent while the transcript is being edited). It turns the
   `Notes` body into fields the way transcript editing does: the header `Edit notes`; the overview as one multi-line plain-text field when
@@ -2991,7 +2992,7 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   `Action items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows; a tap asks; `✓` on the one
   behind the shown answer), `Ask your own question` with a primary `Ask` (Enter asks and Shift+Enter adds a line on the desktops; the phone
   keyboard's Send or Return asks), then the answer as selectable plain text with its line breaks — `Asking…` with the square loader
-  over it while it runs — then `ChatGPT · <model>` (secondary, 12) and a quiet `Copy all`, or the failure notice the notes use. Each
+  over it while it runs — then `ChatGPT · <model>` (secondary, 12) and the notes' copy icon, or the failure notice the notes use. Each
   `[HH:MM:SS]` in it (`SummaryCitations`) plays the recording from that time (2026-10-10: seek and play): mono, accent, no underline — a
   dotted underline means a web page — with a target of at least the minimum each way, laid over the selectable text; where two targets
   overlap, the citation whose glyphs are nearest the tap wins; each has its own accessibility element `Play from 00:12:34`; past the
@@ -3012,7 +3013,8 @@ says provisional or edited: the notes simply change when a pass lands.
   block and no empty state. The `Organizing…` line or the failure notice stays on top.
 - **A row** is at least 44 high: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
   present, the due date muted. At its end the item's time in the recording's time format, as the transcript's quiet monospace time button:
-  a tap seeks and plays (the citation path), accessibility `Play from 00:12:34`; disabled while the recording records, when its audio is not
+  a tap moves the playhead and leaves playing or paused as it was, as the transcript's does (2026-10-28; until then it also played, the
+  citation path), accessibility `Go to 00:12:34`; disabled while the recording records, when its audio is not
   held, or past the held audio.
 - **A tap on the row** opens the `linesAround` lines under it — the speaker's name only when there is one (`Me` for an unnamed me, part
   labels never), then the text — with the reader's accent start-edge bar on the note's own line: the line containing the quote, else the
@@ -3070,7 +3072,9 @@ screen reader labels are resources (§7), and an element that opens a screen whe
 switches, icon buttons, the find bar's arrows alike — so it never looks enabled in high contrast. A button showing its own work — `…` while
 it runs, `✓` when done (principle 4's processing state) — is not disabled in this sense: it cannot be pressed meanwhile, but it keeps its
 normal ink, because that state is what the user is meant to read. Every focusable control shows the focus ring of
-"Component measurements" under keyboard, Switch Access or full keyboard access, links included. Screen and section headers are headings
+"Component measurements" under keyboard, Switch Access or full keyboard access, links included. On the desktops (Mac, Windows) the pointer is
+the pointing hand over anything that can be pressed — buttons, icon buttons, chips, menus, links, rows that open or expand — and stays the
+arrow over a disabled one or one showing its own work (2026-10-28); the phones and watches have no pointer. Screen and section headers are headings
 (`heading()`, `.isHeader`); a status line that changes while the user looks at it — the record screens', both watches', the popover's and the
 tray's — is announced politely (a polite live region; on Apple an announcement when its text changes). Windows ships `jdk.accessibility` in its
 runtime, so NVDA and JAWS read the app through the Java Access Bridge (turned on with `jabswitch /enable`), and it follows the system text size

@@ -99,7 +99,7 @@ internal fun TranscriptEditor(
                     val stamp = clock(segment.start.toLong(), scaleSec)
                     val seekLabel = stringResource(R.string.transcript_seek, hms(segment.start.toLong()))
                     BlueprintButton(stamp, { onSeek(segment.start) }, enabled = canSeek && segment.start < seekableDurationSec,
-                        modifier = Modifier.semantics { contentDescription = seekLabel }, tone = ButtonTone.QUIET, monospace = true)
+                        modifier = Modifier.semantics { contentDescription = seekLabel }, tone = ButtonTone.QUIET, monospace = true, compact = true)
                     if (segment.speaker.isEmpty()) {
                         BlueprintButton(stringResource(R.string.speaker_add), { onDraft(draft.apply(TranscriptEdit.SetSpeaker(index, null))) },
                             tone = ButtonTone.QUIET, modifier = Modifier.testTag("edit-add-speaker-$index"))

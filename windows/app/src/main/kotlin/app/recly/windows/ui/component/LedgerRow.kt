@@ -159,6 +159,7 @@ fun LedgerRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRing()
+                .pressCursor()
                 .clickable(onClick = onClick)
                 .semantics(mergeDescendants = true) {
                     contentDescription = announce

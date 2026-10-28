@@ -38,6 +38,7 @@ import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.fieldBox
 import app.recly.windows.ui.component.focusRing
+import app.recly.windows.ui.component.pressCursor
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
@@ -95,7 +96,7 @@ internal fun SearchField(
         )
         if (query.isNotEmpty() && clearLabel != null) {
             Box(
-                Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).clickable(role = Role.Button) { onQuery("") }
+                Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).pressCursor().clickable(role = Role.Button) { onQuery("") }
                     .semantics { contentDescription = clearLabel },
                 contentAlignment = Alignment.Center,
             ) {
@@ -118,7 +119,7 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, notesLabel: Strin
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
         Row(
             // A list row: 12 top and bottom, as the ledger's (docs/09 "Component measurements").
-            Modifier.fillMaxWidth().focusRing().clickable(role = Role.Button, onClick = onOpen).padding(horizontal = Space.m, vertical = Space.sm),
+            Modifier.fillMaxWidth().focusRing().pressCursor().clickable(role = Role.Button, onClick = onOpen).padding(horizontal = Space.m, vertical = Space.sm),
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalAlignment = Alignment.Top,
         ) {
@@ -191,7 +192,7 @@ internal fun FindBar(
 @Composable
 private fun FindArrow(mark: String, label: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
-        Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).pressCursor(enabled).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {

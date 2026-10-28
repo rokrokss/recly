@@ -19,6 +19,7 @@ public struct BlueprintButton: View {
     private let tone: ButtonTone
     private let mono: Bool
     private let minWidth: CGFloat?
+    private let compact: Bool
     private let action: () -> Void
     /// docs/09 "Disabled, focus and structure" (2026-10-15): showing its own work — [ProcessingButton]'s `…` and `✓` —
     /// the button cannot be pressed, but it is not disabled: it keeps its ink and edge, because that state is what the
@@ -39,19 +40,23 @@ public struct BlueprintButton: View {
     /// - Parameter mono: for a label that is data — a provider id — rather than a word, as
     ///   [BlueprintField]'s own `mono` is, and as the other two shells' `BlueprintButton` already had.
     /// - Parameter minWidth: [wordedMinWidth] when not given, except for a data label.
+    /// - Parameter compact: docs/09 "Component measurements" — Time and speaker button (2026-10-28): drawn at the
+    ///   status badge's size, label 12, inside a target that is still the touch minimum.
     public init(
         _ label: String,
         tone: ButtonTone = .accent,
         leading: String? = nil,
         mono: Bool = false,
         minWidth: CGFloat? = nil,
+        compact: Bool = false,
         action: @escaping () -> Void
     ) {
         self.label = label
         self.tone = tone
         self.leading = leading
         self.mono = mono
-        self.minWidth = minWidth ?? (mono ? nil : Self.wordedMinWidth)
+        self.minWidth = minWidth ?? (mono || compact ? nil : Self.wordedMinWidth)
+        self.compact = compact
         self.action = action
     }
 
@@ -69,8 +74,9 @@ public struct BlueprintButton: View {
                 }
                 Text(verbatim: label)
             }
-            // docs/09 "Component measurements" — Button: a label of 14 whether it is sans or mono.
-            .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
+            // docs/09 "Component measurements" — Button: a label of 14 whether it is sans or mono; a compact one's is
+            // the status badge's 12.
+            .font(labelFont)
             .foregroundStyle(ink)
             .lineLimit(3)
             .multilineTextAlignment(.center)
@@ -78,7 +84,7 @@ public struct BlueprintButton: View {
             .padding(.horizontal, Space.s)
             .padding(.vertical, Space.xs)
             // docs/09 "Accessibility": the label is small, the button is not.
-            .frame(minWidth: minWidth, maxWidth: fillsWidth ? .infinity : nil, minHeight: minTouch)
+            .frame(minWidth: minWidth, maxWidth: fillsWidth ? .infinity : nil, minHeight: compact ? nil : minTouch)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
                 // 2026-10-08 §12: a disabled button is dashed as well as muted — the shape survives
@@ -92,6 +98,7 @@ public struct BlueprintButton: View {
             }
             .contentShape(Rectangle())
             .blueprintFocusRing(onFill: isEnabled && tone == .primary)
+            .modifier(TouchTarget(active: compact))
         }
         .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
@@ -109,6 +116,11 @@ public struct BlueprintButton: View {
         func body(content: Content) -> some View {
             if active { content.focusable(false) } else { content }
         }
+    }
+
+    private var labelFont: Font {
+        let size = compact ? TypeSize.small : TypeSize.bodySmall
+        return mono ? blueprint.fonts.mono(size) : blueprint.fonts.sans(size, weight: .medium)
     }
 
     /// The button while it shows its own work ([showsWork]).
@@ -147,6 +159,22 @@ public struct BlueprintButton: View {
 
     private var fill: Color {
         isEnabled && tone == .primary ? blueprint.palette.accent : .clear
+    }
+}
+
+/// docs/09 "Component measurements" — Time and speaker button: the box is drawn at the status badge's size, and the
+/// target around it is still the touch minimum each way, as the highlight square's is.
+struct TouchTarget: ViewModifier {
+    var active = true
+
+    func body(content: Content) -> some View {
+        if active {
+            content
+                .frame(minWidth: minTouch, minHeight: minTouch)
+                .contentShape(Rectangle())
+        } else {
+            content
+        }
     }
 }
 
@@ -229,6 +257,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
         .buttonStyle(BlueprintPressStyle())
         .menuIndicator(.hidden)
         .focusEffectDisabled()
+        .pointerCursor()
         // One element, deliberately (the AlertBanner/LedgerRow idiom): a `Menu` publishes its own
         // menu-button element AND its plain-styled label subtree publishes a second one, so the
         // setting reads twice — Language/한국어, then Language/한국어 again over nothing. Ignoring

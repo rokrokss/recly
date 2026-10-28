@@ -382,6 +382,7 @@ fun BlueprintMenuRow(
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
             .focusRing()
+            .pressCursor(enabled)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Space.sm, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -448,6 +449,7 @@ fun <T> BlueprintDropdown(
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
                 .border(palette.line, palette.inputBorder, shape)
                 .focusRing(shape)
+                .pressCursor()
                 .clickable(role = Role.Button) { expanded = true }
                 // One element: the value and the mark are two texts, and a reader walking them would say the value and
                 // then "down-pointing triangle". Cleared after the click, so the role and the action stay; it says what

@@ -1,11 +1,16 @@
 package app.recly.windows.ui
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -21,13 +26,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.WORD_JOINER
@@ -37,9 +50,12 @@ import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.LoadingText
-import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SectionHeader
 import app.recly.windows.ui.component.fieldBox
+import app.recly.windows.ui.component.focusRing
+import app.recly.windows.ui.component.pressCursor
+import app.recly.windows.ui.theme.MinTouch
+import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -66,14 +82,14 @@ internal fun NotesChips(showingNotes: Boolean, onShowNotes: (Boolean) -> Unit, s
 /**
  * docs/09 "AI view" · "Notes view": the Notes chip's body. On top, the square loader and `Organizing…` while the
  * recording is organized here, or the last Organize's failure; under it the notes there are ([NotesBlock]), whose
- * times play the recording from there ([canPlay], [onPlay]); under them which model made them, and Copy all.
+ * times move the playhead there ([canSeek], [onSeek]); under them which model made them, and Copy all.
  */
 @Composable
 internal fun NotesPane(
     model: ShellModel,
     detail: RecordingDetail,
-    canPlay: Boolean,
-    onPlay: (Double) -> Unit,
+    canSeek: Boolean,
+    onSeek: (Double) -> Unit,
     strings: Strings,
     modifier: Modifier = Modifier,
 ) {
@@ -91,8 +107,8 @@ internal fun NotesPane(
         if (notes != null && !notes.isEmpty) {
             NotesBlock(
                 notes = notes,
-                canPlay = canPlay,
-                onPlay = onPlay,
+                canSeek = canSeek,
+                onSeek = onSeek,
                 linesAround = { atSec -> model.noteLines(detail.recordingId, atSec) },
                 onDelete = { item -> model.deleteNote(detail.recordingId, item.id) },
                 strings = strings,
@@ -107,8 +123,8 @@ internal fun NotesPane(
 }
 
 /**
- * Which model wrote it, and Copy all, which copies [text] — read when it is pressed — and says Copied, with the mark,
- * the way the transcript's does. Under the notes, and under an answer.
+ * Which model wrote it, and Copy all, which copies [text] — read when it is pressed — and says Copied. Under the notes,
+ * and under an answer.
  */
 @Composable
 internal fun ChatGptFooter(source: String, recordingId: String, strings: Strings, text: suspend () -> String?) {
@@ -122,18 +138,61 @@ internal fun ChatGptFooter(source: String, recordingId: String, strings: Strings
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(source, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted, modifier = Modifier.weight(1f))
-        BlueprintButton(
-            if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.TRANSCRIPT_COPY],
-            {
-                scope.launch {
-                    text()?.let {
-                        clipboard.setText(AnnotatedString(it))
-                        copied = true
-                    }
+        CopyAllButton(copied, strings) {
+            scope.launch {
+                text()?.let {
+                    clipboard.setText(AnnotatedString(it))
+                    copied = true
                 }
-            },
-            tone = ButtonTone.QUIET,
-        )
+            }
+        }
+    }
+}
+
+/**
+ * docs/09 "AI view": Copy all as the copy icon (2026-10-28; until then a quiet worded button) — no box, the muted ink of
+ * the shell's other marks (the find bar's, a field's ×), the [MinTouch] target — and for as long as it would have said
+ * Copied, the check mark, which says so to a reader; a press does nothing then. The shell has no icon font, so both are
+ * drawn, in the icons' thin line (docs/09 "Icons"), at the body size, as the Mac's SF Symbol is.
+ */
+@Composable
+private fun CopyAllButton(copied: Boolean, strings: Strings, onCopy: () -> Unit) {
+    val ink = blueprint.textMuted
+    val label = strings[if (copied) Str.TRANSCRIPT_COPIED else Str.TRANSCRIPT_COPY]
+    val side = with(LocalDensity.current) { MaterialTheme.typography.bodyLarge.fontSize.toDp() }
+    Box(
+        Modifier
+            .size(MinTouch)
+            .focusRing(RoundedCornerShape(Radius.node))
+            // Copied, it cannot be pressed: the arrow.
+            .pressCursor(!copied)
+            .clickable(role = Role.Button) { if (!copied) onCopy() }
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.size(side)) {
+            // On a grid of 16 across, as the mark is drawn at 16.
+            val unit = size.width / ICON_GRID
+            val stroke = Stroke(ICON_LINE.toPx())
+            if (copied) {
+                val check = Path().apply {
+                    moveTo(2.5f * unit, 8.5f * unit)
+                    lineTo(6.25f * unit, 12.25f * unit)
+                    lineTo(13.5f * unit, 4f * unit)
+                }
+                drawPath(check, ink, style = stroke)
+            } else {
+                // The sheet in front at the top right and the corner of the one behind it at the bottom left, as Material's
+                // content_copy and SF's doc.on.doc are — and, as theirs, not mirrored in a right-to-left language.
+                drawRect(ink, Offset(5.75f * unit, 0.75f * unit), Size(9f * unit, 10.5f * unit), style = stroke)
+                val behind = Path().apply {
+                    moveTo(1.75f * unit, 4.5f * unit)
+                    lineTo(1.75f * unit, 15f * unit)
+                    lineTo(10.75f * unit, 15f * unit)
+                }
+                drawPath(behind, ink, style = stroke)
+            }
+        }
     }
 }
 
@@ -267,3 +326,7 @@ internal fun notesHeadings(strings: Strings): NotesHeadings {
 }
 
 private const val COPIED_MS = 3_000L
+
+/** The copy and check marks' grid, and their line: docs/09 "Icons", geometric thin lines of 1.5. */
+private const val ICON_GRID = 16f
+private val ICON_LINE: Dp = 1.5.dp

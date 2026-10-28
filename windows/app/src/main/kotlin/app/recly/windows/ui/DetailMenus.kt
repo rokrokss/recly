@@ -50,11 +50,13 @@ import app.recly.windows.ui.component.BlueprintMenuDivider
 import app.recly.windows.ui.component.BlueprintMenuRow
 import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.ButtonTone
+import app.recly.windows.ui.component.CompactControl
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SwitchTrack
 import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.component.onLabelBaseline
+import app.recly.windows.ui.component.pressCursor
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
@@ -390,25 +392,25 @@ internal fun speakerName(speaker: TranscriptSpeaker?, strings: Strings): String?
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, reason: String? = null, onClick: () -> Unit) {
     val palette = blueprint
-    // The time button's box beside it (2026-10-09): the same 44 height, corner and edge, and the same 14 type every
-    // button label is (docs/09 "Component measurements"), so the two share one height, one centre and one baseline.
-    Box(
-        Modifier
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .border(palette.line, if (enabled) palette.inputBorder else palette.disabled, RoundedCornerShape(Radius.node))
-            .focusRing(RoundedCornerShape(Radius.node))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            // Why it is off, for whoever cannot see that it is (D13).
-            .semantics { if (!enabled && reason != null) stateDescription = reason }
-            .padding(horizontal = Space.s, vertical = Space.xs),
-        contentAlignment = Alignment.Center,
+    val shape = RoundedCornerShape(Radius.node)
+    // The compact time button's box beside it (2026-10-09, 2026-10-28): the status badge's size in the same corner and
+    // edge, and the same 12 type (docs/09 "Component measurements" — Time and speaker button), so the two share one
+    // height, one centre and one baseline; the target around it is still the touch minimum.
+    CompactControl(
+        onClick = onClick,
+        // Why it is off, for whoever cannot see that it is (D13).
+        modifier = Modifier.semantics { if (!enabled && reason != null) stateDescription = reason },
+        face = Modifier.border(palette.line, if (enabled) palette.inputBorder else palette.disabled, shape),
+        shape = shape,
+        enabled = enabled,
     ) {
+        val sans = MaterialTheme.typography.labelMedium
         Text(
             name ?: id,
-            style = if (name != null) MaterialTheme.typography.labelLarge else mono.bodySmall,
+            style = if (name != null) sans else mono.small,
             color = palette.textMuted,
             maxLines = 1,
-            modifier = if (name != null) Modifier else Modifier.onLabelBaseline(),
+            modifier = if (name != null) Modifier else Modifier.onLabelBaseline(sans),
         )
     }
 }
@@ -539,6 +541,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 // A quiet control's edge is the input border, 3:1 against the page in light and dark.
                 .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
                 .focusRing(RoundedCornerShape(Radius.node))
+                .pressCursor()
                 .clickable(role = Role.Button) { open = true }
                 .semantics {
                     contentDescription = strings[Str.PLAYER_SPEED]
@@ -562,6 +565,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = MinTouch)
                     .focusRing()
+                    .pressCursor()
                     .toggleable(value = skipSilence, role = Role.Switch, onValueChange = onSkipSilence)
                     .padding(start = Space.sm, end = Space.xs),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),

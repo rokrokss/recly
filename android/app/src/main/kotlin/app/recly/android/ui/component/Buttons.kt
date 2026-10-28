@@ -8,12 +8,18 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -72,7 +78,13 @@ fun BlueprintButton(
     monospace: Boolean = false,
     /** [ButtonMinWidth] for a worded button; [MinTouch] for data and for Close, Delete and Cancel. */
     minWidth: Dp = if (monospace) MinTouch else ButtonMinWidth,
-) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false, fade = false)
+    /**
+     * docs/09 "Component measurements" — Time and speaker button (2026-10-28): drawn at the status badge's measure, a
+     * label of 12 in padding 8 × 4 and no minimum, in a [CompactTarget] that is still [MinTouch] each way; [minWidth]
+     * does not apply.
+     */
+    compact: Boolean = false,
+) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false, fade = false, compact = compact)
 
 /**
  * [BlueprintButton]'s box. [working] is [ProcessingButton]'s "…" and "✓" (docs/09 "Disabled, focus and structure"):
@@ -94,6 +106,7 @@ private fun ButtonBox(
     minWidth: Dp,
     working: Boolean,
     fade: Boolean,
+    compact: Boolean = false,
 ) {
     val palette = blueprint
     val drawnEnabled = enabled || working
@@ -114,28 +127,19 @@ private fun ButtonBox(
         else -> palette.inputBorder
     }
     val fill = if (drawnEnabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
+    val box = Modifier
+        .background(fill, RoundedCornerShape(Radius.node))
+        // A disabled button is dashed, as on Windows: a shape is the cue that survives high contrast,
+        // which promotes the muted ink to the body colour.
+        .then(
+            if (drawnEnabled) {
+                Modifier.border(palette.line, edge, RoundedCornerShape(Radius.node))
+            } else {
+                Modifier.dashedBorder(palette.line, edge, Radius.node)
+            },
+        )
 
-    Row(
-        modifier = modifier
-            // docs/09 "Accessibility": the label is small, the button is not — in both directions. A height
-            // alone left the two-letter template variables (`MM`, `dd`) a target some 30dp wide.
-            .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
-            .focusRing(palette, Radius.node, onFill = fill != Color.Transparent)
-            .background(fill, RoundedCornerShape(Radius.node))
-            // A disabled button is dashed, as on Windows: a shape is the cue that survives high contrast,
-            // which promotes the muted ink to the body colour.
-            .then(
-                if (drawnEnabled) {
-                    Modifier.border(palette.line, edge, RoundedCornerShape(Radius.node))
-                } else {
-                    Modifier.dashedBorder(palette.line, edge, Radius.node)
-                },
-            )
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.s, vertical = Space.xs),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    val content: @Composable RowScope.() -> Unit = {
         val words: @Composable (Pair<String?, String>) -> Unit = { (lead, text) ->
             Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
                 lead?.let {
@@ -146,10 +150,15 @@ private fun ButtonBox(
                         modifier = if (it == "+") Modifier.clearAndSetSemantics { } else Modifier,
                     )
                 }
-                // docs/09 "Typography": a button's label is 14, sans or mono.
+                // docs/09 "Typography": a button's label is 14, sans or mono; a compact one's the status badge's 12.
                 Text(
                     text,
-                    style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge,
+                    style = when {
+                        compact && monospace -> mono.small
+                        compact -> MaterialTheme.typography.labelMedium
+                        monospace -> mono.bodySmall
+                        else -> MaterialTheme.typography.labelLarge
+                    },
                     color = ink,
                     maxLines = 3,
                 )
@@ -170,6 +179,66 @@ private fun ButtonBox(
         } else {
             words(leading to label)
         }
+    }
+    if (compact) {
+        CompactTarget(onClick, enabled, modifier, Radius.node, box, onFill = fill != Color.Transparent, content = content)
+        return
+    }
+    Row(
+        modifier = modifier
+            // docs/09 "Accessibility": the label is small, the button is not — in both directions. A height
+            // alone left the two-letter template variables (`MM`, `dd`) a target some 30dp wide.
+            .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
+            .focusRing(palette, Radius.node, onFill = fill != Color.Transparent)
+            .then(box)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = Space.s, vertical = Space.xs),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+    )
+}
+
+/**
+ * docs/09 "Component measurements" — Time and speaker button (2026-10-28): a compact control. Its box — [box]'s fill and
+ * edge around padding 8 × 4, with no minimum — is drawn at the status badge's measure, centred in a target of at least
+ * [MinTouch] each way that is laid out as such, as the highlight square's is. The target takes the tap, the focus and
+ * the caller's [modifier] (a tag, what a screen reader hears); the box draws the press and the focus ring, so both are
+ * the size the eye sees.
+ */
+@Composable
+internal fun CompactTarget(
+    onClick: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier,
+    radius: Dp,
+    box: Modifier,
+    onFill: Boolean = false,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val palette = blueprint
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    Box(
+        modifier
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            Modifier
+                // [focusRing]'s ring, over the fill and the edge, for the focus the target holds.
+                .drawWithContent {
+                    drawContent()
+                    if (focused) drawFocusRing(if (onFill) palette.onAccent else palette.accent, palette.selectedLine, palette.line, radius)
+                }
+                .then(box)
+                .indication(interaction, LocalIndication.current)
+                .padding(horizontal = Space.s, vertical = Space.xs),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
     }
 }
 

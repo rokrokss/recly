@@ -83,6 +83,7 @@ struct TranscriptReader: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .pointerCursor()
                         .focusEffectDisabled()
                         .padding(.bottom, Space.s)
                         .accessibilityIdentifier("back-to-playback")
@@ -135,7 +136,7 @@ struct TranscriptReader: View {
         let marks = highlights.filter { $0 >= group.start && $0 < end }
         return VStack(alignment: .leading, spacing: Space.xs) {
             HStack(spacing: Space.xs) {
-                BlueprintButton(stamp, tone: active ? .accent : .quiet, mono: true) { onSeek(group.start) }
+                BlueprintButton(stamp, tone: active ? .accent : .quiet, mono: true, compact: true) { onSeek(group.start) }
                     .disabled(!canSeek || group.start >= seekableDurationSec)
                     .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(group.start)))))
                     .accessibilityIdentifier("transcript-time-\(group.id)")

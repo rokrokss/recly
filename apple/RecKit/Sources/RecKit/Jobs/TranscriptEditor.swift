@@ -165,7 +165,7 @@ struct TranscriptEditor: View {
         let speaker = draft.speakers[index]
         return VStack(alignment: .leading, spacing: Space.xs) {
             HStack(spacing: Space.xs) {
-                BlueprintButton(stamp, tone: .quiet, mono: true) { onSeek(segment.start) }
+                BlueprintButton(stamp, tone: .quiet, mono: true, compact: true) { onSeek(segment.start) }
                     .disabled(!canSeek)
                     .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(segment.start)))))
                 DraftSpeakerMenu(draft: draft, index: index) {
@@ -250,6 +250,7 @@ private struct DraftSpeakerMenu<Label: View>: View {
         }
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
+        .pointerCursor()
     }
 }
 

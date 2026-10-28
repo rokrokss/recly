@@ -2,12 +2,16 @@ package app.recly.windows.ui.component
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
@@ -28,13 +32,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,6 +87,11 @@ fun BlueprintButton(
     busy: Boolean = false,
     /** [ButtonMinWidth] for a worded button; [MinTouch] for data and for Close, Delete and Cancel. */
     minWidth: Dp = if (monospace) MinTouch else ButtonMinWidth,
+    /**
+     * docs/09 "Component measurements" — Time and speaker button (2026-10-28): drawn at the status badge's size, label 12
+     * and no minimum, inside a target that is still [MinTouch] each way ([CompactControl]). [minWidth] does not apply.
+     */
+    compact: Boolean = false,
 ) {
     val palette = blueprint
     val ink = when {
@@ -99,30 +112,23 @@ fun BlueprintButton(
     }
     val fill = if (enabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
     val shape = RoundedCornerShape(Radius.node)
-
-    Row(
-        modifier = modifier
-            // docs/09 "Accessibility": the label is small, the button is not — either way.
-            .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
-            .background(fill, shape)
-            // docs/09 "High-contrast mode" promotes `grid` and `textMuted` to the body colour, which left a
-            // disabled button drawn in exactly the ink and the border weight of a live QUIET one.
-            // A dash is the cue that survives that, because it is a shape rather than a colour.
-            .then(
-                if (enabled) {
-                    Modifier.border(palette.line, edge, shape)
-                } else {
-                    Modifier.dashedBorder(palette.line, edge, Radius.node)
-                },
-            )
-            // On the accent fill an accent ring would vanish, so a filled button's ring is the ink on it.
-            .focusRing(shape, color = if (fill == Color.Transparent) null else palette.onAccent)
-            .clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick)
-            // docs/09 "Component measurements": the minimum touch size decides the height, so the vertical padding is the small one.
-            .padding(horizontal = Space.s, vertical = Space.xs),
-        horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    val face = Modifier
+        .background(fill, shape)
+        // docs/09 "High-contrast mode" promotes `grid` and `textMuted` to the body colour, which left a
+        // disabled button drawn in exactly the ink and the border weight of a live QUIET one.
+        // A dash is the cue that survives that, because it is a shape rather than a colour.
+        .then(
+            if (enabled) {
+                Modifier.border(palette.line, edge, shape)
+            } else {
+                Modifier.dashedBorder(palette.line, edge, Radius.node)
+            },
+        )
+    // On the accent fill an accent ring would vanish, so a filled button's ring is the ink on it.
+    val ring = if (fill == Color.Transparent) null else palette.onAccent
+    // The sans label beside a compact one is the status badge's 12 (labelMedium), not a button's 14 (labelLarge).
+    val sans = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
+    val content: @Composable RowScope.() -> Unit = {
         leading?.let {
             Text(
                 it,
@@ -134,14 +140,74 @@ fun BlueprintButton(
         Text(
             label,
             // Data — a time, a name of a key — reads left to right in every language (docs/09 "Typography"), and at the
-            // 14 every button label is, sans or mono.
-            style = if (monospace) mono.bodySmall.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.labelLarge,
+            // 14 every button label is, sans or mono; a compact one's is the status badge's 12.
+            style = when {
+                !monospace -> sans
+                compact -> mono.small.copy(textDirection = TextDirection.Ltr)
+                else -> mono.bodySmall.copy(textDirection = TextDirection.Ltr)
+            },
             color = ink,
             maxLines = 3,
             // A label that will not fit is cut with a mark that says so — a Korean button label is
             // half again as long as the English one, and a 640dp window is where that shows.
             overflow = TextOverflow.Ellipsis,
-            modifier = if (monospace) Modifier.onLabelBaseline() else Modifier,
+            modifier = if (monospace) Modifier.onLabelBaseline(sans) else Modifier,
+        )
+    }
+
+    if (compact) {
+        CompactControl(onClick, modifier, face, shape, enabled = enabled && !busy, ring = ring, content = content)
+        return
+    }
+    Row(
+        modifier = modifier
+            // docs/09 "Accessibility": the label is small, the button is not — either way.
+            .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
+            .then(face)
+            .focusRing(shape, color = ring)
+            .pressCursor(enabled && !busy)
+            .clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick)
+            // docs/09 "Component measurements": the minimum touch size decides the height, so the vertical padding is the small one.
+            .padding(horizontal = Space.s, vertical = Space.xs),
+        horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+    )
+}
+
+/**
+ * docs/09 "Component measurements" — Time and speaker button (2026-10-28): a control drawn at the status badge's size —
+ * its [face] (fill and edge) around [content], with the badge's 8 × 4 inset and no minimum — inside a target of at least
+ * [MinTouch] each way, centred on it. The target takes the click and the room in the row, so a row is no shorter than
+ * it was; the box drawn in it wears the hover, the press and the focus ring, so they stay on what is seen. [modifier] is
+ * the target's: what a reader hears is said there.
+ */
+@Composable
+internal fun CompactControl(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    face: Modifier,
+    shape: Shape,
+    enabled: Boolean = true,
+    ring: Color? = null,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .pressCursor(enabled)
+            .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            face
+                .focusRing(interaction, shape, ring)
+                .indication(interaction, LocalIndication.current)
+                .padding(horizontal = Space.s, vertical = Space.xs),
+            horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
         )
     }
 }
@@ -152,11 +218,11 @@ fun BlueprintButton(
  * ascent and descent instead, Consolas sat a pixel and a half above Segoe UI on Windows, where SF Mono and SF agree:
  * the box is a sans label's — one line of it, and each further line of the label — with the label's first baseline on
  * the sans one, so it centres as a sans label does. Ink that reaches past the sans face's ascent or descent hangs over.
+ * A compact control's 12 is set on [sansStyle] at 12 the same way.
  */
 @Composable
-internal fun Modifier.onLabelBaseline(): Modifier {
+internal fun Modifier.onLabelBaseline(sansStyle: TextStyle = MaterialTheme.typography.labelLarge): Modifier {
     val measurer = rememberTextMeasurer(cacheSize = 0)
-    val sansStyle = MaterialTheme.typography.labelLarge
     val sans = remember(measurer, sansStyle) { measurer.measure("A", sansStyle) }
     return layout { measurable, constraints ->
         val text = measurable.measure(constraints)
@@ -164,6 +230,14 @@ internal fun Modifier.onLabelBaseline(): Modifier {
         layout(text.width, height) { text.place(0, sans.firstBaseline.roundToInt() - text[FirstBaseline]) }
     }
 }
+
+/**
+ * docs/09 "Disabled, focus and structure" (2026-10-28): the pointing hand over anything that can be pressed now — a
+ * button, a mark such as a field's × or the highlight square, a chip, a menu and its items, a link, a row that opens,
+ * expands or toggles — and the arrow over one that cannot: disabled, or showing its own work. Never over plain text or a
+ * field. Placed with the control's own click, on the same box.
+ */
+fun Modifier.pressCursor(enabled: Boolean = true): Modifier = if (enabled) pointerHoverIcon(PointerIcon.Hand) else this
 
 /**
  * The same square outline as `Modifier.border`, dashed — the edge of anything disabled (docs/09 "Disabled, focus and structure"). Compose has no dashed border modifier, so
@@ -333,6 +407,7 @@ fun BlueprintChip(
             // border is not something a screen reader can read. `selectable` puts the same fact in
             // the semantics — one node, in place of the plain click, so it is announced as a choice
             // rather than as a button whose state nobody mentioned.
+            .pressCursor(enabled)
             .selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
             .padding(horizontal = Space.s, vertical = Space.xs),
         horizontalArrangement = Arrangement.Center,

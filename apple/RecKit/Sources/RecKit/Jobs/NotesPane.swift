@@ -64,20 +64,31 @@ struct NotesPane: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            BlueprintButton(
-                copied ? loc("Copied") : loc("Copy all"),
-                tone: .quiet,
-                leading: copied ? BlueprintChip.selectionMark : nil
-            ) {
+            CopyAllButton(copied: copied) {
                 Task { await model.copyNotes() }
                 copied = true
             }
-            .disabled(copied)
             .accessibilityIdentifier("notes-copy")
         }
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// docs/09 "AI view": `Copy all` under the notes or an answer, as the copy icon (2026-10-28). For as long as it would
+/// have said `Copied` it is the check mark, and a press does nothing then.
+struct CopyAllButton: View {
+    let copied: Bool
+    let copy: () -> Void
+
+    var body: some View {
+        BlueprintIconButton(
+            copied ? "checkmark" : "doc.on.doc",
+            label: copied ? RecKitStrings.localized("Copied") : RecKitStrings.localized("Copy all"),
+            action: copy
+        )
+        .allowsHitTesting(!copied)
+    }
 }
 
 /// One centred notice and at most one way out of it (docs/09 screen principle 8): an Organize's failure, and an

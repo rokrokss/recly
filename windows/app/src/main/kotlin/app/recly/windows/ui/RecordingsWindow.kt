@@ -15,6 +15,7 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.semantics.Role
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
+import app.recly.windows.ui.component.pressCursor
 import kotlinx.coroutines.launch
 import recly.core.recording.SearchHit
 import recly.core.transcribe.EditResult
@@ -480,6 +481,7 @@ private fun ListMessage(notice: ShellNotice, strings: Strings, onDismiss: () -> 
             .background(palette.surface, shape)
             // A border is a graphic, so a warning's may be the documented amber rather than its darker ink.
             .border(palette.line, if (notice.tone == BadgeTone.WARNING) palette.warning else notice.tone.ink(), shape)
+            .pressCursor()
             .clickable(onClickLabel = strings[Str.CLOSE], role = Role.Button, onClick = onDismiss)
             .padding(horizontal = Space.sm, vertical = Space.s),
         contentAlignment = Alignment.CenterStart,
@@ -532,7 +534,8 @@ private fun Detail(
     val canSeek = !detail.writing && !model.recording && !model.playbackBlocked && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val onSeek: (Double) -> Unit = { if (!model.recording && !model.playbackBlocked) player.seek(detail.audio, it) }
-    // A note's or an answer's time reads `Play from`, and does (2026-10-10): the seek, then playback from there.
+    // An answer's time reads `Play from`, and does (2026-10-10): the seek, then playback from there. A note's time is the
+    // transcript's [onSeek] (2026-10-28).
     val onPlay: (Double) -> Unit = { at ->
         if (!model.recording && !model.playbackBlocked) {
             player.seek(detail.audio, at)
@@ -732,7 +735,7 @@ private fun Detail(
         notesDraft != null -> NotesEditor(
             notesDraft, notesEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
         )
-        notesShown -> NotesPane(model, detail, canSeek, onPlay, strings, Modifier.fillMaxSize())
+        notesShown -> NotesPane(model, detail, canSeek, onSeek, strings, Modifier.fillMaxSize())
         draft != null -> TranscriptEditor(
             draft = draft,
             canSeek = canSeek,
@@ -1271,6 +1274,7 @@ internal fun Waveform(
                             .width(TickTarget)
                             .fillMaxHeight()
                             .focusRing()
+                            .pressCursor()
                             .clickable(role = Role.Button) { tickMenu = at }
                             .semantics { contentDescription = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed(millis(at))] },
                     )

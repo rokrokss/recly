@@ -76,6 +76,7 @@ struct VocabularyEditor: View {
                     .blueprintFocusRing()
             }
             .buttonStyle(.plain)
+            .pointerCursor()
             .focusEffectDisabled()
             .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Remove %@", term)))
         }

@@ -277,6 +277,7 @@ public struct LedgerRow<Trailing: View>: View {
             .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .focusEffectDisabled()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: announce))

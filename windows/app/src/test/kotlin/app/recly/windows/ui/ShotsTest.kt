@@ -167,7 +167,7 @@ class ShotsTest {
             model.showNotes(true)
             val notesWindow: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
             shot("recordings-notes-$lang", 1000, 680, ko) { notesWindow() }
-            // All of it in a taller window: the user's own section last, and the model with Copy all under the notes.
+            // All of it in a taller window: the user's own section last, and the model with the copy icon under the notes.
             shot("recordings-notes-tall-$lang", 1000, 1100, ko) { notesWindow() }
             shot("recordings-notes-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { notesWindow() }
             shot("recordings-notes-export-$lang", 1000, 680, ko, clicks = listOf(EXPORT)) { notesWindow() }

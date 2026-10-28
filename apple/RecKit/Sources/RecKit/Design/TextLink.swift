@@ -49,7 +49,7 @@ public struct TextLink: View {
 
     private struct Pressed: ButtonStyle {
         func makeBody(configuration: Configuration) -> some View {
-            configuration.label.opacity(configuration.isPressed ? 0.6 : 1)
+            configuration.label.opacity(configuration.isPressed ? 0.6 : 1).pointerCursor()
         }
     }
 }

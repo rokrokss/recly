@@ -116,7 +116,7 @@ class NotesBlockTest {
         val scene = ImageComposeScene(400, 300, Density(1f)) {
             ReclyDesktopTheme(dark = false, highContrast = false) {
                 Box(Modifier.onGloballyPositioned { height = it.size.height }) {
-                    NotesBlock(notes(), canPlay = true, onPlay = {}, linesAround = { emptyList() }, onDelete = {}, strings = StringTable.of(StringTable.BASE))
+                    NotesBlock(notes(), canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, strings = StringTable.of(StringTable.BASE))
                 }
             }
         }
@@ -169,14 +169,15 @@ class NotesBlockTest {
     }
 
     /**
-     * A click opens the row and asks for the lines around its time; the time plays from there; a right click opens
-     * the menu and not the row, and its Delete deletes without asking.
+     * A click opens the row and asks for the lines around its time; the time moves the playhead there, the transcript's
+     * seek and not the answer's play (2026-10-28); a right click opens the menu and not the row, and its Delete deletes
+     * without asking.
      */
     @Test
-    fun `a row opens on a click, plays from its time, and deletes from its context menu`() {
+    fun `a row opens on a click, seeks to its time, and deletes from its context menu`() {
         val note = item("n1", NoteKind.TODO, atSec = 75.0)
         val asked = mutableListOf<Double>()
-        val played = mutableListOf<Double>()
+        val seeks = mutableListOf<Double>()
         val deleted = mutableListOf<String>()
         var toggles = 0
         var expanded by mutableStateOf(false)
@@ -191,8 +192,8 @@ class NotesBlockTest {
                             toggles++
                             expanded = !expanded
                         },
-                        playable = true,
-                        onPlay = { played += it },
+                        seekable = true,
+                        onSeek = { seeks += it },
                         linesAround = { at -> asked += at; listOf(line(74.0, "I'll send the quote")) },
                         onDelete = { deleted += it.id },
                         strings = strings,
@@ -219,9 +220,12 @@ class NotesBlockTest {
             click(Offset(40f, ROW_MIDDLE))
             assertEquals(2, toggles)
             assertFalse(expanded)
-            // The time at the row's end plays, and is not the row's click.
+            // The time at the row's end seeks, and is not the row's click.
             click(Offset(WIDTH - 6f, ROW_MIDDLE))
-            assertEquals(listOf(75.0), played)
+            assertEquals(listOf(75.0), seeks)
+            // Its target is the touch minimum though its box is the status badge's: a press above the box still seeks.
+            click(Offset(WIDTH - 6f, ROW_MIDDLE - 18f))
+            assertEquals(listOf(75.0, 75.0), seeks)
             assertEquals(2, toggles)
             // A right click: the menu, not the row.
             val at = Offset(60f, ROW_MIDDLE)
@@ -240,7 +244,7 @@ class NotesBlockTest {
     private companion object {
         const val WIDTH = 500
 
-        /** The row is the time button's 44 and 4 above and below it. */
+        /** The row is the time button's 44 target and 4 above and below it. */
         const val ROW_MIDDLE = 26f
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import app.recly.windows.ui.component.pressCursor
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Radius
 import androidx.compose.material3.*
@@ -288,7 +289,7 @@ private fun TermChip(term: String, removeLabel: String, onRemove: () -> Unit) {
     ) {
         Text(term, style = MaterialTheme.typography.labelLarge, color = palette.text)
         Box(
-            Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).clickable(role = Role.Button, onClick = onRemove)
+            Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).pressCursor().clickable(role = Role.Button, onClick = onRemove)
                 .semantics { contentDescription = removeLabel },
             contentAlignment = Alignment.Center,
         ) {
