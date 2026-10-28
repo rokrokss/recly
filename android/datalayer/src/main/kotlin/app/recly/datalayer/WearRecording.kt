@@ -4,6 +4,8 @@ package app.recly.datalayer
 
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.serialization.json.Json
@@ -45,20 +47,27 @@ object WearRecording {
 
     /**
      * The state, or null for a payload that is not one. The id is held to the transfer's own check
-     * ([TransferPath]), since the phone files parts under the same id; a field this build does not read is
-     * left alone, as [AckJson] leaves one.
+     * ([TransferPath]), since the phone files parts under the same id, and the start to the years a recording
+     * can claim — from [EARLIEST] to a day past this device's [now], as the iPhone holds the Apple Watch's; a
+     * field this build does not read is left alone, as [AckJson] leaves one.
      */
-    fun decode(payload: ByteArray): State? {
+    fun decode(payload: ByteArray, now: Instant = Clock.System.now()): State? {
         if (payload.size > MAX_BYTES) return null
         val root = runCatching { json.parseToJsonElement(payload.decodeToString()) as? JsonObject }.getOrNull()
             ?: return null
         val recordingId = root.string("recordingId")?.takeIf { TransferPath.isId(it) } ?: return null
-        val startedAt = root.string("startedAt")?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null
+        val startedAt = root.string("startedAt")?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            ?.takeIf { it >= EARLIEST && it <= now + SKEW } ?: return null
         return State(recordingId, startedAt)
     }
 
     /** A 64-character id and a timestamp come to about a hundred and twenty; anything far past that is not this. */
     private const val MAX_BYTES = 256
+
+    private val EARLIEST = Instant.parse("2020-01-01T00:00:00Z")
+
+    /** Two clocks that disagree, not a recording that has not started. */
+    private val SKEW = 24.hours
 
     private val ISO_UTC: DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC)

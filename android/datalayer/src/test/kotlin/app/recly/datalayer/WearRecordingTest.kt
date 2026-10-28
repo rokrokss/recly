@@ -28,6 +28,17 @@ class WearRecordingTest {
     }
 
     @Test
+    fun `a start before 2020 or more than a day ahead is no state`() {
+        val now = Instant.parse("2026-10-28T05:00:00Z")
+        assertNull(WearRecording.decode(WearRecording.encode("01J9WATCH", Instant.parse("2019-12-31T23:59:59Z")), now))
+        assertNull(WearRecording.decode(WearRecording.encode("01J9WATCH", Instant.parse("2026-10-29T05:00:01Z")), now))
+        assertEquals(
+            WearRecording.State("01J9WATCH", Instant.parse("2026-10-29T05:00:00Z")),
+            WearRecording.decode(WearRecording.encode("01J9WATCH", Instant.parse("2026-10-29T05:00:00Z")), now),
+        )
+    }
+
+    @Test
     fun `the payload is the two fields, the time in UTC with three fraction digits`() {
         assertEquals(
             """{"recordingId":"01J9WATCH","startedAt":"2026-10-28T04:57:29.123Z"}""",

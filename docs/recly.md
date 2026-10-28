@@ -1139,10 +1139,11 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   process that died mid-recording leaves nothing standing once the app runs again. Galaxy Watch: a Data Layer item at `/rec/recording`
   (urgent), its payload hand-written JSON `{"recordingId":"…","startedAt":"…"}` (ISO-8601, UTC), deleted the moment the recorder leaves
   recording (before the finalize) — the watch's own item only, by its node id, so a phone paired with two watches keeps the other's. Apple Watch: the
-  watch's application context `{recording: {recordingId, startedAt}}` (`startedAt` in seconds since 1970; a context without `recording` is
-  "not recording"), and the same dictionary as a live message when the phone is reachable, because a context does not wake the iPhone app.
-  The phone keeps only the newest state, ignores one not shaped like it, and draws it (§11, §13 "iPhone"); none of it
-  reaches the core or Drive.
+  watch's application context `{recording: {recordingId, startedAt}}` (`startedAt` in seconds since 1970; the empty context `{}` is
+  "not recording"), and the same dictionary as a live message when the phone is reachable, because a context does not wake the iPhone app —
+  a launch is activated before it is in reach, so a message not yet sent goes when the session next reports the phone reachable. The phone
+  keeps only the newest state and ignores one not shaped like it — an id that fails the transfer's id check, or a start before 2020 or
+  more than a day past its own clock — and draws it (§11, §13 "iPhone"); none of it reaches the core or Drive.
 
 ---
 
@@ -3860,9 +3861,12 @@ macOS.
   - **While the Apple Watch records** (2026-10-28, §3 "Watch → phone transfer contract"): the Home and Lock Screen widgets show
     `Recording on the watch` and the elapsed time from the watch's `startedAt`, and a tap opens the app — there is nothing on the phone to
     stop. ActivityKit starts a Live Activity only while the app is in the foreground (a background start needs a push server, and Recly
-    runs none), so the watch's recording gets one when the app is open as it starts or is opened while it runs: the same pill with
-    `Recording on the watch` where the stop button was. It ends from the background on the watch's stop. The phone's own recording takes
-    precedence on both. Like every iPhone Live Activity, it also shows in the watch's Smart Stack.
+    runs none), so the watch's recording gets one when the app is open as it starts or is opened while it runs — one that starts with the
+    app in the background shows on the widgets at once and in a pill the next time the app is opened. The pill says `Recording on the
+    watch` in place of `Recording` and has no stop button (the Lock Screen's clock moves to the trailing edge; the expanded island puts the
+    words below the clock, where a long translation has the width). It ends from the background on the watch's stop, and is not renewed at
+    ActivityKit's 8-hour limit (that needs the app in front): past it, only the widgets show the watch's recording. The phone's own
+    recording takes precedence on both. Like every iPhone Live Activity, it also shows in the watch's Smart Stack.
 - **Entry points**: App Intents `StartRecordingIntent`, `StopRecordingIntent` and `AddHighlightIntent` (2026-10-15, as the Mac's
   `Add Highlight`) → Siri · Shortcuts · Action button.
   An iOS 18 Control starts by opening the app with `OpenIntent` (starting a long-running audio session from a widget extension is unreliable).
