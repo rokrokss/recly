@@ -117,6 +117,8 @@
     <string name="tile_recording">Kayıt yapılıyor</string>
     <string name="widget_idle">Hazır</string>
     <string name="widget_recording">Kayıt yapılıyor</string>
+    <string name="watch_recording_channel">Saat kaydı</string>
+    <string name="watch_recording_title">Saatte kayıt yapılıyor</string>
     <string name="widget_description">Tek dokunuşla kaydı başlatın ve durdurun.</string>
     <string name="shortcut_start_short">Kaydı başlat</string>
     <string name="shortcut_start_long">Recly kaydı başlat</string>

@@ -117,6 +117,8 @@
     <string name="tile_recording">Inarekodi</string>
     <string name="widget_idle">Tayari</string>
     <string name="widget_recording">Inarekodi</string>
+    <string name="watch_recording_channel">Kurekodi kwenye saa</string>
+    <string name="watch_recording_title">Inarekodi kwenye saa</string>
     <string name="widget_description">Anza na usimamishe kurekodi kwa kugusa mara moja.</string>
     <string name="shortcut_start_short">Anza kurekodi</string>
     <string name="shortcut_start_long">Anza rekodi ya Recly</string>

@@ -117,6 +117,8 @@
     <string name="tile_recording">Идёт запись</string>
     <string name="widget_idle">Ожидание</string>
     <string name="widget_recording">Идёт запись</string>
+    <string name="watch_recording_channel">Запись на часах</string>
+    <string name="watch_recording_title">Идёт запись на часах</string>
     <string name="widget_description">Начинайте и останавливайте запись одним нажатием.</string>
     <string name="shortcut_start_short">Начать запись</string>
     <string name="shortcut_start_long">Начать запись Recly</string>

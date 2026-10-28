@@ -132,6 +132,8 @@
     <string name="tile_recording">녹음 중</string>
     <string name="widget_idle">대기 중</string>
     <string name="widget_recording">녹음 중</string>
+    <string name="watch_recording_channel">워치 녹음</string>
+    <string name="watch_recording_title">워치에서 녹음 중</string>
     <string name="widget_description">한 번에 녹음을 시작하고 정지합니다.</string>
     <string name="shortcut_start_short">녹음 시작</string>
     <string name="shortcut_start_long">Recly 녹음 시작</string>

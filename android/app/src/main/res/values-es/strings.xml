@@ -117,6 +117,8 @@
     <string name="tile_recording">Grabando</string>
     <string name="widget_idle">Inactivo</string>
     <string name="widget_recording">Grabando</string>
+    <string name="watch_recording_channel">Grabación del reloj</string>
+    <string name="watch_recording_title">Grabando en el reloj</string>
     <string name="widget_description">Inicia y detén una grabación con un toque.</string>
     <string name="shortcut_start_short">Iniciar grabación</string>
     <string name="shortcut_start_long">Iniciar una grabación de Recly</string>

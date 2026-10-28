@@ -117,6 +117,8 @@
     <string name="tile_recording">Nagre-record</string>
     <string name="widget_idle">Handa</string>
     <string name="widget_recording">Nagre-record</string>
+    <string name="watch_recording_channel">Pagre-record sa relo</string>
+    <string name="watch_recording_title">Nagre-record sa relo</string>
     <string name="widget_description">Simulan at ihinto ang recording sa isang tap.</string>
     <string name="shortcut_start_short">Simulan ang pag-record</string>
     <string name="shortcut_start_long">Magsimula ng recording sa Recly</string>

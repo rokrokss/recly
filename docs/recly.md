@@ -1133,6 +1133,15 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   before any meta arrives (`TransferReceiver.placeholder`, parts without an in-progress meta) likewise reads its start time from **the ULID timestamp of `recordingId`**
   — using the arrival time would make just that recording jump to the top of the list on a phone that received a 20-minute recording after it ended. What the shell uses to recognize this row
   is `RecordingRecord.receiving` (the table at the end of §3 "Recordings from other devices").
+- **The phone shows that the watch is recording** (2026-10-28, both watches alike). The watch publishes its recorder's state apart
+  from the parts — `{recordingId, startedAt}` while it records, nothing once it stops — because the first part only comes a segment
+  (15 minutes) in. It is written when the recorder starts recording, when it stops, and at app start when nothing is recording, so a
+  process that died mid-recording leaves nothing standing once the app runs again. Galaxy Watch: a Data Layer item at `/rec/recording`
+  (urgent), its payload hand-written JSON `{"recordingId":"…","startedAt":"…"}` (ISO-8601, UTC), deleted on the stop. Apple Watch: the
+  watch's application context `{recording: {recordingId, startedAt}}` (`startedAt` in seconds since 1970; a context without `recording` is
+  "not recording"), and the same dictionary as a live message when the phone is reachable, because a context does not wake the iPhone app.
+  The phone keeps only the newest state, ignores one not shaped like it, and draws it (§11, §13 "iPhone"); none of it
+  reaches the core or Drive.
 
 ---
 
@@ -3527,6 +3536,12 @@ android/
   `ACTION_BATTERY_CHANGED` (its first delivery is the reading at start), handed to the core's `BatteryStop` as `level × 100 / scale`
   and `EXTRA_PLUGGED == 0`. Channel `recording-alerts` (default importance, vibration,
   no sound), notification ids 2–4, apart from the ongoing one (id 1, `recording`). Phone and watch share it.
+- **While the paired Galaxy Watch records** (2026-10-28): `RecListenerService` takes `DATA_CHANGED` on `/rec/recording` (§3 "Watch → phone
+  transfer contract") and the phone shows an ongoing notification — `Recording on the watch`, the platform's chronometer from the watch's
+  `startedAt`, no action, a tap opens the app — in a channel of its own, `watch-recording` (low importance, no sound or vibration, id 300),
+  asking to be promoted like the recorder's own (A12). `setLocalOnly(true)`: a phone notification is bridged to the watch by default, and
+  this one would buzz the very watch that is recording. The item's deletion takes it down, the app's start repaints it from the item that
+  is standing (a reboot clears the shade, not the item), and a locale change repaints it (docs/07 rule 3).
 - `RecordingRecovery.reconcile()`: at app start and before a new recording starts, finds rows with `status = recording` (except rows still being
   received from the watch, §3 "Watch → phone transfer contract"), registers and finalizes the unregistered parts on disk, and hands recordings that were finalized but not processed
   to `RecorderHost.onRecordingReady(recordingId, enqueue=true)` (recovery from process death or from termination during the dialog,
@@ -3547,7 +3562,7 @@ android/
 | A5 | `WorkflowWorker`: `OneTimeWorkRequest` (unique `rec-jobs`, `NetworkType.CONNECTED`), calls `runDueJobs()`, `Result.retry` on failure (the periodic instance returns success after the cap — so the 6h safety net does not die); **after every pass, the follow-up run is recomputed**: the minimum of WAITING's `nextRunAt` and PENDING (immediate) arms a single `rec-jobs-next` (REPLACE, delay 0 if in the past); if `alreadyRunning`, the timer is left alone and a follow-up comes 60 seconds later; enqueue also arms `rec-jobs-next` at 0 seconds; the core `retry` (WAITING included) + `setExpedited` that the old "Upload now" used is used unchanged by "Retry"; changing the "Upload on Wi-Fi only" setting re-arms `rec-jobs-next` and `rec-jobs-periodic` with the new constraint (`rec-jobs` is KEEP — cancelling a running pass uses up retry budget; one pass already in the queue may run under the old constraint) |
 | A6 | **Retired (2026-09-24)** — workflow editing UI: list ("Edit" · "Use" · delete on each row, a badge on the row in use), name/minimum length, step order editing (drag), `drive.upload` folder template, `webhook` URL/secret, `transcribe` form and provider notice, a warning for secrets missing on this device, key management (values are per device, §5). Write rules: every document change re-reads `current()` inside the mutex, then applies and saves (prevents races between whole-document saves); the editor remembers the `updatedAt` from when it was opened, and if a save from another window changed it, it refuses to save and offers "Reopen"; copying a secret sets the clipboard sensitive flag |
 | A7 | **Retired (2026-09-24)** — workflow export/import in settings (§5): SAF `CREATE_DOCUMENT` (default name `recly-workflows.json`) · `OPEN_DOCUMENT`, import applies after a replace confirmation, a note that keys are not included in the file |
-| A8 | Data Layer receiving: `WearableListenerService` (`ChannelClient.onChannelOpened` → `receiveFile`, paths `/rec/part/…` · `/rec/progress/…` · `/rec/meta/…`), sha256 verification, `MessageClient` ack `/rec/ack` · `/rec/ack-meta`, the in-progress meta filed with no ack (`TransferReceiver.acceptProgress`, the parts it lists organized while the watch records, §3 · §8 "Organizing"), on meta receipt register + enqueue + `onJobsDue`; ~~publish the workflow summary on `DataClient` `/rec/workflows` (urgent)~~ (retired 2026-09-24); declares the `rec_phone` capability |
+| A8 | Data Layer receiving: `WearableListenerService` (`ChannelClient.onChannelOpened` → `receiveFile`, paths `/rec/part/…` · `/rec/progress/…` · `/rec/meta/…`), `DATA_CHANGED` on the `/rec/recording` item (the watch's recorder state, 2026-10-28), sha256 verification, `MessageClient` ack `/rec/ack` · `/rec/ack-meta`, the in-progress meta filed with no ack (`TransferReceiver.acceptProgress`, the parts it lists organized while the watch records, §3 · §8 "Organizing"), on meta receipt register + enqueue + `onJobsDue`; ~~publish the workflow summary on `DataClient` `/rec/workflows` (urgent)~~ (retired 2026-09-24); declares the `rec_phone` capability |
 | A9 | Entry points: Quick Settings tile, home widget (start/stop), app shortcuts. When starting from a tile or widget, the FGS background-start exception is either **used or given up** — it never fails silently |
 | A10 | Settings: Google Drive connection state and disconnect action, language, Wi-Fi only, consent reminder, **log export** |
 | A11 | Play listing: Wear OS form factor included, screenshots, Data safety form ("No data collected") |
@@ -3839,6 +3854,12 @@ macOS.
   Play switches the session to `.playback`/`.default` and activates it. The `.playAndRecord` category that remains after recording ends is not
   taken as a sign of whether a recording is in progress.
 - **Display**: Live Activity (elapsed time, stop button) — Lock Screen · Dynamic Island · watch Smart Stack. It is **renewed at the 8-hour limit**.
+  - **While the Apple Watch records** (2026-10-28, §3 "Watch → phone transfer contract"): the Home and Lock Screen widgets show
+    `Recording on the watch` and the elapsed time from the watch's `startedAt`, and a tap opens the app — there is nothing on the phone to
+    stop. ActivityKit starts a Live Activity only while the app is in the foreground (a background start needs a push server, and Recly
+    runs none), so the watch's recording gets one when the app is open as it starts or is opened while it runs: the same pill with
+    `Recording on the watch` where the stop button was. It ends from the background on the watch's stop. The phone's own recording takes
+    precedence on both. Like every iPhone Live Activity, it also shows in the watch's Smart Stack.
 - **Entry points**: App Intents `StartRecordingIntent`, `StopRecordingIntent` and `AddHighlightIntent` (2026-10-15, as the Mac's
   `Add Highlight`) → Siri · Shortcuts · Action button.
   An iOS 18 Control starts by opening the app with `OpenIntent` (starting a long-running audio session from a widget extension is unreliable).
@@ -4324,6 +4345,8 @@ happens independently of both Drive and providers.
 |---|---|---|
 | Galaxy Watch → Android phone | Recording part `.m4a` files, each as soon as it is filed, with the in-progress `meta.json` ahead of each while recording (2026-10-27), and the final `meta.json` once everything is acked | Wear Data Layer `ChannelClient.openChannel` → `sendFile`. File metadata rides in the channel path, not in a separate payload (`/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}` · `/rec/progress/{recordingId}` · `/rec/meta/{recordingId}`). The phone receives with `WearableListenerService.onChannelOpened` → `receiveFile` and acks with `MessageClient` |
 | Apple Watch → iPhone | Recording part `.m4a` files, each as soon as it is filed, with the in-progress `meta.json` ahead of each while recording (2026-10-27), the final `meta.json` right behind the last ones, then an empty wake message | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId · part · track · sha256 · file name ride in the `metadata` dictionary (`recordingId` · `progress` for the in-progress meta). The phone receives with `WCSessionDelegate.session(_:didReceive:)` and acks with `transferUserInfo`. The wake is `sendMessage` with no recording data in it — it only launches the iPhone app in the background |
+| Galaxy Watch → Android phone | Whether the watch is recording: the `recordingId` and the start time while it records, nothing once it stops (2026-10-28) | `DataClient.putDataItem` path `/rec/recording` (urgent), deleted when the recording stops |
+| Apple Watch → iPhone | The same two values (2026-10-28) | `WCSession.updateApplicationContext`, and the same dictionary as a live message while the phone is reachable |
 | Android phone → Galaxy Watch | **Retired (2026-09-24)** — ~~workflow summary: only two fields per workflow, `id` · `name`~~. The watch has no workflow list | ~~`DataClient.putDataItem` path `/rec/workflows`~~ |
 | iPhone → Apple Watch | Only the app language (the workflow summary `id` · `name` was retired 2026-09-24), no step contents | `WCSession.updateApplicationContext` |
 | Android phone → Galaxy Watch | Only the app language tag (`ko`, `zh-Hans`, `pt-BR`, …; 2026-10-15), nothing else | `DataClient.putDataItem` path `/rec/language` (urgent), written when the phone app starts or its language changes; the watch ignores anything not shaped like a language tag |
@@ -4333,7 +4356,8 @@ happens independently of both Drive and providers.
 - Recording file transfer goes **only to a nearby node** — Android filters out nodes that are not `isNearby`, which excludes relay through the Google cloud,
   and Apple uses only `WCSession`. (The `/rec/workflows` DataClient item, which had no filter, was retired 2026-09-24 and
   is no longer published.) The `/rec/language` item is a data item, so it waits for a watch out of reach and the Data Layer may carry it through
-  Google's cloud when Bluetooth is unavailable — it holds the language tag only, which is why it is not limited to nearby nodes.
+  Google's cloud when Bluetooth is unavailable — it holds the language tag only, which is why it is not limited to nearby nodes. The
+  `/rec/recording` item is the same kind: a recording id and a start time, nothing of the audio.
 - For recordings the direction is **one-way**. There is only watch → phone; there is no path by which transcript text or workflow steps · secrets · Job results
   go phone → watch.
 - The watch deletes its own copy once it receives the ack — no recording history stays on the watch.

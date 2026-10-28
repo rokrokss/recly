@@ -117,6 +117,8 @@
     <string name="tile_recording">正在录音</string>
     <string name="widget_idle">空闲</string>
     <string name="widget_recording">正在录音</string>
+    <string name="watch_recording_channel">手表录音</string>
+    <string name="watch_recording_title">正在手表上录音</string>
     <string name="widget_description">轻点即可开始和停止录音。</string>
     <string name="shortcut_start_short">开始录音</string>
     <string name="shortcut_start_long">开始Recly录音</string>

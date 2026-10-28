@@ -117,6 +117,8 @@
     <string name="tile_recording">กำลังบันทึกเสียง</string>
     <string name="widget_idle">พร้อม</string>
     <string name="widget_recording">กำลังบันทึกเสียง</string>
+    <string name="watch_recording_channel">การบันทึกเสียงบนนาฬิกา</string>
+    <string name="watch_recording_title">กำลังบันทึกเสียงบนนาฬิกา</string>
     <string name="widget_description">เริ่มและหยุดบันทึกเสียงได้ในแตะเดียว</string>
     <string name="shortcut_start_short">เริ่มบันทึกเสียง</string>
     <string name="shortcut_start_long">เริ่มบันทึกเสียงด้วย Recly</string>

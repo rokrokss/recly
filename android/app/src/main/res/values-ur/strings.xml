@@ -117,6 +117,8 @@
     <string name="tile_recording">ریکارڈنگ جاری</string>
     <string name="widget_idle">تیار</string>
     <string name="widget_recording">ریکارڈنگ جاری</string>
+    <string name="watch_recording_channel">گھڑی کی ریکارڈنگ</string>
+    <string name="watch_recording_title">گھڑی پر ریکارڈنگ جاری</string>
     <string name="widget_description">ایک بار تھپتھپا کر ریکارڈنگ شروع کریں اور روکیں۔</string>
     <string name="shortcut_start_short">ریکارڈنگ شروع کریں</string>
     <string name="shortcut_start_long">Recly ریکارڈنگ شروع کریں</string>

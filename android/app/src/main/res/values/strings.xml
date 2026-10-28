@@ -165,6 +165,8 @@
     <string name="tile_recording">Recording</string>
     <string name="widget_idle">Idle</string>
     <string name="widget_recording">Recording</string>
+    <string name="watch_recording_channel">Watch recording</string>
+    <string name="watch_recording_title">Recording on the watch</string>
     <string name="widget_description">Start and stop a recording in one tap.</string>
     <string name="shortcut_start_short">Start recording</string>
     <string name="shortcut_start_long">Start a Recly recording</string>
