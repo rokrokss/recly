@@ -188,7 +188,8 @@ final class OrganizeConsentTests: XCTestCase {
     func testTheIPhoneSheetDisclosesChatGptUntilItIsAllowed() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("OrganizeConsentTests-\(UUID().uuidString)", isDirectory: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
+        // Left in the temporary directory: the settings model's observers read this database on their own schedule,
+        // and one that read it after its removal took the whole test run down with SQLITE_IOERR.
         let phone = try await CoreBridge.make(
             platform: .ios, deviceName: "Test iPhone",
             dataDirectory: directory.appendingPathComponent("phone", isDirectory: true),
@@ -252,7 +253,8 @@ final class OrganizeConsentTests: XCTestCase {
     func testSignedOutNothingIsAsked() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("OrganizeConsentTests-\(UUID().uuidString)", isDirectory: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
+        // Left in the temporary directory: the settings model's observers read this database on their own schedule,
+        // and one that read it after its removal took the whole test run down with SQLITE_IOERR.
         let bridge = try await CoreBridge.make(
             deviceName: "RecKitTests",
             dataDirectory: directory,
