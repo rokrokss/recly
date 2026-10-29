@@ -149,10 +149,10 @@ filtered by the provider or the device's speech engine. Desktop recordings alway
 Settings and transcript formats are documented in [`spec/`](spec/).
 
 <p align="center">
-  <img src="docs/design/screenshots/en/01-record-for-your-ai.png" width="24%" alt="Record for your AI: your recordings, your Drive, your choice of transcription">
+  <img src="docs/design/screenshots/en/01-record-for-your-ai.png" width="24%" alt="Record for your AI: tap the watch you already wear">
   <img src="docs/design/screenshots/en/02-transcribe.png" width="24%" alt="Transcribe on device: read along, then jump to any moment">
-  <img src="docs/design/screenshots/en/03-drive.png" width="24%" alt="Saved to your Drive: no Recly account, no Recly server">
-  <img src="docs/design/screenshots/en/04-record.png" width="24%" alt="Record in one tap on iPhone or Apple Watch">
+  <img src="docs/design/screenshots/en/03-notes.png" width="24%" alt="Organized by ChatGPT: decisions and to-dos, each at its moment">
+  <img src="docs/design/screenshots/en/04-list.png" width="24%" alt="Ready for your AI: any AI that can read your Drive can make notes">
 </p>
 
 ## Notes: bring your own agent

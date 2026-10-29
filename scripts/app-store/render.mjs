@@ -14,7 +14,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const W = 540, H = 1173, SCALE = 2;
-const NAMES = { 1: '01-record-for-your-ai', 2: '02-transcribe', 3: '03-drive', 4: '04-record' };
+const NAMES = { 1: '01-record-for-your-ai', 2: '02-transcribe', 3: '03-notes', 4: '04-list' };
 
 function cdp(url) {
   const ws = new WebSocket(url);

@@ -8,10 +8,10 @@ the demo recordings both sets use, are in [`scripts/play-store/`](../play-store/
 
 | Image | Screen |
 |---|---|
-| `01-record-for-your-ai` | List tab |
+| `01-record-for-your-ai` | Record tab, idle, with the Apple Watch's record screen in front |
 | `02-transcribe` | the first recording's Details, after its second timestamp was tapped |
-| `03-drive` | List tab, the first row opened |
-| `04-record` | Record tab, idle, with the Apple Watch's record screen in front |
+| `03-notes` | the same recording's Details, its Notes chip selected |
+| `04-list` | List tab |
 
 ## Making them
 
@@ -31,12 +31,13 @@ UDID to every `simctl` call: `booted` may resolve to another simulator that is r
    then `python3 scripts/app-store/seed.py <en|ko> <that copy> build/app-store-assets/seed/<lang>` and
    `scripts/app-store/push.sh <udid> build/app-store-assets/seed/<lang>`. The recordings are `demo_data.py`'s, with
    rows marked uploaded and transcribed.
-4. **Captures.** Launch with the language:
-   `xcrun simctl launch <udid> app.recly -AppleLanguages "(ko)" -AppleLocale ko_KR -appLanguage ko` (or `en`). Capture
+4. **Captures.** Launch with the language, in the demo recordings' time zone (not the host's):
+   `SIMCTL_CHILD_TZ=Asia/Dubai xcrun simctl launch <udid> app.recly -AppleLanguages "(ko)" -AppleLocale ko_KR -appLanguage ko` (or `en`). Capture
    with `xcrun simctl io <udid> screenshot --mask=black build/app-store-assets/captures/<lang>/<name>.png`: `record`,
-   `list`, `expand`, `detail` (the table above), and on the watch, launched the same way as `app.recly.watchkitapp`,
+   `list`, `detail`, `notes` (the table above), and on the watch, launched the same way as `app.recly.watchkitapp`,
    `watch-idle` (no mask). watchOS draws its own clock, which the status bar override does not reach, so
-   `promo.html` draws the phone's 9:41 over it.
+   `promo.html` draws the phone's 9:41 over it; capture the watch in a minute ending in 1, or the real clock's last
+   digit shows past that cover.
 5. **Render.** `node scripts/app-store/render.mjs` frames the captures in `promo.html`, writes the PNG and WebP
    for both languages, and stops if any copy spills past the edges or into the phone. Captions and the README's
    alt texts say the same thing; change both together.

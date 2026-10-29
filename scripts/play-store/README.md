@@ -40,9 +40,10 @@ iPhone, Apple Watch or iCloud, and on-device transcription only on phones with 8
    `meta.json`, a `transcript.json` whose segment times are the real offsets in that audio, and job rows marked
    uploaded and transcribed. The transcripts are sample text, not transcription output.
 3. **Phone captures.** `push.sh <dir>` replaces the app's data with the seed; `demo-bar.sh` sets the status bar.
+   Time zone, the demo recordings' (not the host's, which the emulator takes): `adb shell cmd alarm set-timezone Asia/Dubai`.
    Language: `adb shell cmd locale set-app-locales app.recly --locales ko-KR` (or `en-US`). Capture with
-   `adb exec-out screencap -p` into `build/play-store-assets/captures/<lang>/`: `list` (List tab), `expand` (first
-   row tapped), `detail` (Details, then the second timestamp tapped), `record` (Record tab, idle).
+   `adb exec-out screencap -p` into `build/play-store-assets/captures/<lang>/`: `list` (List tab), `detail` (the first
+   row's Details, then the second timestamp tapped), `notes` (the same Details, its Notes chip), `record` (Record tab, idle).
 4. **Watch captures.** A fresh large round Wear OS AVD (`hw.lcd.circular=true`) with the APK from `make wear-apk` and the
    microphone permission granted. `wear-idle` and `wear-rec` (12 s into a recording) from the app; `wear-tile`
    after adding the tile with

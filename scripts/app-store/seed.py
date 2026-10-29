@@ -110,6 +110,7 @@ def main(lang: str, data_dir: str, out: str) -> None:
         }
         with open(os.path.join(folder, f"{base}.transcript.json"), "w") as f:
             json.dump(transcript, f, ensure_ascii=False)
+        play.write_notes(folder, base, play.notes(lang, title, rid, segments, done + timedelta(seconds=20)))
 
         drive_folder = "1" + "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in range(32))
         db.execute("INSERT INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status, drive_folder_id, remote, remote_pending, drive_synced) "

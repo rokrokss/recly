@@ -74,19 +74,19 @@
     en: {
       1: ['Record for <em>your AI</em>', 'Tap the watch you already wear.'],
       2: ['Transcribe on device', 'On 8 GB phones, or with a service you pick.'],
-      3: ['Saved to your Drive', 'No Recly account. No Recly server.'],
+      3: ['Organized by ChatGPT', 'Decisions and to-dos, each at its moment.'],
       4: ['Record in one tap', 'Or from Quick Settings or a home screen widget.'],
       5: ['Ready for <em>your AI</em>', 'Any AI that can read your Drive can make notes.'],
     },
     ko: {
       1: ['내 <em>AI</em>를 위한 녹음기', '이미 차고 있는 시계를 탭해 녹음하세요'],
       2: ['기기에서 바로 전사', 'RAM 8GB 휴대폰에서, 또는 고른 서비스로'],
-      3: ['내 Google 드라이브에 저장', 'Recly 계정도, Recly 서버도 없습니다'],
+      3: ['ChatGPT가 정리합니다', '결정과 할 일을, 그 말이 나온 순간과 함께'],
       4: ['탭 한 번으로 녹음', '빠른 설정 타일이나 홈 화면 위젯에서도'],
       5: ['내 <em>AI</em>가 바로 읽는 전사본', 'Drive를 읽는 AI라면 바로 노트로 만듭니다'],
     },
   };
-  const SCREEN = { 2: 'detail', 3: 'expand', 4: 'record', 5: 'list' };
+  const SCREEN = { 2: 'detail', 3: 'notes', 4: 'record', 5: 'list' };
   const [h1, sub] = COPY[lang][shot];
   document.getElementById('h1').innerHTML = h1;
   document.getElementById('sub').textContent = sub;

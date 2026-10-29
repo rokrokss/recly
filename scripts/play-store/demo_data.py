@@ -139,4 +139,33 @@ KO = [
     ]),
 ]
 
+# The notes a ChatGPT pass would make of a recording, by title (docs/08 "Organizing"). Each item is
+# (kind, text, index of the segment it was said in, due); seed.py writes them as the recording's notes file.
+NOTES = {
+    "en": {
+        "Weekly product sync": {
+            "overview": "Beta feedback was positive, and the launch stays on October 14.",
+            "items": [
+                ("point", "About 200 beta testers replied this week, and the response was very positive.", 3, None),
+                ("decision", "The list shows recordings still arriving.", 11, None),
+                ("decision", "The launch stays on October 14.", 24, None),
+                ("todo", "Draft the onboarding copy.", 16, "Thursday"),
+                ("todo", "Finish the help center article.", 19, None),
+            ],
+        },
+    },
+    "ko": {
+        "주간 제품 회의": {
+            "overview": "베타 반응이 좋았고, 출시는 10월 14일 그대로 갑니다.",
+            "items": [
+                ("point", "이번 주 테스터 이백 명 정도가 의견을 줬고 반응이 아주 좋았습니다.", 3, None),
+                ("decision", "받는 중인 녹음을 목록에 표시합니다.", 11, None),
+                ("decision", "출시는 10월 14일 그대로 갑니다.", 24, None),
+                ("todo", "온보딩 문구 초안 만들기", 16, "목요일"),
+                ("todo", "도움말 문서 마무리하기", 19, None),
+            ],
+        },
+    },
+}
+
 SETS = {"en": (EN, "Samantha", "en"), "ko": (KO, "Yuna", "ko")}

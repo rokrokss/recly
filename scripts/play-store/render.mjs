@@ -16,7 +16,7 @@ const WORK = join(ROOT, 'build/play-store-assets');
 const OUT = join(WORK, 'out');
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-const PHONE = { 1: 'watch', 2: 'transcript', 3: 'drive', 4: 'record', 5: 'list' };
+const PHONE = { 1: 'watch', 2: 'transcript', 3: 'notes', 4: 'record', 5: 'list' };
 const WEAR = [['wear-rec', 'recording'], ['wear-idle', 'ready'], ['wear-tile', 'tile']];
 
 function cdp(url) {

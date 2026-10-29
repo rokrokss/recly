@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(__file__))
-from demo_data import SETS
+from demo_data import NOTES, SETS
 
 TZ_NAME, TZ = "Asia/Dubai", timezone(timedelta(hours=4))
 CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
@@ -30,6 +30,35 @@ def ulid(at: datetime) -> str:
 
 def iso(at: datetime) -> str:
     return at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + f"{at.microsecond // 1000:03d}Z"
+
+
+def notes(lang: str, title: str, rid: str, segments: list, at: datetime) -> dict | None:
+    """The recording's final notes file (spec/notes.schema.json), each item quoting the segment it cites."""
+    demo = NOTES[lang].get(title)
+    if demo is None:
+        return None
+    stamp = iso(at)
+    items = []
+    for kind, text, segment, due in demo["items"]:
+        item = {"id": ulid(at), "kind": kind, "text": text}
+        if due:
+            item["due"] = due
+        item.update({"evidence": {"atSec": segments[segment]["start"], "quote": segments[segment]["text"]},
+                     "provisional": False, "conversation": 0, "createdAt": stamp})
+        items.append(item)
+    return {
+        "schema": 1, "recordingId": rid, "stage": "final", "overview": demo["overview"], "items": items,
+        "tombstones": [], "conversations": [{"startSec": 0.0, "endSec": segments[-1]["end"], "summary": demo["overview"]}],
+        "parts": [1], "model": "gpt-6.1-terra", "modelName": "GPT-6.1 Terra",
+        "sections": [{"id": kind, "name": "", "description": "", "kind": kind} for kind in ("point", "decision", "todo", "question")],
+        "createdAt": stamp, "updatedAt": stamp, "finalizedAt": stamp,
+    }
+
+
+def write_notes(folder: str, base: str, doc: dict | None) -> None:
+    if doc is not None:
+        with open(os.path.join(folder, f"{base}.notes.v1.json"), "w") as f:
+            json.dump(doc, f, ensure_ascii=False)
 
 
 def tts(text: str, voice: str, path: str) -> bytes:
@@ -111,6 +140,7 @@ def main(lang: str, template: str, out: str) -> None:
         }
         with open(os.path.join(folder, f"{base}.transcript.json"), "w") as f:
             json.dump(transcript, f, ensure_ascii=False)
+        write_notes(folder, base, notes(lang, title, rid, segments, done + timedelta(seconds=20)))
 
         drive_folder = "1" + "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in range(32))
         db.execute("INSERT INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status, drive_folder_id, remote, remote_pending, drive_synced) "

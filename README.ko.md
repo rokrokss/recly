@@ -133,10 +133,10 @@ Android·Windows는 오픈소스 Qwen3-ASR 0.6B 모델로 하며, 이 모델은 
 설정·전사 파일 계약은 [`spec/`](spec/)에 있습니다.
 
 <p align="center">
-  <img src="docs/design/screenshots/ko/01-record-for-your-ai.png" width="24%" alt="내 AI를 위한 녹음기: 녹음은 내 드라이브에, 전사는 원하는 방식으로">
+  <img src="docs/design/screenshots/ko/01-record-for-your-ai.png" width="24%" alt="내 AI를 위한 녹음기: 이미 차고 있는 시계를 탭해 녹음하세요">
   <img src="docs/design/screenshots/ko/02-transcribe.png" width="24%" alt="기기에서 바로 전사: 읽으면서 원하는 순간으로 이동">
-  <img src="docs/design/screenshots/ko/03-drive.png" width="24%" alt="내 Google 드라이브에 저장: Recly 계정도, Recly 서버도 없습니다">
-  <img src="docs/design/screenshots/ko/04-record.png" width="24%" alt="iPhone과 Apple Watch에서 탭 한 번으로 녹음">
+  <img src="docs/design/screenshots/ko/03-notes.png" width="24%" alt="ChatGPT가 정리합니다: 결정과 할 일을, 그 말이 나온 순간과 함께">
+  <img src="docs/design/screenshots/ko/04-list.png" width="24%" alt="내 AI가 바로 읽는 전사본: Drive를 읽는 AI라면 바로 노트로 만듭니다">
 </p>
 
 ## 노트: 내 에이전트로

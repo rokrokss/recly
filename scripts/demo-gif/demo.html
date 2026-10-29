@@ -54,8 +54,6 @@ body { font-family: var(--sans); -webkit-font-smoothing: antialiased; word-break
 .ws .state { position: absolute; left: 0; right: 0; top: 86px; font-family: var(--mono); font-size: 14px; }
 .ws .btn { position: absolute; left: 101px; top: 112px; width: 68px; height: 68px; border-radius: 6px; }
 .ws .btn i { position: absolute; left: 23px; top: 23px; width: 22px; height: 22px; border-radius: 3px; }
-.ws .badge { position: absolute; left: 0; right: 0; top: 190px; font-family: var(--mono); font-size: 13px; color: #9A9CA3; }
-.ws .help { position: absolute; left: 104px; top: 214px; width: 62px; height: 36px; border: 1px solid #333; border-radius: 6px; font-size: 14px; font-weight: 700; line-height: 34px; }
 .face .bigtime { position: absolute; left: 0; right: 0; top: 92px; font-size: 64px; font-weight: 300; letter-spacing: -0.02em; }
 .face .date { position: absolute; left: 0; right: 0; top: 70px; font-size: 15px; color: #9A9CA3; }
 
@@ -82,25 +80,24 @@ body { font-family: var(--sans); -webkit-font-smoothing: antialiased; word-break
 .list .title { position: absolute; left: 16px; top: 8px; font-size: 17px; font-weight: 700; }
 .list .summary { position: absolute; left: 16px; top: 33px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .ledger { position: absolute; left: 0; right: 0; top: 60px; }
-.cols, .row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 44px 92px; column-gap: 8px; align-items: center; padding: 0 12px 0 16px; }
+.cols, .row { display: grid; grid-template-columns: 50px minmax(0, 1fr) 42px 78px; column-gap: 8px; align-items: center; padding: 0 12px 0 16px; }
 .cols { font-size: 11px; color: var(--muted); height: 28px; border-bottom: 1px solid var(--grid); }
 .row { background: var(--surface); border-bottom: 1px solid var(--grid); min-height: 50px; padding-top: 7px; padding-bottom: 7px; }
 .row .tm { font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.35; }
+.row .tw { min-width: 0; }
 .row .tt { font-size: 13px; font-weight: 700; }
+.row .pv { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .ln { font-family: var(--mono); font-size: 12px; }
 .chip { justify-self: start; font-family: var(--mono); font-size: 10.5px; line-height: 1.3; border: 1px solid; border-radius: 2px; padding: 2px 5px; }
 .chip.done { color: var(--success); border-color: var(--success); }
 .chip.busy { color: var(--accent); border-color: var(--accent); }
-.actions { display: flex; gap: 8px; padding: 10px 16px; background: var(--ground); border-bottom: 1px solid var(--grid); }
-.obtn { font-size: 12.5px; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 6px 10px; background: var(--surface); }
 
-.detail .dh { position: absolute; left: 16px; right: 14px; top: 6px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.detail .dh { position: absolute; left: 16px; right: 10px; top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .detail .dt { font-size: 16px; font-weight: 700; }
-.detail .did { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
-.detail .dbtns { display: flex; gap: 6px; }
-.detail .dbtns span { font-size: 11.5px; border: 1px solid var(--grid); background: var(--surface); border-radius: 4px; padding: 5px 8px; }
-.detail .body { position: absolute; left: 16px; right: 16px; top: 62px; border-top: 1px solid var(--grid); padding-top: 12px; display: grid; gap: 10px; }
-.detail .ts { display: inline-block; font-family: var(--mono); font-size: 11px; border: 1px solid var(--grid); background: var(--surface); border-radius: 2px; padding: 3px 7px; }
+.detail .glyphs { display: flex; gap: 14px; align-items: center; }
+.detail .glyphs svg { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.detail .body { position: absolute; left: 16px; right: 16px; top: 44px; border-top: 1px solid var(--grid); padding-top: 12px; display: grid; gap: 10px; }
+.detail .ts { display: inline-block; font-family: var(--mono); font-size: 11px; border: 1px solid #8D8D8A; background: var(--surface); border-radius: 2px; padding: 4px 8px; }
 .detail .para { font-size: 13px; line-height: 1.55; margin-top: 6px; }
 </style>
 </head>
@@ -154,7 +151,7 @@ const STEPS = [[0, 1.75], [1.75, 5.3], [5.3, 7.6], [7.6, 10.3], [10.3, END + 1]]
 const PRESS = [0.75, 1.1];          // the two home-key presses
 const REC_START = 1.75, JUMP = 4.6, STOP = 5.0, SAVED = 5.6, SENT = 7.3;
 const PACKET = [6.0, 7.2];
-const UPLOADING = 8.1, DONE_AT = 9.4, ROW_TAP = 9.75, DETAILS_TAP = 10.15, DETAIL = 10.35;
+const UPLOADING = 8.1, DONE_AT = 9.4, ROW_TAP = 9.75, DETAIL = 10.1;
 const LENGTH_S = 41;
 
 // Geometry of the watch keys: on the case's right edge, the upper one is the home key.
@@ -187,7 +184,7 @@ function watchScreen(t) {
   if (t < REC_START) {
     return `<div class="ws face"><div class="date">${esc(S.copy.faceDate)}</div><div class="bigtime">9:41</div></div>`;
   }
-  let timer, state, stateColor, btnBg, btnBorder, inner, badge = '';
+  let timer, state, stateColor, btnBg, btnBorder, inner;
   if (t < STOP) {
     const secs = t < JUMP ? Math.floor(t - REC_START) : LENGTH_S;
     timer = mmss(secs); state = S.wear.recording_active; stateColor = '#FA4D56';
@@ -196,14 +193,13 @@ function watchScreen(t) {
     timer = mmss(LENGTH_S); state = S.wear.recording_stopping; stateColor = '#9A9CA3';
     btnBg = '#3A3B40'; btnBorder = '#3A3B40'; inner = '#111';
   } else {
-    timer = '00:00'; state = S.wear.recording_idle; stateColor = '#9A9CA3';
+    // One status line: what the watch is doing, and nothing once it is idle.
+    timer = '00:00'; state = t < SENT ? S.wear.sending_badge : ''; stateColor = '#9A9CA3';
     btnBg = '#000'; btnBorder = '#FA4D56'; inner = '#FA4D56';
-    if (t < SENT) badge = fmt(S.wear.sending_badge, 1);
   }
   return `<div class="ws"><div class="clock">9:41</div><div class="timer">${timer}</div>` +
     `<div class="state" style="color:${stateColor}">${esc(state)}</div>` +
-    `<div class="btn" style="background:${btnBg};border:2px solid ${btnBorder}"><i style="background:${inner}"></i></div>` +
-    `<div class="badge">${esc(badge)}</div><div class="help">${esc(S.wear.info_open)}</div></div>`;
+    `<div class="btn" style="background:${btnBg};border:2px solid ${btnBorder}"><i style="background:${inner}"></i></div></div>`;
 }
 
 function chip(state) {
@@ -213,17 +209,23 @@ function chip(state) {
 }
 
 function row(r, extra = '') {
+  const preview = r.preview ? `<div class="pv">${esc(r.preview)}</div>` : '';
   return `<div class="row" style="${extra}"><div class="tm">${esc(r.date)}<br>${esc(r.time)}</div>` +
-    `<div class="tt">${esc(r.title)}</div><div class="ln">${esc(r.len)}</div>${chip(r.state)}</div>`;
+    `<div class="tw"><div class="tt">${esc(r.title)}</div>${preview}</div><div class="ln">${esc(r.len)}</div>${chip(r.state)}</div>`;
 }
+
+const GLYPHS = [
+  '<svg viewBox="0 0 20 20"><path d="M10 2.5v10M6.5 6 10 2.5 13.5 6M5 9.5H4v8h12v-8h-1"/></svg>',
+  '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><g fill="#111" stroke="none"><circle cx="6.5" cy="10" r="1.1"/><circle cx="10" cy="10" r="1.1"/><circle cx="13.5" cy="10" r="1.1"/></g></svg>',
+  '<svg viewBox="0 0 20 20"><path d="M4.5 4.5l11 11M15.5 4.5l-11 11"/></svg>',
+];
 
 function phoneView(t) {
   if (t >= DETAIL) {
     const p = S.copy.transcript;
     const o1 = ramp(t, DETAIL + 0.05, DETAIL + 0.35), o2 = ramp(t, DETAIL + 0.35, DETAIL + 0.65);
-    return `<div class="detail"><div class="dh"><div><div class="dt">${esc(S.app.jobs_untitled)}</div>` +
-      `<div class="did">${esc(S.copy.recordingId)}</div></div>` +
-      `<div class="dbtns"><span>${esc(S.app.detail_rename)}</span><span>${esc(S.app.action_close)}</span></div></div>` +
+    return `<div class="detail"><div class="dh"><div class="dt">${esc(S.app.jobs_untitled)}</div>` +
+      `<div class="glyphs">${GLYPHS.join('')}</div></div>` +
       `<div class="body"><div style="opacity:${o1}"><span class="ts">00:00</span><p class="para">${esc(p[0])}</p></div>` +
       `<div style="opacity:${o2}"><span class="ts">00:24</span><p class="para">${esc(p[1])}</p></div></div></div>`;
   }
@@ -234,14 +236,11 @@ function phoneView(t) {
     total = 4; waiting = state === 'done' ? 0 : 1;
     const glow = 1 - ramp(t, SENT, SENT + 1.2);
     const bg = `background:color-mix(in srgb, var(--accent-soft) ${Math.round(glow * 100)}%, var(--surface))`;
-    let html = row({ date: S.copy.newDate, time: '09:41', title: S.app.jobs_untitled, len: mmss(LENGTH_S), state }, bg);
-    if (t >= ROW_TAP + 0.1) {
-      html += `<div class="actions"><span class="obtn">${esc(S.app.jobs_open_drive)}</span><span class="obtn">${esc(S.app.detail_open)}</span></div>`;
-    }
-    rows.unshift(html);
+    const preview = state === 'done' ? S.copy.transcript[0] : '';
+    rows.unshift(row({ date: S.copy.newDate, time: '09:41', title: S.app.jobs_untitled, len: mmss(LENGTH_S), state, preview }, bg));
   }
   return `<div class="list"><div class="title">${esc(S.app.jobs_title)}</div>` +
-    `<div class="summary">${esc(fmt(S.app.jobs_summary, total, waiting, 0))}</div>` +
+    `<div class="summary">${esc([String(total), waiting > 0 ? fmt(S.app.jobs_summary_waiting, waiting) : null].filter(Boolean).join(' · '))}</div>` +
     `<div class="ledger"><div class="cols"><span>${esc(S.app.jobs_column_time)}</span><span>${esc(S.app.jobs_column_title)}</span>` +
     `<span>${esc(S.app.jobs_column_length)}</span><span>${esc(S.app.jobs_column_status)}</span></div>${rows.join('')}</div></div>`;
 }
@@ -290,8 +289,7 @@ function render(t) {
   const tap = $('tap');
   let st = 'display:none';
   if (t >= STOP && t < STOP + 0.4) st = tapAt(CX, 341, STOP, t, false);
-  else if (t >= ROW_TAP && t < ROW_TAP + 0.4) st = tapAt(...center(document.querySelector('.row')), ROW_TAP, t, true);
-  else if (t >= DETAILS_TAP && t < DETAIL) st = tapAt(...center(document.querySelectorAll('.obtn')[1]), DETAILS_TAP, t, true);
+  else if (t >= ROW_TAP && t < DETAIL) st = tapAt(...center(document.querySelector('.row')), ROW_TAP, t, true);
   tap.setAttribute('style', st);
 }
 

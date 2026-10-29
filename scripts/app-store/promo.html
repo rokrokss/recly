@@ -75,20 +75,20 @@
   // The README's alt texts say the same.
   const COPY = {
     en: {
-      1: ['Record for your AI', 'Your recordings, your Drive, your choice of transcription.'],
+      1: ['Record for your AI', 'Tap the watch you already wear.'],
       2: ['Transcribe on device', 'Read along, then jump to any moment.'],
-      3: ['Saved to your Drive', 'No Recly account. No Recly server.'],
-      4: ['Record in one tap', 'On iPhone or Apple Watch.'],
+      3: ['Organized by ChatGPT', 'Decisions and to-dos, each at its moment.'],
+      4: ['Ready for your AI', 'Any AI that can read your Drive can make notes.'],
     },
     ko: {
-      1: ['내 AI를 위한 녹음기', '녹음은 내 드라이브에, 전사는 원하는 방식으로'],
+      1: ['내 AI를 위한 녹음기', '이미 차고 있는 시계를 탭해 녹음하세요'],
       2: ['기기에서 바로 전사', '읽으면서 원하는 순간으로 이동'],
-      3: ['내 Google 드라이브에 저장', 'Recly 계정도, Recly 서버도 없습니다'],
-      4: ['탭 한 번으로 녹음', 'iPhone과 Apple Watch에서'],
+      3: ['ChatGPT가 정리합니다', '결정과 할 일을, 그 말이 나온 순간과 함께'],
+      4: ['내 AI가 바로 읽는 전사본', 'Drive를 읽는 AI라면 바로 노트로 만듭니다'],
     },
   };
-  // 1 the list, 2 a transcript after its second timestamp was tapped, 3 the first row opened, 4 the Record tab.
-  const SCREEN = { 1: 'list', 2: 'detail', 3: 'expand', 4: 'record' };
+  // 1 the Record tab with the watch, 2 a transcript after its second timestamp was tapped, 3 the same recording's notes, 4 the list.
+  const SCREEN = { 1: 'record', 2: 'detail', 3: 'notes', 4: 'list' };
   const [h1, sub] = COPY[lang][shot];
   document.getElementById('h1').textContent = h1;
   document.getElementById('sub').textContent = sub;
@@ -99,7 +99,7 @@
   const img = name => `../../build/app-store-assets/captures/${lang}/${name}.png`;
   document.getElementById('screen').src = img(SCREEN[shot]);
 
-  if (shot === 4) {
+  if (shot === 1) {
     // The 46 mm watch's 416×496 screen at 0.36, its case around it, bottom right over the phone's empty side.
     const s = 0.36, sw = 416 * s, sh = 496 * s, rim = 11, cw = sw + rim * 2, ch = sh + rim * 2;
     const left = 338, top = 712, bandW = cw * 0.74, band = 74;
