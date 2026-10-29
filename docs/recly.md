@@ -3776,8 +3776,10 @@ With the built-in speakers the microphone's input node runs with voice processin
   a reduced fallback (macOS uses a `.window` MenuBarExtra, so there is no NSMenu).
 - **The popover stays open when this app's windows take focus** — opening a details or settings window or the delete dialog from the popover
   and clicking inside it does not close it. Only a click in another app, a click on the status icon, or Esc closes it (on the Mac, `MenuBarPanel`'s
-  AppKit `NSPanel` + a global mouse monitor, 2026-09-03; the Windows tray popup tells apart the case where focus went to another window of this JVM,
-  2026-09-04).
+  AppKit `NSPanel` + a global mouse monitor, 2026-09-03, which leaves a click on the status icon to the icon — macOS 27 draws the menu bar's
+  items in the window server, so that click reaches the monitor too, and the popover closed and opened again, 2026-10-29; the Windows tray popup
+  tells apart the case where focus went to another window of this JVM, 2026-09-04). A question the app asks over it (the title sheet, the
+  consent questions) comes up above it even when macOS does not bring the app to the front (2026-10-29).
 - **Runner**: the app process calls `runDueJobs()` (a) right after a Job is created (b) on a 5-minute timer (c) when the network returns (`NWPathMonitor`)
   (d) as the `nextRunAt` follow-up. Launch at login via `SMAppService`.
 - **Highlight** (2026-10-07): while recording, the popover's command row has `Highlight` right after `Stop recording`; it calls

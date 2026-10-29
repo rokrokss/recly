@@ -50,6 +50,11 @@ enum BlueprintPanel {
         // `LSUIElement` means the app is not frontmost when the menu closes; without this the panel
         // opens behind whatever the user was doing.
         NSApp.activate(ignoringOtherApps: true)
+        // The activation can be refused. The title prompt comes once the stop has finished, a while
+        // after the click in the popover; macOS 27 left the app behind, the popover kept the level it
+        // floats at over other apps (`MenuBarPanel`), and the question opened under it (2026-10-29).
+        // A question the whole app waits on is above the popover either way.
+        window.level = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue + 1)
         window.makeKeyAndOrderFront(nil)
         NSApp.runModal(for: window)
         window.orderOut(nil)

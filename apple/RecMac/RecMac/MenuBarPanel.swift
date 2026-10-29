@@ -87,11 +87,18 @@ final class MenuBarPanel {
 
         // Clicks in other apps close it. A global monitor sees only events sent to other
         // applications, which is exactly the line: a click on this app's own windows never arrives
-        // here, and the popover stays.
+        // here, and the popover stays. Except the status item's: macOS 27 draws the menu bar's items in
+        // the window server, so the mouse-down on this one arrives here too, and the button's action on
+        // the mouse-up found the popover it should close already closed and opened it again
+        // (2026-10-29). The button is the toggle; a click on it is left to it.
         monitors.append(NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
         ) { [weak self] _ in
-            Task { @MainActor in self?.hide() }
+            let location = NSEvent.mouseLocation
+            Task { @MainActor in
+                guard let self, self.itemFrame?.contains(location) != true else { return }
+                self.hide()
+            }
         } as Any)
 
         // `MenuBarExtra` redrew its label on every change of the model and of the language — the
@@ -159,11 +166,16 @@ final class MenuBarPanel {
         }
     }
 
+    /// The status item's button on the screen.
+    private var itemFrame: NSRect? {
+        guard let button = item.button, let bar = button.window else { return nil }
+        return bar.convertToScreen(button.convert(button.bounds, to: nil))
+    }
+
     /// Constrain both SwiftUI's layout proposal and the native window. Clipping only the window
     /// would still leave the footer below its visible area in SwiftUI's taller content layout.
     private func fit() {
-        guard let button = item.button, let bar = button.window else { return }
-        let rect = bar.convertToScreen(button.convert(button.bounds, to: nil))
+        guard let rect = itemFrame else { return }
         guard let screen = NSScreen.screens.first(where: { $0.frame.intersects(rect) }) ?? NSScreen.main else { return }
         let visible = screen.visibleFrame.insetBy(dx: Self.gap, dy: Self.gap)
         // An overflowed status item can lie off-screen; use that screen's top-right corner.
