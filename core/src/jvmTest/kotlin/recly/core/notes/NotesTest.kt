@@ -82,12 +82,12 @@ class NotesTest {
     }
 
     private fun answer(json: String) {
-        chatGpt.server.reply(
-            "data: {\"type\":\"response.output_text.delta\",\"delta\":" + Json.encodeToString(String.serializer(), json) +
-                "}\n\ndata: {\"type\":\"response.completed\",\"response\":{}}\n\n",
-            headers = mapOf("Content-Type" to "text/event-stream"),
-        )
+        chatGpt.server.reply(stream(json), headers = mapOf("Content-Type" to "text/event-stream"))
     }
+
+    private fun stream(json: String) =
+        "data: {\"type\":\"response.output_text.delta\",\"delta\":" + Json.encodeToString(String.serializer(), json) +
+            "}\n\ndata: {\"type\":\"response.completed\",\"response\":{}}\n\n"
 
     private fun usageLimit() = chatGpt.server.reply("""{"error":{"code":"subscription_sharing_usage_limit_exceeded"}}""", status = 429)
 
@@ -1023,6 +1023,31 @@ class NotesTest {
         assertEquals(NotesStage.FINAL, again.stage)
         assertEquals(listOf("Ship alpha"), again.decisions.map { it.text })
         assertTrue(notes.needsConsent(), "asking once is not agreeing to organize every recording")
+    }
+
+    @Test
+    fun `Organize again asks for the names of the speakers who have none, beside the notes`() = runBlocking {
+        engine.answer = { meeting }
+        val meta = f.recordAndRun()
+        chatGpt.signIn(account = f.core.chatGpt)
+        chatGpt.server.replyEach(chatGpt::isFill, stream("""{"speakers":{"S1":"Mina","S2":"Joon"}}"""), headers = mapOf("Content-Type" to "text/event-stream"))
+        suspend fun names() = f.core.results(meta.recordingId).transcript!!.speakers.associate { it.id to it.name }
+        assertEquals(mapOf("S1" to null, "S2" to null), names())
+
+        answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
+        assertNull(notes.organizeAgain(meta.recordingId))
+        f.core.awaitPushes()
+        assertEquals(mapOf("S1" to "Mina", "S2" to "Joon"), names())
+        val fill = chatGpt.server.requests.single(chatGpt::isFill)
+        assertTrue("\"title\"" !in fill.json()["instructions"]!!.jsonPrimitive.content, "the title is not asked for")
+        assertNull(f.core.recordings.get(meta.recordingId)!!.meta.title)
+        assertEquals("organize", f.logger.fieldsOf("summary.fill.start").single()["trigger"])
+        assertEquals(listOf("Ship alpha"), notes.get(meta.recordingId).decisions.map { it.text })
+
+        answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
+        assertNull(notes.organizeAgain(meta.recordingId))
+        f.core.awaitPushes()
+        assertEquals(1, chatGpt.server.requests.count(chatGpt::isFill), "everyone has a name: nothing more is asked")
     }
 
     @Test

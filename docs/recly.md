@@ -2253,6 +2253,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   request: it needs the sign-in (`CHATGPT_SIGN_IN_REQUIRED` otherwise, also when OpenAI ended it) and, on iPhone, the plan allowed as a
   destination (`TRANSFER_CONSENT_REQUIRED` before anything is sent), but not the consent above, and it waits for nothing: a failure is
   `RecordingNotes.failure` until the next try, and the next try starts over. A recording already being organized here is not asked twice, and a recording's final passes — the job's and Organize again — run one at a time.
+  Beside it go the names of the speakers who have none (2026-10-29, §8 "Titles and speaker names").
 - **Errors after Stop** go through the job's own retries and `CoreMessage`s, and never hold up the upload or the publication, which
   come before: `CHATGPT_USAGE_LIMIT` waits five hours (the plan's shorter usage window), `CHATGPT_PLAN_REQUIRED` a day and
   `CHATGPT_SIGN_IN_REQUIRED` — OpenAI ended the sign-in — six hours between tries (the step's `retry.maxDelaySec` is a day);
@@ -2338,7 +2339,7 @@ user's when `mic` sounds and `sys` is quiet, and the call's when `sys` sounds.
 
 2026-10-15 (user decision); 2026-10-29 (user decision: no boxes — automatic). A recording's title, when it has none, and its speakers'
 names come from the user's ChatGPT plan: at every publication of its transcript on this device, for a user signed in who agreed to the
-plan's background use, and on request from its detail (`AutoFill`). (From 2026-10-15 to 2026-10-29 the title sheet after Stop had two
+plan's background use, and on request from its detail — its names also with `Organize` (`AutoFill`). (From 2026-10-15 to 2026-10-29 the title sheet after Stop had two
 checkboxes, `Fill in the title with ChatGPT` and `Fill in speaker names with ChatGPT`, remembered on each device and asked per recording;
 the user chose automatic instead.)
 
@@ -2359,9 +2360,14 @@ the user chose automatic instead.)
   `TRANSFER_CONSENT_REQUIRED` on iPhone before anything is sent, as for `Organize`. One run per recording: asking for what the run going
   asks for answers that run; asking for the other half waits for it and then runs on its own (a second request — the halves are never
   folded into a request already sent). A run goes on when its screen closes.
+- **With Organize** (2026-10-29, user request). More → `Organize` and `Organize again` (`notes.organizeAgain`, §8 "Organizing") also
+  ask for the names of the speakers who have none, as `Fill in speaker names` does (`AutoFill.withOrganize`) — never the title. It goes
+  beside the notes' request and neither waits for the other: the notes are written from speaker labels and show the names once they are
+  given. Only when Organize goes ahead — signed in and, on iPhone, the destination allowed, the recording not already being organized —
+  and nothing is sent when every speaker who speaks has a name. What it meets is logged, not shown: the detail reports the notes' result.
 - **What is being filled in** (`observeFills()`, a list of `FillRun(recordingId, title, names)`, one per recording). A fill is in it
   from the moment it asks the plan until the answer is applied — or the request fails, or the pass is cut short — whichever trigger
-  started it: a publication's or the detail's. `title` and `names` are what that request asks for: the halves asked that the recording
+  started it: a publication's, the detail's or Organize's. `title` and `names` are what that request asks for: the halves asked that the recording
   lacked. A fill that sends nothing (nothing to fill, a job in the way, no permission, the pause) and an ask waiting for the run before
   it are not in it. The lists' `Filling in` badge and the detail's line under its header read it (§9 principle 2, "AI view").
 - **What is asked** (`FillNeeds.of(title, transcript)`, the rule the shells offer the two items by: `title` for the title, `names` —
@@ -2395,7 +2401,7 @@ the user chose automatic instead.)
 - **Never in the way.** At a publication a skip or a failure publishes the transcript as it was, and the step is not retried for it
   (`summary.fill.start` — with `title`, `names` and `speakers`, what the
   request asks for — `.model` — the model and effort asked — `.done`, `.skipped`, `.failed`, and `.effort.refused` when the plan refused
-  `reasoning` and was asked again without it, each with `trigger` `publish` or `manual`; ids, flags, counts and the model only, never a
+  `reasoning` and was asked again without it, each with `trigger` `publish`, `manual` or `organize`; ids, flags, counts and the model only, never a
   title or a name). Signed out, not agreed, or ChatGPT not offered in the storefront: nothing is asked. iPhone: skipped until ChatGPT is an
   allowed destination (§15 "iPhone providers"); the notes' consent sheet gives that permission with its `Continue`. OpenAI asks apps to stop requests
   at the usage limit and when the plan no longer covers the app (developers.openai.com/siwc "Errors and recovery", 2026-10-15):
@@ -4500,7 +4506,7 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Sign-out | the `revocation_endpoint` from `https://auth.openai.com/.well-known/openid-configuration` | the refresh token and client id | 200 |
 | Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`); Recly offers those marked `list`, less `HIDDEN_MODELS` (§8) |
 | Ask | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `About you` when set — and **the recording's transcript text with its times and the speakers' names**, and the preset's question or the user's own — no title, never audio | the answer as a stream (`store: false`); kept in memory only |
-| Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu |
+| Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu — the names also with `Organize` |
 | Organizing (2026-10-27; `Organize again`, 2026-10-28) | the same | the access token, the model Settings picked, the instructions — with the user's `Notes instructions`, `My sections` and `About you` when set — and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop and at `Organize again`, each conversation's lines, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device, no title, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the final notes go to the recording's Drive or iCloud folder (§1, §1b) |
 
 - Only when the user asks: signing in, and choosing `Organize` or `Organize again`, a question in `Ask about this recording…`, `Fill in

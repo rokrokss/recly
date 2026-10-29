@@ -276,6 +276,7 @@ class ReclyCore(
             pushes.launch { remote.pushNotes() }
         },
         fetch = { recordingId -> notesInFolder(recordingId) },
+        nameSpeakers = { recordingId -> autoFill.withOrganize(recordingId) },
     )
 
     init {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -95,7 +96,8 @@ sealed interface FillResult {
  * signed in who agreed to the plan's background use ([agreed], docs/08 "Organizing"), so the folder's first copy, and
  * whatever reads it, has them; nothing there stops the publication, a skip or a failure publishes the transcript as it
  * was. More → Fill in title and More → Fill in speaker names ask for a recording already transcribed ([manual]), each
- * on its own, on request (docs/15 §10). What is asking now, for either, is [observe].
+ * on its own, on request (docs/15 §10), and Organize asks for the names too ([withOrganize]). What is asking now, for
+ * any of them, is [observe].
  */
 internal class AutoFill(
     private val db: RecDatabase,
@@ -167,47 +169,64 @@ internal class AutoFill(
      * already in the folder. The background pause does not apply: the user asked. One run per recording: asking again
      * for what the run going asks for answers that run; asking for the other half waits for it, then runs on its own.
      * On iPhone a destination the user has not allowed answers `TRANSFER_CONSENT_REQUIRED` before anything is sent,
-     * as a summary does.
+     * as a summary does. [trigger] is what asked, for the log.
      */
-    suspend fun manual(recordingId: String, title: Boolean, names: Boolean): FillResult {
+    suspend fun manual(recordingId: String, title: Boolean, names: Boolean, trigger: String = MANUAL): FillResult {
         if (!title && !names) return FillResult.NothingToFill
         if (consents.missing(listOf(TransferTargets.chatGptSummary())).isNotEmpty()) {
-            skipped(recordingId, MANUAL, "consent")
+            skipped(recordingId, trigger, "consent")
             return FillResult.Failed(CoreMessage.TRANSFER_CONSENT_REQUIRED.code())
         }
         while (true) {
             val run = runLock.withLock {
-                runs[recordingId] ?: Manual(title, names, scope.async { manualRun(recordingId, title, names) }).also { runs[recordingId] = it }
+                runs[recordingId] ?: Manual(title, names, scope.async { manualRun(recordingId, title, names, trigger) }).also { runs[recordingId] = it }
             }
             if (run.covers(title, names)) return run.outcome.await()
             run.outcome.join()
         }
     }
 
-    private suspend fun manualRun(recordingId: String, title: Boolean, names: Boolean): FillResult = try {
-        attempt(recordingId, title, names)
+    /**
+     * Organize and Organize again (docs/08 "Organizing"): the speakers that still have no name are asked for as More →
+     * Fill in speaker names asks — beside the notes and not waited for, since neither needs the other's answer: the
+     * notes are written from speaker labels and show the names when they come. What it meets is logged, not shown.
+     */
+    fun withOrganize(recordingId: String) {
+        scope.launch {
+            try {
+                manual(recordingId, title = false, names = true, trigger = ORGANIZE)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                deps.logger.log(Logger.Level.WARN, "summary.fill.failed", mapOf("recordingId" to recordingId, "trigger" to ORGANIZE), e)
+            }
+        }
+    }
+
+    private suspend fun manualRun(recordingId: String, title: Boolean, names: Boolean, trigger: String): FillResult = try {
+        attempt(recordingId, title, names, trigger)
     } finally {
         withContext(NonCancellable) { runLock.withLock { runs.remove(recordingId) } }
     }
 
-    private suspend fun attempt(recordingId: String, title: Boolean, names: Boolean): FillResult {
-        if (busy(recordingId)) return FillResult.Busy.also { skipped(recordingId, MANUAL, "busy") }
-        val record = recordings.get(recordingId) ?: return FillResult.NoTranscript.also { skipped(recordingId, MANUAL, "transcript") }
-        val current = transcript(recordingId) ?: return FillResult.NoTranscript.also { skipped(recordingId, MANUAL, "transcript") }
+    private suspend fun attempt(recordingId: String, title: Boolean, names: Boolean, trigger: String): FillResult {
+        if (busy(recordingId)) return FillResult.Busy.also { skipped(recordingId, trigger, "busy") }
+        val record = recordings.get(recordingId) ?: return FillResult.NoTranscript.also { skipped(recordingId, trigger, "transcript") }
+        val current = transcript(recordingId) ?: return FillResult.NoTranscript.also { skipped(recordingId, trigger, "transcript") }
         val needs = FillNeeds.of(record.meta.title, current).only(title, names)
-        if (!needs.any) return FillResult.NothingToFill.also { skipped(recordingId, MANUAL, "nothing") }
+        if (!needs.any) return FillResult.NothingToFill.also { skipped(recordingId, trigger, "nothing") }
         return shown(recordingId, needs) {
             val answer = try {
-                ask(recordingId, current, needs, MANUAL)
+                ask(recordingId, current, needs, trigger)
             } catch (e: ChatGptFailure) {
                 return@shown FillResult.Failed(e.reason)
             }
-            val titled = answer.title?.takeIf { needs.title }?.let { giveTitle(recordingId, it, MANUAL) } ?: false
+            val titled = answer.title?.takeIf { needs.title }?.let { giveTitle(recordingId, it, trigger) } ?: false
             val given = answer.speakers.filterKeys { it in needs.speakers }
             val named = if (given.isEmpty()) 0 else name(recordingId, given)
             // A transcription started meanwhile: nothing of the transcript was changed.
-            if (named == null && !titled) return@shown FillResult.Busy.also { skipped(recordingId, MANUAL, "busy") }
-            done(recordingId, MANUAL, titled, named ?: 0)
+            if (named == null && !titled) return@shown FillResult.Busy.also { skipped(recordingId, trigger, "busy") }
+            done(recordingId, trigger, titled, named ?: 0)
             FillResult.Filled(titled, named ?: 0)
         }
     }
@@ -301,9 +320,13 @@ internal class AutoFill(
     internal companion object {
         const val PAUSED_UNTIL = "summary/fill/paused_until"
 
-        /** The `trigger` of the log events: a publication, or the detail's More → Fill in title or Fill in speaker names. */
+        /**
+         * The `trigger` of the log events: a publication, the detail's More → Fill in title or Fill in speaker names, or
+         * Organize asking for the names.
+         */
         const val PUBLISH = "publish"
         const val MANUAL = "manual"
+        const val ORGANIZE = "organize"
 
         /** The plan's shorter usage window is five hours (developers.openai.com/siwc "Profiles and sessions", 2026-10-15). */
         const val USAGE_PAUSE_SEC = 5 * 3600L

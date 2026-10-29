@@ -104,6 +104,8 @@ class Notes internal constructor(
     private val published: suspend (String) -> Unit = {},
     /** The recording's folder copy, for a recording opened here before a pull brought it ([NotesFolder]). */
     private val fetch: suspend (String) -> String? = { null },
+    /** Organize again is going ahead: the speakers without a name are asked for beside it (docs/08 "Titles and speaker names"). */
+    private val nameSpeakers: (String) -> Unit = {},
 ) {
     /** The providers a part goes to (tests replace it). */
     internal var providers: (String) -> SttProvider? = SttProviders::create
@@ -739,7 +741,8 @@ class Notes internal constructor(
     /**
      * Organize again, which the user asks for from the detail: the final pass once more, from the recording's transcript
      * now and with Settings as they are now. On request, so it needs the sign-in — and on iPhone the plan allowed as a
-     * destination — but not the consent to organizing while recording. What the user edited or deleted stays. Answers
+     * destination — but not the consent to organizing while recording. What the user edited or deleted stays, and the
+     * speakers without a name are asked for beside it ([nameSpeakers]), as More → Fill in speaker names would. Answers
      * null when the notes were written, or a `CoreMessage` wire code; a failure other than the iPhone permission is also
      * [RecordingNotes.failure] until the next try. A recording already being organized is not asked twice.
      */
@@ -753,6 +756,7 @@ class Notes internal constructor(
                 if (account.standing() != ChatGptStanding.SIGNED_IN) throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
                 val transcript = readTranscript(recordingId) ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
                 deps.logger.log(Logger.Level.INFO, "organize.again.start", mapOf("recordingId" to recordingId))
+                nameSpeakers(recordingId)
                 // On request nothing is waited for: a failure is shown, and the next try starts over.
                 onePass(recordingId) { finalPass(recordingId, transcript, null) {} }
                 null
