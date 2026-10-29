@@ -2374,7 +2374,8 @@ the user chose automatic instead.)
   there.
 - **The request** is §8 "AI requests"'s (§15 §10) with its own instructions: the transcript's lines with their times and the speakers' names — no
   title, no highlights, never audio — and the answer asked for is one JSON object: `title` in the notes' language (§8 "AI requests"), at
-  most 60 characters, and `speakers`, each asked id's name only as the transcript gives it — what they call themselves, or what the others
+  most 20 characters in Korean, Japanese or Chinese and 40 in any other language, in a few words rather than a sentence (2026-10-29,
+  user request: titles of 60 ran long), and `speakers`, each asked id's name only as the transcript gives it — what they call themselves, or what the others
   call them when talking to them, without honorifics that go with a name (`님`, `씨`, `さん`, `Mr.`), a form of address used alone
   (`팀장님`) kept — else null. A name said to someone is the listener's, and someone only talked about is no speaker. The
   model is the first of `Summaries.FILL_MODELS` the plan offers — `gpt-6.1-sol` at reasoning effort `low`, then `gpt-6.1-terra` at

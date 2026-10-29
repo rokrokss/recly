@@ -365,7 +365,8 @@ class Summaries internal constructor(
             append("You fill in details of a recording from its transcript. Each line starts with [HH:MM:SS] and who is speaking.\n")
             append("Answer with one JSON object and nothing else: no Markdown, no code fence, no other text.\n")
             if (title) {
-                append("\"title\": a short title for the recording in $language, at most 60 characters, naming what it is about. ")
+                append("\"title\": a short title for the recording in $language — at most 20 characters in Korean, Japanese or Chinese, ")
+                append("at most 40 in any other language — naming what it is about in a few words, not a sentence. ")
                 append("No date or time, no quotation marks, no final period.\n")
             }
             if (speakers.isNotEmpty()) {
@@ -421,7 +422,7 @@ Use plain text. No Markdown: no #, no **, no tables. Start list items with "- ".
 /** docs/08 "Titles and speaker names": what ChatGPT suggested — a title, and names by speaker id. */
 internal data class FillAnswer(val title: String?, val speakers: Map<String, String>) {
     companion object {
-        /** Cut to this, though the instructions ask for 60: the exported file names keep 100 characters of a title. */
+        /** Cut to this, though the instructions ask for 20 or 40: the exported file names keep 100 characters of a title. */
         const val TITLE_MAX = 100
 
         /**
