@@ -547,7 +547,6 @@
   "{0} waiting": "{0} wartend",
   "{0} failed": "{0} fehlgeschlagen",
   "Something went wrong at the provider.": "Beim Anbieter ist etwas schiefgelaufen.",
-  "Open data folder": "Datenordner öffnen",
   "Recording, {0}": "Aufnahme läuft, {0}",
   "Asked once, before the first recording.": "Wird einmal vor der ersten Aufnahme gefragt.",
   "Still transcribing on this device — try again once it has finished": "Wird auf diesem Gerät noch transkribiert – versuche es danach erneut",

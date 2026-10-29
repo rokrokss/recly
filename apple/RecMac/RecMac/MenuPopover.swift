@@ -406,15 +406,11 @@ struct SettingsPane: View {
             VStack(alignment: .leading, spacing: Space.xs) {
                 mono("recly \(CoreBridge.appVersion) (build \(CoreBridge.appBuild)) · macos \(CoreBridge.systemVersion)")
                 mono("device \(model.deviceId)")
-                // docs/09 trend 6: where this Mac keeps its data, and the policy the phones link to.
-                HStack(spacing: Space.s) {
-                    BlueprintButton(loc("Open data folder"), tone: .quiet) { model.openDataFolder() }
-                        .accessibilityIdentifier("open-data-folder")
-                    TextLink(RecKitStrings.localized("Privacy Policy")) {
-                        NSWorkspace.shared.open(PrivacyLinks.recly(locale: locale))
-                    }
-                    .accessibilityIdentifier("privacy-policy")
+                // docs/09 trend 6: the policy the phones link to.
+                TextLink(RecKitStrings.localized("Privacy Policy")) {
+                    NSWorkspace.shared.open(PrivacyLinks.recly(locale: locale))
                 }
+                .accessibilityIdentifier("privacy-policy")
                 Text(verbatim: loc("Open-source notices"))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)

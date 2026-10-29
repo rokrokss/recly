@@ -547,7 +547,6 @@
   "{0} waiting": "{0}件待機中",
   "{0} failed": "{0}件失敗",
   "Something went wrong at the provider.": "プロバイダー側で問題が発生しました。",
-  "Open data folder": "データフォルダを開く",
   "Recording, {0}": "録音中、{0}",
   "Asked once, before the first recording.": "最初の録音の前に一度だけ確認します。",
   "Still transcribing on this device — try again once it has finished": "この端末でまだ文字起こし中です。終わってからもう一度お試しください",

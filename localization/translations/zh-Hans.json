@@ -547,7 +547,6 @@
   "{0} waiting": "{0}项等待",
   "{0} failed": "{0}项失败",
   "Something went wrong at the provider.": "服务提供方出现问题。",
-  "Open data folder": "打开数据文件夹",
   "Recording, {0}": "正在录音，{0}",
   "Asked once, before the first recording.": "仅在第一次录音前询问一次。",
   "Still transcribing on this device — try again once it has finished": "此设备仍在转录——完成后再试一次",

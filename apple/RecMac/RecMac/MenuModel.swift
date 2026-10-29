@@ -1141,12 +1141,6 @@ final class MenuModel: ObservableObject {
 
     private static let microphonePane = "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
 
-    /// docs/09 "About": this Mac's data — the database, the recordings not yet in storage, the logs' neighbours.
-    func openDataFolder() {
-        guard let directory = bridge?.dataDirectory else { return }
-        NSWorkspace.shared.open(directory)
-    }
-
     /// docs/03 "Storage location": an iCloud recording's folder, in the iCloud Drive folder Finder shows — or a
     /// local folder recording's, under the folder picked in settings.
     func showInFinder(_ item: RecentItem) {

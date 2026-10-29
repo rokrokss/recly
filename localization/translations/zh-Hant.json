@@ -547,7 +547,6 @@
   "{0} waiting": "{0}項等待",
   "{0} failed": "{0}項失敗",
   "Something went wrong at the provider.": "服務提供方發生問題。",
-  "Open data folder": "打開資料檔案夾",
   "Recording, {0}": "正在錄音，{0}",
   "Asked once, before the first recording.": "僅在第一次錄音前詢問一次。",
   "Still transcribing on this device — try again once it has finished": "此裝置仍在轉錄——完成後再試一次",

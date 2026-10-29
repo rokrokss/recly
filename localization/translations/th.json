@@ -547,7 +547,6 @@
   "{0} waiting": "รอ {0}",
   "{0} failed": "ล้มเหลว {0}",
   "Something went wrong at the provider.": "เกิดปัญหาที่ฝั่งผู้ให้บริการ",
-  "Open data folder": "เปิดโฟลเดอร์ข้อมูล",
   "Recording, {0}": "กำลังบันทึก {0}",
   "Asked once, before the first recording.": "ถามครั้งเดียวก่อนการบันทึกครั้งแรก",
   "Still transcribing on this device — try again once it has finished": "ยังถอดเสียงอยู่บนอุปกรณ์นี้ — ลองอีกครั้งเมื่อเสร็จแล้ว",

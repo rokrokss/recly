@@ -2524,10 +2524,6 @@ class ShellModel(
     /** About's Privacy Policy: the canonical page the phones link (recly.dev), in Korean for the Korean app. */
     fun openPrivacyPolicy(language: String) = open(privacyPolicyUrl(language))
 
-    fun openDataDir() {
-        graph?.dataDir?.let { open(it.toString()) }
-    }
-
     /**
      * docs/05: the file itself. AWT's own dialog rather than Swing's chooser — it is the Windows
      * shell dialog, which is the one a user of this app has seen before, and this app already draws

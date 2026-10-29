@@ -539,8 +539,6 @@ private fun About(model: ShellModel, strings: Strings) {
         // The privacy policy the phones link, in the app's language where there is one (D23).
         TextLink(strings[Str.SETTINGS_PRIVACY_POLICY], { model.openPrivacyPolicy(strings.language) },
             modifier = Modifier.padding(top = Space.s), style = MaterialTheme.typography.bodySmall)
-        BlueprintButton(strings[Str.SETTINGS_OPEN_DATA_FOLDER], model::openDataDir, tone = ButtonTone.QUIET,
-            modifier = Modifier.align(Alignment.End).padding(top = Space.s))
     }
     HairLine()
 }

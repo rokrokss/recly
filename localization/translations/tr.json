@@ -547,7 +547,6 @@
   "{0} waiting": "{0} bekliyor",
   "{0} failed": "{0} başarısız",
   "Something went wrong at the provider.": "Sağlayıcı tarafında bir sorun oluştu.",
-  "Open data folder": "Veri klasörünü aç",
   "Recording, {0}": "Kaydediliyor, {0}",
   "Asked once, before the first recording.": "İlk kayıttan önce bir kez sorulur.",
   "Still transcribing on this device — try again once it has finished": "Bu cihazda metne dönüştürme sürüyor — bittiğinde yeniden deneyin",

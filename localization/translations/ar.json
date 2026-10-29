@@ -547,7 +547,6 @@
   "{0} waiting": "{0} منتظر",
   "{0} failed": "{0} فاشل",
   "Something went wrong at the provider.": "حدث خطأ لدى مزوّد الخدمة.",
-  "Open data folder": "فتح مجلد البيانات",
   "Recording, {0}": "جارٍ التسجيل، {0}",
   "Asked once, before the first recording.": "يُطرح السؤال مرة واحدة قبل أول تسجيل.",
   "Still transcribing on this device — try again once it has finished": "لا يزال النسخ جاريًا على هذا الجهاز — حاول مجددًا بعد انتهائه",

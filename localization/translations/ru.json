@@ -547,7 +547,6 @@
   "{0} waiting": "{0} в ожидании",
   "{0} failed": "{0} с ошибкой",
   "Something went wrong at the provider.": "На стороне поставщика что-то пошло не так.",
-  "Open data folder": "Открыть папку данных",
   "Recording, {0}": "Идёт запись, {0}",
   "Asked once, before the first recording.": "Спрашивается один раз, перед первой записью.",
   "Still transcribing on this device — try again once it has finished": "На этом устройстве ещё идёт расшифровка — попробуйте снова, когда она завершится",
