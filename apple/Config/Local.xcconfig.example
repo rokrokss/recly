@@ -8,6 +8,11 @@ RECLY_PHONE_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-xxxxx
 RECLY_MAC_GID_CLIENT_ID = 1234567890-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy.apps.googleusercontent.com
 RECLY_MAC_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 
+// The Mac with your Apple Development certificate and its team, so a rebuild keeps the Keychain's
+// "Always Allow" instead of asking again for every item (Recly.xcconfig, RECLY_MAC_SIGN_IDENTITY).
+// RECLY_MAC_SIGN_IDENTITY = Apple Development
+// RECLY_MAC_TEAM = ABCDE12345
+
 // docs/03 "Storage location": iCloud, once iCloud.app.recly is registered for your team (Certificates,
 // Identifiers & Profiles → Identifiers → iCloud Containers) and the iCloud capability with that
 // container is enabled on the app.recly and app.recly.mac App IDs. The Mac's Release build also

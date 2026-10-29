@@ -4,6 +4,8 @@
 # An ad-hoc signature's designated requirement is its code hash. That hash changes on every
 # rebuild, so macOS Keychain ACLs and privacy grants no longer recognise the next build. A local
 # certificate keeps the signing identity stable without requiring an Apple Developer account.
+# The Keychain still asks after a rebuild: with no team in the signature, an item opens only to the
+# build hash it was allowed for. An Apple Development certificate fixes that (Recly.xcconfig).
 set -euo pipefail
 
 identity="Recly Local Development"

@@ -24,6 +24,15 @@ RECLY_MAC_PROFILE =
 RECLY_MAC_ICLOUD_CONTAINER = $(RECLY_ICLOUD_CONTAINER)
 RECLY_MAC_ICLOUD_CONTAINER[config=Debug] =
 
+// The Mac's signing identity outside release-mac.sh, which passes its own. The certificate
+// setup-local-signing.sh makes keeps the designated requirement, and with it the microphone grant,
+// across rebuilds; the Keychain does not go by that. A Keychain item opens without asking only to
+// the team of a signature, and a signature without one to that build's hash alone, so each rebuild
+// asks again for every item. Local.xcconfig signs with an Apple Development certificate instead
+// (Local.xcconfig.example), whose team the Keychain keeps through rebuilds.
+RECLY_MAC_SIGN_IDENTITY = Recly Local Development
+RECLY_MAC_TEAM =
+
 // Your own ids, if you have them: copy `Local.xcconfig.example` to `Local.xcconfig` and fill it
 // in. The include is last on purpose — a later assignment wins — and optional (`#include?`), so
 // a checkout without the file builds with the placeholders above.

@@ -75,12 +75,19 @@ runs the playback audio-session regression on an iOS simulator without opening a
 
 ```bash
 ./apple/scripts/build-core.sh                 # :core:assembleXCFramework → apple/RecKit/Frameworks/
-./apple/scripts/setup-local-signing.sh        # once per Mac; keeps Keychain grants across rebuilds
+./apple/scripts/setup-local-signing.sh        # once per Mac; keeps the microphone grant across rebuilds
 xcodebuild -workspace apple/Rec.xcworkspace -scheme RecKit -destination 'platform=macOS' -collect-test-diagnostics never test
 xcodebuild -workspace apple/Rec.xcworkspace -scheme 'Recly Mac' -destination 'platform=macOS' build
 ./apple/scripts/build-sim.sh Recly "iOS Simulator" "iPhone 17 Pro" build
 ./apple/scripts/build-sim.sh "Recly Watch" "watchOS Simulator" "Apple Watch Series 11 (46mm)" build
 ```
+
+The local certificate has no team, and the Keychain lets an item open without asking only to a
+signature's team or, failing one, to that one build's hash: every rebuild then asks again for each
+item the app reads (the Drive token, each piece of the ChatGPT session, each key). With an Apple
+Developer account, set `RECLY_MAC_SIGN_IDENTITY = Apple Development` and `RECLY_MAC_TEAM` in
+`apple/Config/Local.xcconfig` (`Local.xcconfig.example`): "Always Allow" once per item then holds
+through rebuilds, and the microphone asks once more for the new signature.
 
 Simulator builds go through `build-sim.sh`, which pins `ARCHS=arm64` on the command line: the
 core ships arm64-only simulator slices, and a command-line build setting is the only thing that
