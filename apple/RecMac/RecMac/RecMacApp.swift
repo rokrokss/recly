@@ -57,6 +57,9 @@ struct RecMacApp: App {
                 .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .blueprint()
         }
+        // The list's 360pt (RecordingsWindow) beside the ~720pt the transcript had when the window took its content's
+        // width and split it in half.
+        .defaultSize(width: 1080, height: 720)
     }
 }
 

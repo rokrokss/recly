@@ -66,6 +66,9 @@ struct RecordingsWindow: View {
                 }
             }
             .frame(minWidth: 300)
+            // 2026-10-29 (user): the list opens at 360pt — half of the even split it had — and the transcript beside it
+            // keeps the rest of the window's default width (RecMacApp).
+            .background(InitialSplitWidth(width: 360))
             // 2026-10-08 badge column rule: the list pane can be as narrow as 300pt, so its status
             // column is capped as the phone's is and a longer word wraps inside its badge.
             .environment(\.ledgerStatusCapped, true)
