@@ -53,6 +53,13 @@
   .watch .screen img { display: block; width: 100%; height: 100%; }
   /* watchOS draws its own clock, which `simctl status_bar` cannot reach: the phone's 9:41 over it. */
   .watch .clock { position: absolute; background: #0E0F12; color: #fff; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+  /* The App Store set's first image: RecordingView while it records, drawn in watch points (README.md "App Store screenshots"). */
+  .ring { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+  .rec { position: absolute; inset: 0; background: #0E0F12; color: #F2F2F0; }
+  .rec * { position: absolute; left: 0; right: 0; text-align: center; }
+  .rec .t { font-family: ui-monospace, "SF Mono", monospace; }
+  .rec .sq { left: auto; right: auto; border-radius: 4px; background: #FA4D56; display: grid; place-items: center; }
+  .rec .sq i { position: static; display: block; border-radius: 2px; background: #0E0F12; }
 </style>
 </head>
 <body>
@@ -106,7 +113,41 @@
   const img = name => `../../build/app-store-assets/captures/${lang}/${name}.png`;
   document.getElementById('screen').src = img(SCREEN[shot]);
 
-  if (shot === 1) {
+  if (store && shot === 1) {
+    // The App Store's first image is the Apple Watch alone, recording, as the Play set's first is the Galaxy Watch:
+    // the watch is what brings people in. Its screen is RecordingView in recording, drawn in points (46 mm: 208 × 248)
+    // at the places the idle capture measures (drawn idle, it lands within 1 pt of it), because a simulator watch
+    // would record from the Mac's microphone.
+    document.querySelector('.phone').style.display = 'none';
+    const k = 1.3, sw = 208 * k, sh = 248 * k, rim = 24, cw = sw + rim * 2, ch = sh + rim * 2;
+    const cx = 270, cy = 700, left = cx - cw / 2, top = cy - ch / 2, bandW = cw * 0.72;
+    const glows = document.getElementById('device');
+    const ring = (d, css) => { const r = document.createElement('div'); r.className = 'ring';
+      Object.assign(r.style, { left: cx + 'px', top: cy + 'px', width: d + 'px', height: d + 'px' }, css); glows.appendChild(r); };
+    ring(620, { background: 'radial-gradient(closest-side, rgba(250,77,86,0.30), transparent 72%)' });
+    for (const [d, a] of [[390, 0.30], [480, 0.20], [570, 0.12]]) ring(d, { border: `2px solid rgba(250,77,86,${a})` });
+    const pt = v => `${v * k}px`;
+    const w = document.createElement('div'); w.className = 'watch';
+    Object.assign(w.style, { left: left + 'px', top: top + 'px', width: cw + 'px', height: ch + 'px' });
+    const fade = 'linear-gradient(to bottom, transparent, #000 45%)', fadeOut = 'linear-gradient(to top, transparent, #000 45%)';
+    const upper = top + 40 - 236, lower = 1173 - (top + ch - 40);
+    w.innerHTML = `
+      <div class="band" style="top:${40 - upper}px;width:${bandW}px;height:${upper}px;border-radius:0;-webkit-mask-image:${fade}"></div>
+      <div class="band" style="top:${ch - 40}px;width:${bandW}px;height:${lower}px;border-radius:0;-webkit-mask-image:${fadeOut}"></div>
+      <div class="case" style="width:${cw}px;height:${ch}px;border-radius:${cw * 0.25}px"></div>
+      <div class="crown" style="left:${cw - 5}px;top:${ch * 0.24}px;width:13px;height:${ch * 0.17}px"></div>
+      <div class="button" style="left:${cw - 4}px;top:${ch * 0.5}px;width:8px;height:${ch * 0.2}px"></div>
+      <div class="screen" style="left:${rim}px;top:${rim}px;width:${sw}px;height:${sh}px;border-radius:${sw * 0.2}px">
+        <div class="rec">
+          <div style="left:auto;right:${pt(15.5)};top:${pt(16.5)};font-size:${pt(16)};line-height:${pt(18)};font-weight:600">9:41</div>
+          <div class="t" style="top:${pt(53)};font-size:${pt(20)};line-height:${pt(24)};letter-spacing:${pt(1)}">00:12</div>
+          <!-- The status line sits where the VStack puts it: 8 pt under the timer's line, 8 pt over the square. -->
+          <div style="top:${pt(85.3)};font-size:${pt(14)};line-height:${pt(16.7)};font-weight:500">${lang === 'ko' ? '녹음 중' : 'Recording'}</div>
+          <div class="sq" style="left:${pt(76)};top:${pt(110)};width:${pt(56)};height:${pt(56)}"><i style="width:${pt(18)};height:${pt(18)}"></i></div>
+        </div>
+      </div>`;
+    glows.appendChild(w);
+  } else if (shot === 1) {
     // The 46 mm watch's 416×496 screen at 0.36, its case around it, bottom right over the phone's empty side.
     const s = 0.36, sw = 416 * s, sh = 496 * s, rim = 11, cw = sw + rim * 2, ch = sh + rim * 2;
     const left = 338, top = 712, bandW = cw * 0.74, band = 74;
@@ -135,7 +176,9 @@
       if (b.left < 24 || b.right > 540 - 24) out.push(`${id} ${Math.round(b.left)}..${Math.round(b.right)}`);
     }
     const headBottom = r(document.getElementById('sub')).bottom;
-    if (headBottom > r(document.querySelector('.phone')).top - 24) out.push(`head ends ${Math.round(headBottom)}`);
+    // The device under the headline: the phone, or the watch's case where the phone is not drawn.
+    const device = document.querySelector('.phone').offsetParent ? '.phone' : '.watch .case';
+    if (headBottom > r(document.querySelector(device)).top - 24) out.push(`head ends ${Math.round(headBottom)}`);
     if ([...document.images].some(i => !i.complete || i.naturalWidth === 0)) out.push('image missing');
     document.body.dataset.m = JSON.stringify({ out, headBottom: Math.round(headBottom) });
   });
