@@ -45,14 +45,11 @@ UDID to every `simctl` call: `booted` may resolve to another simulator that is r
 ## App Store screenshots
 
 The iPhone 6.9-inch set for App Store Connect, in `build/app-store-assets/store/<lang>/` (not committed):
-1320×2868, opaque, square corners, the same frame and the same 04. `01-record` is the Apple Watch alone,
-recording, as the Play set's first image is the Galaxy Watch: the watch is what brings people in. Its screen is
-drawn from `RecordingView` at the places the idle capture measures, since a simulator watch would record from the
-Mac's microphone. The set shows no notes and names no AI service, because the China mainland storefront shows the
-English listing and does not get notes (docs/app-store-copy.md): `02-transcribe` is a recording without notes, so
-no Notes chip, and `03-storage` is Settings → Storage.
+1320×2868, opaque, square corners, and the README set's 02, 03 and 04 (`02-transcribe`, `03-notes`, `04-list`).
+`01-record` is the Apple Watch alone, recording, as the Play set's first image is the Galaxy Watch: the watch is
+what brings people in. Its screen is drawn from `RecordingView` at the places the idle capture measures, since a
+simulator watch would record from the Mac's microphone. The set names ChatGPT because China mainland is not among
+the app's App Store regions; if it comes back, the set has to drop the notes and every AI service name
+(docs/app-store-copy.md), as it did in 7d76b13c.
 
-1. **Captures.** Seed as above, then delete the seed's `*.notes.v1.json` before `push.sh`. Capture `transcript`
-   (the first recording's Details, its second timestamp tapped) and `storage` (Settings, Local folder with a
-   folder chosen: create one in the picker's On My iPhone) next to the others.
-2. **Render.** `STORE=1 node scripts/app-store/render.mjs`.
+Render it from the same captures with `STORE=1 node scripts/app-store/render.mjs`.

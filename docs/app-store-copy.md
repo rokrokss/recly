@@ -2,6 +2,10 @@
 
 The English copy to enter in App Store Connect is in [app-store-metadata.en.txt](app-store-metadata.en.txt). Changing this file or pushing it to Git does not change the copy in App Store Connect automatically.
 
+## China mainland
+
+As of 2026-10-30, China mainland is out of the app's App Store availability (Pricing and Availability), so the public copy, What's New and screenshots may name ChatGPT. The China rules below (the English metadata shown in China, no ChatGPT/OpenAI/GPT references, the check with a mainland China StoreKit account) apply again only if China mainland is added back. The app's own restriction for the `CHN` storefront stays in the code ([design §15](recly.md#china-mainland-app-store)).
+
 ## Where to enter it
 
 | App Store Connect location | Field | Section in the copy file |

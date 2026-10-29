@@ -2,7 +2,7 @@
 // Renders the README's and recly.dev's iPhone promo images (README.md) from promo.html and the captures in
 // build/app-store-assets/captures/<lang>/, into docs/design/screenshots/<lang>/0N-*.png and .webp.
 // Usage: node scripts/app-store/render.mjs. Needs Google Chrome, ffmpeg and cwebp.
-// STORE=1 renders the App Store's 6.9-inch set instead: 1320×2868, opaque, no notes, into
+// STORE=1 renders the App Store's 6.9-inch set instead: 1320×2868, opaque, into
 // build/app-store-assets/store/<lang>/ (README.md "App Store screenshots").
 // The page is drawn at twice its size and scaled down, so the phone's 1206 px screen loses detail once.
 // It reports what spills in document.body.dataset.m; a spill stops the run.
@@ -19,7 +19,7 @@ const STORE = process.env.STORE === '1';
 const W = 540, H = 1173, SCALE = STORE ? 3 : 2;
 const [OUT_W, OUT_H] = STORE ? [1320, 2868] : [W, H];
 const NAMES = STORE
-  ? { 1: '01-record', 2: '02-transcribe', 3: '03-storage', 4: '04-list' }
+  ? { 1: '01-record', 2: '02-transcribe', 3: '03-notes', 4: '04-list' }
   : { 1: '01-record-for-your-ai', 2: '02-transcribe', 3: '03-notes', 4: '04-list' };
 
 function cdp(url) {
