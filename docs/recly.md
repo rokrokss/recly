@@ -2200,9 +2200,8 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   name, description, kind)`) — the built-in groups first, in their order `Key points` · `Decisions` · `To-dos` · `Questions`, then up to
   three sections of the user's own. Each has a name (up to 40 characters, one line) and what goes in it (up to 200).
   - A built-in group's id is its kind (`point`, `decision`, `todo`, `question`). An empty name or description is its own: the app's
-    words, in the app's language (the `Key points` heading; `Anything else worth remembering — a fact, a figure, an idea, a conclusion.`,
-    `What the people settled.`, `What someone said they or another person will do, with who and by when.`, `Questions raised and not
-    answered.`), and the fixed meaning in the request. The user may rename it, describe it anew — the request then asks for it in their
+    words, in the app's language (the `Key points` heading; `Facts, numbers, ideas and conclusions worth remembering.`, `What was agreed or decided.`,
+    `Who will do what, and by when.`, `Questions still without an answer.`), and the fixed meaning in the request. The user may rename it, describe it anew — the request then asks for it in their
     words — or remove it, and it is no longer asked for: an answer that gives one anyway is not kept. Whatever its words, a group keeps
     its rules: a to-do's owner and due date, a decision as it stands at the end, a question only while unanswered, key points after Stop
     only and apart from the other groups. Nothing is stored for the groups as they come; the user's way is kept in `notes/prefs/builtIns`,
@@ -2965,7 +2964,7 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   and `e.g. Anything that could delay the launch, and who raised it.`. Under the rows a quiet `Add section` while the user has fewer
   than three of their own, which adds an empty section and focuses its name; then a quiet `Restore defaults` while a built-in group is
   removed, renamed or described anew, which brings the four back in their own words and leaves the user's sections as they are, saved
-  at once; under them `Each recording’s notes start with an overview, then list these, with when each was said.`. Then `About you`, a
+  at once; under them `Notes start with an overview, then these sections. Each item shows when it was said.`. Then `About you`, a
   field of up to three lines (`Notes and answers use this to judge what matters to you.`). The fields save when editing ends
   (`notes.setPreferences`, and About you as before); a built-in group's field left empty, or holding its own words, saves as its own and
   shows them again; a section of the user's own left without a name is not kept and goes from the list then; `Remove` saves at once.

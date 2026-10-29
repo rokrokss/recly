@@ -486,10 +486,10 @@ public struct NoteSectionDraft: Identifiable, Equatable {
     /// nothing for a section of the user's own.
     static func defaults(_ kind: NoteKind) -> (name: String, description: String) {
         switch kind {
-        case .point: return (NoteGroup.word(kind), RecKitStrings.localized("Anything else worth remembering — a fact, a figure, an idea, a conclusion."))
-        case .decision: return (NoteGroup.word(kind), RecKitStrings.localized("What the people settled."))
-        case .todo: return (NoteGroup.word(kind), RecKitStrings.localized("What someone said they or another person will do, with who and by when."))
-        case .question: return (NoteGroup.word(kind), RecKitStrings.localized("Questions raised and not answered."))
+        case .point: return (NoteGroup.word(kind), RecKitStrings.localized("Facts, numbers, ideas and conclusions worth remembering."))
+        case .decision: return (NoteGroup.word(kind), RecKitStrings.localized("What was agreed or decided."))
+        case .todo: return (NoteGroup.word(kind), RecKitStrings.localized("Who will do what, and by when."))
+        case .question: return (NoteGroup.word(kind), RecKitStrings.localized("Questions still without an answer."))
         case .section: return ("", "")
         }
     }

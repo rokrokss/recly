@@ -149,7 +149,7 @@ class NotesTest {
     @Test
     fun `Sections saves the built-in groups and the named sections, in order, and a new one keeps the id it was given`() {
         val drafts = listOf(
-            SectionDraft(0, "decision", "Decisions", "What the people settled.", NoteKind.DECISION),
+            SectionDraft(0, "decision", "Decisions", "What was agreed or decided.", NoteKind.DECISION),
             SectionDraft(1, "s1", " Risks ", "What could slip"),
             SectionDraft(2, "", "", "half written"),
             SectionDraft(3, "", "Budget", ""),
@@ -169,7 +169,7 @@ class NotesTest {
         val drafts = sectionDrafts(NoteSection.DEFAULTS + NoteSection("s1", "Risks", "What could slip"), WORDS)
 
         assertEquals(listOf("Key points", "Decisions", "To-dos", "Questions", "Risks"), drafts.map { it.name })
-        assertEquals("What the people settled.", drafts[1].description)
+        assertEquals("What was agreed or decided.", drafts[1].description)
         // Untouched, the groups are as they come: nothing to save, nothing to restore.
         assertEquals(NoteSection.DEFAULTS + NoteSection("s1", "Risks", "What could slip"), keptSections(drafts, WORDS))
         assertFalse(NoteSection.changed(keptSections(drafts, WORDS)))
@@ -358,7 +358,7 @@ class NotesTest {
         /** The built-in groups' own words, as the app's resources give them. */
         val WORDS = mapOf(
             NoteKind.POINT to GroupWords("Key points", "Anything else worth remembering."),
-            NoteKind.DECISION to GroupWords("Decisions", "What the people settled."),
+            NoteKind.DECISION to GroupWords("Decisions", "What was agreed or decided."),
             NoteKind.TODO to GroupWords("To-dos", "What someone will do."),
             NoteKind.QUESTION to GroupWords("Questions", "Questions not answered."),
         )

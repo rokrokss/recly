@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">mf. Chochote kinachoweza kuchelewesha uzinduzi, na aliyekitaja.</string>
     <string name="notes_section_remove">Ondoa</string>
     <string name="notes_section_add">Ongeza sehemu</string>
-    <string name="notes_sections_note">Madokezo ya kila rekodi huanza na muhtasari, kisha huorodhesha sehemu hizi, pamoja na wakati kila jambo liliposemwa.</string>
+    <string name="notes_sections_note">Madokezo huanza na muhtasari, kisha hufuata sehemu hizi. Kando ya kila jambo kuna wakati liliposemwa.</string>
     <string name="notes_section_restore">Rejesha chaguo-msingi</string>
-    <string name="notes_key_points_about">Jambo jingine lolote la kukumbuka — ukweli, takwimu, wazo, hitimisho.</string>
-    <string name="notes_decisions_about">Kile watu walichokubaliana.</string>
-    <string name="notes_todos_about">Kile mtu alichosema yeye au mtu mwingine atafanya: nani na hadi lini.</string>
-    <string name="notes_questions_about">Maswali yaliyoulizwa bila kujibiwa.</string>
+    <string name="notes_key_points_about">Mambo ya kukumbuka, kama ukweli, takwimu, mawazo na hitimisho.</string>
+    <string name="notes_decisions_about">Mambo yaliyokubaliwa au kuamuliwa.</string>
+    <string name="notes_todos_about">Nani atafanya nini na kufikia lini.</string>
+    <string name="notes_questions_about">Maswali ambayo bado hayajajibiwa.</string>
     <string name="notes_about">Kuhusu wewe</string>
     <string name="notes_about_placeholder">k.m. Meneja wa bidhaa; ninajali tarehe za mwisho na maamuzi.</string>
     <string name="notes_about_note">Madokezo na majibu hutumia hili kupima kilicho muhimu kwako.</string>

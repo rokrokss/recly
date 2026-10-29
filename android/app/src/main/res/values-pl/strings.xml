@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">np. Wszystko, co może opóźnić premierę, i kto to zgłosił.</string>
     <string name="notes_section_remove">Usuń</string>
     <string name="notes_section_add">Dodaj sekcję</string>
-    <string name="notes_sections_note">Notatki każdego nagrania zaczynają się od przeglądu, a potem wymieniają te sekcje, z momentem, w którym padła każda rzecz.</string>
+    <string name="notes_sections_note">Notatki zaczynają się od podsumowania, po którym następują te sekcje. Przy każdym punkcie widać, kiedy o tym mówiono.</string>
     <string name="notes_section_restore">Przywróć domyślne</string>
-    <string name="notes_key_points_about">Wszystko inne, co warto zapamiętać — fakt, liczba, pomysł, wniosek.</string>
-    <string name="notes_decisions_about">To, co ustalili rozmówcy.</string>
-    <string name="notes_todos_about">To, co ktoś zapowiedział, że zrobi on sam lub ktoś inny — kto i do kiedy.</string>
-    <string name="notes_questions_about">Pytania, które padły i zostały bez odpowiedzi.</string>
+    <string name="notes_key_points_about">Fakty, liczby, pomysły i wnioski, które warto zapamiętać.</string>
+    <string name="notes_decisions_about">Co uzgodniono lub postanowiono.</string>
+    <string name="notes_todos_about">Kto co zrobi i do kiedy.</string>
+    <string name="notes_questions_about">Pytania, na które wciąż nie ma odpowiedzi.</string>
     <string name="notes_about">O Tobie</string>
     <string name="notes_about_placeholder">np. Product manager; zależy mi na terminach i decyzjach.</string>
     <string name="notes_about_note">Notatki i odpowiedzi korzystają z tego, by ocenić, co jest dla Ciebie ważne.</string>

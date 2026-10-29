@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">z. B. alles, was den Start verzögern könnte, und wer es angesprochen hat.</string>
     <string name="notes_section_remove">Entfernen</string>
     <string name="notes_section_add">Abschnitt hinzufügen</string>
-    <string name="notes_sections_note">Die Notizen jeder Aufnahme beginnen mit einem Überblick und listen dann diese – jeweils mit dem Zeitpunkt, an dem es gesagt wurde.</string>
+    <string name="notes_sections_note">Die Notizen beginnen mit einem Überblick, danach folgen diese Abschnitte. Bei jedem Eintrag siehst du, wann das gesagt wurde.</string>
     <string name="notes_section_restore">Standard wiederherstellen</string>
-    <string name="notes_key_points_about">Alles andere, was man sich merken sollte – eine Tatsache, eine Zahl, eine Idee, ein Fazit.</string>
-    <string name="notes_decisions_about">Was die Beteiligten festgelegt haben.</string>
-    <string name="notes_todos_about">Was jemand sagte, dass er oder eine andere Person tun wird – wer und bis wann.</string>
-    <string name="notes_questions_about">Gestellte Fragen ohne Antwort.</string>
+    <string name="notes_key_points_about">Fakten, Zahlen, Ideen und Schlussfolgerungen, die man sich merken sollte.</string>
+    <string name="notes_decisions_about">Was vereinbart oder beschlossen wurde.</string>
+    <string name="notes_todos_about">Wer was bis wann erledigt.</string>
+    <string name="notes_questions_about">Fragen, die noch offen sind.</string>
     <string name="notes_about">Über dich</string>
     <string name="notes_about_placeholder">z. B. Produktmanagerin; mir sind Fristen und Entscheidungen wichtig.</string>
     <string name="notes_about_note">Notizen und Antworten nutzen das, um einzuschätzen, was dir wichtig ist.</string>

@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">es. Tutto ciò che potrebbe ritardare il lancio, e chi l’ha sollevato.</string>
     <string name="notes_section_remove">Rimuovi</string>
     <string name="notes_section_add">Aggiungi sezione</string>
-    <string name="notes_sections_note">Gli appunti di ogni registrazione iniziano con una panoramica, poi elencano queste sezioni, con il momento in cui è stata detta ogni cosa.</string>
+    <string name="notes_sections_note">Gli appunti iniziano con un riepilogo, seguito da queste sezioni. Per ogni punto vedi quando se n’è parlato.</string>
     <string name="notes_section_restore">Ripristina predefiniti</string>
-    <string name="notes_key_points_about">Qualsiasi altra cosa da ricordare: un fatto, un numero, un’idea, una conclusione.</string>
-    <string name="notes_decisions_about">Ciò che è stato deciso.</string>
-    <string name="notes_todos_about">Ciò che qualcuno ha detto che farà lui o un’altra persona: chi ed entro quando.</string>
-    <string name="notes_questions_about">Domande poste e rimaste senza risposta.</string>
+    <string name="notes_key_points_about">Fatti, numeri, idee e conclusioni da ricordare.</string>
+    <string name="notes_decisions_about">Ciò che è stato concordato o deciso.</string>
+    <string name="notes_todos_about">Chi farà cosa ed entro quando.</string>
+    <string name="notes_questions_about">Domande ancora senza risposta.</string>
     <string name="notes_about">Su di te</string>
     <string name="notes_about_placeholder">ad es. Product manager; mi interessano scadenze e decisioni.</string>
     <string name="notes_about_note">Appunti e risposte lo usano per capire cosa conta per te.</string>

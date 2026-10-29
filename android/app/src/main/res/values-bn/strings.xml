@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">যেমন: যা কিছু লঞ্চ পিছিয়ে দিতে পারে, আর কে সেটা তুলেছেন।</string>
     <string name="notes_section_remove">সরান</string>
     <string name="notes_section_add">বিভাগ যোগ করুন</string>
-    <string name="notes_sections_note">প্রতিটি রেকর্ডিংয়ের নোট একটি সারসংক্ষেপ দিয়ে শুরু হয়, তারপর এগুলো থাকে, প্রতিটি কখন বলা হয়েছিল তা সহ।</string>
+    <string name="notes_sections_note">নোট শুরু হয় একটি সারসংক্ষেপ দিয়ে, তারপর আসে এই বিভাগগুলো। প্রতিটি আইটেমে দেখা যায় কথাটি কখন বলা হয়েছিল।</string>
     <string name="notes_section_restore">ডিফল্টে ফেরান</string>
-    <string name="notes_key_points_about">মনে রাখার মতো আর যা কিছু — তথ্য, সংখ্যা, ভাবনা, উপসংহার।</string>
-    <string name="notes_decisions_about">যা সবাই মিলে ঠিক করেছে।</string>
-    <string name="notes_todos_about">কেউ বলেছে নিজে বা অন্য কেউ যা করবে, কে এবং কবের মধ্যে।</string>
-    <string name="notes_questions_about">যে প্রশ্ন উঠেছে কিন্তু উত্তর মেলেনি।</string>
+    <string name="notes_key_points_about">মনে রাখার মতো তথ্য, সংখ্যা, ভাবনা ও নিষ্কর্ষ।</string>
+    <string name="notes_decisions_about">যেসব বিষয়ে একমত হওয়া বা সিদ্ধান্ত নেওয়া হয়েছে।</string>
+    <string name="notes_todos_about">কে কী কবের মধ্যে করবেন।</string>
+    <string name="notes_questions_about">যে প্রশ্নের উত্তর এখনও মেলেনি।</string>
     <string name="notes_about">আপনার সম্পর্কে</string>
     <string name="notes_about_placeholder">যেমন: প্রোডাক্ট ম্যানেজার; সময়সীমা আর সিদ্ধান্ত আমার কাছে গুরুত্বপূর্ণ।</string>
     <string name="notes_about_note">কী আপনার কাছে গুরুত্বপূর্ণ, তা বুঝতে নোট ও উত্তর এটি ব্যবহার করে।</string>

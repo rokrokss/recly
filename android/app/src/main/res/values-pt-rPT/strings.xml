@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">ex.: Tudo o que possa atrasar o lançamento, e quem o levantou.</string>
     <string name="notes_section_remove">Remover</string>
     <string name="notes_section_add">Adicionar secção</string>
-    <string name="notes_sections_note">As notas de cada gravação começam com uma visão geral e depois listam estas secções, com o momento em que cada coisa foi dita.</string>
+    <string name="notes_sections_note">As notas começam por um resumo, seguido destas secções. Cada item indica o momento em que foi dito.</string>
     <string name="notes_section_restore">Repor predefinições</string>
-    <string name="notes_key_points_about">Qualquer outra coisa que valha a pena lembrar — um facto, um número, uma ideia, uma conclusão.</string>
-    <string name="notes_decisions_about">O que as pessoas decidiram.</string>
-    <string name="notes_todos_about">O que alguém disse que ele ou outra pessoa vai fazer: quem e até quando.</string>
-    <string name="notes_questions_about">Perguntas feitas e sem resposta.</string>
+    <string name="notes_key_points_about">Factos, números, ideias e conclusões a reter.</string>
+    <string name="notes_decisions_about">O que foi acordado ou decidido.</string>
+    <string name="notes_todos_about">Quem fará o quê e até quando.</string>
+    <string name="notes_questions_about">Perguntas que ficaram por responder.</string>
     <string name="notes_about">Sobre si</string>
     <string name="notes_about_placeholder">ex.: Gestor de produto; importam-me prazos e decisões.</string>
     <string name="notes_about_note">Notas e respostas usam isto para avaliar o que lhe importa.</string>

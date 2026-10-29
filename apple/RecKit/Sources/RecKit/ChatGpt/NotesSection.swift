@@ -58,7 +58,7 @@ public struct NotesSection: View {
                     BlueprintButton(loc("Restore defaults"), tone: .quiet) { model.restoreDefaults() }
                         .accessibilityIdentifier("notes-restore-defaults")
                 }
-                Text(verbatim: loc("Each recording’s notes start with an overview, then list these, with when each was said."))
+                Text(verbatim: loc("Notes start with an overview, then these sections. Each item shows when it was said."))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .fixedSize(horizontal: false, vertical: true)

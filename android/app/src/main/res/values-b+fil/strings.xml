@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">hal. Anumang maaaring makaantala sa launch, at kung sino ang nagbanggit.</string>
     <string name="notes_section_remove">Alisin</string>
     <string name="notes_section_add">Magdagdag ng seksyon</string>
-    <string name="notes_sections_note">Nagsisimula ang mga tala ng bawat recording sa isang pangkalahatang-ideya, saka inililista ang mga ito, kasama kung kailan sinabi ang bawat isa.</string>
+    <string name="notes_sections_note">Nagsisimula ang mga tala sa isang buod, at kasunod nito ang mga seksyong ito. May kasamang oras ang bawat item kung kailan ito sinabi.</string>
     <string name="notes_section_restore">Ibalik ang mga default</string>
-    <string name="notes_key_points_about">Anumang iba pang dapat tandaan — isang katotohanan, numero, ideya, o konklusyon.</string>
-    <string name="notes_decisions_about">Ang napagkasunduan ng mga tao.</string>
-    <string name="notes_todos_about">Ang sinabi ng isang tao na gagawin niya o ng iba, kung sino at kailan.</string>
-    <string name="notes_questions_about">Mga tanong na naitanong at hindi nasagot.</string>
+    <string name="notes_key_points_about">Mga detalye, numero, ideya at konklusyong dapat tandaan.</string>
+    <string name="notes_decisions_about">Ang mga napagkasunduan o napagpasyahan.</string>
+    <string name="notes_todos_about">Sino ang gagawa ng ano, at kailan dapat matapos.</string>
+    <string name="notes_questions_about">Mga tanong na wala pang sagot.</string>
     <string name="notes_about">Tungkol sa iyo</string>
     <string name="notes_about_placeholder">hal. Product manager; mahalaga sa akin ang mga deadline at desisyon.</string>
     <string name="notes_about_note">Ginagamit ito ng mga tala at sagot para matantya kung ano ang mahalaga sa iyo.</string>

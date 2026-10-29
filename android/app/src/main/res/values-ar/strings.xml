@@ -417,12 +417,12 @@
     <string name="notes_section_description_placeholder">مثال: كل ما قد يؤخّر الإطلاق، ومن أثاره.</string>
     <string name="notes_section_remove">إزالة</string>
     <string name="notes_section_add">إضافة قسم</string>
-    <string name="notes_sections_note">تبدأ ملاحظات كل تسجيل بنظرة عامة، ثم تسرد هذه الأقسام، مع وقت قول كل بند.</string>
+    <string name="notes_sections_note">تبدأ الملاحظات بنظرة عامة، تليها هذه الأقسام. يظهر مع كل بند وقت ذكره في التسجيل.</string>
     <string name="notes_section_restore">استعادة الإعدادات الافتراضية</string>
-    <string name="notes_key_points_about">أي شيء آخر يستحق التذكّر — حقيقة أو رقم أو فكرة أو استنتاج.</string>
-    <string name="notes_decisions_about">ما اتفق عليه المتحدثون.</string>
-    <string name="notes_todos_about">ما قال أحدهم إنه أو شخص آخر سيفعله، ومن ومتى.</string>
-    <string name="notes_questions_about">أسئلة طُرحت ولم تُجب.</string>
+    <string name="notes_key_points_about">ما يستحق التذكّر من حقائق وأرقام وأفكار واستنتاجات.</string>
+    <string name="notes_decisions_about">ما اتُّفق عليه أو تقرّر.</string>
+    <string name="notes_todos_about">ما سيُنجَز، ومن يتولّاه، ومتى.</string>
+    <string name="notes_questions_about">أسئلة لا تزال بلا إجابة.</string>
     <string name="notes_about">عنك</string>
     <string name="notes_about_placeholder">مثلاً: مدير منتج؛ تهمّني المواعيد النهائية والقرارات.</string>
     <string name="notes_about_note">تستخدم الملاحظات والإجابات هذا لتقدير ما يهمّك.</string>

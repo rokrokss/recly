@@ -116,7 +116,7 @@ class NotesSettingsTest {
         val (point, decision, todo, question) = settings.sections
         assertEquals(NoteSection.BUILT_IN, listOf(point, decision, todo, question).map { it.kind })
         assertEquals(defaultNames, listOf(point, decision, todo, question).map { it.name })
-        assertEquals("What the people settled.", decision.description)
+        assertEquals("What was agreed or decided.", decision.description)
         assertFalse(settings.builtInsChanged)
 
         // Its own words, a space more or not, are its own: nothing for Restore defaults to do.
@@ -153,7 +153,7 @@ class NotesSettingsTest {
         val risks = own(settings).single()
         settings.restoreSections()
         assertEquals(defaultNames + "Risks", settings.sections.map { it.name })
-        assertEquals("What the people settled.", settings.sections[1].description)
+        assertEquals("What was agreed or decided.", settings.sections[1].description)
         assertEquals(risks, own(settings).single())
         assertFalse(settings.builtInsChanged)
         until { notes.preferences().sections.filter { it.builtIn } == NoteSection.DEFAULTS }
