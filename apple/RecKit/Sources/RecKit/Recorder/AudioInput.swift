@@ -142,7 +142,20 @@ final class MicrophoneInput: AudioInput {
     }
 
     private var currentFormat: AVAudioFormat? {
-        let format = engine.inputNode.outputFormat(forBus: 0)
+        var format = engine.inputNode.outputFormat(forBus: 0)
+        #if os(macOS)
+        // The node keeps the rate of the default devices the engine was built on, and pinning the unit to
+        // another device does not move it: a pinned AirPods microphone read 48 kHz here and 24 kHz at the
+        // device for as long as anyone looked (2026-10-29). The device's own rate is what the tap is
+        // installed with, which sets it on the node too. Voice processing has formats of its own and is
+        // left alone.
+        let hardware = engine.inputNode.inputFormat(forBus: 0)
+        if !engine.inputNode.isVoiceProcessingEnabled, hardware.sampleRate > 0, hardware.sampleRate != format.sampleRate {
+            var description = format.streamDescription.pointee
+            description.mSampleRate = hardware.sampleRate
+            format = AVAudioFormat(streamDescription: &description, channelLayout: format.channelLayout) ?? format
+        }
+        #endif
         return format.sampleRate > 0 && format.channelCount > 0 ? format : nil
     }
 
@@ -250,6 +263,13 @@ final class MicrophoneInput: AudioInput {
             routeError = RecorderError("the microphone audio unit is unavailable")
             return
         }
+        // The default input is not pinned: the engine is on it already, through the default devices'
+        // aggregate. Pinning it anyway is what took AirPods out of that aggregate's 48 kHz into a call
+        // profile of their own at 24 kHz, half a second later and on every start (2026-10-29).
+        if Self.isDefaultInput(device) {
+            route.bind(device)
+            return
+        }
         var deviceID = device.audioID
         let status = AudioUnitSetProperty(
             unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
@@ -271,10 +291,7 @@ final class MicrophoneInput: AudioInput {
     /// when the system refuses it, the engine stays the plain one and the pinned device is kept
     /// (docs/12 "Microphone selection").
     private func enableVoiceProcessing(for device: MicrophoneDevice) -> Bool {
-        let defaultInput: AudioDeviceID? = CoreAudioProperty.value(
-            of: AudioObjectID(kAudioObjectSystemObject), selector: kAudioHardwarePropertyDefaultInputDevice
-        )
-        guard device.audioID == defaultInput else { return false }
+        guard Self.isDefaultInput(device) else { return false }
         do {
             try engine.inputNode.setVoiceProcessingEnabled(true)
         } catch {
@@ -379,6 +396,13 @@ final class MicrophoneInput: AudioInput {
     }
 
     #if os(macOS)
+    private static func isDefaultInput(_ device: MicrophoneDevice) -> Bool {
+        let defaultInput: AudioDeviceID? = CoreAudioProperty.value(
+            of: AudioObjectID(kAudioObjectSystemObject), selector: kAudioHardwarePropertyDefaultInputDevice
+        )
+        return device.audioID == defaultInput
+    }
+
     private static var defaultInputAddress: AudioObjectPropertyAddress {
         AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultInputDevice,

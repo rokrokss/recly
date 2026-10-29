@@ -3708,6 +3708,8 @@ With the built-in speakers the microphone's input node runs with voice processin
   An automatically selected input is not changed by a meeting-app mute alone. A normal device switch settles for 1 second and a disconnect gets a 2-second grace period before
   a replacement input is selected, and the selected device's state and full format are checked every second. Transient errors on the very first start are also retried briefly.
   Only Recly's AudioUnit is bound; the OS default input and output and the meeting app's device and mute settings are not changed.
+  The default input is not bound to the unit, which is on it already; binding it took AirPods from the 48 kHz they share with their output
+  into a call profile of their own at 24 kHz on every start, and the start failed (2026-10-29). A bound device's tap takes the device's own rate.
   AirPods input is supported, and the built-in microphone is not forced automatically during a call. A recording the user started continues independently of the meeting app's
   mute. No microphone picker UI is exposed; during recording only the current input device's name is shown as status. The guidance for restoring microphone permission stays.
 - **Echo** (2026-10-07): when the default output device is the built-in speakers at the start of a recording (built-in transport with the `ispk` data
