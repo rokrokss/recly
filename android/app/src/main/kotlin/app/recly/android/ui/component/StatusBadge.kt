@@ -144,5 +144,6 @@ internal fun badgeWord(code: String): Int? = when (code) {
     "SKIPPED" -> R.string.job_state_skipped_short
     "WAITING_FOLDER" -> R.string.badge_waiting_folder
     "FILLING" -> R.string.badge_filling
+    "ORGANIZING" -> R.string.badge_organizing
     else -> null
 }

@@ -363,6 +363,7 @@
     <string name="badge_storage_full">स्टोरेज भर गया</string>
     <string name="badge_waiting_folder">फ़ोल्डर की प्रतीक्षा</string>
     <string name="badge_filling">भरा जा रहा है</string>
+    <string name="badge_organizing">व्यवस्थित हो रहा है</string>
     <string name="node_state_ready">तैयार</string>
     <string name="node_state_starting">शुरू हो रहा है</string>
     <string name="node_state_saving">सहेजा जा रहा है</string>

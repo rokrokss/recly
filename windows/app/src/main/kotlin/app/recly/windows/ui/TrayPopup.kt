@@ -358,8 +358,8 @@ private fun RecentRow(
     val length = LedgerFormat.length(item.durationSec)
     // The transcript's first words (2026-10-08), the Details row's own, and nothing for a recording with no transcript here.
     val preview = model.previews[item.id]
-    // docs/09 screen principle 2: `Filling in` while ChatGPT fills it in, and heard so too.
-    val status = item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id })
+    // docs/09 screen principle 2: `Filling in` while ChatGPT fills it in, `Organizing` while its notes are, and heard so too.
+    val status = item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id }, organizing = item.id in model.organizing)
     LedgerRow(
         date = LedgerFormat.date(item.startedAt),
         time = LedgerFormat.time(item.startedAt),

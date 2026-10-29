@@ -363,6 +363,7 @@
     <string name="badge_storage_full">存储空间已满</string>
     <string name="badge_waiting_folder">等待文件夹</string>
     <string name="badge_filling">正在填写</string>
+    <string name="badge_organizing">正在整理</string>
     <string name="node_state_ready">就绪</string>
     <string name="node_state_starting">正在启动</string>
     <string name="node_state_saving">正在保存</string>

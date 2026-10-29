@@ -363,6 +363,7 @@
     <string name="badge_storage_full">พื้นที่เต็ม</string>
     <string name="badge_waiting_folder">กำลังรอโฟลเดอร์</string>
     <string name="badge_filling">กำลังเติม</string>
+    <string name="badge_organizing">กำลังจัดระเบียบ</string>
     <string name="node_state_ready">พร้อม</string>
     <string name="node_state_starting">กำลังเริ่ม</string>
     <string name="node_state_saving">กำลังบันทึก</string>

@@ -395,6 +395,7 @@
     <string name="badge_storage_full">저장 공간 부족</string>
     <string name="badge_waiting_folder">폴더 대기</string>
     <string name="badge_filling">채우는 중</string>
+    <string name="badge_organizing">정리하는 중</string>
     <string name="node_state_ready">준비</string>
     <string name="node_state_starting">시작 중</string>
     <string name="node_state_saving">저장 중</string>

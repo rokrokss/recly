@@ -363,6 +363,7 @@
     <string name="badge_storage_full">儲存空間已滿</string>
     <string name="badge_waiting_folder">等待資料夾</string>
     <string name="badge_filling">正在填寫</string>
+    <string name="badge_organizing">正在整理</string>
     <string name="node_state_ready">就緒</string>
     <string name="node_state_starting">正在啟動</string>
     <string name="node_state_saving">儲存中</string>

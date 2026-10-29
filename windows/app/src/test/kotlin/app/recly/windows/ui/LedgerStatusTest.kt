@@ -104,21 +104,49 @@ class LedgerStatusTest {
         val row = app.recly.windows.jobs.RecentItem(
             id = "r", jobId = "j", title = Str.UNTITLED.message(), startedAt = "2026-10-15T00:00:00Z", state = Str.STATE_DONE.message(), link = null,
         )
-        val filling = row.ledgerStatus(en, filling = true)
+        val filling = row.ledgerStatus(en, filling = true, organizing = false)
         assertEquals(LedgerStatus("FILLING", BadgeTone.ACCENT, label = "Filling in", busy = true, word = Str.BADGE_FILLING), filling)
-        assertEquals("채우는 중", row.ledgerStatus(ko, filling = true).label.plain())
-        assertEquals(Str.STATE_DONE.message().ledgerStatus(en), row.ledgerStatus(en, filling = false))
+        assertEquals("채우는 중", row.ledgerStatus(ko, filling = true, organizing = false).label.plain())
+        assertEquals(Str.STATE_DONE.message().ledgerStatus(en), row.ledgerStatus(en, filling = false, organizing = false))
         LedgerStates.keys.filter { it != Str.STATUS_RECORDING && it != Str.STATE_RECEIVING }.forEach { key ->
-            assertEquals("FILLING", row.copy(state = key.message()).ledgerStatus(en, filling = true).code, key.name)
+            assertEquals("FILLING", row.copy(state = key.message()).ledgerStatus(en, filling = true, organizing = false).code, key.name)
         }
-        assertEquals("REC", row.copy(state = Str.STATUS_RECORDING.message()).ledgerStatus(en, filling = true).code)
-        assertEquals("RECEIVING", row.copy(state = Str.STATE_RECEIVING.message()).ledgerStatus(en, filling = true).code)
+        assertEquals("REC", row.copy(state = Str.STATUS_RECORDING.message()).ledgerStatus(en, filling = true, organizing = false).code)
+        assertEquals("RECEIVING", row.copy(state = Str.STATE_RECEIVING.message()).ledgerStatus(en, filling = true, organizing = false).code)
         // Its counts are the job's: a filling row that is done is not one more waiting.
         assertEquals("1", ledgerCounts(listOf(row), { "$it waiting" }, { "$it failed" }))
         for (strings in listOf(en, ko)) {
             val labels = ledgerBadgeLabels(strings)
             assertTrue(strings[Str.BADGE_FILLING] in labels)
             assertTrue("  ${strings[Str.BADGE_FILLING]}" in labels, "the loader's room is not measured")
+        }
+    }
+
+    /**
+     * docs/08 "Organizing": a done recording whose notes are being organized — the final pass or Organize again — says
+     * `Organizing`, with the loader, until the pass ends; any other state, and a fill, stay as they are. The column is
+     * measured for it.
+     */
+    @Test
+    fun `a done recording being organized says so until the pass ends`() {
+        val en = StringTable.of(StringTable.BASE)
+        val ko = StringTable.of(StringTable.KOREAN)
+        val row = app.recly.windows.jobs.RecentItem(
+            id = "r", jobId = "j", title = Str.UNTITLED.message(), startedAt = "2026-10-29T00:00:00Z", state = Str.STATE_DONE.message(), link = null,
+        )
+        assertEquals(
+            LedgerStatus("ORGANIZING", BadgeTone.ACCENT, label = "Organizing", busy = true, word = Str.BADGE_ORGANIZING),
+            row.ledgerStatus(en, filling = false, organizing = true),
+        )
+        assertEquals("정리하는 중", row.ledgerStatus(ko, filling = false, organizing = true).label.plain())
+        assertEquals(Str.STATE_DONE.message().ledgerStatus(en), row.ledgerStatus(en, filling = false, organizing = false))
+        LedgerStates.filterValues { it.code != "DONE" }.keys.forEach { key ->
+            val other = row.copy(state = key.message())
+            assertEquals(key.message().ledgerStatus(en), other.ledgerStatus(en, filling = false, organizing = true), key.name)
+        }
+        assertEquals("FILLING", row.ledgerStatus(en, filling = true, organizing = true).code)
+        for (strings in listOf(en, ko)) {
+            assertTrue("  ${strings[Str.BADGE_ORGANIZING]}" in ledgerBadgeLabels(strings), "the loader's room is not measured")
         }
     }
 

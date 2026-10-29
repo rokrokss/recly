@@ -17,8 +17,11 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -948,6 +951,20 @@ class NotesTest {
     }
 
     @Test
+    fun `a recording is in observeOrganizing while a pass of its notes runs, for the lists' badge`() = runBlocking {
+        val meta = organized()
+        assertEquals(emptyList(), notes.observeOrganizing().first())
+        val during = mutableListOf<List<String>>()
+        chatGpt.server.beforeReply = { if (!chatGpt.isFill(it)) during += notes.observeOrganizing().first() }
+        answer(conversation("Alpha again.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
+
+        assertNull(notes.organizeAgain(meta.recordingId))
+
+        assertEquals(listOf(listOf(meta.recordingId)), during)
+        assertEquals(emptyList(), notes.observeOrganizing().first(), "not once it is over")
+    }
+
+    @Test
     fun `an edited item passes its words only to one that says the same, and words put back make it the model's again`() = runBlocking {
         val meta = organized()
         val first = notes.get(meta.recordingId)
@@ -1031,18 +1048,24 @@ class NotesTest {
         val meta = f.recordAndRun()
         chatGpt.signIn(account = f.core.chatGpt)
         chatGpt.server.replyEach(chatGpt::isFill, stream("""{"speakers":{"S1":"Mina","S2":"Joon"}}"""), headers = mapOf("Content-Type" to "text/event-stream"))
+        val namesHeld = CompletableDeferred<Unit>()
+        chatGpt.server.beforeReply = { if (chatGpt.isFill(it)) namesHeld.await() }
         suspend fun names() = f.core.results(meta.recordingId).transcript!!.speakers.associate { it.id to it.name }
         assertEquals(mapOf("S1" to null, "S2" to null), names())
 
         answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
-        assertNull(notes.organizeAgain(meta.recordingId))
+        assertNull(notes.organizeAgain(meta.recordingId), "the notes do not wait for the names")
+        assertEquals(listOf("Ship alpha"), notes.get(meta.recordingId).decisions.map { it.text })
+        assertEquals(mapOf("S1" to null, "S2" to null), names())
+        // The fake file system takes one writer at a time: the names come once the notes are in the folder.
+        withTimeout(10_000) { while (f.core.recordings.pendingNotes().isNotEmpty()) delay(10) }
+        namesHeld.complete(Unit)
         f.core.awaitPushes()
         assertEquals(mapOf("S1" to "Mina", "S2" to "Joon"), names())
         val fill = chatGpt.server.requests.single(chatGpt::isFill)
         assertTrue("\"title\"" !in fill.json()["instructions"]!!.jsonPrimitive.content, "the title is not asked for")
         assertNull(f.core.recordings.get(meta.recordingId)!!.meta.title)
         assertEquals("organize", f.logger.fieldsOf("summary.fill.start").single()["trigger"])
-        assertEquals(listOf("Ship alpha"), notes.get(meta.recordingId).decisions.map { it.text })
 
         answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
         assertNull(notes.organizeAgain(meta.recordingId))

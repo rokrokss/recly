@@ -79,12 +79,18 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
 val FillingStatus: LedgerStatus = LedgerStatus("FILLING", BadgeTone.ACCENT, busy = true, word = Str.BADGE_FILLING)
 
 /**
+ * docs/08 "Organizing": a done recording whose notes are being organized now — the core's `notes.observeOrganizing()`
+ * — wears `Organizing`, accent, with the loader turning: the detail's `Organizing…` on its row.
+ */
+val OrganizingStatus: LedgerStatus = LedgerStatus("ORGANIZING", BadgeTone.ACCENT, busy = true, word = Str.BADGE_ORGANIZING)
+
+/**
  * docs/09 screen principle 2: every label a ledger badge can wear in [strings]' language — each state's word,
- * `Filling in` and `Unknown` — which is what the status column is measured against, so none of them is ever cut to
- * fit.
+ * `Filling in`, `Organizing` and `Unknown` — which is what the status column is measured against, so none of them is
+ * ever cut to fit.
  */
 fun ledgerBadgeLabels(strings: Strings): List<String> =
-    (LedgerStates.keys.map { it.message().ledgerStatus(strings) } + FillingStatus.worded(strings)).flatMap { status ->
+    (LedgerStates.keys.map { it.message().ledgerStatus(strings) } + FillingStatus.worded(strings) + OrganizingStatus.worded(strings)).flatMap { status ->
         // Two spaces stand in for the loader a busy badge turns in front of its code — about its 12dp.
         listOfNotNull(status.label, "  ${status.label}".takeIf { status.busy })
     } + strings[Str.BADGE_UNKNOWN]
@@ -101,11 +107,17 @@ fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
 
 /**
  * The row's badge: [FillingStatus] while ChatGPT is [filling] it in — read after `REC` and `RECEIVING`, ahead of
- * every other state — and its state's otherwise.
+ * every other state — then [OrganizingStatus] on a row that would say `Done` while it is [organizing], and its state's
+ * otherwise.
  */
-fun RecentItem.ledgerStatus(strings: Strings?, filling: Boolean): LedgerStatus {
+fun RecentItem.ledgerStatus(strings: Strings?, filling: Boolean, organizing: Boolean): LedgerStatus {
     val key = (state as? UiMessage.Res)?.key
-    return if (filling && key != Str.STATUS_RECORDING && key != Str.STATE_RECEIVING) FillingStatus.worded(strings) else state.ledgerStatus(strings)
+    val status = state.ledgerStatus(strings)
+    return when {
+        filling && key != Str.STATUS_RECORDING && key != Str.STATE_RECEIVING -> FillingStatus.worded(strings)
+        organizing && status.code == "DONE" -> OrganizingStatus.worded(strings)
+        else -> status
+    }
 }
 
 /** The badge with its word put in, when there is a language to put it in. */

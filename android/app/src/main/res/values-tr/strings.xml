@@ -363,6 +363,7 @@
     <string name="badge_storage_full">Depolama dolu</string>
     <string name="badge_waiting_folder">Klasör bekleniyor</string>
     <string name="badge_filling">Dolduruluyor</string>
+    <string name="badge_organizing">Düzenleniyor</string>
     <string name="node_state_ready">Hazır</string>
     <string name="node_state_starting">Başlatılıyor</string>
     <string name="node_state_saving">Kaydediliyor</string>

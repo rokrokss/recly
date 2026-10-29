@@ -450,6 +450,7 @@
     <string name="badge_storage_full">Storage full</string>
     <string name="badge_waiting_folder">Waiting for folder</string>
     <string name="badge_filling">Filling in</string>
+    <string name="badge_organizing">Organizing</string>
     <string name="node_state_ready">Ready</string>
     <string name="node_state_starting">Starting</string>
     <string name="node_state_saving">Saving</string>

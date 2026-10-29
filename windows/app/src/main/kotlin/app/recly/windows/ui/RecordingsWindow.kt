@@ -453,7 +453,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
                 style = mono.small.copy(textDirection = TextDirection.Ltr),
                 color = palette.textMuted,
             )
-            FadingStatusBadge(item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id }))
+            FadingStatusBadge(item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id }, organizing = item.id in model.organizing))
         }
         // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line ([FailureReason]).
         if (selected) FailureReason(item, strings)

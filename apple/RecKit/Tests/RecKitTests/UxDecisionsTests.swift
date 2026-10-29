@@ -26,6 +26,7 @@ final class UxDecisionsTests: XCTestCase {
         (LedgerStatus(code: "TRANSCRIBING", tone: .accent), "Transcribing", "전사 중"),
         (LedgerStatus(code: "IMPORTING", tone: .accent), "Importing", "가져오는 중"),
         (LedgerStatus.filling, "Filling in", "채우는 중"),
+        (LedgerStatus.organizing, "Organizing", "정리하는 중"),
         (LedgerStatus(code: "REC", tone: .danger), "Recording", "녹음 중"),
         (LedgerStatus(code: "NEEDS_AUTH", tone: .neutral), "Waiting for Drive", "Drive 연결 대기"),
         (LedgerStatus(code: "NEEDS_CONSENT", tone: .warning), "Needs permission", "허용 필요"),
@@ -94,6 +95,29 @@ final class UxDecisionsTests: XCTestCase {
         XCTAssertTrue(failed.canDelete)
         XCTAssertEqual(failed.stateLabel, "Failed")
         XCTAssertEqual(Recents.summary([failed, item("Waiting"), item("Done")]), "3 · 1 waiting · 1 failed")
+    }
+
+    // MARK: - 2026-10-29: a done recording being organized (docs/08 "Organizing")
+
+    /// `Organizing` stands for `Done` while a pass of the recording's notes runs — the final pass or Organize again — and
+    /// the row says `Done` again when it ends. Every other state, and a fill, stay as they are; VoiceOver hears the badge.
+    func testADoneRecordingBeingOrganizedSaysSoUntilThePassEnds() {
+        AppLanguage.current = .en
+        func item(_ state: String, filling: Bool = false, organizing: Bool = true) -> RecentItem {
+            RecentItem(
+                id: "r", jobId: "j", title: "", startedAt: "2026-10-29T10:00:00Z", state: state, link: nil,
+                lastError: nil, filling: filling, organizing: organizing
+            )
+        }
+        XCTAssertEqual(item("Done").badge, LedgerStatus.organizing)
+        XCTAssertEqual(item("Done").spokenState, "Organizing")
+        XCTAssertEqual(item("Done", organizing: false).badge.code, "DONE")
+        for state in ["Recording", "Receiving from the watch", "Uploading", "Waiting", "Retry pending", "Failed", "Transcribing on this device"] {
+            XCTAssertEqual(item(state).badge, LedgerStatus.forRecent(state: state), state)
+        }
+        XCTAssertEqual(item("Done", filling: true).badge, LedgerStatus.filling)
+        XCTAssertEqual(LedgerStatus.organizing.tone, .accent)
+        XCTAssertEqual(Recents.summary([item("Done")]), "1", "its counts are the row's state")
     }
 
     // MARK: - §1b·§1c: the dashboard's nodes

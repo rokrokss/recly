@@ -363,6 +363,7 @@
     <string name="badge_storage_full">Spazio esaurito</string>
     <string name="badge_waiting_folder">In attesa della cartella</string>
     <string name="badge_filling">Completamento</string>
+    <string name="badge_organizing">Organizzazione</string>
     <string name="node_state_ready">Pronto</string>
     <string name="node_state_starting">Avvio in corso</string>
     <string name="node_state_saving">Salvataggio</string>

@@ -2365,9 +2365,11 @@ the user chose automatic instead.)
   beside the notes' request and neither waits for the other: the notes are written from speaker labels and show the names once they are
   given. Only when Organize goes ahead — signed in and, on iPhone, the destination allowed, the recording not already being organized —
   and nothing is sent when every speaker who speaks has a name. What it meets is logged, not shown: the detail reports the notes' result.
+  It is not in "What is being filled in" either (2026-10-29, user report — `Filling in speaker names…` over the chips and `Organizing…`
+  under them were two loaders for one action): the notes' `Organizing…`, and the lists' `Organizing` badge, are what say it is going on.
 - **What is being filled in** (`observeFills()`, a list of `FillRun(recordingId, title, names)`, one per recording). A fill is in it
   from the moment it asks the plan until the answer is applied — or the request fails, or the pass is cut short — whichever trigger
-  started it: a publication's, the detail's or Organize's. `title` and `names` are what that request asks for: the halves asked that the recording
+  started it: a publication's or the detail's — not Organize's (above). `title` and `names` are what that request asks for: the halves asked that the recording
   lacked. A fill that sends nothing (nothing to fill, a job in the way, no permission, the pause) and an ask waiting for the run before
   it are not in it. The lists' `Filling in` badge and the detail's line under its header read it (§9 principle 2, "AI view").
 - **What is asked** (`FillNeeds.of(title, transcript)`, the rule the shells offer the two items by: `title` for the title, `names` —
@@ -2600,9 +2602,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
 2. **List = ledger**: row = `time (mono) · title (and its preview line) · length · status word · progress`. In all four shells, regardless of language, the time column is
    **`MM-dd` over `HH:mm`** (month first; a fixed-width pattern, not locale formatting — only the spoken sentence uses locale formatting).
    The status is a text badge (both color and text), and the failure reason is a translated message key. The badge says a translated word, not the
-   code (2026-10-08, user decision): `Done` · `Failed` · `Retrying` · `Waiting` · `Uploading` · `Receiving` · `Transcribing` · `Filling in` · `Importing` · `Recording` ·
+   code (2026-10-08, user decision): `Done` · `Failed` · `Retrying` · `Waiting` · `Uploading` · `Receiving` · `Transcribing` · `Filling in` · `Organizing` · `Importing` · `Recording` ·
    `Waiting for Drive` (`NEEDS_AUTH`) · `Needs permission` · `Waiting for model` · `Storage full` · `Too short` · `Waiting for iCloud` · `Waiting for folder` ·
-   `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `채우는 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
+   `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `채우는 중` · `정리하는 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
    `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. On phones and in the desktop Details lists the status column is capped at the width the code
    `TRANSCRIBING` needed, and a longer word wraps inside its badge onto a second line (centred, never cut), so the title column is never narrower
    than it was with codes. A word too long for its line breaks only at the language's own hyphenation points, with a hyphen (2026-10-11 — badges,
@@ -2635,6 +2637,12 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    `RECEIVING` and ahead of everything else — the other things happening elsewhere and the job state mapping — and the row goes back to
    what its job says when the run ends. The header count and the row's actions still go by the job state. The row's spoken sentence says
    `Filling in` too, so a screen reader hears what the badge shows.
+   **A recording being organized** (2026-10-29, user report — Organize again from the detail left the list saying `Done` while the
+   detail still said `Organizing…`; §8 "Organizing") — in the core's `notes.observeOrganizing()`, the final pass or `Organize again`, the
+   same reading as the detail's `Organizing…` — shows `Organizing` (accent, with the square loader, as `Filling in`) where the row would
+   say `Done`, on every list, until the pass ends, however it ends; then `Done` again. Any other state stays as it is — a part organized
+   while recording leaves `Recording`, a transcription still running leaves its own word — and a fill is read first. The header count
+   and the row's actions go by the job state; the spoken sentence says `Organizing`. The watches show no notes, so they have no such row.
    **A row opens its recording's page** (2026-10-28, user decision, every list: phones, popover, tray and Details lists — a tap that only
    expanded the row, then a second tap on `Details`, was one step too many). A row carries no buttons; the popover's and tray's bring the
    Details window to the front at the recording. What can be done about a recording is on its page: `Open in Drive` (when there is a link; the desktops'

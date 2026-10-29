@@ -58,9 +58,11 @@ internal class ScriptedServer {
     fun request(index: Int): Recorded = requests[index]
 
     fun engine(): MockEngine = MockEngine { request ->
-        requests += Recorded.of(request)
-        beforeReply?.invoke(requests.last())
-        val reply = standing.firstOrNull { (matching, _) -> matching(requests.last()) }?.second
+        // This request's own record: while [beforeReply] holds it, others arrive and become the last.
+        val recorded = Recorded.of(request)
+        requests += recorded
+        beforeReply?.invoke(recorded)
+        val reply = standing.firstOrNull { (matching, _) -> matching(recorded) }?.second
             ?: queued.removeFirstOrNull()
             ?: Reply(500, """{"error":"no scripted reply"}""", mapOf("Content-Type" to "application/json"))
         respond(

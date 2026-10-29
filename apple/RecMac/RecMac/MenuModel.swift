@@ -284,6 +284,7 @@ final class MenuModel: ObservableObject {
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             observeFills(core: bridge.core)
+            observeOrganizing(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
             //
@@ -369,6 +370,23 @@ final class MenuModel: ObservableObject {
                 let ids = Set(runs.map(\.recordingId))
                 guard ids != self.filling else { continue }
                 self.filling = ids
+                await self.refreshRecents()
+            }
+        }
+    }
+
+    /// docs/08 "Organizing": the recordings being organized now, whose rows say `Organizing` where they would say
+    /// `Done` — a pass of the notes moves neither the queue nor the recordings table, so the rows are read again as
+    /// one starts and ends.
+    private var organizing: Set<String> = []
+
+    private func observeOrganizing(core: ReclyCore_) {
+        Task { [weak self] in
+            for await ids in core.notes.observeOrganizing() {
+                guard let self else { return }
+                let ids = Set(ids)
+                guard ids != self.organizing else { continue }
+                self.organizing = ids
                 await self.refreshRecents()
             }
         }
@@ -814,7 +832,7 @@ final class MenuModel: ObservableObject {
         guard let core = bridge?.core else { return }
         defer { recentsLoading = false }
         do {
-            recents = try await Recents.load(core: core, limit: recentsLimit, filling: filling)
+            recents = try await Recents.load(core: core, limit: recentsLimit, filling: filling, organizing: organizing)
             recordingCount = try await core.recordings.ids().count
         } catch {
             logger.error("shell.recents.failed error=\(String(describing: error), privacy: .private)")

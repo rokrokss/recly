@@ -363,6 +363,7 @@
     <string name="badge_storage_full">Hifadhi imejaa</string>
     <string name="badge_waiting_folder">Inasubiri folda</string>
     <string name="badge_filling">Inajaza</string>
+    <string name="badge_organizing">Inapanga</string>
     <string name="node_state_ready">Tayari</string>
     <string name="node_state_starting">Inaanzishwa</string>
     <string name="node_state_saving">Inahifadhi</string>

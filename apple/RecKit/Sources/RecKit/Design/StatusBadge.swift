@@ -65,6 +65,7 @@ public struct LedgerStatus: Equatable, Sendable {
         "RECEIVING": "Receiving",
         "TRANSCRIBING": "Transcribing",
         "FILLING": "Filling in",
+        "ORGANIZING": "Organizing",
         "IMPORTING": "Importing",
         "REC": "Recording",
         "NEEDS_AUTH": "Waiting for Drive",
@@ -86,7 +87,7 @@ public struct LedgerStatus: Equatable, Sendable {
     /// Every badge [forRecent] and [RecentItem.badge] can mint — what the ledger's status column is
     /// measured against, in the language on screen, so the widest of the words fits at full size.
     public static let ledgerStatuses: [LedgerStatus] = [
-        "IMPORTING", "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "FILLING", "REC", "RETRY", "DONE", "FAILED",
+        "IMPORTING", "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "FILLING", "ORGANIZING", "REC", "RETRY", "DONE", "FAILED",
         "NEEDS_CONSENT", "NEEDS_MODEL", "NEEDS_AUTH", "NO_SPACE", "SKIPPED", "UNKNOWN", "WAITING",
     ].map { LedgerStatus(code: $0, tone: .neutral) } + [waitingForFolder]
 
@@ -96,6 +97,10 @@ public struct LedgerStatus: Equatable, Sendable {
     /// docs/09 screen principle 2 · docs/08 "Titles and speaker names": ChatGPT is filling in the recording's title or
     /// speaker names — work in flight, so accent, with the loader.
     public static let filling = LedgerStatus(code: "FILLING", tone: .accent)
+
+    /// docs/09 screen principle 2 · docs/08 "Organizing": a recording that is done, its notes being organized now — the
+    /// detail's `Organizing…` on its row. Accent, with the loader, as a fill is.
+    public static let organizing = LedgerStatus(code: "ORGANIZING", tone: .accent)
 
     /// docs/03 "Storage location": a local folder that cannot be reached waits the way iCloud does — the
     /// same code, its own word.
@@ -169,9 +174,9 @@ public struct StatusBadge: View {
     public var body: some View {
         let label = verbatim ?? status.label
         let words = HStack(spacing: Space.xs) {
-            // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink. So is a fill
-            // (docs/09 screen principle 2).
-            if status.code == "IMPORTING" || status.code == LedgerStatus.filling.code {
+            // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink. So are a fill
+            // and the notes being organized (docs/09 screen principle 2).
+            if status.code == "IMPORTING" || status.code == LedgerStatus.filling.code || status.code == LedgerStatus.organizing.code {
                 BlueprintLoader(color: status.tone.ink(blueprint.palette))
             }
             // 2026-10-11 (N2): a word wider than the column breaks at a hyphen, never between two letters.

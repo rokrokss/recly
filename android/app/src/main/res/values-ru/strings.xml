@@ -363,6 +363,7 @@
     <string name="badge_storage_full">Хранилище заполнено</string>
     <string name="badge_waiting_folder">Ожидание папки</string>
     <string name="badge_filling">Заполнение</string>
+    <string name="badge_organizing">Упорядочивание</string>
     <string name="node_state_ready">Готово</string>
     <string name="node_state_starting">Запуск</string>
     <string name="node_state_saving">Сохранение</string>

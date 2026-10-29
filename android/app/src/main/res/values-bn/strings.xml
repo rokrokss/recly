@@ -363,6 +363,7 @@
     <string name="badge_storage_full">স্টোরেজ পূর্ণ</string>
     <string name="badge_waiting_folder">ফোল্ডারের অপেক্ষায়</string>
     <string name="badge_filling">পূরণ হচ্ছে</string>
+    <string name="badge_organizing">সাজানো হচ্ছে</string>
     <string name="node_state_ready">প্রস্তুত</string>
     <string name="node_state_starting">শুরু হচ্ছে</string>
     <string name="node_state_saving">সেভ হচ্ছে</string>

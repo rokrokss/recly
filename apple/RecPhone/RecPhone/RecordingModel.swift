@@ -357,6 +357,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             observeFills(core: bridge.core)
+            observeOrganizing(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
             // Read once at launch, so a recording's More menu knows the sign-in before Settings is opened.
             let chatGpt = ChatGptSettingsModel(core: bridge.core)
@@ -467,6 +468,23 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 let ids = Set(runs.map(\.recordingId))
                 guard ids != self.filling else { continue }
                 self.filling = ids
+                await self.refreshRecents()
+            }
+        }
+    }
+
+    /// docs/08 "Organizing": the recordings being organized now, whose rows say `Organizing` where they would say
+    /// `Done` — a pass of the notes moves neither the queue nor the recordings table, so the rows are read again as
+    /// one starts and ends.
+    private var organizing: Set<String> = []
+
+    private func observeOrganizing(core: ReclyCore_) {
+        Task { [weak self] in
+            for await ids in core.notes.observeOrganizing() {
+                guard let self else { return }
+                let ids = Set(ids)
+                guard ids != self.organizing else { continue }
+                self.organizing = ids
                 await self.refreshRecents()
             }
         }
@@ -1251,7 +1269,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         guard let core = bridge?.core else { return }
         defer { recentsLoading = false }
         do {
-            recents = try await Recents.load(core: core, limit: Self.recentsLimit, filling: filling)
+            recents = try await Recents.load(core: core, limit: Self.recentsLimit, filling: filling, organizing: organizing)
             // The states are the list's whole content and none of them is the user's text — the
             // titles are, and they stay out of the log (as on macOS).
             logger.info("shell.recents states=\(self.recents.map(\.state).joined(separator: ","), privacy: .public)")

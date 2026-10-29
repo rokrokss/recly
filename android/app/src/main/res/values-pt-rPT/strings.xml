@@ -363,6 +363,7 @@
     <string name="badge_storage_full">Armazenamento cheio</string>
     <string name="badge_waiting_folder">À espera da pasta</string>
     <string name="badge_filling">A preencher</string>
+    <string name="badge_organizing">A organizar</string>
     <string name="node_state_ready">Pronto</string>
     <string name="node_state_starting">A iniciar</string>
     <string name="node_state_saving">A guardar</string>

@@ -192,6 +192,8 @@ data class JobsUiState(
      * detail's alike. Their rows say `Filling in`, and the open detail what is being filled in.
      */
     val fills: List<FillRun> = emptyList(),
+    /** docs/08 "Organizing": the recordings being organized now — their rows say `Organizing` where they would say `Done`. */
+    val organizing: List<String> = emptyList(),
 )
 
 /** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
@@ -353,6 +355,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { preferences.skipSilence.collect { skip -> _state.update { it.copy(skipSilence = skip) } } }
         viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
         viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
+        viewModelScope.launch { core().notes.observeOrganizing().collect { ids -> _state.update { it.copy(organizing = ids) } } }
         viewModelScope.launch {
             val core = core()
             var before = emptyList<FillRun>()

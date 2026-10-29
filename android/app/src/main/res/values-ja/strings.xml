@@ -363,6 +363,7 @@
     <string name="badge_storage_full">容量不足</string>
     <string name="badge_waiting_folder">フォルダ待ち</string>
     <string name="badge_filling">入力中</string>
+    <string name="badge_organizing">整理中</string>
     <string name="node_state_ready">準備完了</string>
     <string name="node_state_starting">起動中</string>
     <string name="node_state_saving">保存中</string>

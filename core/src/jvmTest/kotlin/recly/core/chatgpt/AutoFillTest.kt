@@ -354,6 +354,20 @@ class AutoFillTest {
     }
 
     @Test
+    fun `Organize asks for the names alone, and its fill is no second line beside the notes' own`() = runBlocking {
+        val f = Fixture()
+        f.ready()
+        f.h.server.beforeReply = { if (it.url.endsWith("/responses")) f.during += f.running() }
+        f.h.server.reply(answer("""{"title":"Ignored","speakers":{"S1":"Mina","S2":"Joon"}}"""), headers = SSE)
+        f.fill.withOrganize(ID)
+        f.fill.awaitRuns()
+        assertEquals(listOf(mapOf("S1" to "Mina", "S2" to "Joon")), f.renamed)
+        assertEquals(emptyList(), f.titles)
+        assertEquals(listOf(emptyList<FillRun>(), emptyList()), f.during, "neither while asking nor while applying")
+        assertEquals("organize", f.h.logger.entries.single { it.event == "summary.fill.start" }.fields["trigger"])
+    }
+
+    @Test
     fun `More keeps an import's title and asks only for the names`() = runBlocking {
         val f = Fixture(title = "2026-08-26 Interview")
         f.ready()

@@ -363,6 +363,7 @@
     <string name="badge_storage_full">Hết dung lượng</string>
     <string name="badge_waiting_folder">Đang chờ thư mục</string>
     <string name="badge_filling">Đang điền</string>
+    <string name="badge_organizing">Đang sắp xếp</string>
     <string name="node_state_ready">Sẵn sàng</string>
     <string name="node_state_starting">Đang khởi động</string>
     <string name="node_state_saving">Đang lưu</string>

@@ -363,6 +363,7 @@
     <string name="badge_storage_full">Puno na ang storage</string>
     <string name="badge_waiting_folder">Naghihintay sa folder</string>
     <string name="badge_filling">Pinupunan</string>
+    <string name="badge_organizing">Inaayos</string>
     <string name="node_state_ready">Handa</string>
     <string name="node_state_starting">Sinisimulan</string>
     <string name="node_state_saving">Sine-save</string>

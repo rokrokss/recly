@@ -83,12 +83,18 @@ public struct RecentItem: Identifiable, Sendable {
     /// (`observeFills()`). Only the badge says so — the header's counts and the row's actions go by [state].
     public let filling: Bool
 
+    /// docs/08 "Organizing": a pass of this recording's notes is running now (`notes.observeOrganizing()`) — the final
+    /// pass or Organize again. Only a row that would say `Done` says so, after a fill: a part organized while recording
+    /// leaves `Recording` as it is.
+    public let organizing: Bool
+
     /// docs/09 screen principle 2: the ledger's badge. docs/08 "Polling · status": a job parked while a provider
     /// transcribes is waiting on someone else, not on a retry timer, so it is its own code rather
     /// than the `RETRY` its `WAITING` status would give it — the code the desktop already shows
     /// (`windows/.../Ledger.LedgerStates`). A fill is read after `REC` and `RECEIVING` and ahead of everything else.
     public var badge: LedgerStatus {
         if filling, !Self.aheadOfFill.contains(state) { return LedgerStatus.filling }
+        if organizing, state == "Done" { return LedgerStatus.organizing }
         return waitingMinutes == nil
             ? LedgerStatus.forRecent(state: state)
             : LedgerStatus(code: "TRANSCRIBING", tone: .accent)
@@ -97,10 +103,10 @@ public struct RecentItem: Identifiable, Sendable {
     /// The two states a fill does not cover: the take still being written here, and one still arriving from the watch.
     private static let aheadOfFill: Set<String> = ["Recording", "Receiving from the watch"]
 
-    /// docs/09 "Accessibility": what the row's spoken sentence says of its state — the badge's `Filling in` while
-    /// one runs, so a screen reader hears what the eye sees; [stateLabel] otherwise.
+    /// docs/09 "Accessibility": what the row's spoken sentence says of its state — the badge's `Filling in` or
+    /// `Organizing` while one runs, so a screen reader hears what the eye sees; [stateLabel] otherwise.
     public var spokenState: String {
-        if filling, !Self.aheadOfFill.contains(state) { return RecKitStrings.localized("Filling in") }
+        if badge == LedgerStatus.filling || badge == LedgerStatus.organizing { return badge.label }
         return stateLabel
     }
 
@@ -203,7 +209,8 @@ public struct RecentItem: Identifiable, Sendable {
         alert: AlertReason? = nil,
         localLanguage: String? = nil,
         preview: String? = nil,
-        filling: Bool = false
+        filling: Bool = false,
+        organizing: Bool = false
     ) {
         self.id = id
         self.jobId = jobId
@@ -222,6 +229,7 @@ public struct RecentItem: Identifiable, Sendable {
         self.localLanguage = localLanguage
         self.preview = preview
         self.filling = filling
+        self.organizing = organizing
     }
 }
 
@@ -235,20 +243,25 @@ public enum Recents {
     public static let page: Int32 = 20
 
     /// - Parameter filling: the recordings ChatGPT is filling in now (`observeFills()`), whose rows say so.
-    public static func load(core: ReclyCore_, limit: Int32 = Recents.page, filling: Set<String> = []) async throws -> [RecentItem] {
+    /// - Parameter organizing: the recordings being organized now (`notes.observeOrganizing()`), whose rows say so.
+    public static func load(
+        core: ReclyCore_, limit: Int32 = Recents.page, filling: Set<String> = [], organizing: Set<String> = []
+    ) async throws -> [RecentItem] {
         let jobs = try await core.jobs.list()
-        return try await items(core: core, records: core.recordings.list(limit: limit), jobs: jobs, filling: filling)
+        return try await items(
+            core: core, records: core.recordings.list(limit: limit), jobs: jobs, filling: filling, organizing: organizing
+        )
     }
 
     /// One recording's row, read as [load] reads the ledger's — for a recording older than the page that is
     /// loaded, such as a search hit open in the Mac's Details window. Nil when there is no such recording.
     public static func item(core: ReclyCore_, recordingId: String) async throws -> RecentItem? {
         guard let record = try await core.recordings.get(id: recordingId) else { return nil }
-        return try await items(core: core, records: [record], jobs: core.jobs.list(), filling: []).first
+        return try await items(core: core, records: [record], jobs: core.jobs.list(), filling: [], organizing: []).first
     }
 
     private static func items(
-        core: ReclyCore_, records: [RecordingRecord], jobs: [ReclyCore.Job], filling: Set<String>
+        core: ReclyCore_, records: [RecordingRecord], jobs: [ReclyCore.Job], filling: Set<String>, organizing: Set<String>
     ) async throws -> [RecentItem] {
         let byRecording = Dictionary(grouping: jobs, by: \.recordingId)
         let now = core.deps.clock.now()
@@ -296,7 +309,8 @@ public enum Recents {
                     alert: notesOnly ? nil : job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) },
                     localLanguage: job.flatMap { $0.status == .needsModel ? localLanguage(job: $0, steps: steps) : nil },
                     preview: previews[record.id],
-                    filling: filling.contains(record.id)
+                    filling: filling.contains(record.id),
+                    organizing: organizing.contains(record.id)
                 )
             )
         }

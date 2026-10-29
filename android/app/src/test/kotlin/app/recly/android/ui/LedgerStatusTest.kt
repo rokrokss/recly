@@ -95,6 +95,28 @@ class LedgerStatusTest {
         assertEquals(app.recly.android.R.string.badge_filling, app.recly.android.ui.component.badgeWord("FILLING"))
     }
 
+    /**
+     * docs/08 "Organizing": a done recording whose notes are being organized — the final pass or Organize again — says
+     * `Organizing`, with the loader, until the pass ends; any other state, and a fill, stay as they are.
+     */
+    @Test
+    fun `a done recording being organized says so until the pass ends`() {
+        val row = JobItem(
+            recordingId = "r", jobId = "j", title = null, startedAt = "2026-10-29T00:00:00Z", durationSec = 1.0,
+            state = ItemState.DONE, error = null, waitingMinutes = null, link = null, nextRunAt = null,
+        )
+        val organizing = LedgerStatus("ORGANIZING", BadgeTone.ACCENT, busy = true)
+        assertEquals(organizing, row.badge(organizing = true))
+        assertEquals(organizing, row.copy(state = ItemState.NO_JOB).badge(organizing = true), "another device's recording, organized here")
+        assertEquals(ItemState.DONE.badge(), row.badge(organizing = false))
+        ItemState.entries.filter { it.badge().code != "DONE" }.forEach { state ->
+            assertEquals(state.badge(), row.copy(state = state).badge(organizing = true), "$state")
+        }
+        assertEquals("FILLING", row.badge(filling = true, organizing = true).code)
+        assertTrue("ORGANIZING" in BADGE_CODES)
+        assertEquals(app.recly.android.R.string.badge_organizing, app.recly.android.ui.component.badgeWord("ORGANIZING"))
+    }
+
     /** docs/03: the three things happening somewhere else, as the ledger says them. */
     @Test
     fun `what another device is doing has its own codes`() {

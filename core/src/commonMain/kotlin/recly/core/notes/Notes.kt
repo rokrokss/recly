@@ -246,6 +246,12 @@ class Notes internal constructor(
     suspend fun get(recordingId: String): RecordingNotes = view(recordingId, recordingId in working.value, failures.value[recordingId])
 
     /**
+     * The recordings being organized now — each one [observe] says is [RecordingNotes.organizing]. The lists' badge
+     * `Organizing` reads it, on a row that would say `Done` (docs/09 screen principle 2).
+     */
+    fun observeOrganizing(): Flow<List<String>> = working.map { it.keys.toList() }.distinctUntilChanged()
+
+    /**
      * Removes an item for good: it is gone from the notes now and never comes back — not from a later part, not
      * from the final pass, not from a transcription again. False when there is no such item.
      */

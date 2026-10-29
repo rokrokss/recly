@@ -365,6 +365,10 @@ class ShellModel(
     var fills: List<FillRun> by mutableStateOf(emptyList())
         internal set
 
+    /** docs/08 "Organizing": the recordings being organized now — their rows say `Organizing` where they would say `Done`. */
+    var organizing: List<String> by mutableStateOf(emptyList())
+        private set
+
     /** Whether a [loadMoreRecents] is already reading, so scrolling does not ask twice for a page. */
     private var loadingMoreRecents = false
     /**
@@ -946,6 +950,7 @@ class ShellModel(
         // ever made for — the job table never moves for one of those.
         scope.launch { graph.core.recordings.observe().conflate().collect { refreshRecents() } }
         scope.launch { followFills(graph) }
+        scope.launch { graph.core.notes.observeOrganizing().collect { organizing = it } }
 
         // Started last: the offer's whole point is the recording behind it, and an offer made
         // before the shell is ready is one that cannot be taken.

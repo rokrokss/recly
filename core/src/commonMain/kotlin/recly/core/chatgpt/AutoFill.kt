@@ -97,7 +97,7 @@ sealed interface FillResult {
  * whatever reads it, has them; nothing there stops the publication, a skip or a failure publishes the transcript as it
  * was. More → Fill in title and More → Fill in speaker names ask for a recording already transcribed ([manual]), each
  * on its own, on request (docs/15 §10), and Organize asks for the names too ([withOrganize]). What is asking now, for
- * any of them, is [observe].
+ * a publication or the detail, is [observe].
  */
 internal class AutoFill(
     private val db: RecDatabase,
@@ -189,7 +189,8 @@ internal class AutoFill(
     /**
      * Organize and Organize again (docs/08 "Organizing"): the speakers that still have no name are asked for as More →
      * Fill in speaker names asks — beside the notes and not waited for, since neither needs the other's answer: the
-     * notes are written from speaker labels and show the names when they come. What it meets is logged, not shown.
+     * notes are written from speaker labels and show the names when they come. It is not in [observe] — the notes'
+     * `Organizing…` is the one line that says something is going on — and what it meets is logged, not shown.
      */
     fun withOrganize(recordingId: String) {
         scope.launch {
@@ -215,7 +216,8 @@ internal class AutoFill(
         val current = transcript(recordingId) ?: return FillResult.NoTranscript.also { skipped(recordingId, trigger, "transcript") }
         val needs = FillNeeds.of(record.meta.title, current).only(title, names)
         if (!needs.any) return FillResult.NothingToFill.also { skipped(recordingId, trigger, "nothing") }
-        return shown(recordingId, needs) {
+        // Organize's own `Organizing…` already says what is going on: a second line for its names would be two loaders.
+        return shown(recordingId, needs, visible = trigger != ORGANIZE) {
             val answer = try {
                 ask(recordingId, current, needs, trigger)
             } catch (e: ChatGptFailure) {
@@ -231,8 +233,12 @@ internal class AutoFill(
         }
     }
 
-    /** [block] asks ChatGPT for [needs] of [recordingId] and applies the answer: in [observe] while it goes, however it ends. */
-    private suspend fun <T> shown(recordingId: String, needs: FillNeeds, block: suspend () -> T): T {
+    /**
+     * [block] asks ChatGPT for [needs] of [recordingId] and applies the answer: in [observe] while it goes, however it ends
+     * — unless it is not [visible].
+     */
+    private suspend fun <T> shown(recordingId: String, needs: FillNeeds, visible: Boolean = true, block: suspend () -> T): T {
+        if (!visible) return block()
         asking.update { it + (recordingId to FillRun(recordingId, needs.title, needs.names)) }
         try {
             return block()
