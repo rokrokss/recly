@@ -552,12 +552,9 @@
   "Still transcribing on this device — try again once it has finished": "Vẫn đang chép lời trên thiết bị này — hãy thử lại khi xong",
   "Turn it on in Settings → Apps → Recly → Permissions.": "Bật trong Cài đặt → Ứng dụng → Recly → Quyền.",
   "Asked before every recording.": "Hỏi trước mỗi bản ghi.",
-  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "Khi chép lời xong, bản chép lời được gửi tới ChatGPT để lấy tiêu đề còn thiếu và tên của những người nói được gọi tên. Việc này được tính vào mức sử dụng ChatGPT của bạn.",
   "Filling in…": "Đang điền…",
   "Fill in title": "Điền tiêu đề",
   "Fill in speaker names": "Điền tên người nói",
-  "Fill in the title with ChatGPT": "Điền tiêu đề bằng ChatGPT",
-  "Fill in speaker names with ChatGPT": "Điền tên người nói bằng ChatGPT",
   "Already has a title": "Đã có tiêu đề",
   "No unnamed speakers": "Không có người nói chưa có tên",
   "Filling in the title…": "Đang điền tiêu đề…",
@@ -566,7 +563,7 @@
   "Could not fill in the title": "Không thể điền tiêu đề",
   "Could not fill in speaker names": "Không thể điền tên người nói",
   "Recly organizes while you record": "Recly sắp xếp ngay khi bạn ghi âm",
-  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Khi bạn đăng nhập ChatGPT, Recly gửi văn bản chép lời của từng bản ghi âm đến gói ChatGPT của bạn trong khi ghi và sau khi dừng, rồi liệt kê các quyết định, việc cần làm và câu hỏi. Âm thanh không bao giờ được gửi. Việc này được tính vào mức sử dụng gói của bạn.",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers' names. Audio is never sent. This counts toward your plan.": "Khi bạn đăng nhập ChatGPT, Recly gửi văn bản chép lời của từng bản ghi âm đến gói ChatGPT của bạn trong khi ghi và sau khi dừng, liệt kê các quyết định, việc cần làm và câu hỏi, đồng thời điền tiêu đề còn trống và tên người nói. Âm thanh không bao giờ được gửi. Việc này được tính vào mức sử dụng gói của bạn.",
   "Decisions": "Quyết định",
   "To-dos": "Việc cần làm",
   "Questions": "Câu hỏi",
@@ -577,5 +574,6 @@
   "Recording stopped: battery low": "Đã dừng ghi âm: pin yếu",
   "Recording alerts": "Cảnh báo ghi âm",
   "Recording paused": "Đã tạm dừng ghi âm",
-  "Open Recly to keep recording.": "Mở Recly để tiếp tục ghi âm."
+  "Open Recly to keep recording.": "Mở Recly để tiếp tục ghi âm.",
+  "Filled in automatically": "Tự động điền"
 }

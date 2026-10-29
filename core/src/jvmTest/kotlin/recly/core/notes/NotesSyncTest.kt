@@ -32,6 +32,7 @@ class NotesSyncTest {
     private suspend fun organized(): RecordingMeta {
         chatGpt.signIn(account = f.core.chatGpt)
         notes.consent()
+        chatGpt.answerFills()
         val answer = """{"summary":"Alpha.","items":[{"kind":"decision","text":"Ship alpha","at":"00:00:00","quote":"alpha1 alpha2 alpha3"}]}"""
         chatGpt.server.reply(
             "data: {\"type\":\"response.output_text.delta\",\"delta\":" + Json.encodeToString(String.serializer(), answer) +

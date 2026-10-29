@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Ginagamit ng mga tala sa Recly ang iyong ChatGPT plan. Maaari mong pamahalaan ang paggamit sa mga setting ng ChatGPT.</string>
     <string name="chatgpt_got_it">Nakuha ko</string>
     <string name="notes_consent_title">Nag-aayos ang Recly habang nagre-record ka</string>
-    <string name="notes_consent_body">Habang naka-sign in ka sa ChatGPT, ipinapadala ng Recly ang teksto ng transcript ng bawat recording sa iyong ChatGPT plan habang nagre-record ka at pagkatapos mong huminto, at inililista ang mga desisyon, gagawin at tanong nito. Hindi kailanman ipinapadala ang audio. Kasama ito sa paggamit ng iyong plan.</string>
+    <string name="notes_consent_body">Habang naka-sign in ka sa ChatGPT, ipinapadala ng Recly ang teksto ng transcript ng bawat recording sa iyong ChatGPT plan habang nagre-record ka at pagkatapos mong huminto, inililista ang mga desisyon, gagawin at tanong nito, at pinupunan ang kulang na pamagat at ang mga pangalan ng mga nagsasalita. Hindi kailanman ipinapadala ang audio. Kasama ito sa paggamit ng iyong plan.</string>
+    <string name="title_auto_fill">Awtomatikong pupunan</string>
     <string name="notes_consent_continue">Magpatuloy</string>
     <string name="notes_decisions">Mga desisyon</string>
     <string name="notes_todos">Mga gagawin</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Itanong</string>
     <string name="ask_running">Nagtatanong…</string>
     <string name="ask_failed">Hindi nakasagot</string>
-    <string name="fill_after_stop_note">Kapag handa na ang transcript, ipapadala ito sa ChatGPT para sa kulang na pamagat at sa mga pangalan ng mga nagsasalitang tinawag sa pangalan. Kasama ito sa paggamit mo ng ChatGPT.</string>
     <string name="fill_running">Pinupunan…</string>
     <string name="fill_title_menu">Punan ang pamagat</string>
     <string name="fill_names_menu">Punan ang mga pangalan ng nagsasalita</string>
-    <string name="fill_title_after_stop">Punan ang pamagat gamit ang ChatGPT</string>
-    <string name="fill_names_after_stop">Punan ang mga pangalan ng nagsasalita gamit ang ChatGPT</string>
     <string name="fill_has_title">May pamagat na</string>
     <string name="fill_no_unnamed">Walang nagsasalitang walang pangalan</string>
     <string name="fill_title_running">Pinupunan ang pamagat…</string>

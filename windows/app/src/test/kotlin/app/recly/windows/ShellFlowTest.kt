@@ -11,12 +11,10 @@ import app.recly.windows.jobs.Recents
 import app.recly.windows.record.RecordingOutcome
 import app.recly.windows.record.WindowsRecorder
 import app.recly.windows.record.completeRecording
-import app.recly.windows.record.fillAsk
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -27,12 +25,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
 import recly.core.job.EnqueueResult
-import recly.core.recording.FillRequest
 import recly.core.job.JobStatus
 
 /**
@@ -115,42 +111,6 @@ class ShellFlowTest {
 
         assertEquals("주간 회의", assertNotNull(core.recordings.get(outcome.recordingId)).meta.title)
         assertEquals(1, core.jobs.list().size)
-        scope.cancel()
-    }
-
-    @Test
-    fun `ticked ChatGPT boxes leave their request for the job, and unticked ones none`() = runBlocking {
-        // docs/08 "Titles and speaker names": the publication reads the request, so it is there once the job is.
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        val core = AppModule.build(
-            dataDir = Files.createTempDirectory("recly-fill").toString().toPath(),
-        ).core
-        core.initializeProcessing()
-        val finalized = Channel<RecordingOutcome>(Channel.UNLIMITED)
-        val recorder = WindowsRecorder(
-            core = core,
-            scope = scope,
-            helper = {
-                HelperClient(FakeHelperCommand.command("parts=1", "sec=2.0"), Dispatchers.IO, SilentLogger)
-            },
-            onFinalized = { finalized.trySend(it) },
-        )
-        suspend fun record(): RecordingOutcome {
-            assertNotNull(recorder.start())
-            recorder.stop()
-            return withTimeout(TIMEOUT_MS) { finalized.receive() }
-        }
-
-        // A typed title leaves the title box nothing to do: the names box alone asks.
-        val ticked = record()
-        val ask = fillAsk(offered = true, title = "주간 회의", titleBox = true, namesBox = true)
-        assertIs<EnqueueResult.Enqueued>(completeRecording(core, ticked.recordingId, "주간 회의", fill = ask).enqueued)
-        assertEquals(FillRequest(title = false, names = true), core.recordings.fillRequest(ticked.recordingId))
-
-        val unticked = record()
-        assertIs<EnqueueResult.Enqueued>(completeRecording(core, unticked.recordingId, null).enqueued)
-        assertFalse(core.recordings.fillRequested(unticked.recordingId))
-        assertEquals(2, core.jobs.list().size)
         scope.cancel()
     }
 

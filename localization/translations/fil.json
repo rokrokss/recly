@@ -552,12 +552,9 @@
   "Still transcribing on this device — try again once it has finished": "Nagta-transcribe pa sa device na ito — subukan ulit kapag tapos na",
   "Turn it on in Settings → Apps → Recly → Permissions.": "I-on ito sa Mga Setting → Mga App → Recly → Mga Pahintulot.",
   "Asked before every recording.": "Itinatanong bago ang bawat recording.",
-  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "Kapag handa na ang transcript, ipapadala ito sa ChatGPT para sa kulang na pamagat at sa mga pangalan ng mga nagsasalitang tinawag sa pangalan. Kasama ito sa paggamit mo ng ChatGPT.",
   "Filling in…": "Pinupunan…",
   "Fill in title": "Punan ang pamagat",
   "Fill in speaker names": "Punan ang mga pangalan ng nagsasalita",
-  "Fill in the title with ChatGPT": "Punan ang pamagat gamit ang ChatGPT",
-  "Fill in speaker names with ChatGPT": "Punan ang mga pangalan ng nagsasalita gamit ang ChatGPT",
   "Already has a title": "May pamagat na",
   "No unnamed speakers": "Walang nagsasalitang walang pangalan",
   "Filling in the title…": "Pinupunan ang pamagat…",
@@ -566,7 +563,7 @@
   "Could not fill in the title": "Hindi mapunan ang pamagat",
   "Could not fill in speaker names": "Hindi mapunan ang mga pangalan ng nagsasalita",
   "Recly organizes while you record": "Nag-aayos ang Recly habang nagre-record ka",
-  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Habang naka-sign in ka sa ChatGPT, ipinapadala ng Recly ang teksto ng transcript ng bawat recording sa iyong ChatGPT plan habang nagre-record ka at pagkatapos mong huminto, at inililista ang mga desisyon, gagawin at tanong nito. Hindi kailanman ipinapadala ang audio. Kasama ito sa paggamit ng iyong plan.",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers' names. Audio is never sent. This counts toward your plan.": "Habang naka-sign in ka sa ChatGPT, ipinapadala ng Recly ang teksto ng transcript ng bawat recording sa iyong ChatGPT plan habang nagre-record ka at pagkatapos mong huminto, inililista ang mga desisyon, gagawin at tanong nito, at pinupunan ang kulang na pamagat at ang mga pangalan ng mga nagsasalita. Hindi kailanman ipinapadala ang audio. Kasama ito sa paggamit ng iyong plan.",
   "Decisions": "Mga desisyon",
   "To-dos": "Mga gagawin",
   "Questions": "Mga tanong",
@@ -577,5 +574,6 @@
   "Recording stopped: battery low": "Huminto ang pagre-record: mahina ang baterya",
   "Recording alerts": "Mga alerto sa pagre-record",
   "Recording paused": "Naka-pause ang pagre-record",
-  "Open Recly to keep recording.": "Buksan ang Recly para ituloy ang pagre-record."
+  "Open Recly to keep recording.": "Buksan ang Recly para ituloy ang pagre-record.",
+  "Filled in automatically": "Awtomatikong pupunan"
 }

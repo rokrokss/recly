@@ -88,7 +88,7 @@ public struct OrganizeConsentDialog: View {
                 .keyboardShortcut(.defaultAction)
                 .accessibilityIdentifier("organize-continue")
         } content: {
-            BlueprintDialogText(loc("While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan."))
+            BlueprintDialogText(loc("While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers' names. Audio is never sent. This counts toward your plan."))
                 .accessibilityIdentifier("organize-body")
             if !permission.isEmpty {
                 TransferDisclosureList(targets: permission, trainingOff: $trainingOff)

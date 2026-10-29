@@ -29,12 +29,10 @@ import recly.core.model.RecordingStatus
 import recly.core.model.Track
 import recly.core.privacy.TransferConsents
 import recly.core.privacy.TransferTargets
-import recly.core.recording.FillRequest
 import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
 import recly.core.recording.RecordingRepository
 import recly.core.testing.testMeta
-import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptProvider
 import recly.core.transcribe.TranscriptSegment
@@ -54,6 +52,9 @@ class AutoFillTest {
         var editRefused = false
         val renamed = mutableListOf<Map<String, String>>()
 
+        /** The notes' consent: with a sign-in, what lets a publication ask (docs/08 "Organizing"). */
+        var agreed = true
+
         /** What was being filled in when a title or names were applied — inside the run. */
         val during = mutableListOf<List<FillRun>>()
 
@@ -63,6 +64,7 @@ class AutoFillTest {
 
         val fill = AutoFill(
             h.db, h.deps, summaries, consents, recordings,
+            agreed = { agreed && h.account.standing().let { it == ChatGptStanding.SIGNED_IN || it == ChatGptStanding.EXPIRED } },
             setTitle = { id, title ->
                 during += running()
                 reached.complete(Unit)
@@ -80,11 +82,10 @@ class AutoFillTest {
         val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
         val record get() = RecordingRecord(ID, meta, dir)
 
-        /** The recording, a sign-in, and the title sheet's two boxes ticked for it. */
-        suspend fun ready(signIn: Boolean = true, requested: Boolean = true) {
+        /** The recording and a sign-in. */
+        suspend fun ready(signIn: Boolean = true) {
             recordings.create(meta, dir)
             if (signIn) h.signIn()
-            if (requested) recordings.requestFill(ID, title = true, names = true)
         }
 
         fun requests() = h.server.requests.count { it.url.endsWith("/responses") }
@@ -95,48 +96,10 @@ class AutoFillTest {
     }
 
     @Test
-    fun `how each of the title sheet's boxes was left is kept on this device, unticked at first`() = runBlocking {
+    fun `signed in but not agreed to the background use, a recording is published as it is`() = runBlocking {
         val f = Fixture()
-        assertEquals(SummaryPreferences(), f.summaries.preferences())
-        assertFalse(f.summaries.preferences().fillTitleAfterStop)
-        assertFalse(f.summaries.preferences().fillNamesAfterStop)
-        f.summaries.setPreferences(SummaryPreferences(aboutMe = "PM", fillNamesAfterStop = true))
-        val fresh = Summaries(f.h.db, f.h.deps, f.h.account, f.recordings, { null }, f.consents)
-        assertEquals(SummaryPreferences(aboutMe = "PM", fillNamesAfterStop = true), fresh.preferences())
-        f.summaries.setPreferences(SummaryPreferences(fillTitleAfterStop = true))
-        val again = Summaries(f.h.db, f.h.deps, f.h.account, f.recordings, { null }, f.consents)
-        assertEquals(SummaryPreferences(fillTitleAfterStop = true), again.preferences(), "one box, not the other")
-    }
-
-    @Test
-    fun `a request keeps each half asked until it is spent`() = runBlocking {
-        val f = Fixture()
-        f.ready(requested = false)
-        assertNull(f.recordings.fillRequest(ID))
-        assertFalse(f.recordings.requestFill("01J9NOSUCHRECORDING0000000", title = true, names = true))
-        assertTrue(f.recordings.requestFill(ID, title = true, names = false))
-        assertEquals(FillRequest(title = true, names = false), f.recordings.fillRequest(ID))
-        f.recordings.requestFill(ID, title = false, names = true)
-        assertEquals(FillRequest(title = true, names = true), f.recordings.fillRequest(ID), "a later ask adds to it")
-        assertEquals(FillRequest(title = true, names = true), f.recordings.takeFillRequest(ID))
-        assertNull(f.recordings.takeFillRequest(ID), "of two takers only one fills")
-        assertFalse(f.recordings.fillRequested(ID))
-
-        f.fill.request(ID, title = false, names = false)
-        assertFalse(f.recordings.fillRequested(ID), "neither box ticked asks nothing")
-        assertTrue("summary.fill.requested" !in f.h.logger.events)
-        f.fill.request(ID, title = false, names = true)
-        f.fill.awaitRuns()
-        assertEquals(FillRequest(title = false, names = true), f.recordings.fillRequest(ID))
-        val requested = f.h.logger.entries.single { it.event == "summary.fill.requested" }.fields
-        assertEquals(false, requested["title"])
-        assertEquals(true, requested["names"])
-    }
-
-    @Test
-    fun `a recording nobody asked for is published as it is`() = runBlocking {
-        val f = Fixture()
-        f.ready(requested = false)
+        f.agreed = false
+        f.ready()
         assertSame(TRANSCRIPT, f.fill.fill(f.record, TRANSCRIPT).transcript)
         assertEquals(0, f.requests())
         assertTrue(f.h.logger.events.none { it.startsWith("summary.fill") })
@@ -146,11 +109,9 @@ class AutoFillTest {
     fun `an untitled recording gets a title and the unnamed speakers their names, before it is published`() = runBlocking {
         val f = Fixture()
         f.ready()
-        assertTrue(f.recordings.fillRequested(ID))
         f.h.server.reply(answer("""{"title":"Launch plan","speakers":{"S1":"Mina","S2":null}}"""), headers = SSE)
         val filled = f.fill.fill(f.record, TRANSCRIPT)
 
-        assertFalse(f.recordings.fillRequested(ID), "asked once: the request is spent")
         assertEquals("Launch plan", filled.title)
         assertEquals(listOf("Launch plan"), f.titles)
         assertEquals(listOf(listOf(FillRun(ID, title = true, names = true))), f.during, "shown while it is filled in")
@@ -172,39 +133,42 @@ class AutoFillTest {
         val start = f.h.logger.entries.single { it.event == "summary.fill.start" }.fields
         assertEquals(listOf(true, true, 2), listOf(start["title"], start["names"], start["speakers"]))
 
-        assertSame(TRANSCRIPT, f.fill.fill(f.record, TRANSCRIPT).transcript, "a later publication — a re-transcription — asks nothing")
-        assertEquals(1, f.requests())
+        f.h.server.reply(answer("""{"title":"Ignored","speakers":{"S2":"Joon"}}"""), headers = SSE)
+        val again = f.fill.fill(f.record, TRANSCRIPT)
+        assertTrue("\"title\"" !in f.instructions(), "a publication tried again, or a re-transcription, asks for what is still missing")
+        assertTrue("speaker ids: S1, S2." in f.instructions())
+        assertNull(again.title)
+        assertEquals("Joon", again.transcript.speakers[1].name)
+        assertEquals(2, f.requests())
     }
 
     @Test
-    fun `a title alone is asked for when only its box was ticked`() = runBlocking {
+    fun `an untitled recording whose speakers all have names asks for its title alone`() = runBlocking {
         val f = Fixture()
-        f.ready(requested = false)
-        f.recordings.requestFill(ID, title = true, names = false)
-        f.h.server.reply(answer("""{"title":"Launch plan","speakers":{"S1":"Mina"}}"""), headers = SSE)
-        val filled = f.fill.fill(f.record, TRANSCRIPT)
+        f.ready()
+        val named = TRANSCRIPT.copy(speakers = listOf(TranscriptSpeaker("S1", "Mina"), TranscriptSpeaker("S2", "Joon"), TranscriptSpeaker("S3", me = true)))
+        f.h.server.reply(answer("""{"title":"Launch plan","speakers":{"S1":"Somebody"}}"""), headers = SSE)
+        val filled = f.fill.fill(f.record, named)
         assertTrue("\"title\"" in f.instructions())
         assertTrue("speaker ids" !in f.instructions())
         assertEquals("Launch plan", filled.title)
-        assertSame(TRANSCRIPT, filled.transcript, "no name was asked for, none is taken")
+        assertSame(named, filled.transcript, "no name was asked for, none is taken")
         assertEquals(listOf(listOf(FillRun(ID, title = true, names = false))), f.during)
         val start = f.h.logger.entries.single { it.event == "summary.fill.start" }.fields
         assertEquals(listOf(true, false, 0), listOf(start["title"], start["names"], start["speakers"]))
     }
 
     @Test
-    fun `speaker names alone are asked for when only their box was ticked`() = runBlocking {
-        val f = Fixture()
-        f.ready(requested = false)
-        f.recordings.requestFill(ID, title = false, names = true)
+    fun `a titled recording asks for its speaker names alone`() = runBlocking {
+        val f = Fixture(title = "Weekly sync")
+        f.ready()
         f.h.server.reply(answer("""{"title":"Ignored","speakers":{"S1":"Mina"}}"""), headers = SSE)
         val filled = f.fill.fill(f.record, TRANSCRIPT)
         assertTrue("\"title\"" !in f.instructions())
         assertTrue("speaker ids: S1, S2." in f.instructions())
         assertNull(filled.title)
-        assertNull(f.recordings.get(ID)!!.meta.title, "an untitled recording stays so")
+        assertEquals("Weekly sync", f.recordings.get(ID)!!.meta.title, "a title is never replaced")
         assertEquals("Mina", filled.transcript.speakers[0].name)
-        assertFalse(f.recordings.fillRequested(ID))
     }
 
     @Test
@@ -215,9 +179,7 @@ class AutoFillTest {
         assertSame(named, f.fill.fill(f.record, named).transcript)
         assertEquals(0, f.requests())
         assertEquals("nothing", f.h.logger.entries.last().fields["reason"])
-        assertFalse(f.recordings.fillRequested(ID), "nothing to fill is an answer too")
 
-        f.recordings.requestFill(ID, title = true, names = true)
         f.h.server.reply(answer("""{"title":"Ignored","speakers":{"S2":"Joon"}}"""), headers = SSE)
         val filled = f.fill.fill(f.record, TRANSCRIPT.copy(speakers = listOf(TranscriptSpeaker("S1", "Mina"), TranscriptSpeaker("S2"), TranscriptSpeaker("S3", me = true))))
         val instructions = f.h.server.requests.last().json()["instructions"]!!.jsonPrimitive.content
@@ -235,8 +197,7 @@ class AutoFillTest {
         val sent = f.h.server.requests.size
         assertSame(TRANSCRIPT, f.fill.fill(f.record, TRANSCRIPT).transcript)
         assertEquals(sent, f.h.server.requests.size)
-        assertEquals("summary.fill.skipped", f.h.logger.events.last())
-        assertFalse(f.recordings.fillRequested(ID))
+        assertTrue(f.h.logger.events.none { it.startsWith("summary.fill") }, "the same no-op as for anyone not agreed")
     }
 
     @Test
@@ -245,11 +206,9 @@ class AutoFillTest {
         f.ready()
         assertSame(TRANSCRIPT, f.fill.fill(f.record, TRANSCRIPT).transcript)
         assertEquals(0, f.requests())
-        assertEquals("consent", f.h.logger.entries.last().fields["reason"])
-        assertFalse(f.recordings.fillRequested(ID), "the sheet asks for the permission; a publication cannot")
+        assertEquals("consent", f.h.logger.entries.last().fields["reason"], "the notes' consent gives the permission; a publication cannot")
 
         f.consents.grant(listOf(TransferTargets.chatGptSummary()))
-        f.recordings.requestFill(ID, title = true, names = true)
         f.h.server.reply(answer("""{"title":"Launch plan","speakers":{}}"""), headers = SSE)
         assertEquals("Launch plan", f.fill.fill(f.record, TRANSCRIPT).title)
     }
@@ -263,13 +222,11 @@ class AutoFillTest {
         assertEquals(1, f.requests())
         assertEquals("summary.fill.failed", f.h.logger.events.last())
 
-        f.recordings.requestFill(ID, title = true, names = true)
         assertSame(TRANSCRIPT, f.fill.fill(f.record, TRANSCRIPT).transcript)
         assertEquals(1, f.requests(), "paused")
         assertEquals("paused", f.h.logger.entries.last().fields["reason"])
 
         f.h.clock.advance(5.hours)
-        f.recordings.requestFill(ID, title = true, names = true)
         // The access token ran out meanwhile: refreshed first.
         f.h.server.reply(f.h.tokens("access-2", "refresh-2"))
         f.h.server.reply(answer("""{"title":"Launch plan"}"""), headers = SSE)
@@ -304,7 +261,6 @@ class AutoFillTest {
         f.h.signIn(models = """{"models":[{"slug":"gpt-a","display_name":"GPT A","visibility":"list"},
             {"slug":"gpt-5.6-terra","display_name":"Second","visibility":"list"},
             {"slug":"gpt-6.1-sol","display_name":"First","visibility":"list"}]}""")
-        f.recordings.requestFill(ID, title = true, names = true)
         f.h.server.reply(answer("""{"title":"Launch plan"}"""), headers = SSE)
         f.fill.fill(f.record, TRANSCRIPT)
         val body = f.h.server.requests.last().json()
@@ -325,7 +281,6 @@ class AutoFillTest {
         val f = Fixture()
         f.recordings.create(f.meta, f.dir)
         f.h.signIn(models = """{"models":[{"slug":"gpt-5.6-terra","display_name":"Second","visibility":"list"}]}""")
-        f.recordings.requestFill(ID, title = true, names = true)
         f.h.server.reply("""{"error":{"code":"unsupported_parameter","message":"reasoning"}}""", status = 400)
         f.h.server.reply(answer("""{"title":"Launch plan"}"""), headers = SSE)
         assertEquals("Launch plan", f.fill.fill(f.record, TRANSCRIPT).title)
@@ -355,7 +310,7 @@ class AutoFillTest {
     @Test
     fun `asked for both, a missing title and the unnamed speakers come in one request, the names as an edit`() = runBlocking {
         val f = Fixture()
-        f.ready(requested = false)
+        f.ready()
         f.h.server.reply(answer("""{"title":"Launch plan","speakers":{"S1":"Mina","S2":null}}"""), headers = SSE)
         assertEquals(FillResult.Filled(title = true, names = 1), f.fill.manual(ID, title = true, names = true))
         assertEquals("Launch plan", f.recordings.get(ID)!!.meta.title)
@@ -370,7 +325,7 @@ class AutoFillTest {
     @Test
     fun `More - Fill in title asks for the title alone`() = runBlocking {
         val f = Fixture()
-        f.ready(requested = false)
+        f.ready()
         f.h.server.reply(answer("""{"title":"Launch plan","speakers":{"S1":"Mina"}}"""), headers = SSE)
         assertEquals(FillResult.Filled(title = true, names = 0), f.fill.manual(ID, title = true, names = false))
         assertTrue("\"title\"" in f.instructions())
@@ -386,7 +341,7 @@ class AutoFillTest {
     @Test
     fun `More - Fill in speaker names asks for the names alone`() = runBlocking {
         val f = Fixture()
-        f.ready(requested = false)
+        f.ready()
         f.h.server.reply(answer("""{"title":"Ignored","speakers":{"S1":"Mina","S2":"Joon"}}"""), headers = SSE)
         assertEquals(FillResult.Filled(title = false, names = 2), f.fill.manual(ID, title = false, names = true))
         assertTrue("\"title\"" !in f.instructions())
@@ -401,7 +356,7 @@ class AutoFillTest {
     @Test
     fun `More keeps an import's title and asks only for the names`() = runBlocking {
         val f = Fixture(title = "2026-08-26 Interview")
-        f.ready(requested = false)
+        f.ready()
         f.h.server.reply(answer("""{"title":"Ignored","speakers":{"S2":"Joon"}}"""), headers = SSE)
         assertEquals(FillResult.Filled(title = false, names = 1), f.fill.manual(ID, title = true, names = true))
         assertTrue("\"title\"" !in f.h.server.requests.last().json()["instructions"]!!.jsonPrimitive.content)
@@ -412,7 +367,7 @@ class AutoFillTest {
     @Test
     fun `More sends nothing when there is nothing to fill, no transcript, or a job in the way`() = runBlocking {
         val f = Fixture(title = "Weekly sync")
-        f.ready(requested = false)
+        f.ready()
         f.transcript = TRANSCRIPT.copy(speakers = listOf(TranscriptSpeaker("S1", "Mina"), TranscriptSpeaker("S2", "Joon"), TranscriptSpeaker("S3", me = true)))
         assertEquals(FillResult.NothingToFill, f.fill.manual(ID, title = true, names = true))
         f.transcript = TRANSCRIPT
@@ -434,13 +389,12 @@ class AutoFillTest {
     @Test
     fun `More ignores the pause, and a usage limit it meets still pauses the publications`() = runBlocking {
         val f = Fixture()
-        f.ready(requested = false)
+        f.ready()
         f.h.server.reply("""{"error":{"code":"subscription_sharing_usage_limit_exceeded"}}""", status = 429)
         val failed = assertIs<FillResult.Failed>(f.fill.manual(ID, title = true, names = false))
         assertTrue(failed.reason.startsWith(CoreMessage.CHATGPT_USAGE_LIMIT.name), failed.reason)
         assertEquals("manual", f.h.logger.entries.last { it.event == "summary.fill.failed" }.fields["trigger"])
 
-        f.recordings.requestFill(ID, title = true, names = true)
         assertSame(TRANSCRIPT, f.fill.fill(f.record, TRANSCRIPT).transcript)
         assertEquals("paused", f.h.logger.entries.last().fields["reason"])
         assertEquals(1, f.requests())
@@ -453,7 +407,7 @@ class AutoFillTest {
     @Test
     fun `More signed out says so`() = runBlocking {
         val f = Fixture()
-        f.ready(signIn = false, requested = false)
+        f.ready(signIn = false)
         val failed = assertIs<FillResult.Failed>(f.fill.manual(ID, title = true, names = false))
         assertTrue(failed.reason.startsWith(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.name), failed.reason)
     }
@@ -461,7 +415,7 @@ class AutoFillTest {
     @Test
     fun `on iPhone More answers as Ask does before ChatGPT is allowed`() = runBlocking {
         val f = Fixture(requireTransferConsent = true)
-        f.ready(requested = false)
+        f.ready()
         assertEquals(FillResult.Failed(CoreMessage.TRANSFER_CONSENT_REQUIRED.code()), f.fill.manual(ID, title = false, names = true))
         assertEquals(0, f.requests())
     }
@@ -469,13 +423,12 @@ class AutoFillTest {
     @Test
     fun `what is being filled in is shown until the answer is applied, and cleared however the run ends`() = runBlocking {
         val f = Fixture()
-        f.ready(requested = false)
+        f.ready()
         f.h.server.beforeReply = { if (it.url.endsWith("/responses")) f.during += f.running() }
 
-        f.recordings.requestFill(ID, title = false, names = true)
         f.h.server.reply(answer("I could not tell."), headers = SSE)
         assertSame(TRANSCRIPT, f.fill.fill(f.record, TRANSCRIPT).transcript)
-        assertEquals(listOf(listOf(FillRun(ID, title = false, names = true))), f.during, "a publication's")
+        assertEquals(listOf(listOf(FillRun(ID, title = true, names = true))), f.during, "a publication's")
         assertEquals(emptyList(), f.running(), "cleared when the answer could not be read")
 
         f.h.server.reply("""{"error":{"code":"subscription_sharing_usage_limit_exceeded"}}""", status = 429)
@@ -487,18 +440,16 @@ class AutoFillTest {
         f.h.clock.advance(5.hours)
         f.h.server.reply(f.h.tokens("access-2", "refresh-2"))
         f.h.server.beforeReply = { if (it.url.endsWith("/responses")) awaitCancellation() }
-        f.recordings.requestFill(ID, title = true, names = true)
         val pass = launch(Dispatchers.Default) { f.fill.fill(f.record, TRANSCRIPT) }
         assertEquals(listOf(FillRun(ID, title = true, names = true)), withTimeout(10_000) { f.fill.observe().first { it.isNotEmpty() } })
         pass.cancelAndJoin()
         assertEquals(emptyList(), f.running(), "cleared when cancelled")
-        assertTrue(f.recordings.fillRequested(ID), "and its publication asks again")
     }
 
     @Test
     fun `asking again for what the run going asks answers that run, and the other half runs after it`() = runBlocking {
         val f = Fixture()
-        f.ready(requested = false)
+        f.ready()
         f.gate = CompletableDeferred()
         f.h.server.reply(answer("""{"title":"Launch plan","speakers":{"S1":"Mina"}}"""), headers = SSE)
         val first = async(Dispatchers.Default) { f.fill.manual(ID, title = true, names = false) }
@@ -519,33 +470,6 @@ class AutoFillTest {
         assertEquals(listOf(FillRun(ID, title = true, names = false)), f.during[0])
         assertEquals(listOf(FillRun(ID, title = false, names = true)), f.during[1])
         assertEquals(emptyList(), f.running())
-    }
-
-    @Test
-    fun `a request for a transcript already published is filled at once, one before the transcription waits for it`() = runBlocking {
-        val f = Fixture()
-        f.ready(requested = false)
-        f.fill.request(ID, title = true, names = true)
-        f.fill.awaitRuns()
-        assertTrue(f.recordings.fillRequested(ID), "no transcript here yet: its publication asks")
-        assertEquals(0, f.requests())
-        assertTrue("summary.fill.requested" in f.h.logger.events)
-
-        f.h.fs.createDirectories(f.dir)
-        f.h.fs.write(f.dir / TranscribeRunner.jsonFileName(MetaWriter.baseName(f.meta))) { writeUtf8("{}") }
-        f.busy = true
-        f.fill.request(ID, title = true, names = true)
-        f.fill.awaitRuns()
-        assertTrue(f.recordings.fillRequested(ID), "still being published")
-
-        f.busy = false
-        f.h.server.reply(answer("""{"title":"Launch plan","speakers":{"S1":"Mina"}}"""), headers = SSE)
-        f.fill.request(ID, title = true, names = true)
-        f.fill.awaitRuns()
-        assertFalse(f.recordings.fillRequested(ID))
-        assertEquals("Launch plan", f.recordings.get(ID)!!.meta.title)
-        assertEquals(listOf(mapOf("S1" to "Mina")), f.renamed)
-        assertEquals(1, f.requests())
     }
 
     @Test

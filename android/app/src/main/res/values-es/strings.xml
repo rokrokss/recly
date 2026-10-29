@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Las notas de Recly usan tu plan de ChatGPT. Puedes gestionar el uso en los ajustes de ChatGPT.</string>
     <string name="chatgpt_got_it">Entendido</string>
     <string name="notes_consent_title">Recly organiza mientras grabas</string>
-    <string name="notes_consent_body">Mientras tengas la sesión iniciada en ChatGPT, Recly envía el texto de la transcripción de cada grabación a tu plan de ChatGPT mientras grabas y después de detenerla, y enumera sus decisiones, tareas y preguntas. El audio nunca se envía. Esto cuenta para el uso de tu plan.</string>
+    <string name="notes_consent_body">Mientras tengas la sesión iniciada en ChatGPT, Recly envía el texto de la transcripción de cada grabación a tu plan de ChatGPT mientras grabas y después de detenerla, enumera sus decisiones, tareas y preguntas, y completa el título que falte y los nombres de los hablantes. El audio nunca se envía. Esto cuenta para el uso de tu plan.</string>
+    <string name="title_auto_fill">Se completa automáticamente</string>
     <string name="notes_consent_continue">Continuar</string>
     <string name="notes_decisions">Decisiones</string>
     <string name="notes_todos">Tareas</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Preguntar</string>
     <string name="ask_running">Preguntando…</string>
     <string name="ask_failed">No se pudo responder</string>
-    <string name="fill_after_stop_note">Cuando la transcripción esté lista, se envía a ChatGPT para obtener el título que falta y los nombres de los hablantes a los que se llama por su nombre. Cuenta para tu uso de ChatGPT.</string>
     <string name="fill_running">Completando…</string>
     <string name="fill_title_menu">Completar título</string>
     <string name="fill_names_menu">Completar nombres de hablantes</string>
-    <string name="fill_title_after_stop">Completar el título con ChatGPT</string>
-    <string name="fill_names_after_stop">Completar los nombres de hablantes con ChatGPT</string>
     <string name="fill_has_title">Ya tiene título</string>
     <string name="fill_no_unnamed">No hay hablantes sin nombre</string>
     <string name="fill_title_running">Completando el título…</string>

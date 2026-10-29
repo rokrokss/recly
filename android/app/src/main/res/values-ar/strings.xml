@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">تستخدم الملاحظات في Recly خطة ChatGPT الخاصة بك. يمكنك إدارة الاستخدام من إعدادات ChatGPT.</string>
     <string name="chatgpt_got_it">حسنًا</string>
     <string name="notes_consent_title">يرتّب Recly الملاحظات أثناء التسجيل</string>
-    <string name="notes_consent_body">أثناء تسجيل دخولك إلى ChatGPT، يرسل Recly نص نسخ كل تسجيل إلى خطة ChatGPT الخاصة بك أثناء التسجيل وبعد إيقافه، ويُدرج ما فيه من قرارات ومهام وأسئلة. لا يُرسَل الصوت أبدًا. يُحتسب ذلك ضمن استخدام خطتك.</string>
+    <string name="notes_consent_body">أثناء تسجيل دخولك إلى ChatGPT، يرسل Recly نص نسخ كل تسجيل إلى خطة ChatGPT الخاصة بك أثناء التسجيل وبعد إيقافه، ويُدرج ما فيه من قرارات ومهام وأسئلة، ويملأ العنوان الناقص وأسماء المتحدثين. لا يُرسَل الصوت أبدًا. يُحتسب ذلك ضمن استخدام خطتك.</string>
+    <string name="title_auto_fill">يُملأ تلقائيًا</string>
     <string name="notes_consent_continue">متابعة</string>
     <string name="notes_decisions">القرارات</string>
     <string name="notes_todos">المهام</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">اسأل</string>
     <string name="ask_running">جارٍ السؤال…</string>
     <string name="ask_failed">تعذّرت الإجابة</string>
-    <string name="fill_after_stop_note">بعد اكتمال النسخ، يُرسَل نص النسخة إلى ChatGPT للحصول على العنوان الناقص وأسماء المتحدثين الذين نودوا بأسمائهم. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.</string>
     <string name="fill_running">جارٍ الملء…</string>
     <string name="fill_title_menu">ملء العنوان</string>
     <string name="fill_names_menu">ملء أسماء المتحدثين</string>
-    <string name="fill_title_after_stop">ملء العنوان باستخدام ChatGPT</string>
-    <string name="fill_names_after_stop">ملء أسماء المتحدثين باستخدام ChatGPT</string>
     <string name="fill_has_title">للتسجيل عنوان بالفعل</string>
     <string name="fill_no_unnamed">لا يوجد متحدثون بلا أسماء</string>
     <string name="fill_title_running">جارٍ ملء العنوان…</string>

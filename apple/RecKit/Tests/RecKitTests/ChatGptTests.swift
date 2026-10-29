@@ -261,53 +261,16 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertEqual(saved.aboutMe, "PM")
     }
 
-    /// docs/08 "Titles and speaker names": the title sheet's two boxes are off until ticked and each is kept as it was
-    /// left — saved at once, signed in or out, on the Mac with nothing to ask — apart from the other, and stays as it is
-    /// when About you changes.
-    func testTheTitleSheetBoxesAreKeptApartAndSurviveTheOtherPreferences() async throws {
+    /// docs/08 "Titles and speaker names": signed out, a publication fills nothing in, so the title sheet says
+    /// `Untitled`; the Mac needs no permission for the plan as a destination.
+    func testSignedOutTheTitleSheetSaysUntitled() async throws {
         let bridge = try await bridge()
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
         try await Task.sleep(for: .milliseconds(300))
-        XCTAssertFalse(model.preferences.fillTitleAfterStop)
-        XCTAssertFalse(model.preferences.fillNamesAfterStop)
-        XCTAssertFalse(model.fillOffered, "signed out, the sheet offers no box")
-
         XCTAssertTrue(model.fillAllowed, "the Mac needs no permission")
-        model.setFillNamesAfterStop(true)
-        try await until { model.preferences.fillNamesAfterStop }
-        XCTAssertTrue(model.fillConsent.isEmpty, "the Mac never asks")
-        XCTAssertTrue(model.fillNamesTicked)
-        XCTAssertFalse(model.fillTitleTicked, "ticking the names leaves the title's box as it was")
-        var saved = try await savedPreferences(bridge) { $0.fillNamesAfterStop }
-        XCTAssertTrue(saved.fillNamesAfterStop)
-        XCTAssertFalse(saved.fillTitleAfterStop)
-
-        model.setFillTitleAfterStop(true)
-        try await until { model.preferences.fillTitleAfterStop }
-        XCTAssertTrue(model.fillTitleTicked)
-        XCTAssertTrue(model.fillNamesTicked)
-        saved = try await savedPreferences(bridge) { $0.fillTitleAfterStop }
-        XCTAssertTrue(saved.fillTitleAfterStop)
-        XCTAssertTrue(saved.fillNamesAfterStop)
-
-        model.aboutMe = "PM"
-        model.savePreferences()
-        try await until { model.preferences.aboutMe == "PM" }
-        XCTAssertTrue(model.preferences.fillTitleAfterStop)
-        XCTAssertTrue(model.preferences.fillNamesAfterStop)
-        saved = try await bridge.core.summaries.preferences()
-        XCTAssertEqual(saved.aboutMe, "PM")
-        XCTAssertTrue(saved.fillTitleAfterStop)
-        XCTAssertTrue(saved.fillNamesAfterStop)
-
-        // Off at once, the other box and the fields left as they were.
-        model.setFillTitleAfterStop(false)
-        XCTAssertFalse(model.preferences.fillTitleAfterStop, "off is shown at once")
-        XCTAssertTrue(model.preferences.fillNamesAfterStop)
-        let last = try await savedPreferences(bridge) { !$0.fillTitleAfterStop }
-        XCTAssertFalse(last.fillTitleAfterStop)
-        XCTAssertTrue(last.fillNamesAfterStop)
-        XCTAssertEqual(last.aboutMe, "PM")
+        XCTAssertFalse(model.autoFill, "signed out")
+        XCTAssertEqual(TitlePlaceholder.text(autoFill: model.autoFill), RecKitStrings.localized("Untitled"))
+        XCTAssertEqual(TitlePlaceholder.text(autoFill: true), RecKitStrings.localized("Filled in automatically"))
     }
 
     private func bridge() async throws -> CoreBridge {
@@ -505,28 +468,6 @@ final class NotesMenuTests: XCTestCase {
         }
     }
 
-    /// docs/09 screen principle 5: the title's box does nothing while the title field has a title — it is off then —
-    /// and `Save` asks for each half as its box shows, the title's only with the field empty.
-    func testTheTitleSheetAsksForWhatItsBoxesShow() {
-        XCTAssertTrue(TitleSheetFill.titleBoxEnabled(typedTitle: nil))
-        XCTAssertTrue(TitleSheetFill.titleBoxEnabled(typedTitle: ""))
-        XCTAssertTrue(TitleSheetFill.titleBoxEnabled(typedTitle: "  "), "spaces are no title")
-        XCTAssertFalse(TitleSheetFill.titleBoxEnabled(typedTitle: "Weekly sync"))
-
-        func ask(_ title: Bool, _ names: Bool, _ typed: String?) -> [Bool] {
-            let fill = TitleSheetFill(titleTicked: title, namesTicked: names, typedTitle: typed)
-            return [fill.title, fill.names, fill.any]
-        }
-        XCTAssertEqual(ask(true, true, nil), [true, true, true])
-        XCTAssertEqual(ask(true, false, nil), [true, false, true])
-        XCTAssertEqual(ask(false, true, nil), [false, true, true])
-        XCTAssertEqual(ask(false, false, nil), [false, false, false], "neither ticked: requestFill is not called")
-        XCTAssertEqual(ask(true, true, "Weekly sync"), [false, true, true], "a typed title is never replaced")
-        XCTAssertEqual(ask(true, false, "Weekly sync"), [false, false, false])
-        XCTAssertEqual(ask(true, false, " "), [true, false, true])
-        XCTAssertFalse(TitleSheetFill.none.any)
-    }
-
     /// docs/09 "AI view": the text cut at the citations the core finds, in UTF-16 as the core counts — a line
     /// in Korean with an emoji before the citation lands on the same characters.
     func testCitationsSplitTheTextWhereTheCoreFindsThem() {
@@ -656,97 +597,6 @@ final class SummaryTransferTests: XCTestCase {
         XCTAssertEqual(notes.failure.flatMap(ChatGptText.message), .chatgptSignInRequired)
     }
 
-    /// docs/08 "Titles and speaker names": on the iPhone ticking either of the title sheet's boxes asks for the ChatGPT
-    /// permission first, as Organize does — declined, it stays off; allowed, it is ticked, and either box is ticked
-    /// again later without asking.
-    func testTheIPhoneAsksBeforeATitleSheetBoxIsTicked() async throws {
-        let bridge = try await CoreBridge.make(
-            platform: .ios, deviceName: "Test iPhone",
-            dataDirectory: directory, databaseName: "fill-consent.db", secureStore: InMemorySecureStore(),
-            transcriptionPolicy: TranscriptionPolicy(region: nil)
-        )
-        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
-        let chatGpt = TransferTargets.shared.chatGptSummary()
-        // The saved preferences arrive first, as they do long before anyone stops a recording.
-        try await Task.sleep(for: .milliseconds(300))
-
-        model.setFillNamesAfterStop(true)
-        try await until { !model.fillConsent.isEmpty }
-        XCTAssertEqual(model.fillConsent.map(\.id), [chatGpt.id])
-        XCTAssertFalse(model.preferences.fillNamesAfterStop, "nothing is ticked before the answer")
-
-        await model.answerFillConsent(allow: false)
-        XCTAssertTrue(model.fillConsent.isEmpty)
-        XCTAssertFalse(model.preferences.fillNamesAfterStop)
-        let still = try await bridge.core.transferConsents.missing(targets: [chatGpt])
-        XCTAssertEqual(still.count, 1)
-        let declined = try await bridge.core.summaries.preferences()
-        XCTAssertFalse(declined.fillNamesAfterStop)
-
-        model.setFillTitleAfterStop(true)
-        try await until { !model.fillConsent.isEmpty }
-        await model.answerFillConsent(allow: true)
-        try await until { model.preferences.fillTitleAfterStop }
-        XCTAssertTrue(model.fillConsent.isEmpty)
-        XCTAssertFalse(model.preferences.fillNamesAfterStop, "the permission ticks the box it was asked for")
-        let missing = try await bridge.core.transferConsents.missing(targets: [chatGpt])
-        XCTAssertTrue(missing.isEmpty)
-        let saved = try await savedPreferences(bridge) { $0.fillTitleAfterStop }
-        XCTAssertTrue(saved.fillTitleAfterStop)
-        XCTAssertFalse(saved.fillNamesAfterStop)
-
-        // Off never asks; on again — either box — once allowed, does not either.
-        model.setFillTitleAfterStop(false)
-        XCTAssertFalse(model.preferences.fillTitleAfterStop)
-        XCTAssertTrue(model.fillConsent.isEmpty)
-        model.setFillNamesAfterStop(true)
-        try await until { model.preferences.fillNamesAfterStop }
-        XCTAssertTrue(model.fillConsent.isEmpty, "allowed once is allowed")
-        XCTAssertTrue(model.fillNamesTicked)
-    }
-
-    /// docs/08 "Titles and speaker names": on the iPhone both boxes show ticked only while the permission stands —
-    /// withdrawn in Settings → Privacy, they show unticked though they were left ticked, so Save asks for nothing, and
-    /// ticking one asks again.
-    func testTheIPhoneBoxesAreUntickedOnceThePermissionIsWithdrawn() async throws {
-        let bridge = try await CoreBridge.make(
-            platform: .ios, deviceName: "Test iPhone",
-            dataDirectory: directory, databaseName: "fill-withdrawn.db", secureStore: InMemorySecureStore(),
-            transcriptionPolicy: TranscriptionPolicy(region: nil)
-        )
-        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
-        let chatGpt = TransferTargets.shared.chatGptSummary()
-        try await Task.sleep(for: .milliseconds(300))
-        XCTAssertFalse(model.fillAllowed)
-        XCTAssertFalse(model.fillTitleTicked)
-        XCTAssertFalse(model.fillNamesTicked)
-
-        model.setFillTitleAfterStop(true)
-        try await until { !model.fillConsent.isEmpty }
-        await model.answerFillConsent(allow: true)
-        try await until { model.fillTitleTicked }
-        model.setFillNamesAfterStop(true)
-        try await until { model.fillNamesTicked }
-        XCTAssertTrue(model.fillAllowed)
-
-        try await bridge.core.transferConsents.revoke(id: chatGpt.id)
-        try await until { !model.fillTitleTicked && !model.fillNamesTicked }
-        XCTAssertFalse(model.fillAllowed)
-        XCTAssertTrue(model.preferences.fillTitleAfterStop, "how the boxes were left is kept")
-        XCTAssertTrue(model.preferences.fillNamesAfterStop)
-        let unticked = TitleSheetFill(titleTicked: model.fillTitleTicked, namesTicked: model.fillNamesTicked, typedTitle: nil)
-        XCTAssertFalse(unticked.any, "Save asks for nothing")
-
-        model.setFillNamesAfterStop(true)
-        try await until { !model.fillConsent.isEmpty }
-        XCTAssertFalse(model.fillNamesTicked, "nothing is ticked before the answer")
-        await model.answerFillConsent(allow: false)
-        XCTAssertFalse(model.fillNamesTicked)
-        XCTAssertFalse(model.fillTitleTicked)
-        let missing = try await bridge.core.transferConsents.missing(targets: [chatGpt])
-        XCTAssertEqual(missing.count, 1)
-    }
-
     /// docs/08 "Titles and speaker names" · docs/15 "iPhone providers": More → Fill in title asks for the ChatGPT
     /// permission first on the iPhone, and once allowed goes on — here to the recording that has no transcript. Fill in
     /// speaker names does the same.
@@ -788,17 +638,6 @@ final class SummaryTransferTests: XCTestCase {
         }
         XCTFail("timed out")
     }
-}
-
-/// The preferences as the core keeps them, once [condition] holds — a save runs after the screen shows it.
-@MainActor
-private func savedPreferences(_ bridge: CoreBridge, until condition: (SummaryPreferences) -> Bool) async throws -> SummaryPreferences {
-    var saved = try await bridge.core.summaries.preferences()
-    for _ in 0..<200 where !condition(saved) {
-        try await Task.sleep(for: .milliseconds(25))
-        saved = try await bridge.core.summaries.preferences()
-    }
-    return saved
 }
 
 /// A browser that does what the test says when the sign-in opens it.

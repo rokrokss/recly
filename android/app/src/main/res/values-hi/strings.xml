@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Recly में नोट्स आपके ChatGPT प्लान का इस्तेमाल करते हैं। आप ChatGPT सेटिंग में उपयोग प्रबंधित कर सकते हैं।</string>
     <string name="chatgpt_got_it">समझ गया</string>
     <string name="notes_consent_title">Recly रिकॉर्ड करते समय ही व्यवस्थित करता है</string>
-    <string name="notes_consent_body">जब तक आप ChatGPT में साइन इन हैं, Recly हर रिकॉर्डिंग के ट्रांसक्रिप्ट का टेक्स्ट रिकॉर्ड करते समय और रोकने के बाद आपके ChatGPT प्लान को भेजता है, और उसके फ़ैसलों, करने के कामों और सवालों की सूची बनाता है। ऑडियो कभी नहीं भेजा जाता। यह आपके प्लान के उपयोग में गिना जाता है।</string>
+    <string name="notes_consent_body">जब तक आप ChatGPT में साइन इन हैं, Recly हर रिकॉर्डिंग के ट्रांसक्रिप्ट का टेक्स्ट रिकॉर्ड करते समय और रोकने के बाद आपके ChatGPT प्लान को भेजता है, उसके फ़ैसलों, करने के कामों और सवालों की सूची बनाता है, और खाली शीर्षक व बोलने वालों के नाम भरता है। ऑडियो कभी नहीं भेजा जाता। यह आपके प्लान के उपयोग में गिना जाता है।</string>
+    <string name="title_auto_fill">अपने-आप भरा जाएगा</string>
     <string name="notes_consent_continue">जारी रखें</string>
     <string name="notes_decisions">फ़ैसले</string>
     <string name="notes_todos">करने के काम</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">पूछें</string>
     <string name="ask_running">पूछा जा रहा है…</string>
     <string name="ask_failed">जवाब नहीं मिल सका</string>
-    <string name="fill_after_stop_note">ट्रांसक्रिप्ट तैयार होने पर उसे ChatGPT को भेजा जाता है, ताकि खाली शीर्षक और नाम से पुकारे गए वक्ताओं के नाम मिल सकें। यह आपके ChatGPT उपयोग में गिना जाता है।</string>
     <string name="fill_running">भरा जा रहा है…</string>
     <string name="fill_title_menu">शीर्षक भरें</string>
     <string name="fill_names_menu">वक्ताओं के नाम भरें</string>
-    <string name="fill_title_after_stop">ChatGPT से शीर्षक भरें</string>
-    <string name="fill_names_after_stop">ChatGPT से वक्ताओं के नाम भरें</string>
     <string name="fill_has_title">शीर्षक पहले से है</string>
     <string name="fill_no_unnamed">बिना नाम का कोई वक्ता नहीं</string>
     <string name="fill_title_running">शीर्षक भरा जा रहा है…</string>

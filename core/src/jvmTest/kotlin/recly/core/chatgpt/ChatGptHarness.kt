@@ -8,6 +8,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import okio.ByteString.Companion.encodeUtf8
 import okio.fakefilesystem.FakeFileSystem
+import recly.core.transcribe.Recorded
 import recly.core.transcribe.ScriptedServer
 import recly.core.testing.FakeClock
 import recly.core.testing.FakeLogger
@@ -83,10 +84,24 @@ internal class ChatGptHarness(requireTransferConsent: Boolean = false, locale: S
     }
 
     /** What the keychain holds for this account, by key, as text. */
+    /**
+     * docs/08 "Titles and speaker names": the fill a signed-in, agreed user's every publication asks first, answered with
+     * nothing to fill in — for the tests about what comes after it — and the fill's requests among [server]'s.
+     */
+    fun answerFills() {
+        server.replyEach(::isFill, SSE_EMPTY, headers = mapOf("Content-Type" to "text/event-stream"))
+    }
+
+    fun isFill(request: Recorded): Boolean = request.url.endsWith("/responses") && FILL in request.text
+
     fun held(): Map<String, String> = store.entries.filterKeys { it.startsWith("chatgpt/") }
         .mapKeys { it.key.removePrefix("chatgpt/") }.mapValues { it.value.decodeToString() }
 
     companion object {
+        /** The first words of the fill's instructions (`Summaries.fillInstructions`). */
+        const val FILL = "You fill in details of a recording"
+        private const val SSE_EMPTY =
+            "data: {\"type\":\"response.output_text.delta\",\"delta\":\"{}\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{}}\n\n"
         const val REDIRECT = "http://127.0.0.1:50123/auth/callback"
         const val CLIENT = "oaiapp_test"
         const val SUBJECT = "user-1"

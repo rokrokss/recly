@@ -1,39 +1,23 @@
 package app.recly.windows.ui
 
-import app.recly.windows.SilentLogger
-import app.recly.windows.core.AppModule
 import app.recly.windows.i18n.Str
-import app.recly.windows.record.Completion
-import app.recly.windows.record.FillAsk
-import app.recly.windows.record.completeInOrder
-import app.recly.windows.record.fillAsk
-import app.recly.windows.record.fillTitleBoxEnabled
-import java.nio.file.Files
+import app.recly.windows.titlePlaceholder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import okio.Path.Companion.toPath
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
 import recly.core.chatgpt.FillNeeds
 import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
-import recly.core.job.EnqueueResult
 import recly.core.message.CoreMessage
 
 /**
  * docs/08 "Titles and speaker names" on the PC: why More → Fill in title and Fill in speaker names wait, each in the
- * order the reasons are checked; what each answer says under the header; what the title dialog's two boxes ask for;
- * its Save — the name, the fill request, the job, in that order; and each box starting as it was left.
+ * order the reasons are checked; what each answer says under the header; and the title dialog's placeholder, which
+ * says when a title left empty is filled in.
  */
 class FillTest {
 
@@ -115,73 +99,13 @@ class FillTest {
     }
 
     @Test
-    fun `the title box is disabled while the field has a title`() {
-        assertTrue(fillTitleBoxEnabled(""))
-        assertTrue(fillTitleBoxEnabled("  "))
-        assertFalse(fillTitleBoxEnabled("Weekly sync"))
-    }
-
-    @Test
-    fun `the title box asks only while there is no title, and either box alone asks for its half`() {
-        assertEquals(FillAsk(title = true, names = false), fillAsk(true, "", titleBox = true, namesBox = false))
-        assertEquals(FillAsk(title = false, names = true), fillAsk(true, "", titleBox = false, namesBox = true))
-        assertEquals(FillAsk(title = true, names = true), fillAsk(true, " ", titleBox = true, namesBox = true))
-        // A typed title is never replaced: the title box does nothing, the names box still asks.
-        assertNull(fillAsk(true, "Weekly sync", titleBox = true, namesBox = false))
-        assertEquals(FillAsk(title = false, names = true), fillAsk(true, "Weekly sync", titleBox = true, namesBox = true))
-        assertNull(fillAsk(true, "", titleBox = false, namesBox = false))
-        // Boxes that were not there ask for nothing, whatever they were left as.
-        assertNull(fillAsk(false, "", titleBox = true, namesBox = true))
-    }
-
-    @Test
-    fun `Save writes the name, then asks for the fill, then makes the job`() = runBlocking {
-        val calls = mutableListOf<String>()
-        val completion = completeInOrder(
-            name = { calls += "name"; false },
-            requestFill = { calls += "fill" },
-            enqueue = { calls += "enqueue"; EnqueueResult.Enqueued("j") },
-            fillFailed = { calls += "failed" },
-        )
-        assertEquals(listOf("name", "fill", "enqueue"), calls)
-        assertEquals(Completion(EnqueueResult.Enqueued("j"), titleTooLate = true), completion)
-    }
-
-    @Test
-    fun `unticked boxes ask for nothing, and a request that could not be kept costs the fill only`() = runBlocking {
-        val calls = mutableListOf<String>()
-        completeInOrder({ calls += "name"; true }, null, { calls += "enqueue"; EnqueueResult.Enqueued("j") }, { calls += "failed" })
-        assertEquals(listOf("name", "enqueue"), calls)
-        calls.clear()
-        val completion = completeInOrder({ true }, { error("disk") }, { calls += "enqueue"; EnqueueResult.Enqueued("j") }, { calls += "failed" })
-        assertEquals(listOf("failed", "enqueue"), calls)
-        assertEquals(Completion(EnqueueResult.Enqueued("j")), completion)
-    }
-
-    @Test
-    fun `each of the dialog's boxes starts as it was left last, on its own`() = runBlocking {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        val graph = AppModule.build(dataDir = Files.createTempDirectory("recly-fill").toString().toPath())
-        fun viewModel() = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.core.notes, graph.loopback, scope, SilentLogger).also { it.start() }
-        suspend fun until(condition: suspend () -> Boolean) = withTimeout(10_000) { while (!condition()) delay(20) }
-        try {
-            val stored = graph.core.summaries.preferences()
-            assertFalse(stored.fillTitleAfterStop || stored.fillNamesAfterStop, "unticked at first")
-            val first = viewModel()
-            first.rememberFillAfterStop(FillHalf.NAMES, true)
-            until { graph.core.summaries.preferences().fillNamesAfterStop && first.preferences.fillNamesAfterStop }
-            assertFalse(graph.core.summaries.preferences().fillTitleAfterStop, "the names box leaves the title box as it was")
-            // The next dialog reads them from what this PC kept.
-            val next = viewModel()
-            until { next.preferences.fillNamesAfterStop }
-            assertFalse(next.preferences.fillTitleAfterStop)
-            next.rememberFillAfterStop(FillHalf.TITLE, true)
-            until { graph.core.summaries.preferences().fillTitleAfterStop }
-            next.rememberFillAfterStop(FillHalf.NAMES, false)
-            until { !graph.core.summaries.preferences().fillNamesAfterStop }
-            assertTrue(graph.core.summaries.preferences().fillTitleAfterStop)
-        } finally {
-            scope.cancel()
-        }
+    fun `the title field says it fills itself only while the fill will run`() {
+        assertEquals(Str.TITLE_AUTO_FILL, titlePlaceholder(transcribes = true, connection = signedIn, needsConsent = false))
+        // Transcription off, ChatGPT not signed in (or not offered), or the notes consent not given: nothing fills it.
+        assertEquals(Str.UNTITLED, titlePlaceholder(transcribes = false, connection = signedIn, needsConsent = false))
+        assertEquals(Str.UNTITLED, titlePlaceholder(transcribes = true, connection = ChatGptConnection.SignedOut, needsConsent = false))
+        assertEquals(Str.UNTITLED, titlePlaceholder(transcribes = true, connection = ChatGptConnection.Expired("me@example.com"), needsConsent = false))
+        assertEquals(Str.UNTITLED, titlePlaceholder(transcribes = true, connection = null, needsConsent = false))
+        assertEquals(Str.UNTITLED, titlePlaceholder(transcribes = true, connection = signedIn, needsConsent = true))
     }
 }

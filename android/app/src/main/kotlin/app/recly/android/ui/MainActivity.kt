@@ -447,7 +447,6 @@ private fun RecordTab(
         onConsumeAutoStart = model::consumeAutoStart,
         onSaveTitle = model::saveTitle,
         onCancelTitle = model::cancelTitle,
-        onFillChanged = model::rememberFill,
         onConsentAnswered = model::consentAnswered,
         onNotesConsentAnswered = model::notesConsentAnswered,
         onDeleteNote = model::deleteNote,

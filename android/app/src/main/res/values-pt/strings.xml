@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">As notas no Recly usam seu plano do ChatGPT. Você pode gerenciar o uso nas configurações do ChatGPT.</string>
     <string name="chatgpt_got_it">Entendi</string>
     <string name="notes_consent_title">O Recly organiza enquanto você grava</string>
-    <string name="notes_consent_body">Enquanto você estiver conectado ao ChatGPT, o Recly envia o texto da transcrição de cada gravação para o seu plano do ChatGPT durante a gravação e depois que você para, e lista as decisões, tarefas e perguntas. O áudio nunca é enviado. Isso conta no uso do seu plano.</string>
+    <string name="notes_consent_body">Enquanto você estiver conectado ao ChatGPT, o Recly envia o texto da transcrição de cada gravação para o seu plano do ChatGPT durante a gravação e depois que você para, lista as decisões, tarefas e perguntas e preenche o título que faltar e os nomes de quem fala. O áudio nunca é enviado. Isso conta no uso do seu plano.</string>
+    <string name="title_auto_fill">Preenchido automaticamente</string>
     <string name="notes_consent_continue">Continuar</string>
     <string name="notes_decisions">Decisões</string>
     <string name="notes_todos">Tarefas</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Perguntar</string>
     <string name="ask_running">Perguntando…</string>
     <string name="ask_failed">Não foi possível responder</string>
-    <string name="fill_after_stop_note">Quando a transcrição estiver pronta, ela vai para o ChatGPT para receber o título que falta e os nomes dos falantes chamados pelo nome. Isso conta no seu uso do ChatGPT.</string>
     <string name="fill_running">Preenchendo…</string>
     <string name="fill_title_menu">Preencher título</string>
     <string name="fill_names_menu">Preencher nomes dos falantes</string>
-    <string name="fill_title_after_stop">Preencher o título com o ChatGPT</string>
-    <string name="fill_names_after_stop">Preencher os nomes dos falantes com o ChatGPT</string>
     <string name="fill_has_title">Já tem título</string>
     <string name="fill_no_unnamed">Nenhum falante sem nome</string>
     <string name="fill_title_running">Preenchendo o título…</string>

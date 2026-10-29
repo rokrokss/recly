@@ -69,7 +69,7 @@ data class SectionDraft(val key: Int, val id: String, val name: String, val desc
  */
 class ChatGptViewModel(
     private val account: ChatGptAccount,
-    /** Settings → Notes' About you and the title dialog's boxes are the requests' own (docs/08 "AI requests"). */
+    /** Settings → Notes' About you is the requests' own (docs/08 "AI requests"). */
     private val summaries: Summaries,
     /**
      * docs/08 "Organizing": the consent the sign-in asks for, a recording start while it is missing, and Settings →
@@ -88,7 +88,7 @@ class ChatGptViewModel(
         // Set by the off-screen shots alone, which draw the signed-in rows without signing in.
         internal set
 
-    /** About you, which notes and answers on this PC send, and how the title dialog's boxes were left — kept signed out too. */
+    /** About you, which notes and answers on this PC send — kept signed out too. */
     var preferences: SummaryPreferences by mutableStateOf(SummaryPreferences())
         private set
 
@@ -287,17 +287,6 @@ class ChatGptViewModel(
     }
 
     fun saveAboutMe(text: String) = savePreferences { it.copy(aboutMe = text) }
-
-    /**
-     * docs/08 "Titles and speaker names": each of the title dialog's ChatGPT boxes, ticked or not, is how the next
-     * dialog starts — kept on its own the moment it is changed, as Settings keeps its own.
-     */
-    fun rememberFillAfterStop(half: FillHalf, ticked: Boolean) = savePreferences {
-        when (half) {
-            FillHalf.TITLE -> it.copy(fillTitleAfterStop = ticked)
-            FillHalf.NAMES -> it.copy(fillNamesAfterStop = ticked)
-        }
-    }
 
     /** Shown at once; the core keeps it trimmed and capped, and [preferences] follows what it kept. */
     private fun savePreferences(change: (SummaryPreferences) -> SummaryPreferences) {
@@ -591,7 +580,7 @@ enum class FillHalf(
 
 /**
  * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "AI view"), in this order: Ask's
- * reasons, then a fill of [half] running ([running] — `observeFills()`, the title dialog's too), then nothing of it
+ * reasons, then a fill of [half] running ([running] — `observeFills()`, a publication's too), then nothing of it
  * missing — [needed] is [FillHalf.needed] for the recording as it is now, which a fill that is running may be about
  * to change.
  */

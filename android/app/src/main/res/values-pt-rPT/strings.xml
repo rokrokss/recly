@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">As notas no Recly utilizam o seu plano do ChatGPT. Pode gerir a utilização nas definições do ChatGPT.</string>
     <string name="chatgpt_got_it">Entendi</string>
     <string name="notes_consent_title">O Recly organiza enquanto grava</string>
-    <string name="notes_consent_body">Enquanto tiver sessão iniciada no ChatGPT, o Recly envia o texto da transcrição de cada gravação para o seu plano do ChatGPT durante a gravação e depois de parar, e lista as decisões, tarefas e perguntas. O áudio nunca é enviado. Isto conta para a utilização do seu plano.</string>
+    <string name="notes_consent_body">Enquanto tiver sessão iniciada no ChatGPT, o Recly envia o texto da transcrição de cada gravação para o seu plano do ChatGPT durante a gravação e depois de parar, lista as decisões, tarefas e perguntas e preenche o título em falta e os nomes de quem fala. O áudio nunca é enviado. Isto conta para a utilização do seu plano.</string>
+    <string name="title_auto_fill">Preenchido automaticamente</string>
     <string name="notes_consent_continue">Continuar</string>
     <string name="notes_decisions">Decisões</string>
     <string name="notes_todos">Tarefas</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Perguntar</string>
     <string name="ask_running">A perguntar…</string>
     <string name="ask_failed">Não foi possível responder</string>
-    <string name="fill_after_stop_note">Quando a transcrição estiver pronta, é enviada para o ChatGPT para obter o título em falta e os nomes dos oradores chamados pelo nome. Isto conta para a sua utilização do ChatGPT.</string>
     <string name="fill_running">A preencher…</string>
     <string name="fill_title_menu">Preencher título</string>
     <string name="fill_names_menu">Preencher nomes dos oradores</string>
-    <string name="fill_title_after_stop">Preencher o título com o ChatGPT</string>
-    <string name="fill_names_after_stop">Preencher os nomes dos oradores com o ChatGPT</string>
     <string name="fill_has_title">Já tem título</string>
     <string name="fill_no_unnamed">Nenhum orador sem nome</string>
     <string name="fill_title_running">A preencher o título…</string>

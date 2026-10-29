@@ -326,11 +326,12 @@ class ReclyCore(
     )
 
     /**
-     * docs/08 "Titles and speaker names": what a recording asks the user's ChatGPT plan for — before its transcript is
-     * published when the title sheet asked ([requestFill]), or on request ([fillTitle], [fillNames]).
+     * docs/08 "Titles and speaker names": what a recording asks the user's ChatGPT plan for — before each transcript
+     * this device publishes, for a user who agreed to the plan's background use, or on request ([fillTitle], [fillNames]).
      */
     private val autoFill = recly.core.chatgpt.AutoFill(
         db, deps, summaries, transferConsents, recordings,
+        agreed = { notes.agreed() },
         setTitle = { recordingId, title ->
             // In the folder before the transcript: whatever sees the transcript arrive reads the title with it.
             recordings.fillTitle(recordingId, title).also { if (it) remote.pushTitles() }
@@ -339,17 +340,6 @@ class ReclyCore(
         busy = ::transcriptBusy,
         name = ::nameSpeakers,
     )
-
-    /**
-     * docs/08 "Titles and speaker names": the title sheet after Stop was saved with its ChatGPT boxes ticked — `Fill in
-     * the title with ChatGPT` ([title]), `Fill in speaker names with ChatGPT` ([names]) or both. The recording's
-     * publication then asks the plan for that — a title only when it has none, names only for unnamed speakers — before
-     * the transcript goes up; call it before [enqueue], as the sheet's title is written, and not at all with neither
-     * box ticked. A transcript already published is filled at once, in the background, as [fill] fills. How each box
-     * was left is `SummaryPreferences.fillTitleAfterStop` / `fillNamesAfterStop`, saved by the shell.
-     */
-    @Throws(Throwable::class)
-    suspend fun requestFill(recordingId: String, title: Boolean, names: Boolean): Unit = autoFill.request(recordingId, title, names)
 
     /**
      * docs/08 "Titles and speaker names": asks the plan for what the recording lacks of [title] and [names]
@@ -518,7 +508,7 @@ class ReclyCore(
     /** Where an edit's push to storage runs, so the screen that saved it does not wait for the network. */
     private val pushes = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
 
-    /** Tests: wait for the background pushes [editTranscript] and [setHighlights] started, and the fills [requestFill] did. */
+    /** Tests: wait for the background pushes [editTranscript] and [setHighlights] started, and the fills [fill] started. */
     internal suspend fun awaitPushes() {
         autoFill.awaitRuns()
         pushes.coroutineContext[kotlinx.coroutines.Job]?.children?.toList()?.forEach { it.join() }

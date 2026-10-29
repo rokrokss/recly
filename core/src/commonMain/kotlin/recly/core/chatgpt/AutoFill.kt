@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -24,11 +23,8 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
 import recly.core.privacy.TransferConsents
 import recly.core.privacy.TransferTargets
-import recly.core.recording.FillRequest
-import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
 import recly.core.recording.RecordingRepository
-import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptFill
 import recly.core.transcribe.TranscriptFilled
@@ -94,13 +90,12 @@ sealed interface FillResult {
 }
 
 /**
- * docs/08 "Titles and speaker names": a recording's title and speaker names from the user's ChatGPT plan, asked for
- * one recording at a time, each on its own. The title sheet after Stop asks for either or both ([request]): the
- * transcript about to be published first asks — the publish runner's [TranscriptFill] — so the folder's first copy,
- * and whatever reads it, has them; nothing there stops the publication, a skip or a failure publishes the transcript
- * as it was. More → Fill in title and More → Fill in speaker names ask for a recording already transcribed
- * ([manual]). Either is the user's express consent to that use of the plan (docs/15 §10). What is asking now, for
- * either, is [observe].
+ * docs/08 "Titles and speaker names": a recording's title and speaker names from the user's ChatGPT plan. Every
+ * transcript this device publishes first asks for what it lacks — the publish runner's [TranscriptFill] — for a user
+ * signed in who agreed to the plan's background use ([agreed], docs/08 "Organizing"), so the folder's first copy, and
+ * whatever reads it, has them; nothing there stops the publication, a skip or a failure publishes the transcript as it
+ * was. More → Fill in title and More → Fill in speaker names ask for a recording already transcribed ([manual]), each
+ * on its own, on request (docs/15 §10). What is asking now, for either, is [observe].
  */
 internal class AutoFill(
     private val db: RecDatabase,
@@ -108,6 +103,8 @@ internal class AutoFill(
     private val summaries: Summaries,
     private val consents: TransferConsents,
     private val recordings: RecordingRepository,
+    /** Signed in to ChatGPT and agreed to the plan's background use — the notes' consent (docs/08 "Organizing"). */
+    private val agreed: suspend () -> Boolean,
     /** Gives the recording [title] if it still has none, and carries it to its folder; false when it was not given. */
     private val setTitle: suspend (recordingId: String, title: String) -> Boolean,
     /** The recording's transcript as its detail shows it: this device's copy, or its folder's. */
@@ -137,17 +134,14 @@ internal class AutoFill(
     /** docs/08 "Titles and speaker names": what is being filled in now — a publication's fill or the detail's. */
     fun observe(): Flow<List<FillRun>> = asking.map { it.values.toList() }
 
+    /**
+     * Signed out, or not agreed, the transcript is published as it is and nothing is logged: the same no-op `notes.organize`
+     * is for anyone else. A publication tried again asks again for what is still missing.
+     */
     override suspend fun fill(recording: RecordingRecord, transcript: Transcript): TranscriptFilled {
-        val asked = recordings.fillRequest(recording.id) ?: return TranscriptFilled(transcript)
-        val filled = publish(recording, transcript, asked)
-        // Asked once — filled, failed or skipped. A pass cut short never gets here, and its publication asks again.
-        recordings.takeFillRequest(recording.id)
-        return filled
-    }
-
-    private suspend fun publish(recording: RecordingRecord, transcript: Transcript, asked: FillRequest): TranscriptFilled {
         val unchanged = TranscriptFilled(transcript)
-        val needs = FillNeeds.of(recordings.get(recording.id)?.meta?.title, transcript).only(asked.title, asked.names)
+        if (!agreed()) return unchanged
+        val needs = FillNeeds.of(recordings.get(recording.id)?.meta?.title, transcript)
         if (!needs.any) return unchanged.also { skipped(recording.id, PUBLISH, "nothing") }
         backgroundSkip()?.let { reason -> return unchanged.also { skipped(recording.id, PUBLISH, reason) } }
         return shown(recording.id, needs) {
@@ -165,30 +159,6 @@ internal class AutoFill(
             done(recording.id, PUBLISH, titled != null, answer.speakers.count { it.key in needs.speakers })
             TranscriptFilled(if (named.speakers == transcript.speakers) transcript else named, titled)
         }
-    }
-
-    /**
-     * The title sheet's boxes were ticked for [recordingId] — [title], [names] or both: kept for its publication. A
-     * transcript already published — its job settled while the sheet was open — is filled now, in the background, as
-     * [manual] fills.
-     */
-    suspend fun request(recordingId: String, title: Boolean, names: Boolean) {
-        if (!title && !names) return
-        if (!recordings.requestFill(recordingId, title, names)) return
-        deps.logger.log(Logger.Level.INFO, "summary.fill.requested", mapOf("recordingId" to recordingId, "title" to title, "names" to names))
-        if (busy(recordingId) || !transcribedHere(recordingId)) return
-        val asked = recordings.takeFillRequest(recordingId) ?: return
-        scope.launch { manual(recordingId, asked.title, asked.names) }
-    }
-
-    /**
-     * This device's copy of the transcript is on disk. Asked only with no job left to settle, when it means the
-     * publication is over — a look at the disk, never at the folder.
-     */
-    private suspend fun transcribedHere(recordingId: String): Boolean {
-        val record = recordings.get(recordingId) ?: return false
-        val path = record.dir / TranscribeRunner.jsonFileName(MetaWriter.baseName(record.meta))
-        return withContext(deps.io) { deps.fileSystem.exists(path) }
     }
 
     /**
@@ -323,7 +293,7 @@ internal class AutoFill(
         withContext(deps.io) { db.recQueries.kvSet(PAUSED_UNTIL, until.toString()) }
     }
 
-    /** Tests: wait for the fills [request] started in the background. */
+    /** Tests: wait for the fills [manual] started. */
     internal suspend fun awaitRuns() {
         scope.coroutineContext[kotlinx.coroutines.Job]?.children?.toList()?.forEach { it.join() }
     }
@@ -331,10 +301,7 @@ internal class AutoFill(
     internal companion object {
         const val PAUSED_UNTIL = "summary/fill/paused_until"
 
-        /**
-         * The `trigger` of the log events: a publication the title sheet asked for, or the detail's More → Fill in title
-         * or Fill in speaker names (and a request that came after the publication).
-         */
+        /** The `trigger` of the log events: a publication, or the detail's More → Fill in title or Fill in speaker names. */
         const val PUBLISH = "publish"
         const val MANUAL = "manual"
 

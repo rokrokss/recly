@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Recly’deki notlar ChatGPT planınızı kullanır. Kullanımı ChatGPT ayarlarından yönetebilirsiniz.</string>
     <string name="chatgpt_got_it">Anladım</string>
     <string name="notes_consent_title">Recly siz kaydederken düzenler</string>
-    <string name="notes_consent_body">ChatGPT’de oturumunuz açıkken Recly, her kaydın transkript metnini kayıt sırasında ve kaydı durdurduktan sonra ChatGPT planınıza gönderir; kararları, yapılacakları ve soruları listeler. Ses asla gönderilmez. Bu, planınızın kullanımına dahildir.</string>
+    <string name="notes_consent_body">ChatGPT’de oturumunuz açıkken Recly, her kaydın transkript metnini kayıt sırasında ve kaydı durdurduktan sonra ChatGPT planınıza gönderir; kararları, yapılacakları ve soruları listeler, eksik başlığı ve konuşmacıların adlarını doldurur. Ses asla gönderilmez. Bu, planınızın kullanımına dahildir.</string>
+    <string name="title_auto_fill">Otomatik doldurulur</string>
     <string name="notes_consent_continue">Devam</string>
     <string name="notes_decisions">Kararlar</string>
     <string name="notes_todos">Yapılacaklar</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Sor</string>
     <string name="ask_running">Soruluyor…</string>
     <string name="ask_failed">Yanıtlanamadı</string>
-    <string name="fill_after_stop_note">Döküm hazır olduğunda eksik başlık ve adıyla seslenilen konuşmacıların adları için ChatGPT’ye gönderilir. Bu, ChatGPT kullanımınıza sayılır.</string>
     <string name="fill_running">Dolduruluyor…</string>
     <string name="fill_title_menu">Başlığı doldur</string>
     <string name="fill_names_menu">Konuşmacı adlarını doldur</string>
-    <string name="fill_title_after_stop">Başlığı ChatGPT ile doldur</string>
-    <string name="fill_names_after_stop">Konuşmacı adlarını ChatGPT ile doldur</string>
     <string name="fill_has_title">Zaten bir başlığı var</string>
     <string name="fill_no_unnamed">Adsız konuşmacı yok</string>
     <string name="fill_title_running">Başlık dolduruluyor…</string>

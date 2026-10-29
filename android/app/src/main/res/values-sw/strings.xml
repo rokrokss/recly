@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Madokezo katika Recly hutumia mpango wako wa ChatGPT. Unaweza kudhibiti matumizi kwenye mipangilio ya ChatGPT.</string>
     <string name="chatgpt_got_it">Nimeelewa</string>
     <string name="notes_consent_title">Recly hupanga unaporekodi</string>
-    <string name="notes_consent_body">Ukiwa umeingia kwenye ChatGPT, Recly hutuma maandishi ya unukuzi wa kila rekodi kwenye mpango wako wa ChatGPT unaporekodi na baada ya kusimamisha, na huorodhesha maamuzi, majukumu na maswali yake. Sauti haitumwi kamwe. Hii huhesabiwa katika matumizi ya mpango wako.</string>
+    <string name="notes_consent_body">Ukiwa umeingia kwenye ChatGPT, Recly hutuma maandishi ya unukuzi wa kila rekodi kwenye mpango wako wa ChatGPT unaporekodi na baada ya kusimamisha, huorodhesha maamuzi, majukumu na maswali yake, na hujaza jina la rekodi linalokosekana na majina ya wazungumzaji. Sauti haitumwi kamwe. Hii huhesabiwa katika matumizi ya mpango wako.</string>
+    <string name="title_auto_fill">Hujazwa kiotomatiki</string>
     <string name="notes_consent_continue">Endelea</string>
     <string name="notes_decisions">Maamuzi</string>
     <string name="notes_todos">Majukumu</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Uliza</string>
     <string name="ask_running">Inauliza…</string>
     <string name="ask_failed">Imeshindwa kujibu</string>
-    <string name="fill_after_stop_note">Nakala ikishakamilika, hutumwa kwa ChatGPT ili kupata kichwa kinachokosekana na majina ya wazungumzaji walioitwa kwa majina. Hii huhesabiwa katika matumizi yako ya ChatGPT.</string>
     <string name="fill_running">Inajaza…</string>
     <string name="fill_title_menu">Jaza kichwa</string>
     <string name="fill_names_menu">Jaza majina ya wazungumzaji</string>
-    <string name="fill_title_after_stop">Jaza kichwa kwa ChatGPT</string>
-    <string name="fill_names_after_stop">Jaza majina ya wazungumzaji kwa ChatGPT</string>
     <string name="fill_has_title">Tayari ina kichwa</string>
     <string name="fill_no_unnamed">Hakuna mzungumzaji asiye na jina</string>
     <string name="fill_title_running">Inajaza kichwa…</string>

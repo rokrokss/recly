@@ -6,6 +6,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.SystemClock
+import androidx.annotation.StringRes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.view.HapticFeedbackConstants
@@ -115,11 +116,9 @@ fun RecordingSection(
     /** The permission is there again — the refusal in [RecordingUiState.micRefused] is over. */
     onMicGranted: () -> Unit,
     onConsumeAutoStart: () -> Boolean,
-    /** The title, the head count, and what the sheet's ChatGPT boxes ask for — null for nothing. */
-    onSaveTitle: (String, Int?, FillAsk?) -> Unit,
+    /** The title and the head count. */
+    onSaveTitle: (String, Int?) -> Unit,
     onCancelTitle: () -> Unit,
-    /** One of the sheet's ChatGPT boxes changed: the next sheet starts as it was left. */
-    onFillChanged: (FillHalf, Boolean) -> Unit,
     onConsentAnswered: (Boolean, Boolean) -> Unit,
     modifier: Modifier = Modifier,
     /** The first-run card that offers the speech model, at the top of the tab ([ModelPromptCard]). */
@@ -304,8 +303,7 @@ fun RecordingSection(
     if (state.untitled != null) {
         val transcribes = state.processing.mode != recly.core.processing.TranscriptionMode.OFF
         TitleDialog(onSave = onSaveTitle, onCancel = onCancelTitle, askParticipants = transcribes,
-            askFill = transcribes && state.chatGpt is recly.core.chatgpt.ChatGptConnection.SignedIn,
-            fillTitleInitially = state.fillTitleAfterStop, fillNamesInitially = state.fillNamesAfterStop, onFillChanged = onFillChanged)
+            placeholder = titlePlaceholder(transcribes, state.chatGpt, state.notesConsentNeeded))
     }
 
     if (state.consentPrompt) {
@@ -638,26 +636,18 @@ private fun granted(context: Context, permission: String): Boolean =
  * docs/03 "Titles": it closes through its two buttons only — Back and a tap outside do nothing, because the
  * second button deletes the recording and no gesture should come near that.
  *
- * docs/08 "Titles and speaker names": under the head count, [askFill] — ChatGPT signed in and transcription on —
- * offers two boxes, one asking ChatGPT for this recording's title and one for its speakers' names once it is
- * transcribed, with what that sends under both. Each starts as it was left last ([fillTitleInitially],
- * [fillNamesInitially]). While the field has a title the title box would do nothing, so it is disabled, keeping what
- * it says; Save says what the boxes ask for ([fillAsk]).
+ * docs/08 "Titles and speaker names": the field's [placeholder] says whether a title left empty is filled in
+ * ([titlePlaceholder]).
  */
 @Composable
 internal fun TitleDialog(
-    onSave: (String, Int?, FillAsk?) -> Unit,
+    onSave: (String, Int?) -> Unit,
     onCancel: () -> Unit,
     askParticipants: Boolean = true,
-    askFill: Boolean = false,
-    fillTitleInitially: Boolean = false,
-    fillNamesInitially: Boolean = false,
-    onFillChanged: (FillHalf, Boolean) -> Unit = { _, _ -> },
+    @StringRes placeholder: Int = R.string.jobs_untitled,
 ) {
     var title by remember { mutableStateOf("") }
     var participants by remember { mutableStateOf<Int?>(null) }
-    var fillTitle by remember { mutableStateOf(fillTitleInitially) }
-    var fillNames by remember { mutableStateOf(fillNamesInitially) }
     BlueprintDialog(
         title = stringResource(R.string.recording_title_prompt),
         onDismissRequest = {},
@@ -673,14 +663,14 @@ internal fun TitleDialog(
             )
             BlueprintButton(
                 label = stringResource(R.string.recording_title_save),
-                onClick = { onSave(title, participants, fillAsk(askFill, title, fillTitle, fillNames)) },
+                onClick = { onSave(title, participants) },
                 modifier = Modifier.widthIn(min = 120.dp),
                 tone = ButtonTone.PRIMARY,
             )
         },
     ) {
         BlueprintField(title, { title = it }, Modifier.fillMaxWidth(), label = stringResource(R.string.recording_title_field),
-            placeholder = stringResource(R.string.jobs_untitled), fieldModifier = Modifier.testTag("title-field"))
+            placeholder = stringResource(placeholder), fieldModifier = Modifier.testTag("title-field"))
         if (!askParticipants) return@BlueprintDialog
         BlueprintDialogText(
             stringResource(R.string.recording_participants),
@@ -699,28 +689,6 @@ internal fun TitleDialog(
                 )
             }
         }
-        if (!askFill) return@BlueprintDialog
-        BlueprintCheckRow(
-            label = stringResource(R.string.fill_title_after_stop),
-            checked = fillTitle,
-            onCheckedChange = {
-                fillTitle = it
-                onFillChanged(FillHalf.TITLE, it)
-            },
-            modifier = Modifier.testTag("title-fill-title"),
-            enabled = fillTitleBoxEnabled(title),
-        )
-        BlueprintCheckRow(
-            label = stringResource(R.string.fill_names_after_stop),
-            checked = fillNames,
-            onCheckedChange = {
-                fillNames = it
-                onFillChanged(FillHalf.NAMES, it)
-            },
-            modifier = Modifier.testTag("title-fill-names"),
-        )
-        // What the boxes send, when, and that it counts toward the plan: the consent they are (docs/15 §10).
-        BlueprintDialogText(stringResource(R.string.fill_after_stop_note), tone = DialogTone.MUTED)
     }
 }
 

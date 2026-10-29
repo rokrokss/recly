@@ -552,12 +552,9 @@
   "Still transcribing on this device — try again once it has finished": "اس ڈیوائس پر ابھی ٹرانسکرائب ہو رہا ہے — ختم ہونے پر دوبارہ کوشش کریں",
   "Turn it on in Settings → Apps → Recly → Permissions.": "اسے ترتیبات ← ایپس ← Recly ← اجازتیں میں آن کریں۔",
   "Asked before every recording.": "ہر ریکارڈنگ سے پہلے پوچھا جاتا ہے۔",
-  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "ٹرانسکرپٹ تیار ہونے پر اسے ChatGPT کو بھیجا جاتا ہے تاکہ خالی عنوان اور نام لے کر پکارے گئے بولنے والوں کے نام مل سکیں۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔",
   "Filling in…": "بھرا جا رہا ہے…",
   "Fill in title": "عنوان بھریں",
   "Fill in speaker names": "بولنے والوں کے نام بھریں",
-  "Fill in the title with ChatGPT": "ChatGPT سے عنوان بھریں",
-  "Fill in speaker names with ChatGPT": "ChatGPT سے بولنے والوں کے نام بھریں",
   "Already has a title": "عنوان پہلے سے موجود ہے",
   "No unnamed speakers": "کوئی بے نام بولنے والا نہیں",
   "Filling in the title…": "عنوان بھرا جا رہا ہے…",
@@ -566,7 +563,7 @@
   "Could not fill in the title": "عنوان نہیں بھرا جا سکا",
   "Could not fill in speaker names": "بولنے والوں کے نام نہیں بھرے جا سکے",
   "Recly organizes while you record": "Recly ریکارڈنگ کے دوران ہی ترتیب دیتا ہے",
-  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "جب تک آپ ChatGPT میں سائن ان ہیں، Recly ہر ریکارڈنگ کی ٹرانسکرپٹ کا متن ریکارڈنگ کے دوران اور روکنے کے بعد آپ کے ChatGPT پلان کو بھیجتا ہے، اور اس کے فیصلوں، کرنے کے کاموں اور سوالات کی فہرست بناتا ہے۔ آڈیو کبھی نہیں بھیجا جاتا۔ یہ آپ کے پلان کے استعمال میں شمار ہوتا ہے۔",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers' names. Audio is never sent. This counts toward your plan.": "جب تک آپ ChatGPT میں سائن ان ہیں، Recly ہر ریکارڈنگ کی ٹرانسکرپٹ کا متن ریکارڈنگ کے دوران اور روکنے کے بعد آپ کے ChatGPT پلان کو بھیجتا ہے، اس کے فیصلوں، کرنے کے کاموں اور سوالات کی فہرست بناتا ہے، اور خالی عنوان اور بولنے والوں کے نام بھرتا ہے۔ آڈیو کبھی نہیں بھیجا جاتا۔ یہ آپ کے پلان کے استعمال میں شمار ہوتا ہے۔",
   "Decisions": "فیصلے",
   "To-dos": "کرنے کے کام",
   "Questions": "سوالات",
@@ -577,5 +574,6 @@
   "Recording stopped: battery low": "ریکارڈنگ رک گئی: بیٹری کم ہے",
   "Recording alerts": "ریکارڈنگ الرٹس",
   "Recording paused": "ریکارڈنگ عارضی طور پر رکی ہوئی ہے",
-  "Open Recly to keep recording.": "ریکارڈنگ جاری رکھنے کے لیے Recly کھولیں۔"
+  "Open Recly to keep recording.": "ریکارڈنگ جاری رکھنے کے لیے Recly کھولیں۔",
+  "Filled in automatically": "خودبخود بھرا جائے گا"
 }

@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Gli appunti in Recly usano il tuo piano ChatGPT. Puoi gestire l’utilizzo nelle impostazioni di ChatGPT.</string>
     <string name="chatgpt_got_it">Ho capito</string>
     <string name="notes_consent_title">Recly organizza mentre registri</string>
-    <string name="notes_consent_body">Finché hai effettuato l’accesso a ChatGPT, Recly invia il testo della trascrizione di ogni registrazione al tuo piano ChatGPT mentre registri e dopo l’interruzione, ed elenca decisioni, cose da fare e domande. L’audio non viene mai inviato. Questo rientra nell’utilizzo del tuo piano.</string>
+    <string name="notes_consent_body">Finché hai effettuato l’accesso a ChatGPT, Recly invia il testo della trascrizione di ogni registrazione al tuo piano ChatGPT mentre registri e dopo l’interruzione, elenca decisioni, cose da fare e domande e completa il titolo mancante e i nomi di chi parla. L’audio non viene mai inviato. Questo rientra nell’utilizzo del tuo piano.</string>
+    <string name="title_auto_fill">Compilato automaticamente</string>
     <string name="notes_consent_continue">Continua</string>
     <string name="notes_decisions">Decisioni</string>
     <string name="notes_todos">Cose da fare</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Chiedi</string>
     <string name="ask_running">Domanda in corso…</string>
     <string name="ask_failed">Impossibile rispondere</string>
-    <string name="fill_after_stop_note">Quando la trascrizione è pronta, viene inviata a ChatGPT per il titolo mancante e i nomi degli interlocutori chiamati per nome. Conta nel tuo utilizzo di ChatGPT.</string>
     <string name="fill_running">Completamento in corso…</string>
     <string name="fill_title_menu">Completa titolo</string>
     <string name="fill_names_menu">Completa nomi degli interlocutori</string>
-    <string name="fill_title_after_stop">Completa il titolo con ChatGPT</string>
-    <string name="fill_names_after_stop">Completa i nomi degli interlocutori con ChatGPT</string>
     <string name="fill_has_title">Ha già un titolo</string>
     <string name="fill_no_unnamed">Nessun interlocutore senza nome</string>
     <string name="fill_title_running">Completamento del titolo…</string>

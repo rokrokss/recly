@@ -50,9 +50,8 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// docs/08 "Organizing": signed in and not agreed (`notes.observeNeedsConsent()`) — a start from the app's own
     /// screen asks first.
     @Published public private(set) var needsOrganizeConsent = false
-    /// docs/08 "AI requests": this device's About you and how the title sheet's two ChatGPT boxes were left ("Titles
-    /// and speaker names"), as saved — shown and editable signed in or out.
-    @Published public private(set) var preferences = SummaryPreferences(aboutMe: "", fillTitleAfterStop: false, fillNamesAfterStop: false)
+    /// docs/08 "AI requests": this device's About you, as saved — shown and editable signed in or out.
+    @Published public private(set) var preferences = SummaryPreferences(aboutMe: "")
     /// About you as its field holds it; saved when editing ends ([savePreferences]).
     @Published public var aboutMe = ""
     /// docs/08 "Organizing" — "Settings": what this device asks every recording's notes for, as saved — Settings → Notes.
@@ -60,9 +59,6 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// Notes instructions and My sections as their fields hold them; saved when editing ends ([saveNotes]).
     @Published public var instructions = ""
     @Published public var sections: [NoteSectionDraft] = []
-    /// docs/15 "iPhone providers": the ChatGPT destination the title sheet's boxes wait on before either is ticked —
-    /// asked about only where the core requires the permission, so never on the Mac.
-    @Published public private(set) var fillConsent: [TransferTarget] = []
     /// docs/15 "iPhone providers": the transcript may go to ChatGPT now — at once where no permission is asked (the
     /// Mac); on the iPhone once allowed, and no longer once withdrawn in Settings → Privacy.
     @Published public private(set) var fillAllowed: Bool
@@ -135,9 +131,11 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// docs/15 "China mainland App Store": the whole section goes where ChatGPT is not offered.
     public var available: Bool { !(connection is ChatGptConnection.Unavailable) }
 
-    /// docs/08 "Titles and speaker names": the title sheet offers its ChatGPT boxes only while signed in — an ended
-    /// sign-in is not one, and signed in means ChatGPT is offered here. The shell adds that transcription is on.
-    public var fillOffered: Bool { connection is ChatGptConnection.SignedIn }
+    /// docs/08 "Titles and speaker names": a recording published now has its missing title and its speakers' names filled
+    /// in — signed in (an ended sign-in is not one, and signed in means ChatGPT is offered here), agreed to the notes'
+    /// consent, and the plan a destination the transcript may go to (the iPhone's permission). The shell adds that
+    /// transcription is on.
+    public var autoFill: Bool { connection is ChatGptConnection.SignedIn && !needsOrganizeConsent && fillAllowed }
 
     /// Reads the sign-in this device holds and the plan's models — when the app opens and when Settings
     /// does. A keychain that will not be read leaves what the screen shows as it was.
@@ -203,91 +201,15 @@ public final class ChatGptSettingsModel: ObservableObject {
         Task { try? await core.chatGpt.selectModel(id: id) }
     }
 
-    // MARK: - About you and the title sheet's boxes (docs/08 "AI requests")
+    // MARK: - About you (docs/08 "AI requests")
 
-    /// The saved boxes with About you as its field holds it.
-    public var shownPreferences: SummaryPreferences {
-        SummaryPreferences(
-            aboutMe: aboutMe, fillTitleAfterStop: preferences.fillTitleAfterStop, fillNamesAfterStop: preferences.fillNamesAfterStop
-        )
-    }
-
-    /// docs/08 "Titles and speaker names": the title sheet's `Fill in the title with ChatGPT` as it shows — ticked only
-    /// when it was left ticked and the transcript may go to ChatGPT now, so a permission withdrawn since never spends a
-    /// request. Unticked so, ticking it asks again.
-    public var fillTitleTicked: Bool { preferences.fillTitleAfterStop && fillAllowed }
-
-    /// `Fill in speaker names with ChatGPT` as it shows, by [fillTitleTicked]'s rule.
-    public var fillNamesTicked: Bool { preferences.fillNamesAfterStop && fillAllowed }
+    /// About you as its field holds it.
+    public var shownPreferences: SummaryPreferences { SummaryPreferences(aboutMe: aboutMe) }
 
     /// A keychain that will not be read proves no grant, as the core's own guard reads it.
     private func readFillConsent() async {
         let missing = try? await core.transferConsents.missing(targets: [TransferTargets.shared.chatGptSummary()])
         fillAllowed = missing?.isEmpty ?? false
-    }
-
-    /// docs/08 "Titles and speaker names": the title sheet's `Fill in the title with ChatGPT`, as the next sheet starts
-    /// it — remembered apart from the names' box. Saved at once; see [switchFill].
-    public func setFillTitleAfterStop(_ on: Bool) {
-        switchFill(on) { [weak self] in self?.showFill(title: on) }
-    }
-
-    /// The title sheet's `Fill in speaker names with ChatGPT`, as [setFillTitleAfterStop] keeps the title's.
-    public func setFillNamesAfterStop(_ on: Bool) {
-        switchFill(on) { [weak self] in self?.showFill(names: on) }
-    }
-
-    /// Off goes at once and never asks. On sends the recording's transcript to OpenAI, so where the ChatGPT
-    /// destination needs the user's permission and does not have it yet — the iPhone — it is asked for first
-    /// ([fillConsent]), and the box stays off until it is given: a request the core could not run is never made.
-    private func switchFill(_ on: Bool, apply: @escaping () -> Void) {
-        guard on else { apply(); return }
-        Task {
-            do {
-                let missing = try await core.transferConsents.missing(targets: [TransferTargets.shared.chatGptSummary()])
-                if missing.isEmpty {
-                    fillAllowed = true
-                    apply()
-                } else {
-                    afterFillConsent = apply
-                    fillConsent = missing
-                }
-            } catch {
-                logger.error("shell.chatgpt.preferences.failed error=\(String(describing: error), privacy: .private)")
-            }
-        }
-    }
-
-    /// One box shown at once and saved, the other as it was and About you as its field holds it.
-    private func showFill(title: Bool? = nil, names: Bool? = nil) {
-        preferences = SummaryPreferences(
-            aboutMe: preferences.aboutMe,
-            fillTitleAfterStop: title ?? preferences.fillTitleAfterStop,
-            fillNamesAfterStop: names ?? preferences.fillNamesAfterStop
-        )
-        save(shownPreferences)
-    }
-
-    /// What [fillConsent] goes on to do once it is allowed: ticking the box it stood in front of.
-    private var afterFillConsent: (() -> Void)?
-
-    /// The answer to [fillConsent]: allowed, exactly the destination shown is granted and the box is ticked;
-    /// declined, it stays off and nothing is sent. One permission serves both boxes.
-    public func answerFillConsent(allow: Bool) async {
-        let shown = fillConsent
-        let next = afterFillConsent
-        fillConsent = []
-        afterFillConsent = nil
-        guard allow, !shown.isEmpty else { return }
-        do {
-            try await core.transferConsents.grant(targets: shown)
-        } catch {
-            logger.error("shell.chatgpt.preferences.failed error=\(String(describing: error), privacy: .private)")
-            return
-        }
-        // Ticked as it is allowed, not a moment later when the grant comes back through [consentObserver].
-        fillAllowed = true
-        next?()
     }
 
     /// About you's end of editing — focus gone, Return, the screen closed. Nothing to do when what it holds is what is

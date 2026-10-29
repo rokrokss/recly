@@ -552,12 +552,9 @@
   "Still transcribing on this device — try again once it has finished": "Transcription encore en cours sur cet appareil — réessayez une fois terminée",
   "Turn it on in Settings → Apps → Recly → Permissions.": "Activez-la dans Paramètres → Applications → Recly → Autorisations.",
   "Asked before every recording.": "Demandé avant chaque enregistrement.",
-  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "Une fois la transcription prête, elle est envoyée à ChatGPT pour obtenir le titre manquant et le nom des locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT.",
   "Filling in…": "Complétion en cours…",
   "Fill in title": "Compléter le titre",
   "Fill in speaker names": "Compléter les noms des locuteurs",
-  "Fill in the title with ChatGPT": "Compléter le titre avec ChatGPT",
-  "Fill in speaker names with ChatGPT": "Compléter les noms des locuteurs avec ChatGPT",
   "Already has a title": "A déjà un titre",
   "No unnamed speakers": "Aucun locuteur sans nom",
   "Filling in the title…": "Complétion du titre…",
@@ -566,7 +563,7 @@
   "Could not fill in the title": "Impossible de compléter le titre",
   "Could not fill in speaker names": "Impossible de compléter les noms des locuteurs",
   "Recly organizes while you record": "Recly organise pendant que vous enregistrez",
-  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Tant que vous êtes connecté à ChatGPT, Recly envoie le texte de la transcription de chaque enregistrement à votre forfait ChatGPT pendant l’enregistrement et après l’arrêt, et en liste les décisions, les tâches et les questions. L’audio n’est jamais envoyé. Cela compte dans l’utilisation de votre forfait.",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers' names. Audio is never sent. This counts toward your plan.": "Tant que vous êtes connecté à ChatGPT, Recly envoie le texte de la transcription de chaque enregistrement à votre forfait ChatGPT pendant l’enregistrement et après l’arrêt, en liste les décisions, les tâches et les questions, et complète le titre manquant et les noms des intervenants. L’audio n’est jamais envoyé. Cela compte dans l’utilisation de votre forfait.",
   "Decisions": "Décisions",
   "To-dos": "Tâches",
   "Questions": "Questions",
@@ -577,5 +574,6 @@
   "Recording stopped: battery low": "Enregistrement arrêté : batterie faible",
   "Recording alerts": "Alertes d’enregistrement",
   "Recording paused": "Enregistrement en pause",
-  "Open Recly to keep recording.": "Ouvrez Recly pour reprendre l’enregistrement."
+  "Open Recly to keep recording.": "Ouvrez Recly pour reprendre l’enregistrement.",
+  "Filled in automatically": "Rempli automatiquement"
 }

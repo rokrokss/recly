@@ -2,8 +2,6 @@ package recly.core.chatgpt
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
@@ -18,15 +16,22 @@ import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
 
 /**
- * docs/08 "Titles and speaker names" through the whole core: the title sheet's two boxes, More → Fill in title and
- * More → Fill in speaker names, and what is being filled in meanwhile.
+ * docs/08 "Titles and speaker names" through the whole core: a publication's fill for a user who agreed, More → Fill in
+ * title and More → Fill in speaker names, and what is being filled in meanwhile.
  */
 class FillTest {
+
     private val chatGpt = ChatGptHarness()
     private val f = CoreFixture(engine = FakeLocalEngine(supportsDiarization = true), chatGpt = chatGpt.server.transport(chatGpt.fs))
 
     private suspend fun signIn() {
         chatGpt.signIn(account = f.core.chatGpt)
+    }
+
+    /** Signed in and agreed to the plan's background use (docs/08 "Organizing"): every publication fills in. */
+    private suspend fun agree() {
+        signIn()
+        f.core.notes.consent()
     }
 
     private fun answer(text: String) {
@@ -39,17 +44,19 @@ class FillTest {
 
     private fun asked() = chatGpt.server.requests.count { it.url.endsWith("/responses") }
 
+    /** The fill's requests alone: an agreed user's recording is organized after it is published, too. */
+    private fun fills() = chatGpt.server.requests.filter(chatGpt::isFill)
+
     private fun inFolder(base: String): Pair<Transcript, Map<String, String>> =
         f.drive.byName(TranscribeRunner.jsonFileName(base))!!.let { recJson.decodeFromString<Transcript>(it.content.decodeToString()) to it.appProperties }
 
     @Test
-    fun `a recording the title sheet asked for goes up with its title and names`() = runBlocking {
-        signIn()
+    fun `an agreed user's recording goes up with its title and names`() = runBlocking {
+        agree()
         val meta = f.record()
-        f.core.requestFill(meta.recordingId, title = true, names = true)
         answer("""{"title":"Launch plan","speakers":{"S1":"Mina","S2":null}}""")
         val seen = mutableListOf<List<FillRun>>()
-        chatGpt.server.beforeReply = { if (it.url.endsWith("/responses")) seen += f.core.observeFills().first() }
+        chatGpt.server.beforeReply = { if (chatGpt.isFill(it)) seen += f.core.observeFills().first() }
         assertEquals(EnqueueResult.Enqueued::class, f.core.enqueue(meta.recordingId)::class)
         f.drain()
         assertEquals(listOf(listOf(FillRun(meta.recordingId, title = true, names = true))), seen, "being filled in while ChatGPT answers")
@@ -62,50 +69,30 @@ class FillTest {
         assertEquals("transcribed", marks["reclyTranscript"])
         assertEquals("Launch plan", f.core.recordings.get(meta.recordingId)!!.meta.title)
         assertEquals("Launch plan", f.drive.byName(base)!!.description, "the folder has the title")
-        assertFalse(f.core.recordings.fillRequested(meta.recordingId))
-        assertEquals(1, asked())
+        assertEquals(1, fills().size)
     }
 
     @Test
-    fun `a recording whose title sheet asked for the names alone goes up named and untitled`() = runBlocking {
-        signIn()
+    fun `a recording titled at Stop goes up named, its title kept`() = runBlocking {
+        agree()
         val meta = f.record()
-        f.core.requestFill(meta.recordingId, title = false, names = true)
+        f.core.rename(meta.recordingId, "Weekly sync")
         answer("""{"title":"Ignored","speakers":{"S1":"Mina"}}""")
         f.core.enqueue(meta.recordingId)
         f.drain()
 
         assertEquals("Mina", inFolder(MetaWriter.baseName(meta)).first.speakers.single { it.id == "S1" }.name)
-        assertNull(f.core.recordings.get(meta.recordingId)!!.meta.title)
-        val asked = chatGpt.server.requests.last { it.url.endsWith("/responses") }.json().toString()
-        assertTrue("\\\"title\\\"" !in asked, "no title asked for")
+        assertEquals("Weekly sync", f.core.recordings.get(meta.recordingId)!!.meta.title)
+        assertTrue("\\\"title\\\"" !in fills().single().json().toString(), "no title asked for")
     }
 
     @Test
-    fun `a recording nobody asked for is published as it is`() = runBlocking {
+    fun `signed in but not agreed, a recording is published as it is`() = runBlocking {
         signIn()
         val meta = f.recordAndRun()
         assertEquals(0, asked())
         assertTrue(inFolder(MetaWriter.baseName(meta)).first.speakers.all { it.name == null })
         assertNull(f.core.recordings.get(meta.recordingId)!!.meta.title)
-    }
-
-    @Test
-    fun `a request after the publication fills in at once, the names as an edit`() = runBlocking {
-        signIn()
-        val meta = f.recordAndRun()
-        answer("""{"title":"Launch plan","speakers":{"S2":"Joon"}}""")
-        f.core.requestFill(meta.recordingId, title = true, names = true)
-        f.core.awaitPushes()
-
-        assertEquals("Launch plan", f.core.recordings.get(meta.recordingId)!!.meta.title)
-        val local = f.core.results(meta.recordingId).transcript!!
-        assertEquals("Joon", local.speakers.single { it.id == "S2" }.name)
-        assertNotNull(local.editedAt, "a change the user asked for, to a transcript already published")
-        val (published, marks) = inFolder(MetaWriter.baseName(meta))
-        assertEquals("Joon", published.speakers.single { it.id == "S2" }.name)
-        assertEquals("edited", marks["reclyTranscript"])
-        assertFalse(f.core.recordings.fillRequested(meta.recordingId))
     }
 
     @Test

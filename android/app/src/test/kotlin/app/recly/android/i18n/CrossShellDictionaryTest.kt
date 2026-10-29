@@ -731,17 +731,17 @@ class CrossShellDictionaryTest {
                 mac = "Take this app’s access to your Google account away.",
                 phone = "Take this app’s access to your Google account away.",
             ),
-            // docs/08 "Titles and speaker names": the title sheet's two boxes and the sentence under both that is the consent
-            // to them, More's two items with what each says while it cannot run, while it runs and when it failed, the
-            // detail's lines while a fill runs, and the lists' badge. RecKit holds them under the English text; its lane adds
-            // the split ones in parallel, so `reckit` joins those lines at integration.
+            // docs/08 "Titles and speaker names": the title sheet's placeholder while an empty title is filled in, More's
+            // two items with what each says while it cannot run, while it runs and when it failed, the detail's lines while
+            // a fill runs, and the lists' badge. RecKit holds them under the English text; its lane adds the split ones in
+            // parallel, so `reckit` joins those lines at integration.
             Line(
-                what = "what the title sheet's fill box sends",
-                en = "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.",
-                ko = "전사가 끝나면 전사본을 ChatGPT에 보내, 비어 있는 제목과 대화에서 이름이 불린 화자의 이름을 받습니다. ChatGPT 사용량에 포함됩니다.",
-                android = "fill_after_stop_note",
-                windows = "fill.after.stop.note",
-                reckit = "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.",
+                what = "the title sheet's placeholder while an empty title is filled in",
+                en = "Filled in automatically",
+                ko = "자동으로 채우기",
+                android = "title_auto_fill",
+                windows = "title.auto.fill",
+                reckit = "Filled in automatically",
             ),
             Line(
                 what = "the fill item while it runs",
@@ -750,22 +750,6 @@ class CrossShellDictionaryTest {
                 android = "fill_running",
                 windows = "fill.running",
                 reckit = "Filling in…",
-            ),
-            Line(
-                what = "the title sheet's title box",
-                en = "Fill in the title with ChatGPT",
-                ko = "ChatGPT로 제목 채우기",
-                android = "fill_title_after_stop",
-                windows = "fill.title.after.stop",
-                reckit = "Fill in the title with ChatGPT",
-            ),
-            Line(
-                what = "the title sheet's names box",
-                en = "Fill in speaker names with ChatGPT",
-                ko = "ChatGPT로 화자 이름 채우기",
-                android = "fill_names_after_stop",
-                windows = "fill.names.after.stop",
-                reckit = "Fill in speaker names with ChatGPT",
             ),
             Line(
                 what = "the More menu's title item",

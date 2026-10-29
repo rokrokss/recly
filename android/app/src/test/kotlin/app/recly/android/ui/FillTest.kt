@@ -18,8 +18,8 @@ import recly.core.message.CoreMessage
 
 /**
  * docs/08 "Titles and speaker names" on the phone: why More → Fill in title and Fill in speaker names wait, each in
- * the order the reasons are checked; what each answer says under the header; what the title sheet's two boxes ask
- * for; and its Save — the title, the fill request, the job, in that order.
+ * the order the reasons are checked; what each answer says under the header; what the title sheet's field says while
+ * an empty title is filled in; and its Save — the title, then the job.
  */
 class FillTest {
 
@@ -104,63 +104,25 @@ class FillTest {
     }
 
     @Test
-    fun `the title box is disabled while the field has a title`() {
-        assertTrue(fillTitleBoxEnabled(""))
-        assertTrue(fillTitleBoxEnabled("  "))
-        assertFalse(fillTitleBoxEnabled("Weekly sync"))
+    fun `the field says an empty title is filled in only while transcription, ChatGPT and the consent all allow it`() {
+        assertEquals(R.string.title_auto_fill, titlePlaceholder(transcribes = true, signedIn, consentNeeded = false))
+        assertEquals(R.string.jobs_untitled, titlePlaceholder(transcribes = false, signedIn, consentNeeded = false))
+        assertEquals(R.string.jobs_untitled, titlePlaceholder(transcribes = true, signedIn, consentNeeded = true))
+        assertEquals(R.string.jobs_untitled, titlePlaceholder(transcribes = true, ChatGptConnection.SignedOut, consentNeeded = false))
+        assertEquals(R.string.jobs_untitled, titlePlaceholder(transcribes = true, ChatGptConnection.Expired("me@example.com"), consentNeeded = false))
     }
 
     @Test
-    fun `the title box asks only while there is no title, and either box alone asks for its half`() {
-        assertEquals(FillAsk(title = true, names = false), fillAsk(true, "", titleBox = true, namesBox = false))
-        assertEquals(FillAsk(title = false, names = true), fillAsk(true, "", titleBox = false, namesBox = true))
-        assertEquals(FillAsk(title = true, names = true), fillAsk(true, " ", titleBox = true, namesBox = true))
-        // A typed title is never replaced: the title box does nothing, the names box still asks.
-        assertNull(fillAsk(true, "Weekly sync", titleBox = true, namesBox = false))
-        assertEquals(FillAsk(title = false, names = true), fillAsk(true, "Weekly sync", titleBox = true, namesBox = true))
-        assertNull(fillAsk(true, "", titleBox = false, namesBox = false))
-        // Boxes that were not there ask for nothing, whatever they were left as.
-        assertNull(fillAsk(false, "", titleBox = true, namesBox = true))
-    }
-
-    @Test
-    fun `Save writes the title, then asks for the fill, then makes the job`() = runBlocking {
-        val calls = mutableListOf<String>()
-        val (problem, enqueued) = saveInOrder(
-            name = { calls += "title"; null },
-            requestFill = { calls += "fill" },
-            enqueue = { calls += "enqueue"; EnqueueResult.Enqueued("j") },
-            failed = { event, _ -> calls += event },
-        )
-        assertEquals(listOf("title", "fill", "enqueue"), calls)
-        assertNull(problem)
-        assertEquals(EnqueueResult.Enqueued("j"), enqueued)
-    }
-
-    @Test
-    fun `unticked boxes ask for nothing`() = runBlocking {
+    fun `Save writes the title, then makes the job`() = runBlocking {
         val calls = mutableListOf<String>()
         val late = UiMessage.Res(R.string.recording_title_too_late)
-        val (problem, _) = saveInOrder(
+        val (problem, enqueued) = saveInOrder(
             name = { calls += "title"; late },
-            requestFill = null,
             enqueue = { calls += "enqueue"; EnqueueResult.Enqueued("j") },
             failed = { event, _ -> calls += event },
         )
         assertEquals(listOf("title", "enqueue"), calls)
         assertEquals(late, problem)
-    }
-
-    @Test
-    fun `a request that could not be kept costs the fill, never the job`() = runBlocking {
-        val calls = mutableListOf<String>()
-        val (_, enqueued) = saveInOrder(
-            name = { null },
-            requestFill = { error("disk") },
-            enqueue = { calls += "enqueue"; EnqueueResult.Enqueued("j") },
-            failed = { event, _ -> calls += event },
-        )
-        assertEquals(listOf("shell.recording.fill.failed", "enqueue"), calls)
         assertEquals(EnqueueResult.Enqueued("j"), enqueued)
     }
 
@@ -169,7 +131,6 @@ class FillTest {
         val calls = mutableListOf<String>()
         val (_, enqueued) = saveInOrder(
             name = { null },
-            requestFill = null,
             enqueue = { error("db") },
             failed = { event, _ -> calls += event },
         )

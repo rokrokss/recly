@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Recly-র নোট আপনার ChatGPT প্ল্যান ব্যবহার করে। ChatGPT সেটিংসে ব্যবহার পরিচালনা করতে পারেন।</string>
     <string name="chatgpt_got_it">বুঝেছি</string>
     <string name="notes_consent_title">রেকর্ড করার সময়ই Recly গুছিয়ে রাখে</string>
-    <string name="notes_consent_body">ChatGPT-এ সাইন ইন থাকা অবস্থায় Recly প্রতিটি রেকর্ডিংয়ের ট্রান্সক্রিপ্টের লেখা রেকর্ড করার সময় এবং থামানোর পরে আপনার ChatGPT প্ল্যানে পাঠায়, এবং তার সিদ্ধান্ত, করণীয় ও প্রশ্নের তালিকা তৈরি করে। অডিও কখনো পাঠানো হয় না। এটি আপনার প্ল্যানের ব্যবহারে গণনা হয়।</string>
+    <string name="notes_consent_body">ChatGPT-এ সাইন ইন থাকা অবস্থায় Recly প্রতিটি রেকর্ডিংয়ের ট্রান্সক্রিপ্টের লেখা রেকর্ড করার সময় এবং থামানোর পরে আপনার ChatGPT প্ল্যানে পাঠায়, তার সিদ্ধান্ত, করণীয় ও প্রশ্নের তালিকা তৈরি করে, এবং না থাকা শিরোনাম ও বক্তাদের নাম পূরণ করে। অডিও কখনো পাঠানো হয় না। এটি আপনার প্ল্যানের ব্যবহারে গণনা হয়।</string>
+    <string name="title_auto_fill">স্বয়ংক্রিয়ভাবে পূরণ হবে</string>
     <string name="notes_consent_continue">চালিয়ে যান</string>
     <string name="notes_decisions">সিদ্ধান্ত</string>
     <string name="notes_todos">করণীয়</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">জিজ্ঞাসা</string>
     <string name="ask_running">জিজ্ঞাসা করা হচ্ছে…</string>
     <string name="ask_failed">উত্তর দেওয়া যায়নি</string>
-    <string name="fill_after_stop_note">ট্রান্সক্রিপ্ট তৈরি হলে তা ChatGPT-তে যায়, যাতে অনুপস্থিত শিরোনাম এবং নাম ধরে ডাকা বক্তাদের নাম পাওয়া যায়। এটি আপনার ChatGPT ব্যবহারে গোনা হয়।</string>
     <string name="fill_running">পূরণ করা হচ্ছে…</string>
     <string name="fill_title_menu">শিরোনাম পূরণ করুন</string>
     <string name="fill_names_menu">বক্তার নাম পূরণ করুন</string>
-    <string name="fill_title_after_stop">ChatGPT দিয়ে শিরোনাম পূরণ করুন</string>
-    <string name="fill_names_after_stop">ChatGPT দিয়ে বক্তার নাম পূরণ করুন</string>
     <string name="fill_has_title">শিরোনাম আগেই আছে</string>
     <string name="fill_no_unnamed">নামহীন কোনো বক্তা নেই</string>
     <string name="fill_title_running">শিরোনাম পূরণ করা হচ্ছে…</string>

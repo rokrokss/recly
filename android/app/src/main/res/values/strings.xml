@@ -485,7 +485,8 @@
     <string name="chatgpt_got_it">Got it</string>
     <!-- docs/08 "Organizing": the consent after a sign-in and before a start, the notes' groups, Organize, Edit notes and Settings → Notes. -->
     <string name="notes_consent_title">Recly organizes while you record</string>
-    <string name="notes_consent_body">While you\'re signed in to ChatGPT, Recly sends each recording\'s transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.</string>
+    <string name="notes_consent_body">While you\'re signed in to ChatGPT, Recly sends each recording\'s transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers\' names. Audio is never sent. This counts toward your plan.</string>
+    <string name="title_auto_fill">Filled in automatically</string>
     <string name="notes_consent_continue">Continue</string>
     <string name="notes_decisions">Decisions</string>
     <string name="notes_todos">To-dos</string>
@@ -536,12 +537,9 @@
     <string name="ask_ask">Ask</string>
     <string name="ask_running">Asking…</string>
     <string name="ask_failed">Could not answer</string>
-    <string name="fill_after_stop_note">Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.</string>
     <string name="fill_running">Filling in…</string>
     <string name="fill_title_menu">Fill in title</string>
     <string name="fill_names_menu">Fill in speaker names</string>
-    <string name="fill_title_after_stop">Fill in the title with ChatGPT</string>
-    <string name="fill_names_after_stop">Fill in speaker names with ChatGPT</string>
     <string name="fill_has_title">Already has a title</string>
     <string name="fill_no_unnamed">No unnamed speakers</string>
     <string name="fill_title_running">Filling in the title…</string>

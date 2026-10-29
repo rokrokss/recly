@@ -552,12 +552,9 @@
   "Still transcribing on this device — try again once it has finished": "هنوز روی این دستگاه رونویسی می‌شود — پس از پایان دوباره امتحان کنید",
   "Turn it on in Settings → Apps → Recly → Permissions.": "آن را در تنظیمات ← برنامه‌ها ← Recly ← مجوزها روشن کنید.",
   "Asked before every recording.": "پیش از هر ضبط پرسیده می‌شود.",
-  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "وقتی رونوشت آماده شد، برای گرفتن عنوانِ خالی و نام گویندگانی که با نام صدا زده شده‌اند به ChatGPT فرستاده می‌شود. این جزو مصرف ChatGPT شما حساب می‌شود.",
   "Filling in…": "در حال تکمیل…",
   "Fill in title": "تکمیل عنوان",
   "Fill in speaker names": "تکمیل نام گویندگان",
-  "Fill in the title with ChatGPT": "تکمیل عنوان با ChatGPT",
-  "Fill in speaker names with ChatGPT": "تکمیل نام گویندگان با ChatGPT",
   "Already has a title": "از قبل عنوان دارد",
   "No unnamed speakers": "گوینده‌ای بی‌نام نیست",
   "Filling in the title…": "در حال تکمیل عنوان…",
@@ -566,7 +563,7 @@
   "Could not fill in the title": "تکمیل عنوان ممکن نشد",
   "Could not fill in speaker names": "تکمیل نام گویندگان ممکن نشد",
   "Recly organizes while you record": "Recly هم‌زمان با ضبط مرتب می‌کند",
-  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "تا وقتی به ChatGPT وارد شده‌اید، Recly متن رونویسی هر ضبط را هنگام ضبط و پس از توقف به طرح ChatGPT شما می‌فرستد و تصمیم‌ها، کارها و پرسش‌های آن را فهرست می‌کند. صدا هرگز فرستاده نمی‌شود. این کار جزو مصرف طرح شما حساب می‌شود.",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers' names. Audio is never sent. This counts toward your plan.": "تا وقتی به ChatGPT وارد شده‌اید، Recly متن رونویسی هر ضبط را هنگام ضبط و پس از توقف به طرح ChatGPT شما می‌فرستد، تصمیم‌ها، کارها و پرسش‌های آن را فهرست می‌کند و عنوانِ خالی و نام گویندگان را پر می‌کند. صدا هرگز فرستاده نمی‌شود. این کار جزو مصرف طرح شما حساب می‌شود.",
   "Decisions": "تصمیم‌ها",
   "To-dos": "کارها",
   "Questions": "پرسش‌ها",
@@ -577,5 +574,6 @@
   "Recording stopped: battery low": "ضبط متوقف شد: باتری کم است",
   "Recording alerts": "هشدارهای ضبط",
   "Recording paused": "ضبط موقتاً متوقف شد",
-  "Open Recly to keep recording.": "برای ادامهٔ ضبط، Recly را باز کنید."
+  "Open Recly to keep recording.": "برای ادامهٔ ضبط، Recly را باز کنید.",
+  "Filled in automatically": "خودکار پر می‌شود"
 }

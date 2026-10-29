@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Ghi chú trong Recly dùng gói ChatGPT của bạn. Bạn có thể quản lý mức sử dụng trong cài đặt ChatGPT.</string>
     <string name="chatgpt_got_it">Đã hiểu</string>
     <string name="notes_consent_title">Recly sắp xếp ngay khi bạn ghi âm</string>
-    <string name="notes_consent_body">Khi bạn đăng nhập ChatGPT, Recly gửi văn bản chép lời của từng bản ghi âm đến gói ChatGPT của bạn trong khi ghi và sau khi dừng, rồi liệt kê các quyết định, việc cần làm và câu hỏi. Âm thanh không bao giờ được gửi. Việc này được tính vào mức sử dụng gói của bạn.</string>
+    <string name="notes_consent_body">Khi bạn đăng nhập ChatGPT, Recly gửi văn bản chép lời của từng bản ghi âm đến gói ChatGPT của bạn trong khi ghi và sau khi dừng, liệt kê các quyết định, việc cần làm và câu hỏi, đồng thời điền tiêu đề còn trống và tên người nói. Âm thanh không bao giờ được gửi. Việc này được tính vào mức sử dụng gói của bạn.</string>
+    <string name="title_auto_fill">Tự động điền</string>
     <string name="notes_consent_continue">Tiếp tục</string>
     <string name="notes_decisions">Quyết định</string>
     <string name="notes_todos">Việc cần làm</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Hỏi</string>
     <string name="ask_running">Đang hỏi…</string>
     <string name="ask_failed">Không thể trả lời</string>
-    <string name="fill_after_stop_note">Khi chép lời xong, bản chép lời được gửi tới ChatGPT để lấy tiêu đề còn thiếu và tên của những người nói được gọi tên. Việc này được tính vào mức sử dụng ChatGPT của bạn.</string>
     <string name="fill_running">Đang điền…</string>
     <string name="fill_title_menu">Điền tiêu đề</string>
     <string name="fill_names_menu">Điền tên người nói</string>
-    <string name="fill_title_after_stop">Điền tiêu đề bằng ChatGPT</string>
-    <string name="fill_names_after_stop">Điền tên người nói bằng ChatGPT</string>
     <string name="fill_has_title">Đã có tiêu đề</string>
     <string name="fill_no_unnamed">Không có người nói chưa có tên</string>
     <string name="fill_title_running">Đang điền tiêu đề…</string>

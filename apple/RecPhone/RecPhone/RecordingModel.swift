@@ -650,23 +650,16 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// docs/08 "Titles and speaker names": what the title sheet's ChatGPT boxes ask for as they show — offered while
-    /// transcription is on and ChatGPT is signed in, each ticked as it was left with the permission still given, the
-    /// title's only while [typedTitle] is empty.
-    func fillAfterStop(typedTitle: String?) -> TitleSheetFill {
-        guard let chatGpt, chatGpt.fillOffered, !(processing?.transcriptionOff ?? false) else { return .none }
-        return TitleSheetFill(titleTicked: chatGpt.fillTitleTicked, namesTicked: chatGpt.fillNamesTicked, typedTitle: typedTitle)
-    }
+    /// docs/08 "Titles and speaker names": a title left empty in the sheet is filled in when the recording is published —
+    /// while transcription is on and the ChatGPT plan may be used in the background.
+    var titleAutoFill: Bool { chatGpt?.autoFill == true && !(processing?.transcriptionOff ?? false) }
 
     /// Saves the title prompt's answer and queues the recording, including an empty title.
     ///
     /// - Parameters:
     ///   - participants: how many people were in the room, or nil for "unknown" — docs/03's
     ///     `context.participants`, which docs/08 lets override the settings' speaker hint.
-    ///   - fill: what the ChatGPT boxes ask for: the recording's publication first asks for that — its title, its speaker
-    ///     names or both (docs/08 "Titles and speaker names") — asked after the title is written and before the job is
-    ///     queued.
-    func finishNaming(with title: String?, participants: Int? = nil, fill: TitleSheetFill = .none) async {
+    func finishNaming(with title: String?, participants: Int? = nil) async {
         guard let naming else { return }
         self.naming = nil
         let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -679,13 +672,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 participants: participants.map { KotlinInt(int: Int32($0)) }
             )
             titleRefused = saved?.boolValue != true
-        }
-        if fill.any {
-            do {
-                try await bridge?.core.requestFill(recordingId: naming.id, title: fill.title, names: fill.names)
-            } catch {
-                logger.error("shell.chatgpt.fill.request.failed error=\(String(describing: error), privacy: .private)")
-            }
         }
         await enqueue(recordingId: naming.id)
         // docs/03 "Titles": the job had read the meta already, so the name is not the recording's. Said over the

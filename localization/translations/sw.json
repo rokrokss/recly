@@ -552,12 +552,9 @@
   "Still transcribing on this device — try again once it has finished": "Bado inanukuu kwenye kifaa hiki — jaribu tena itakapokamilika",
   "Turn it on in Settings → Apps → Recly → Permissions.": "Iwashe katika Mipangilio → Programu → Recly → Ruhusa.",
   "Asked before every recording.": "Huulizwa kabla ya kila rekodi.",
-  "Once transcribed, the transcript goes to ChatGPT for a missing title and the names of speakers called by name. It counts toward your ChatGPT usage.": "Nakala ikishakamilika, hutumwa kwa ChatGPT ili kupata kichwa kinachokosekana na majina ya wazungumzaji walioitwa kwa majina. Hii huhesabiwa katika matumizi yako ya ChatGPT.",
   "Filling in…": "Inajaza…",
   "Fill in title": "Jaza kichwa",
   "Fill in speaker names": "Jaza majina ya wazungumzaji",
-  "Fill in the title with ChatGPT": "Jaza kichwa kwa ChatGPT",
-  "Fill in speaker names with ChatGPT": "Jaza majina ya wazungumzaji kwa ChatGPT",
   "Already has a title": "Tayari ina kichwa",
   "No unnamed speakers": "Hakuna mzungumzaji asiye na jina",
   "Filling in the title…": "Inajaza kichwa…",
@@ -566,7 +563,7 @@
   "Could not fill in the title": "Imeshindwa kujaza kichwa",
   "Could not fill in speaker names": "Imeshindwa kujaza majina ya wazungumzaji",
   "Recly organizes while you record": "Recly hupanga unaporekodi",
-  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never sent. This counts toward your plan.": "Ukiwa umeingia kwenye ChatGPT, Recly hutuma maandishi ya unukuzi wa kila rekodi kwenye mpango wako wa ChatGPT unaporekodi na baada ya kusimamisha, na huorodhesha maamuzi, majukumu na maswali yake. Sauti haitumwi kamwe. Hii huhesabiwa katika matumizi ya mpango wako.",
+  "While you're signed in to ChatGPT, Recly sends each recording's transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing title and the speakers' names. Audio is never sent. This counts toward your plan.": "Ukiwa umeingia kwenye ChatGPT, Recly hutuma maandishi ya unukuzi wa kila rekodi kwenye mpango wako wa ChatGPT unaporekodi na baada ya kusimamisha, huorodhesha maamuzi, majukumu na maswali yake, na hujaza jina la rekodi linalokosekana na majina ya wazungumzaji. Sauti haitumwi kamwe. Hii huhesabiwa katika matumizi ya mpango wako.",
   "Decisions": "Maamuzi",
   "To-dos": "Majukumu",
   "Questions": "Maswali",
@@ -577,5 +574,6 @@
   "Recording stopped: battery low": "Kurekodi kumesimamishwa: betri iko chini",
   "Recording alerts": "Arifa za kurekodi",
   "Recording paused": "Kurekodi kumesitishwa",
-  "Open Recly to keep recording.": "Fungua Recly ili kuendelea kurekodi."
+  "Open Recly to keep recording.": "Fungua Recly ili kuendelea kurekodi.",
+  "Filled in automatically": "Hujazwa kiotomatiki"
 }

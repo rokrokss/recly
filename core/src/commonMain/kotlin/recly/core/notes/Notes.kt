@@ -185,6 +185,12 @@ class Notes internal constructor(
         deps.logger.log(Logger.Level.INFO, "organize.consent.cleared", emptyMap())
     }
 
+    /**
+     * Signed in and agreed: the plan's background use — organizing, and the title and speaker names a publication fills in
+     * (docs/08 "Titles and speaker names").
+     */
+    internal suspend fun agreed(): Boolean = signedIn(account.standing()) && consented()
+
     private suspend fun consented(): Boolean = consented.value ?: withContext(deps.io) {
         db.recQueries.kvGet(CONSENT_KEY).executeAsOneOrNull() == ON
     }.also { consented.compareAndSet(null, it) }

@@ -172,7 +172,7 @@ class DetailActions(
     /** docs/08 "Titles and speaker names": More → Fill in title or Fill in speaker names, and what came of it — null when the call threw. */
     val onFill: suspend (FillHalf) -> FillResult? = { null },
     /**
-     * The recording's fill asking ChatGPT now (`observeFills()`), from this page or the title sheet: its items say
+     * The recording's fill asking ChatGPT now (`observeFills()`), from this page or its publication: its items say
      * `Filling in…`, and the line under the header says what is being filled in.
      */
     val fill: FillRun? = null,
@@ -487,7 +487,7 @@ fun RecordingDetailScreen(
             )
         }
         HairLine()
-        // docs/09 "AI view": what a fill of this recording is filling in, from this page or the title sheet, the
+        // docs/09 "AI view": what a fill of this recording is filling in, from this page or its publication, the
         // title's line first — gone when the run ends.
         val filling = FillHalf.entries.filter { it.runs(actions.fill) }
         if (filling.isNotEmpty() && !detail.loading) {

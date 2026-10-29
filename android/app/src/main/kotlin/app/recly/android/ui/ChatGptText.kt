@@ -133,7 +133,7 @@ enum class FillHalf(
 
 /**
  * Why More → Fill in title or Fill in speaker names cannot run now (docs/09 "AI view"), in this order: Ask's
- * reasons, then a fill of [half] running ([running] — `observeFills()`, the title sheet's too), then nothing of it
+ * reasons, then a fill of [half] running ([running] — `observeFills()`, the publication's too), then nothing of it
  * missing — [needed] is [FillHalf.needed] for the recording as it is now, which a fill that is running may be about
  * to change. A take still being written says `Still recording` before any of these.
  */
@@ -175,24 +175,14 @@ internal fun fillNotice(result: FillResult?, half: FillHalf, @StringRes busyReas
     null -> FillNotice.Failed(half, null)
 }
 
-/** docs/08 "Titles and speaker names": the halves the title sheet's Save asks for — `requestFill`'s two flags. */
-data class FillAsk(val title: Boolean, val names: Boolean)
-
 /**
- * The title sheet's title box can be changed only while the field is empty: with a title typed it would do nothing — a
- * typed title is never replaced — so it is disabled, keeping what it says.
+ * docs/08 "Titles and speaker names": the title sheet's placeholder — `Filled in automatically` while a title left empty
+ * will come from ChatGPT once the recording is transcribed ([transcribes], ChatGPT signed in, organizing agreed to — not
+ * [consentNeeded]), `Untitled` otherwise.
  */
-internal fun fillTitleBoxEnabled(title: String): Boolean = title.isBlank()
-
-/**
- * What the title sheet's Save asks ChatGPT for — null for nothing, so no request is made. The title box asks only
- * while it is enabled ([fillTitleBoxEnabled]). [offered] is whether the boxes were there at all.
- */
-internal fun fillAsk(offered: Boolean, title: String, titleBox: Boolean, namesBox: Boolean): FillAsk? {
-    if (!offered) return null
-    val askTitle = titleBox && fillTitleBoxEnabled(title)
-    return if (askTitle || namesBox) FillAsk(askTitle, namesBox) else null
-}
+@StringRes
+internal fun titlePlaceholder(transcribes: Boolean, connection: ChatGptConnection, consentNeeded: Boolean): Int =
+    if (transcribes && connection is ChatGptConnection.SignedIn && !consentNeeded) R.string.title_auto_fill else R.string.jobs_untitled
 
 /** docs/09 "AI view": a hit found in the notes alone opens on the notes — there is nothing in the transcript to find. */
 internal fun opensOnNotes(hit: SearchHit): Boolean = hit.notes != null && hit.snippets.isEmpty() && !hit.matchesInTitle

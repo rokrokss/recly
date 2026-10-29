@@ -192,8 +192,8 @@ recording.**
 | **Settings** → **Notes** | **Notes instructions**: how every recording's notes are written. **My sections**: up to three sections of your own, each with what goes in it. **About you**: what matters to you, for notes and answers |
 | **More** → **Edit notes** | fix the overview or a note's words, or empty a note to delete it; in Google Drive or iCloud your other devices show the edit, with a local folder it stays on this device |
 | **More** → **Ask about this recording…** | a follow-up email, the action items, the open questions, a translation, feedback on how you spoke, or your own question; the answer is not saved |
-| **More** → **Fill in title** | a title from your ChatGPT plan, if the recording has none. To have it before the transcript is saved, tick **Fill in the title with ChatGPT** when you name a recording after stopping it |
-| **More** → **Fill in speaker names** | the names of the speakers called by name, from your ChatGPT plan. To have them before the transcript is saved, tick **Fill in speaker names with ChatGPT** when you name a recording after stopping it |
+| **More** → **Fill in title** | a title from your ChatGPT plan, if the recording has none. Signed in and agreed to notes, every recording gets one before its transcript is saved: leave the title empty when you name it |
+| **More** → **Fill in speaker names** | the names of the speakers called by name, from your ChatGPT plan. Signed in and agreed to notes, every recording gets them before its transcript is saved |
 | a note's time | moves the playhead there, playing or paused as it was |
 | a time such as `[00:12:34]` in an answer | plays from there |
 | speed (`1×`) | 0.75× to 2×, and **Skip silence** |

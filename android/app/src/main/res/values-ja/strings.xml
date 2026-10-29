@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Reclyの整理にはChatGPTのプランが使われます。使用量はChatGPTの設定で管理できます。</string>
     <string name="chatgpt_got_it">了解</string>
     <string name="notes_consent_title">録音しながら整理します</string>
-    <string name="notes_consent_body">ChatGPTにサインインしている間、Reclyは録音中と停止後に各録音の文字起こしテキストをあなたのChatGPTプランに送り、決定事項・やること・質問を一覧にします。音声は送信しません。プランの使用量に含まれます。</string>
+    <string name="notes_consent_body">ChatGPTにサインインしている間、Reclyは録音中と停止後に各録音の文字起こしテキストをあなたのChatGPTプランに送り、決定事項・やること・質問を一覧にし、空のタイトルと話者の名前を入力します。音声は送信しません。プランの使用量に含まれます。</string>
+    <string name="title_auto_fill">自動で入力</string>
     <string name="notes_consent_continue">続ける</string>
     <string name="notes_decisions">決定事項</string>
     <string name="notes_todos">やること</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">質問</string>
     <string name="ask_running">質問中…</string>
     <string name="ask_failed">回答できませんでした</string>
-    <string name="fill_after_stop_note">文字起こしが終わると、空のタイトルと、名前で呼ばれた話者の名前を受け取るために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。</string>
     <string name="fill_running">入力しています…</string>
     <string name="fill_title_menu">タイトルを入力</string>
     <string name="fill_names_menu">話者の名前を入力</string>
-    <string name="fill_title_after_stop">ChatGPTでタイトルを入力</string>
-    <string name="fill_names_after_stop">ChatGPTで話者の名前を入力</string>
     <string name="fill_has_title">タイトルはすでにあります</string>
     <string name="fill_no_unnamed">名前のない話者はいません</string>
     <string name="fill_title_running">タイトルを入力しています…</string>

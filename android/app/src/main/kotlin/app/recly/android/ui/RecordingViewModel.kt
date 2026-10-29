@@ -95,11 +95,13 @@ data class RecordingUiState(
      * the record node — the next event replaces it, and leaving the tab clears it.
      */
     val highlighted: Highlighted? = null,
-    /** docs/08 "Titles and speaker names": the title sheet offers its ChatGPT box only while this is signed in. */
+    /** docs/08 "Titles and speaker names": the title sheet says a missing title is filled in only while this is signed in. */
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
-    /** How the sheet's two ChatGPT boxes were left last, which the next sheet starts from. */
-    val fillTitleAfterStop: Boolean = false,
-    val fillNamesAfterStop: Boolean = false,
+    /**
+     * docs/08 "Organizing": `notes.observeNeedsConsent()` — signed in and not yet agreed, when nothing is filled in either.
+     * Until it has said, it counts as not agreed: the title sheet promises no title it may not get.
+     */
+    val notesConsentNeeded: Boolean = true,
     /** docs/08 "Organizing": the notes of the recording running now, as they arrive; null while nothing records. */
     val notes: RecordingNotes? = null,
 )
@@ -155,9 +157,7 @@ class RecordingViewModel @JvmOverloads constructor(
                 .collect { notes -> _state.update { it.copy(notes = notes) } }
         }
         viewModelScope.launch {
-            core().summaries.observePreferences().collect { prefs ->
-                _state.update { it.copy(fillTitleAfterStop = prefs.fillTitleAfterStop, fillNamesAfterStop = prefs.fillNamesAfterStop) }
-            }
+            core().notes.observeNeedsConsent().collect { needed -> _state.update { it.copy(notesConsentNeeded = needed) } }
         }
         viewModelScope.launch {
             val core = core()
@@ -360,38 +360,16 @@ class RecordingViewModel @JvmOverloads constructor(
     /**
      * @param participants how many people were in the room, or null for "unknown" — docs/03's
      * `context.participants`, which docs/08 lets override the workflow's speaker hint.
-     * @param fill what the sheet's ChatGPT boxes ask for, or null for nothing: this recording's publication asks for
-     * its title, its speaker names or both (docs/08 "Titles and speaker names").
      */
-    fun saveTitle(title: String, participants: Int? = null, fill: FillAsk? = null) {
+    fun saveTitle(title: String, participants: Int? = null) {
         val untitled = _state.value.untitled ?: return
         val trimmed = title.trim().takeIf { it.isNotEmpty() }
-        finish(untitled, fill) { core ->
+        finish(untitled) { core ->
             val nothingToSay = trimmed == null && participants == null
             if (!nothingToSay && !core.recordings.updateTitle(untitled.recordingId, trimmed, participants)) {
                 res(R.string.recording_title_too_late)
             } else {
                 null
-            }
-        }
-    }
-
-    /**
-     * docs/08 "Titles and speaker names": each of the sheet's ChatGPT boxes, ticked or not, is how the next sheet starts
-     * — kept on its own the moment it is changed, as Settings keeps its own.
-     */
-    fun rememberFill(half: FillHalf, ticked: Boolean) {
-        _state.update {
-            when (half) {
-                FillHalf.TITLE -> it.copy(fillTitleAfterStop = ticked)
-                FillHalf.NAMES -> it.copy(fillNamesAfterStop = ticked)
-            }
-        }
-        // Through Settings' own saver, so the two never write over each other's fields.
-        ChatGptSignIn.get(getApplication()).updatePreferences {
-            when (half) {
-                FillHalf.TITLE -> it.copy(fillTitleAfterStop = ticked)
-                FillHalf.NAMES -> it.copy(fillNamesAfterStop = ticked)
             }
         }
     }
@@ -444,13 +422,12 @@ class RecordingViewModel @JvmOverloads constructor(
     }
 
     /** Clears the prompt first: whatever the queue says, the recording is safe on disk already. */
-    private fun finish(untitled: UntitledRecording, fill: FillAsk?, apply: suspend (ReclyCore) -> UiMessage?) {
+    private fun finish(untitled: UntitledRecording, apply: suspend (ReclyCore) -> UiMessage?) {
         _state.update { it.copy(untitled = null) }
         viewModelScope.launch {
             val core = core()
             val (problem, enqueued) = saveInOrder(
                 name = { apply(core) },
-                requestFill = fill?.let { ask -> { core.requestFill(untitled.recordingId, ask.title, ask.names) } },
                 enqueue = { core.enqueue(untitled.recordingId) },
                 failed = { event, e -> core.deps.logger.log(Logger.Level.ERROR, event, mapOf("recordingId" to untitled.recordingId), e) },
             )
@@ -500,28 +477,16 @@ internal fun RecordingUiState.consentAnswered(confirmed: Boolean): RecordingUiSt
     copy(consentPrompt = false, askPermissions = confirmed)
 
 /**
- * The title sheet's Save, in its order: the title, then — a ChatGPT box ticked — the fill request, then the job.
- * The request is there before the job because the job's publication is what reads it (docs/08 "Titles and speaker
- * names"); one that could not be kept costs the fill, never the job. D2: a queue that threw is said, not swallowed —
- * the recording is on disk, and recovery queues a finalized recording with no job at the next start — so the job is
- * null then. [failed] logs under the event it is given.
+ * The title sheet's Save, in its order: the title, then the job, which reads it. D2: a queue that threw is said, not
+ * swallowed — the recording is on disk, and recovery queues a finalized recording with no job at the next start — so
+ * the job is null then. [failed] logs under the event it is given.
  */
 internal suspend fun saveInOrder(
     name: suspend () -> UiMessage?,
-    requestFill: (suspend () -> Unit)?,
     enqueue: suspend () -> EnqueueResult,
     failed: (event: String, error: Exception) -> Unit,
 ): Pair<UiMessage?, EnqueueResult?> {
     val problem = name()
-    if (requestFill != null) {
-        try {
-            requestFill()
-        } catch (cancelled: kotlinx.coroutines.CancellationException) {
-            throw cancelled
-        } catch (e: Exception) {
-            failed("shell.recording.fill.failed", e)
-        }
-    }
     val enqueued = try {
         enqueue()
     } catch (cancelled: kotlinx.coroutines.CancellationException) {

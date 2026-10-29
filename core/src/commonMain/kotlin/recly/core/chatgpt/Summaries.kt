@@ -47,14 +47,10 @@ import recly.core.transcribe.providerJson
 
 /**
  * docs/08 "AI requests": what this device tells ChatGPT about the user — Settings → Notes. [aboutMe] tells it
- * who the notes and answers are for. [fillTitleAfterStop] and [fillNamesAfterStop] are how the title sheet's two boxes
- * of docs/08 "Titles and speaker names" were left last, each off until the user ticks it. Local to this device, like the
- * model, and kept while signed out.
+ * who the notes and answers are for. Local to this device, like the model, and kept while signed out.
  */
 data class SummaryPreferences(
     val aboutMe: String = "",
-    val fillTitleAfterStop: Boolean = false,
-    val fillNamesAfterStop: Boolean = false,
 ) {
     companion object {
         const val ABOUT_MAX: Int = 300
@@ -251,8 +247,6 @@ class Summaries internal constructor(
     suspend fun preferences(): SummaryPreferences = prefs.value ?: withContext(deps.io) {
         SummaryPreferences(
             aboutMe = db.recQueries.kvGet(PREF_ABOUT).executeAsOneOrNull().orEmpty(),
-            fillTitleAfterStop = db.recQueries.kvGet(PREF_FILL_TITLE_AFTER_STOP).executeAsOneOrNull() == ON,
-            fillNamesAfterStop = db.recQueries.kvGet(PREF_FILL_NAMES_AFTER_STOP).executeAsOneOrNull() == ON,
         )
     }.also { loaded -> prefs.compareAndSet(null, loaded) }
 
@@ -261,14 +255,10 @@ class Summaries internal constructor(
     suspend fun setPreferences(preferences: SummaryPreferences): SummaryPreferences {
         val kept = SummaryPreferences(
             aboutMe = preferences.aboutMe.trim().take(SummaryPreferences.ABOUT_MAX),
-            fillTitleAfterStop = preferences.fillTitleAfterStop,
-            fillNamesAfterStop = preferences.fillNamesAfterStop,
         )
         withContext(deps.io) {
             db.recQueries.transaction {
                 if (kept.aboutMe.isEmpty()) db.recQueries.kvDelete(PREF_ABOUT) else db.recQueries.kvSet(PREF_ABOUT, kept.aboutMe)
-                if (kept.fillTitleAfterStop) db.recQueries.kvSet(PREF_FILL_TITLE_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_TITLE_AFTER_STOP)
-                if (kept.fillNamesAfterStop) db.recQueries.kvSet(PREF_FILL_NAMES_AFTER_STOP, ON) else db.recQueries.kvDelete(PREF_FILL_NAMES_AFTER_STOP)
             }
         }
         prefs.value = kept
@@ -347,9 +337,6 @@ class Summaries internal constructor(
 
     internal companion object {
         const val PREF_ABOUT = "summary/prefs/about"
-        const val PREF_FILL_TITLE_AFTER_STOP = "summary/prefs/fill_title_after_stop"
-        const val PREF_FILL_NAMES_AFTER_STOP = "summary/prefs/fill_names_after_stop"
-        private const val ON = "1"
 
         const val FILL_TIMEOUT_SEC = 120
 

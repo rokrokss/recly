@@ -88,7 +88,7 @@ struct RecordingView: View {
                 title: $title,
                 participants: $participants,
                 asksPeople: !(model.processing?.transcriptionOff ?? false),
-                chatGpt: model.chatGpt,
+                autoFill: model.titleAutoFill,
                 onSave: { finishNaming(with: title, participants: participants) },
                 onCancel: cancelNaming
             )
@@ -367,11 +367,9 @@ struct RecordingView: View {
     private func finishNaming(with typed: String?, participants count: Int?) {
         guard model.naming != nil else { return }
         let answer = typed
-        // As the sheet showed it when Save was pressed.
-        let fill = model.fillAfterStop(typedTitle: answer)
         title = ""
         participants = nil
-        Task { await model.finishNaming(with: answer, participants: count, fill: fill) }
+        Task { await model.finishNaming(with: answer, participants: count) }
     }
 
     private func cancelNaming() {
@@ -425,25 +423,22 @@ private struct ConsentDialog: View {
 }
 
 /// docs/03: the name, and how many people were in the room — the hint `transcribe` trusts over the
-/// workflow's own `speakers` (docs/08). "Unknown" is where it starts and it writes nothing. Under them, the two ChatGPT
-/// boxes of docs/08 "Titles and speaker names".
+/// workflow's own `speakers` (docs/08). "Unknown" is where it starts and it writes nothing.
 ///
 /// A sheet rather than the alert the title alone used to be: an alert holds no picker.
 private struct NamingSheet: View {
     @Binding var title: String
     @Binding var participants: Int?
-    /// 2026-10-10 (3.5): the count is a hint to the transcription, so it is not asked while transcription is off —
-    /// nor is a fill of the transcript.
+    /// 2026-10-10 (3.5): the count is a hint to the transcription, so it is not asked while transcription is off.
     let asksPeople: Bool
-    /// The ChatGPT boxes' state and the permission they ask for; nil until the core is open.
-    let chatGpt: ChatGptSettingsModel?
+    /// docs/08 "Titles and speaker names": a title left empty is filled in when the recording is published.
+    let autoFill: Bool
     let onSave: () -> Void
     let onCancel: () -> Void
 
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
-    /// The sheet is as tall as what it asks, as a dialog's is ([BlueprintDialogSheet]): the ChatGPT boxes and their
-    /// note do not fit the half height on every phone.
+    /// The sheet is as tall as what it asks, as a dialog's is ([BlueprintDialogSheet]).
     @State private var height: CGFloat?
 
     /// docs/03: 2 · 3 · 4 · 5 · 6+ · unknown. docs/08 caps the hint at 10 speakers, so "6+" asks
@@ -471,7 +466,7 @@ private struct NamingSheet: View {
     private var fields: some View {
         VStack(alignment: .leading, spacing: Space.m) {
             VStack(alignment: .leading, spacing: Space.xs) {
-                BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))
+                BlueprintField(loc("Title"), text: $title, placeholder: TitlePlaceholder.text(autoFill: autoFill))
                     .accessibilityIdentifier("titleField")
             }
             if asksPeople {
@@ -491,10 +486,6 @@ private struct NamingSheet: View {
                     }
                     .accessibilityIdentifier("participants")
                 }
-            }
-            // docs/08 "Titles and speaker names": only while transcription is on and ChatGPT is signed in.
-            if asksPeople, let chatGpt {
-                FillAfterStopChoice(model: chatGpt, typedTitle: title)
             }
             // docs/03 "Titles" · 2026-10-08 §5: the second answer throws the recording away, so it
             // says so, in the red of every other irreversible delete. Side by side while both fit;

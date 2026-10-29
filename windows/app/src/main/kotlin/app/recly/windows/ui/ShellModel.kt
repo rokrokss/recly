@@ -36,7 +36,6 @@ import app.recly.windows.jobs.JobRunner
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
 import app.recly.windows.record.Completion
-import app.recly.windows.record.FillAsk
 import app.recly.windows.record.PowerSources
 import app.recly.windows.record.RecordingOutcome
 import app.recly.windows.record.RecordingRecovery
@@ -1208,11 +1207,8 @@ class ShellModel(
         recorder?.stop()
     }
 
-    /**
-     * Saving a title is the only answer that queues this recording. [fill]: the dialog's ChatGPT box was there and
-     * ticked (docs/08 "Titles and speaker names").
-     */
-    fun saveTitle(title: String, participants: Int? = null, fill: FillAsk? = null) = answerTitle(title, participants, fill)
+    /** Saving a title is the only answer that queues this recording. */
+    fun saveTitle(title: String, participants: Int? = null) = answerTitle(title, participants)
 
     fun cancelTitle() {
         val graph = graph ?: return
@@ -1243,10 +1239,10 @@ class ShellModel(
         }
     }
 
-    private fun answerTitle(title: String?, participants: Int?, fill: FillAsk?) {
+    private fun answerTitle(title: String?, participants: Int?) {
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             val outcome = titles.take() ?: return@launch
-            complete(outcome, title, participants, fill)
+            complete(outcome, title, participants)
         }
     }
 
@@ -1254,9 +1250,9 @@ class ShellModel(
      * docs/03: name it, then queue it — never the other way round (see [completeRecording]). The line then says what
      * the queue made of it ([completionLine]).
      */
-    private suspend fun complete(outcome: RecordingOutcome, title: String?, participants: Int? = null, fill: FillAsk? = null) {
+    private suspend fun complete(outcome: RecordingOutcome, title: String?, participants: Int? = null) {
         val graph = graph ?: return
-        val completion = runCatching { completeRecording(graph.core, outcome.recordingId, title, participants, fill) }
+        val completion = runCatching { completeRecording(graph.core, outcome.recordingId, title, participants) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.enqueue.failed", error = it) }
             .getOrNull()
         // Kept, so its shape is worked out now, and the first open draws it at once.
@@ -1629,7 +1625,7 @@ class ShellModel(
 
     /**
      * docs/08 "Titles and speaker names": what is being filled in, into [fills]. A title a fill gave the open recording
-     * — from its More menu or its title dialog — shows in the header, which does not follow the recording: it is read
+     * — from its More menu or its publication — shows in the header, which does not follow the recording: it is read
      * again once the run that asked for it is over.
      */
     private suspend fun followFills(graph: AppGraph) {

@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Notatki w Recly korzystają z Twojego planu ChatGPT. Użyciem możesz zarządzać w ustawieniach ChatGPT.</string>
     <string name="chatgpt_got_it">Rozumiem</string>
     <string name="notes_consent_title">Recly porządkuje w trakcie nagrywania</string>
-    <string name="notes_consent_body">Gdy jesteś zalogowany w ChatGPT, Recly wysyła tekst transkrypcji każdego nagrania do Twojego planu ChatGPT w trakcie nagrywania i po jego zatrzymaniu oraz wypisuje decyzje, zadania i pytania. Dźwięk nigdy nie jest wysyłany. Wlicza się to do użycia Twojego planu.</string>
+    <string name="notes_consent_body">Gdy jesteś zalogowany w ChatGPT, Recly wysyła tekst transkrypcji każdego nagrania do Twojego planu ChatGPT w trakcie nagrywania i po jego zatrzymaniu, wypisuje decyzje, zadania i pytania oraz uzupełnia brakujący tytuł i imiona mówiących. Dźwięk nigdy nie jest wysyłany. Wlicza się to do użycia Twojego planu.</string>
+    <string name="title_auto_fill">Uzupełniany automatycznie</string>
     <string name="notes_consent_continue">Kontynuuj</string>
     <string name="notes_decisions">Decyzje</string>
     <string name="notes_todos">Zadania</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Zapytaj</string>
     <string name="ask_running">Pytanie…</string>
     <string name="ask_failed">Nie udało się odpowiedzieć</string>
-    <string name="fill_after_stop_note">Gdy transkrypcja będzie gotowa, trafi do ChatGPT po brakujący tytuł i imiona mówców, do których ktoś zwrócił się po imieniu. Wlicza się to do Twojego użycia ChatGPT.</string>
     <string name="fill_running">Uzupełnianie…</string>
     <string name="fill_title_menu">Uzupełnij tytuł</string>
     <string name="fill_names_menu">Uzupełnij imiona mówców</string>
-    <string name="fill_title_after_stop">Uzupełnij tytuł za pomocą ChatGPT</string>
-    <string name="fill_names_after_stop">Uzupełnij imiona mówców za pomocą ChatGPT</string>
     <string name="fill_has_title">Ma już tytuł</string>
     <string name="fill_no_unnamed">Brak mówców bez imion</string>
     <string name="fill_title_running">Uzupełnianie tytułu…</string>

@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Заметки в Recly используют ваш тариф ChatGPT. Использованием можно управлять в настройках ChatGPT.</string>
     <string name="chatgpt_got_it">Понятно</string>
     <string name="notes_consent_title">Recly упорядочивает прямо во время записи</string>
-    <string name="notes_consent_body">Пока вы вошли в ChatGPT, Recly отправляет текст расшифровки каждой записи в ваш тариф ChatGPT во время записи и после её остановки и составляет список решений, задач и вопросов. Аудио никогда не отправляется. Это учитывается в использовании вашего тарифа.</string>
+    <string name="notes_consent_body">Пока вы вошли в ChatGPT, Recly отправляет текст расшифровки каждой записи в ваш тариф ChatGPT во время записи и после её остановки, составляет список решений, задач и вопросов, а также заполняет недостающее название и имена говорящих. Аудио никогда не отправляется. Это учитывается в использовании вашего тарифа.</string>
+    <string name="title_auto_fill">Заполнится автоматически</string>
     <string name="notes_consent_continue">Продолжить</string>
     <string name="notes_decisions">Решения</string>
     <string name="notes_todos">Задачи</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Спросить</string>
     <string name="ask_running">Задаём вопрос…</string>
     <string name="ask_failed">Не удалось ответить</string>
-    <string name="fill_after_stop_note">Когда расшифровка будет готова, она отправится в ChatGPT, чтобы получить недостающее название и имена говорящих, к которым обращались по имени. Это входит в ваше использование ChatGPT.</string>
     <string name="fill_running">Заполняем…</string>
     <string name="fill_title_menu">Заполнить название</string>
     <string name="fill_names_menu">Заполнить имена говорящих</string>
-    <string name="fill_title_after_stop">Заполнить название с помощью ChatGPT</string>
-    <string name="fill_names_after_stop">Заполнить имена говорящих с помощью ChatGPT</string>
     <string name="fill_has_title">Название уже есть</string>
     <string name="fill_no_unnamed">Нет говорящих без имени</string>
     <string name="fill_title_running">Заполняем название…</string>

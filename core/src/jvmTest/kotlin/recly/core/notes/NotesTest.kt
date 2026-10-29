@@ -78,6 +78,7 @@ class NotesTest {
     private suspend fun ready(consent: Boolean = true) {
         chatGpt.signIn(account = f.core.chatGpt)
         if (consent) notes.consent()
+        chatGpt.answerFills()
     }
 
     private fun answer(json: String) {
@@ -104,7 +105,7 @@ class NotesTest {
 
     private fun conversation(summary: String, vararg items: String) = """{"summary":"$summary","items":[${items.joinToString(",")}]}"""
 
-    private fun responses() = chatGpt.server.requests.filter { it.url.endsWith("/responses") }
+    private fun responses() = chatGpt.server.requests.filter { it.url.endsWith("/responses") && !chatGpt.isFill(it) }
 
     private fun input(index: Int): String =
         responses()[index].json()["input"]!!.jsonArray[0].jsonObject["content"]!!.jsonArray[0].jsonObject["text"]!!.jsonPrimitive.content

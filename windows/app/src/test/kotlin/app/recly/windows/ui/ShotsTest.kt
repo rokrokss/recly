@@ -202,22 +202,13 @@ class ShotsTest {
             val window: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
             model.showNotes(true)
             shot("recordings-notes-more-signed-in-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
-            // docs/08 "Titles and speaker names": the title dialog's card with its two ChatGPT boxes as they were left —
-            // unticked, then ticked, then with a title typed, which leaves the title box disabled and still ticked.
-            val sheet: @Composable () -> Unit = {
+            // docs/08 "Titles and speaker names": the title dialog's card, signed in and transcribing, its field saying a
+            // title left empty is filled in automatically.
+            shot("title-sheet-$lang", 460, 520, ko) {
                 TitleSheet(model, strings) { actions, content ->
                     DialogCard(strings[Str.RECORDING_TITLE], androidx.compose.ui.Modifier, actions, content, fill = false)
                 }
             }
-            shot("title-sheet-$lang", 460, 520, ko) { sheet() }
-            chatGpt.rememberFillAfterStop(FillHalf.TITLE, true)
-            chatGpt.rememberFillAfterStop(FillHalf.NAMES, true)
-            until { chatGpt.preferences.fillTitleAfterStop && chatGpt.preferences.fillNamesAfterStop }
-            shot("title-sheet-ticked-$lang", 460, 520, ko) { sheet() }
-            shot("title-sheet-typed-$lang", 460, 520, ko, clicks = listOf(TITLE_FIELD), typed = "Weekly sync") { sheet() }
-            chatGpt.rememberFillAfterStop(FillHalf.TITLE, false)
-            chatGpt.rememberFillAfterStop(FillHalf.NAMES, false)
-            until { !chatGpt.preferences.fillTitleAfterStop && !chatGpt.preferences.fillNamesAfterStop }
             // More → Fill in title with a title to fill, Fill in speaker names with every speaker named, and what a
             // failure says: the plan is drawn signed in, but nothing here is, so the core answers that a sign-in is needed.
             val named = (model.detail!!.title as app.recly.windows.i18n.UiMessage.Text).value
@@ -489,8 +480,6 @@ class ShotsTest {
         val MORE_EDIT_NOTES = Offset(835f, 265f)
         // The decision's field in Edit notes, past the end of its words.
         val NOTES_FIELD = Offset(900f, 513f)
-        // The title dialog's field, in its 460-wide card.
-        val TITLE_FIELD = Offset(230f, 90f)
         const val SETTINGS_HEIGHT = 3100
 
         const val ANSWER = "- Mina: publish the release notes by Thursday [00:00:20]\n" +

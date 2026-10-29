@@ -653,7 +653,7 @@ private fun Detail(
                 }
             },
         )
-        // docs/09 "AI view": what a fill of this recording is filling in, from this window or the title dialog, the
+        // docs/09 "AI view": what a fill of this recording is filling in, from this window or its publication, the
         // title's line first — gone when the run ends.
         val run = model.fills.firstOrNull { it.recordingId == detail.recordingId }
         val filling = FillHalf.entries.filter { it.runs(run) }

@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Recly میں نوٹس آپ کا ChatGPT پلان استعمال کرتے ہیں۔ آپ ChatGPT کی ترتیبات میں استعمال کا انتظام کر سکتے ہیں۔</string>
     <string name="chatgpt_got_it">سمجھ گیا</string>
     <string name="notes_consent_title">Recly ریکارڈنگ کے دوران ہی ترتیب دیتا ہے</string>
-    <string name="notes_consent_body">جب تک آپ ChatGPT میں سائن ان ہیں، Recly ہر ریکارڈنگ کی ٹرانسکرپٹ کا متن ریکارڈنگ کے دوران اور روکنے کے بعد آپ کے ChatGPT پلان کو بھیجتا ہے، اور اس کے فیصلوں، کرنے کے کاموں اور سوالات کی فہرست بناتا ہے۔ آڈیو کبھی نہیں بھیجا جاتا۔ یہ آپ کے پلان کے استعمال میں شمار ہوتا ہے۔</string>
+    <string name="notes_consent_body">جب تک آپ ChatGPT میں سائن ان ہیں، Recly ہر ریکارڈنگ کی ٹرانسکرپٹ کا متن ریکارڈنگ کے دوران اور روکنے کے بعد آپ کے ChatGPT پلان کو بھیجتا ہے، اس کے فیصلوں، کرنے کے کاموں اور سوالات کی فہرست بناتا ہے، اور خالی عنوان اور بولنے والوں کے نام بھرتا ہے۔ آڈیو کبھی نہیں بھیجا جاتا۔ یہ آپ کے پلان کے استعمال میں شمار ہوتا ہے۔</string>
+    <string name="title_auto_fill">خودبخود بھرا جائے گا</string>
     <string name="notes_consent_continue">جاری رکھیں</string>
     <string name="notes_decisions">فیصلے</string>
     <string name="notes_todos">کرنے کے کام</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">پوچھیں</string>
     <string name="ask_running">پوچھا جا رہا ہے…</string>
     <string name="ask_failed">جواب نہیں دیا جا سکا</string>
-    <string name="fill_after_stop_note">ٹرانسکرپٹ تیار ہونے پر اسے ChatGPT کو بھیجا جاتا ہے تاکہ خالی عنوان اور نام لے کر پکارے گئے بولنے والوں کے نام مل سکیں۔ یہ آپ کے ChatGPT استعمال میں شمار ہوتا ہے۔</string>
     <string name="fill_running">بھرا جا رہا ہے…</string>
     <string name="fill_title_menu">عنوان بھریں</string>
     <string name="fill_names_menu">بولنے والوں کے نام بھریں</string>
-    <string name="fill_title_after_stop">ChatGPT سے عنوان بھریں</string>
-    <string name="fill_names_after_stop">ChatGPT سے بولنے والوں کے نام بھریں</string>
     <string name="fill_has_title">عنوان پہلے سے موجود ہے</string>
     <string name="fill_no_unnamed">کوئی بے نام بولنے والا نہیں</string>
     <string name="fill_title_running">عنوان بھرا جا رہا ہے…</string>

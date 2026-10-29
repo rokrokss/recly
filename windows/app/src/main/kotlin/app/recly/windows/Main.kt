@@ -50,13 +50,10 @@ import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
-import app.recly.windows.record.fillAsk
-import app.recly.windows.record.fillTitleBoxEnabled
 import app.recly.windows.ui.Consent
 import app.recly.windows.ui.DeleteDialog
 import app.recly.windows.ui.DevFlags
 import app.recly.windows.ui.DisconnectDialog
-import app.recly.windows.ui.FillHalf
 import app.recly.windows.ui.ByteFormat
 import app.recly.windows.ui.ChatGptWelcomeDialog
 import app.recly.windows.ui.OrganizeConsentDialog
@@ -481,10 +478,9 @@ private fun TitlePrompt(
  * The title dialog's answers and fields, which [frame] puts in a card — its own window here, a card on its own in the
  * off-screen shots.
  *
- * docs/08 "Titles and speaker names": under the head count, while ChatGPT is signed in and transcription is on, two
- * boxes — one asking ChatGPT for this recording's title and one for its speakers' names once it is transcribed — with
- * what that sends under both. Each starts as it was left last. While the field has a title the title box would do
- * nothing, so it is disabled, keeping what it says; Save says what the boxes ask for ([fillAsk]).
+ * docs/08 "Titles and speaker names": the dialog asks ChatGPT for nothing — the core fills a title left empty, and the
+ * speakers' names, once the recording is transcribed — and the field's placeholder says when it will
+ * ([titlePlaceholder]).
  */
 @Composable
 internal fun TitleSheet(
@@ -497,9 +493,7 @@ internal fun TitleSheet(
     var participants by remember { mutableStateOf<Int?>(null) }
     val transcribes = model.processing?.summary?.mode != TranscriptionMode.OFF
     val chatGpt = model.chatGpt
-    val askFill = transcribes && chatGpt?.connection is ChatGptConnection.SignedIn
-    var fillTitle by remember { mutableStateOf(chatGpt?.preferences?.fillTitleAfterStop ?: false) }
-    var fillNames by remember { mutableStateOf(chatGpt?.preferences?.fillNamesAfterStop ?: false) }
+    val placeholder = titlePlaceholder(transcribes, chatGpt?.connection, chatGpt?.needsOrganizeConsent == true)
     frame(
         {
             // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete
@@ -507,7 +501,7 @@ internal fun TitleSheet(
             BlueprintButton(strings[Str.RECORDING_DISCARD], model::cancelTitle, tone = ButtonTone.DANGER, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Str.SAVE],
-                onClick = { model.saveTitle(title, participants, fillAsk(askFill, title, fillTitle, fillNames)) },
+                onClick = { model.saveTitle(title, participants) },
                 modifier = Modifier.widthIn(min = 120.dp),
                 tone = ButtonTone.PRIMARY,
             )
@@ -518,7 +512,7 @@ internal fun TitleSheet(
                 onValueChange = { title = it },
                 // `Title`, not the dialog's own title again (2026-10-10).
                 label = strings[Str.LEDGER_TITLE],
-                placeholder = strings[Str.UNTITLED],
+                placeholder = strings[placeholder],
                 // A title is something a person types, not a field of data.
                 monospace = false,
             )
@@ -547,30 +541,17 @@ internal fun TitleSheet(
                     }
                 }
             }
-            if (askFill) {
-                BlueprintCheckRow(
-                    label = strings[Str.FILL_TITLE_AFTER_STOP],
-                    checked = fillTitle,
-                    onCheckedChange = {
-                        fillTitle = it
-                        chatGpt?.rememberFillAfterStop(FillHalf.TITLE, it)
-                    },
-                    enabled = fillTitleBoxEnabled(title),
-                )
-                BlueprintCheckRow(
-                    label = strings[Str.FILL_NAMES_AFTER_STOP],
-                    checked = fillNames,
-                    onCheckedChange = {
-                        fillNames = it
-                        chatGpt?.rememberFillAfterStop(FillHalf.NAMES, it)
-                    },
-                )
-                // What the boxes send, when, and that it counts toward the plan: the consent they are (docs/15 §10).
-                BlueprintDialogText(strings[Str.FILL_AFTER_STOP_NOTE], tone = DialogTone.MUTED)
-            }
         },
     )
 }
+
+/**
+ * docs/08 "Titles and speaker names": the title field's placeholder — `Filled in automatically` while a title left
+ * empty will be filled in from ChatGPT: transcription is on, ChatGPT is signed in and the notes consent is given
+ * ([needsConsent] is `ChatGptViewModel.needsOrganizeConsent`). `Untitled` otherwise.
+ */
+internal fun titlePlaceholder(transcribes: Boolean, connection: ChatGptConnection?, needsConsent: Boolean): Str =
+    if (transcribes && connection is ChatGptConnection.SignedIn && !needsConsent) Str.TITLE_AUTO_FILL else Str.UNTITLED
 
 /** docs/03: 2 · 3 · 4 · 5 · 6+ · unknown, and unknown — `null` — is where the dialog starts. */
 private val PARTICIPANT_CHOICES = listOf(null, 2, 3, 4, 5, 6)

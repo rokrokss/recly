@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Notizen in Recly nutzen dein ChatGPT-Abo. Die Nutzung lässt sich in den ChatGPT-Einstellungen verwalten.</string>
     <string name="chatgpt_got_it">Verstanden</string>
     <string name="notes_consent_title">Recly ordnet schon während der Aufnahme</string>
-    <string name="notes_consent_body">Solange du bei ChatGPT angemeldet bist, sendet Recly den Transkripttext jeder Aufnahme während der Aufnahme und nach dem Stoppen an dein ChatGPT-Abo und listet Entscheidungen, Aufgaben und Fragen auf. Audio wird nie gesendet. Das zählt zur Nutzung deines Abos.</string>
+    <string name="notes_consent_body">Solange du bei ChatGPT angemeldet bist, sendet Recly den Transkripttext jeder Aufnahme während der Aufnahme und nach dem Stoppen an dein ChatGPT-Abo, listet Entscheidungen, Aufgaben und Fragen auf und ergänzt einen fehlenden Titel und die Namen der Sprechenden. Audio wird nie gesendet. Das zählt zur Nutzung deines Abos.</string>
+    <string name="title_auto_fill">Wird automatisch ausgefüllt</string>
     <string name="notes_consent_continue">Weiter</string>
     <string name="notes_decisions">Entscheidungen</string>
     <string name="notes_todos">Aufgaben</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Fragen</string>
     <string name="ask_running">Wird gefragt…</string>
     <string name="ask_failed">Keine Antwort möglich</string>
-    <string name="fill_after_stop_note">Sobald das Transkript fertig ist, geht es an ChatGPT, um einen fehlenden Titel und die Namen angesprochener Sprecher zu ergänzen. Das zählt zu deiner ChatGPT-Nutzung.</string>
     <string name="fill_running">Wird ergänzt…</string>
     <string name="fill_title_menu">Titel ergänzen</string>
     <string name="fill_names_menu">Sprechernamen ergänzen</string>
-    <string name="fill_title_after_stop">Titel mit ChatGPT ergänzen</string>
-    <string name="fill_names_after_stop">Sprechernamen mit ChatGPT ergänzen</string>
     <string name="fill_has_title">Hat schon einen Titel</string>
     <string name="fill_no_unnamed">Keine Sprecher ohne Namen</string>
     <string name="fill_title_running">Titel wird ergänzt…</string>

@@ -362,7 +362,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             var before = emptyList<FillRun>()
             core.observeFills().collect { fills ->
                 _state.update { it.copy(fills = fills) }
-                // A title a fill gave the open recording — from its More menu or its title sheet — shows in the header,
+                // A title a fill gave the open recording — from its More menu or its publication — shows in the header,
                 // which does not follow the recording: read again once the run that asked for it is over.
                 val open = _state.value.detail?.recordingId
                 if (open != null && before.any { it.recordingId == open && it.title } && fills.none { it.recordingId == open && it.title }) {

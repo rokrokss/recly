@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">یادداشت‌ها در Recly از طرح ChatGPT شما استفاده می‌کنند. می‌توانید مصرف را در تنظیمات ChatGPT مدیریت کنید.</string>
     <string name="chatgpt_got_it">متوجه شدم</string>
     <string name="notes_consent_title">Recly هم‌زمان با ضبط مرتب می‌کند</string>
-    <string name="notes_consent_body">تا وقتی به ChatGPT وارد شده‌اید، Recly متن رونویسی هر ضبط را هنگام ضبط و پس از توقف به طرح ChatGPT شما می‌فرستد و تصمیم‌ها، کارها و پرسش‌های آن را فهرست می‌کند. صدا هرگز فرستاده نمی‌شود. این کار جزو مصرف طرح شما حساب می‌شود.</string>
+    <string name="notes_consent_body">تا وقتی به ChatGPT وارد شده‌اید، Recly متن رونویسی هر ضبط را هنگام ضبط و پس از توقف به طرح ChatGPT شما می‌فرستد، تصمیم‌ها، کارها و پرسش‌های آن را فهرست می‌کند و عنوانِ خالی و نام گویندگان را پر می‌کند. صدا هرگز فرستاده نمی‌شود. این کار جزو مصرف طرح شما حساب می‌شود.</string>
+    <string name="title_auto_fill">خودکار پر می‌شود</string>
     <string name="notes_consent_continue">ادامه</string>
     <string name="notes_decisions">تصمیم‌ها</string>
     <string name="notes_todos">کارها</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">بپرس</string>
     <string name="ask_running">در حال پرسیدن…</string>
     <string name="ask_failed">پاسخ داده نشد</string>
-    <string name="fill_after_stop_note">وقتی رونوشت آماده شد، برای گرفتن عنوانِ خالی و نام گویندگانی که با نام صدا زده شده‌اند به ChatGPT فرستاده می‌شود. این جزو مصرف ChatGPT شما حساب می‌شود.</string>
     <string name="fill_running">در حال تکمیل…</string>
     <string name="fill_title_menu">تکمیل عنوان</string>
     <string name="fill_names_menu">تکمیل نام گویندگان</string>
-    <string name="fill_title_after_stop">تکمیل عنوان با ChatGPT</string>
-    <string name="fill_names_after_stop">تکمیل نام گویندگان با ChatGPT</string>
     <string name="fill_has_title">از قبل عنوان دارد</string>
     <string name="fill_no_unnamed">گوینده‌ای بی‌نام نیست</string>
     <string name="fill_title_running">در حال تکمیل عنوان…</string>

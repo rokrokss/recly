@@ -550,7 +550,7 @@ final class MenuModel: ObservableObject {
             var titleRefused = false
             if askingForTitle {
                 switch askForTitle() {
-                case .save(let title, let participants, let fill):
+                case .save(let title, let participants):
                     if title != nil || participants != nil {
                         let saved = try? await bridge?.core.recordings.updateTitle(
                             recordingId: outcome.recordingId,
@@ -558,15 +558,6 @@ final class MenuModel: ObservableObject {
                             participants: participants.map { KotlinInt(int: Int32($0)) }
                         )
                         titleRefused = saved?.boolValue != true
-                    }
-                    // docs/08 "Titles and speaker names": a box was ticked — asked after the title is written and
-                    // before the job is queued, so the publication finds the request.
-                    if fill.any {
-                        do {
-                            try await bridge?.core.requestFill(recordingId: outcome.recordingId, title: fill.title, names: fill.names)
-                        } catch {
-                            logger.error("shell.chatgpt.fill.request.failed error=\(String(describing: error), privacy: .private)")
-                        }
                     }
                 case .discard, nil:
                     if detail?.recordingId == outcome.recordingId { detail = nil }
@@ -1368,7 +1359,7 @@ final class MenuModel: ObservableObject {
     /// What the stop asked for and got: the name, how many people were in the room, and what ChatGPT is to fill in —
     /// the title, the speakers' names, both or neither.
     enum NamingAnswer {
-        case save(title: String?, participants: Int?, fill: TitleSheetFill)
+        case save(title: String?, participants: Int?)
         case discard
     }
 
@@ -1378,17 +1369,13 @@ final class MenuModel: ObservableObject {
     /// text field bolted to its side.
     private func askForTitle() -> NamingAnswer? {
         let asksPeople = !(processing?.transcriptionOff ?? false)
-        // docs/08 "Titles and speaker names": the ChatGPT boxes, while transcription is on and ChatGPT is signed in.
-        let chatGpt = chatGpt
+        // docs/08 "Titles and speaker names": an empty title is filled in at the publication, while transcription is on.
+        let autoFill = asksPeople && chatGpt?.autoFill == true
         return BlueprintPanel.run { finish in
             NamingSheet(
                 asksPeople: asksPeople,
-                asksFill: asksPeople && chatGpt?.fillOffered == true,
-                fillTitle: chatGpt?.preferences.fillTitleAfterStop ?? false,
-                fillNames: chatGpt?.preferences.fillNamesAfterStop ?? false,
-                onFillTitleChanged: { chatGpt?.setFillTitleAfterStop($0) },
-                onFillNamesChanged: { chatGpt?.setFillNamesAfterStop($0) },
-                onSave: { finish(.save(title: $0, participants: $1, fill: $2)) },
+                autoFill: autoFill,
+                onSave: { finish(.save(title: $0, participants: $1)) },
                 onCancel: { finish(.discard) }
             )
         }

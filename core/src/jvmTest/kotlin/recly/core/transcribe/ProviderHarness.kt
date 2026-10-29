@@ -37,6 +37,8 @@ internal class ScriptedServer {
 
     private val queued = ArrayDeque<Reply>()
 
+    private val standing = mutableListOf<Pair<(Recorded) -> Boolean, Reply>>()
+
     /** Runs as each request arrives, before it is answered: what a test looks at while the caller waits. */
     var beforeReply: (suspend (Recorded) -> Unit)? = null
 
@@ -46,12 +48,20 @@ internal class ScriptedServer {
         headers: Map<String, String> = mapOf("Content-Type" to "application/json"),
     ): ScriptedServer = apply { queued += Reply(status, body, headers) }
 
+    /** Every request [matching] picks out is answered so, outside the queue: a call that comes along with the ones a test scripts. */
+    fun replyEach(
+        matching: (Recorded) -> Boolean,
+        body: String,
+        headers: Map<String, String> = mapOf("Content-Type" to "application/json"),
+    ): ScriptedServer = apply { standing += matching to Reply(200, body, headers) }
+
     fun request(index: Int): Recorded = requests[index]
 
     fun engine(): MockEngine = MockEngine { request ->
         requests += Recorded.of(request)
         beforeReply?.invoke(requests.last())
-        val reply = queued.removeFirstOrNull()
+        val reply = standing.firstOrNull { (matching, _) -> matching(requests.last()) }?.second
+            ?: queued.removeFirstOrNull()
             ?: Reply(500, """{"error":"no scripted reply"}""", mapOf("Content-Type" to "application/json"))
         respond(
             reply.body,

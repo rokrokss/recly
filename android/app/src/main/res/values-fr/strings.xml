@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Les notes dans Recly utilisent votre forfait ChatGPT. Vous pouvez gérer l’utilisation dans les réglages de ChatGPT.</string>
     <string name="chatgpt_got_it">Compris</string>
     <string name="notes_consent_title">Recly organise pendant que vous enregistrez</string>
-    <string name="notes_consent_body">Tant que vous êtes connecté à ChatGPT, Recly envoie le texte de la transcription de chaque enregistrement à votre forfait ChatGPT pendant l’enregistrement et après l’arrêt, et en liste les décisions, les tâches et les questions. L’audio n’est jamais envoyé. Cela compte dans l’utilisation de votre forfait.</string>
+    <string name="notes_consent_body">Tant que vous êtes connecté à ChatGPT, Recly envoie le texte de la transcription de chaque enregistrement à votre forfait ChatGPT pendant l’enregistrement et après l’arrêt, en liste les décisions, les tâches et les questions, et complète le titre manquant et les noms des intervenants. L’audio n’est jamais envoyé. Cela compte dans l’utilisation de votre forfait.</string>
+    <string name="title_auto_fill">Rempli automatiquement</string>
     <string name="notes_consent_continue">Continuer</string>
     <string name="notes_decisions">Décisions</string>
     <string name="notes_todos">Tâches</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">Demander</string>
     <string name="ask_running">Question en cours…</string>
     <string name="ask_failed">Impossible de répondre</string>
-    <string name="fill_after_stop_note">Une fois la transcription prête, elle est envoyée à ChatGPT pour obtenir le titre manquant et le nom des locuteurs appelés par leur nom. Cela compte dans votre utilisation de ChatGPT.</string>
     <string name="fill_running">Complétion en cours…</string>
     <string name="fill_title_menu">Compléter le titre</string>
     <string name="fill_names_menu">Compléter les noms des locuteurs</string>
-    <string name="fill_title_after_stop">Compléter le titre avec ChatGPT</string>
-    <string name="fill_names_after_stop">Compléter les noms des locuteurs avec ChatGPT</string>
     <string name="fill_has_title">A déjà un titre</string>
     <string name="fill_no_unnamed">Aucun locuteur sans nom</string>
     <string name="fill_title_running">Complétion du titre…</string>

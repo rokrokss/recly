@@ -1,10 +1,8 @@
 package app.recly.windows.record
 
 import app.recly.windows.i18n.Str
-import kotlin.coroutines.cancellation.CancellationException
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
-import recly.core.platform.Logger
 
 /**
  * What naming and queuing a finished recording came to: the queue's answer, and whether a name (or the count of
@@ -24,66 +22,20 @@ data class Completion(val enqueued: EnqueueResult, val titleTooLate: Boolean = f
  * @param participants how many people were in the room, or null for "unknown" — docs/03's
  * `context.participants`, which docs/08 lets override the workflow's speaker hint. The same dialog
  * asks for it as on the phones, so both answers land in one write.
- * @param fill what the dialog's ChatGPT boxes ask for, or null for nothing: the recording's publication asks for its
- * title, its speaker names or both (docs/08 "Titles and speaker names").
  */
 suspend fun completeRecording(
     core: ReclyCore,
     recordingId: String,
     title: String?,
     participants: Int? = null,
-    fill: FillAsk? = null,
 ): Completion {
     val named = title?.trim()?.takeIf { it.isNotEmpty() }
-    return completeInOrder(
-        name = { if (named != null || participants != null) core.recordings.updateTitle(recordingId, named, participants) else true },
-        requestFill = fill?.let { ask -> { core.requestFill(recordingId, ask.title, ask.names) } },
-        enqueue = { core.enqueue(recordingId) },
-        fillFailed = { core.deps.logger.log(Logger.Level.ERROR, "rec.fill.failed", mapOf("recordingId" to recordingId), it) },
-    )
-}
-
-/** docs/08 "Titles and speaker names": the halves the title dialog's Save asks for — `requestFill`'s two flags. */
-data class FillAsk(val title: Boolean, val names: Boolean)
-
-/**
- * The title dialog's title box can be changed only while the field is empty: with a title typed it would do nothing — a
- * typed title is never replaced — so it is disabled, keeping what it says.
- */
-fun fillTitleBoxEnabled(title: String): Boolean = title.isBlank()
-
-/**
- * What the title dialog's Save asks ChatGPT for — null for nothing, so no request is made. The title box asks only
- * while it is enabled ([fillTitleBoxEnabled]). [offered] is whether the boxes were there at all.
- */
-fun fillAsk(offered: Boolean, title: String, titleBox: Boolean, namesBox: Boolean): FillAsk? {
-    if (!offered) return null
-    val askTitle = titleBox && fillTitleBoxEnabled(title)
-    return if (askTitle || namesBox) FillAsk(askTitle, namesBox) else null
-}
-
-/**
- * [completeRecording]'s order: the name, then — a ChatGPT box ticked — the fill request, then the job. The request
- * is there before the job because the job's publication is what reads it (docs/08 "Titles and speaker names"); one
- * that could not be kept costs the fill, never the job. [name] answers whether the name was saved.
- */
-internal suspend fun completeInOrder(
-    name: suspend () -> Boolean,
-    requestFill: (suspend () -> Unit)?,
-    enqueue: suspend () -> EnqueueResult,
-    fillFailed: (Exception) -> Unit,
-): Completion {
-    val saved = name()
-    if (requestFill != null) {
-        try {
-            requestFill()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            fillFailed(e)
-        }
+    val saved = if (named != null || participants != null) {
+        core.recordings.updateTitle(recordingId, named, participants)
+    } else {
+        true
     }
-    return Completion(enqueue(), titleTooLate = !saved)
+    return Completion(core.enqueue(recordingId), titleTooLate = !saved)
 }
 
 /**

@@ -75,7 +75,7 @@ the current rule.
 
 | Number | Rule |
 |---|---|
-| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) (Revised 2026-10-09: one exception — a summary of one recording, asked for in its detail, through the user's own ChatGPT plan with Sign in with ChatGPT. The subscription comes into the app rather than the app holding a key, so the rule "use what the user already pays for, no server" holds. It is never a step of the processing plan and never automatic, and there is no summarization with an API key; §8 "AI requests", §15 §10) (Revised 2026-10-15: a second exception — a recording's title and its speakers' names from the same plan, asked for one recording at a time: ticked in the title sheet after Stop, the publication of its transcript first asks for them, so they go up with it, and the recording's More menu asks for them later (§8 "Titles and speaker names"). Never for a recording nobody asked for: the ticked box is the user's express consent to that background use) (Revised 2026-10-27: a third exception — a recording's notes, its decisions, to-dos and open questions, organized in the background through the same plan for a user who signed in and agreed once: each part while it is recorded, and its transcript after Stop as the processing plan's last step, `notes.organize`, a no-op for anyone else. The consent the sign-in shows — or the question at the first recording of a user signed in before — is the user's express consent to that background use, which OpenAI's terms require; there is no switch beyond it but signing out (§8 "Organizing", §15 §10)) (Revised 2026-10-28: the first exception folded into the third — there is no summary on request any more; a recording's notes take its place, in one shape the user adjusts (notes instructions and up to three sections of their own) and edits, and `Organize again` runs them once more on request (§8 "AI requests", §8 "Organizing")) |
+| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) (Revised 2026-10-09: one exception — a summary of one recording, asked for in its detail, through the user's own ChatGPT plan with Sign in with ChatGPT. The subscription comes into the app rather than the app holding a key, so the rule "use what the user already pays for, no server" holds. It is never a step of the processing plan and never automatic, and there is no summarization with an API key; §8 "AI requests", §15 §10) (Revised 2026-10-15: a second exception — a recording's title and its speakers' names from the same plan, asked for one recording at a time: ticked in the title sheet after Stop, the publication of its transcript first asks for them, so they go up with it, and the recording's More menu asks for them later (§8 "Titles and speaker names"). Never for a recording nobody asked for: the ticked box is the user's express consent to that background use) (Revised 2026-10-27: a third exception — a recording's notes, its decisions, to-dos and open questions, organized in the background through the same plan for a user who signed in and agreed once: each part while it is recorded, and its transcript after Stop as the processing plan's last step, `notes.organize`, a no-op for anyone else. The consent the sign-in shows — or the question at the first recording of a user signed in before — is the user's express consent to that background use, which OpenAI's terms require; there is no switch beyond it but signing out (§8 "Organizing", §15 §10)) (Revised 2026-10-28: the first exception folded into the third — there is no summary on request any more; a recording's notes take its place, in one shape the user adjusts (notes instructions and up to three sections of their own) and edits, and `Organize again` runs them once more on request (§8 "AI requests", §8 "Organizing")) (Revised 2026-10-29: the second exception moved under the third's consent — every transcript a signed-in, agreed user's device publishes first asks for its missing title and its speakers' names, with no box in the title sheet, whose empty title field then reads `Filled in automatically`; the More menu still asks on request (§8 "Titles and speaker names")) |
 | ADR-002 | The Android phone, iPhone, macOS and Windows run workflows. Galaxy Watch hands files to the phone over the Data Layer, Apple Watch over WatchConnectivity. **The watches have no authentication or network code.** Standalone upload from a cellular watch is out of scope |
 | ADR-003 | When the phone and the watch record at the same time, there are two files and they are not linked. `recordingId` is an independent per-device ULID, and there is no session linking (session id) |
 | ADR-004 | The workflow engine, Drive client, webhooks, sync and job queue live in a single Kotlin Multiplatform `core/`. Workflow logic is not written twice. (Webhooks retired 2026-09-24) |
@@ -2151,11 +2151,11 @@ plan's API takes neither audio nor transcription, which is why transcription sta
   change with `summaries.setLocale(tag)`, so a new language needs no restart (2026-10-10) — on Android from wherever the language changes,
   the system's per-app language screen included (2026-10-11).
 - **About you** (2026-10-10). `About you` in Settings → Notes, up to 300 characters, trimmed, tells the model what matters to the user;
-  notes and questions send it. `SummaryPreferences(aboutMe, fillTitleAfterStop, fillNamesAfterStop)` is this device's, in `kv`
+  notes and questions send it. `SummaryPreferences(aboutMe)` is this device's, in `kv`
   (`summary/prefs/…`), like the model. `Me` in a transcript (§8 "Me and others") is named with the word for "me".
 - **On request, or with consent.** OpenAI's terms ask for express consent before any background use. Ask and the detail's fills are on
-  request; there are two background uses, each consented to: §8 "Titles and speaker names", for a recording whose title sheet asked for
-  it, and §8 "Organizing", for a user who agreed to it.
+  request; the background uses — §8 "Organizing" and §8 "Titles and speaker names" at every publication — are for a user who agreed to
+  them, under the one consent §8 "Organizing" asks for (2026-10-29).
 - **Citations.** `SummaryCitations.parse(text)` is the one reading of `[HH:MM:SS]` and `[MM:SS]` (minutes and seconds up to 59) in an
   answer, which the shells turn into taps that play from that time (§9 "AI view").
 - **Errors** are `CoreMessage`s: `CHATGPT_SIGN_IN_REQUIRED` (no sign-in, or OpenAI ended it), `CHATGPT_USAGE_LIMIT`
@@ -2338,24 +2338,21 @@ user's when `mic` sounds and `sys` is quiet, and the call's when `sys` sounds.
 
 ### Titles and speaker names
 
-2026-10-15 (user decision; the same day, one recording at a time instead of two switches in Settings → ChatGPT, and the title and
-the names apart, never one action). A recording's title, when it has none, and its speakers' names come from the user's ChatGPT plan
-when the user asks for them for that recording — each on its own — in the title sheet after Stop, or later from its detail
-(`AutoFill`).
+2026-10-15 (user decision); 2026-10-29 (user decision: no boxes — automatic). A recording's title, when it has none, and its speakers'
+names come from the user's ChatGPT plan: at every publication of its transcript on this device, for a user signed in who agreed to the
+plan's background use, and on request from its detail (`AutoFill`). (From 2026-10-15 to 2026-10-29 the title sheet after Stop had two
+checkboxes, `Fill in the title with ChatGPT` and `Fill in speaker names with ChatGPT`, remembered on each device and asked per recording;
+the user chose automatic instead.)
 
-- **After Stop.** The title sheet has two checkboxes, `Fill in the title with ChatGPT` and `Fill in speaker names with ChatGPT` (§9
-  principle 5), shown only while ChatGPT is offered and signed in and transcription is on. Each starts as it was left last
-  (`SummaryPreferences.fillTitleAfterStop` and `fillNamesAfterStop`, this device's, in `kv` beside the other preferences —
-  `summary/prefs/fill_title_after_stop`, `summary/prefs/fill_names_after_stop`; unticked at first). Saved with either ticked, the shell
-  calls `requestFill(recordingId, title, names)` before it queues the recording, and the core keeps what was asked
-  (`summary/fill/requested/{recordingId}` in `kv` — `title`, `names` or `title,names`; a later ask adds to it; gone with the recording).
-  That recording's `transcript.publish` (§5 "Fixed processing settings") then first asks the plan for what it lacks of that — the
+- **At a publication.** Every `transcript.publish` (§5 "Fixed processing settings") of this device — a recording made here, a watch's
+  recording this phone transcribes, an import, a re-transcription — first asks the plan for what the recording lacks (`FillNeeds`) — the
   publish runner's `TranscriptFill` — **before anything of the transcript goes up**, so the folder's first copy has it, and so do
-  recly-events' event and its `get_transcript` (§15 §9). With both ticked, one request asks for both; with one, it asks for that alone.
-  The request is spent once that was tried — filled, failed or skipped; a pass cut short asks again at the next. A transcript already
-  published when the request arrives — its job settled while the sheet was open — is filled at once, as More fills it. Nothing else is
-  asked at a publication: not a recording nobody asked for, not a re-transcription (§10 "Re-transcription"), not another device's
-  recording.
+  recly-events' event and its `get_transcript` (§15 §9). Only for a user signed in to ChatGPT who agreed to the notes' consent
+  (`Notes.agreed()` — §8 "Organizing"; signed out or not agreed, nothing is asked and nothing is logged, the no-op `notes.organize` is for
+  anyone else). The title sheet after Stop has no box: its title field's placeholder reads `Filled in automatically` while a title left
+  empty will be filled in — transcription on, signed in, agreed (and on iPhone the destination allowed) — and `Untitled` otherwise (§9
+  principle 5). A typed title is the recording's, and only the names are asked. A publication tried again asks again for what is still
+  missing; nothing is kept between tries.
 - **From the detail.** More → `Fill in title` and More → `Fill in speaker names` (§9 "AI view") ask for a recording already
   transcribed, this device's or another's: `fillTitle(recordingId)` and `fillNames(recordingId)` — both `fill(recordingId, title, names)`
   for one half — answer `FillResult`: `Filled(title, names)` (whether a title was given and how many speakers were named; ChatGPT may
@@ -2396,20 +2393,22 @@ when the user asks for them for that recording — each on its own — in the ti
   the names as an edit (`editTranscript` with `RenameSpeaker`s): `editedAt` is set and the folder's copy is marked `edited` — the
   transcript is already there, and this is a change the user asked for; a speaker named meanwhile keeps that name.
 - **Never in the way.** At a publication a skip or a failure publishes the transcript as it was, and the step is not retried for it
-  (`summary.fill.requested` — with `title` and `names`, the boxes ticked — `.start` — with `title`, `names` and `speakers`, what the
+  (`summary.fill.start` — with `title`, `names` and `speakers`, what the
   request asks for — `.model` — the model and effort asked — `.done`, `.skipped`, `.failed`, and `.effort.refused` when the plan refused
   `reasoning` and was asked again without it, each with `trigger` `publish` or `manual`; ids, flags, counts and the model only, never a
-  title or a name). Signed out, or ChatGPT not offered in the storefront: skipped. iPhone: skipped until ChatGPT is an allowed
-  destination (§15 "iPhone providers"); the title sheet asks for that permission when either box is ticked. OpenAI asks apps to stop requests
+  title or a name). Signed out, not agreed, or ChatGPT not offered in the storefront: nothing is asked. iPhone: skipped until ChatGPT is an
+  allowed destination (§15 "iPhone providers"); the notes' consent sheet gives that permission with its `Continue`. OpenAI asks apps to stop requests
   at the usage limit and when the plan no longer covers the app (developers.openai.com/siwc "Errors and recovery", 2026-10-15):
   `CHATGPT_USAGE_LIMIT` pauses the publications' fills for five hours — the plan's shorter usage window — and `CHATGPT_PLAN_REQUIRED` for
   a day (`summary/fill/paused_until`). The detail's items are not paused — the user asked — but set the same pause when they meet either.
-- **Where it runs.** At a publication, on the device that runs the recording's job and showed its title sheet — the phone, the Mac or
-  the Windows PC; a watch recording has no title sheet. In the offline pass (a local folder, on-device transcription) it is the one
+- **Where it runs.** At a publication, on the device that runs the recording's job — the phone (a watch's recordings included), the Mac
+  or the Windows PC. In the offline pass (a local folder, on-device transcription) it is the one
   network call: offline it fails at once and the transcript is published without it.
 - **Consent.** OpenAI's Sign in with ChatGPT terms (2026-09-29, checked 2026-10-15) ask for express consent before background use of the
-  plan. A ticked box is that consent, for that one recording and that half: the note under the boxes says what is sent, when, and that it
-  counts toward the plan's usage. The detail's items, like `Organize again` and Ask, are on request.
+  plan. The notes' consent (§8 "Organizing") is that consent for both background uses: its sheet says the transcript text goes to the plan as
+  the user records and after they stop, that its decisions, to-dos and questions are listed and a missing title and the speakers' names
+  filled in, that audio is never sent, and that it counts toward the plan (reworded 2026-10-29). The detail's items, like `Organize again`
+  and Ask, are on request.
 
 ### What is not included
 
@@ -2869,15 +2868,10 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    from the current settings — `With AssemblyAI · Korean.` or `With on-device transcription · Korean.`, plus ` Your edits are replaced.` when the transcript
    was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`); `Rename` opens `Recording title` with the field `Title` (`Cancel` · `Save`), the same field label as the
    title sheet after Stop (2026-10-15, every shell). The title sheet after Stop has `Discard recording` · `Save` — the red
-   `Discard recording` deletes the recording that just ended, as `Cancel` did (§3 "Titles"; relabelled 2026-10-08, user decision). Under
-   its fields, two checkboxes, `Fill in the title with ChatGPT` and `Fill in speaker names with ChatGPT` (2026-10-15, user decision —
-   the title and the names apart; §8 "Titles and speaker names"), shown only while ChatGPT is offered and signed in and transcription is
-   on — like the participant-count row's rule — with one note under both: `Once transcribed, the transcript goes to ChatGPT for a missing
-   title and the names of speakers called by name. It counts toward your ChatGPT usage.` Each starts as it was left last
-   (`SummaryPreferences.fillTitleAfterStop`, `fillNamesAfterStop`) and is remembered on its own; `Save` with either ticked asks for what is
-   ticked, for this recording. While the title field has text, the title box is disabled — a typed title is never replaced, so it would do
-   nothing — and keeps the state it remembers. On iPhone, ticking either asks for the ChatGPT permission first (§15 "iPhone providers"), as `Organize`
-   does.
+   `Discard recording` deletes the recording that just ended, as `Cancel` did (§3 "Titles"; relabelled 2026-10-08, user decision). Its
+   title field's placeholder is `Filled in automatically` while an empty title will be filled in at the publication — transcription on,
+   ChatGPT signed in, the notes' consent given, and on iPhone the destination allowed — and `Untitled` otherwise (2026-10-29, user
+   decision; §8 "Titles and speaker names"). There is no checkbox: the two of 2026-10-15 are gone.
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
@@ -2962,9 +2956,9 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   and `Fill in speaker names` (2026-10-15, §8 "Titles and speaker names"; two items, the title and the names apart — `fillTitle`,
   `fillNames`) — each disabled with the first reason that applies, in this order: `Still recording`; `No transcript yet` (a transcript
   with nothing said included) or the reason of an unsettled job (`Transcribing…`); `Sign in to ChatGPT in Settings`; `Filling in…` while
-  a fill of that half runs (`observeFills()` — the title sheet's too); then `Already has a title` (`Fill in title`, `FillNeeds.title` is
+  a fill of that half runs (`observeFills()` — a publication's too); then `Already has a title` (`Fill in title`, `FillNeeds.title` is
   false) or `No unnamed speakers` (`Fill in speaker names`, `FillNeeds.names` is false). They open no view: the title shows in the header
-  and the names in the transcript. While a fill of the recording runs, from either item or from the title sheet's boxes, the line under
+  and the names in the transcript. While a fill of the recording runs, from either item or at its publication, the line under
   the header says so with the square loader: `Filling in the title…`, `Filling in speaker names…`, or both lines, the title's first, when
   one request asks for both; it goes when the run ends, and steps aside while the transcript or the notes are edited, as the
   other lines there do. An item asked when there turned out to be nothing to fill says its own reason (`Already has a title` or `No
@@ -3031,8 +3025,9 @@ says provisional or edited: the notes simply change when a pass lands.
 - **Lists.** A job with only its notes left (`StepReport.notesOnly`) reads `Done`: no reason line, no retry or countdown, it does not make
   the state node say `Uploading`, and it does not disable the detail's transcript edits or fills. A notes step's error is never shown on a row.
 - **Consent.** A Blueprint dialog `Recly organizes while you record` / `While you're signed in to ChatGPT, Recly sends each recording's
-  transcript text to your ChatGPT plan as you record and after you stop, and lists its decisions, to-dos and questions. Audio is never
-  sent. This counts toward your plan.`, `Sign out` (quiet) · `Continue`
+  transcript text to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing
+  title and the speakers' names. Audio is never sent. This counts toward your plan.` (the title and names since 2026-10-29), `Sign out`
+  (quiet) · `Continue`
   (primary, default). It closes only through its two buttons — back, Esc or a tap outside is no answer, and it asks again at the next start.
   Shown after a successful ChatGPT sign-in when `needsConsent()` (before the one-time welcome), and at a start from the app's own UI — the
   record node, the Mac popover and Transcripts window, a meeting offer — when `needsConsent()`, before the consent reminder and the
@@ -4234,8 +4229,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
   usage, and its help pages say ChatGPT's "Improve the model for everyone" setting governs personal plans (Codex included). So the
   iPhone treats it like ElevenLabs: the destination `TransferTargets.chatGptSummary()` (`summarize`, `chatgpt`,
   `https://api.openai.com/v1`) needs the transfer permission, asked the first time `Organize`, `Ask about this recording…`, `Fill in
-  title` or `Fill in speaker names` is chosen or the title sheet's `Fill in the title with ChatGPT` or `Fill in speaker names with
-  ChatGPT` is ticked (§8 "Titles and speaker names"), or in the notes consent sheet, which carries the same disclosure and whose
+  title` or `Fill in speaker names` is chosen (§8 "Titles and speaker names"), or in the notes consent sheet, which carries the same disclosure and whose
   `Continue` grants it (§8 "Organizing", §9 "Notes view"); its allow button — `Continue` there — turns on
   only when "I turned off “Improve the model for everyone” in ChatGPT." is checked, with a link to OpenAI's data-controls help
   (<https://help.openai.com/en/articles/7730893>). Settings → Privacy lists and withdraws it like the providers.
@@ -4493,8 +4487,8 @@ connections:
 
 - No audio, STT key or long-lived Recly credential passes through it. Transcript text does, on request only: when the agent calls `get_transcript`, recly-events downloads that transcript from Drive, keeps it in memory for that answer only, and sends it to the user's ChatGPT through the user's tunnel, marked as untrusted content (what people said, not instructions). The event delivery itself still carries names and links only, and nothing is read from Drive for it beyond metadata (2026-10-07). The agent therefore needs no Google Drive connector of its own (2026-10-07); a Work chat that has one can still open the files by the event's Drive IDs.
 - **An edit is not a new transcript** (2026-10-07). The apps mark each `{base}.transcript.txt` version they write with the appProperty `reclyTranscript`: `transcribed` from a transcription, `edited` when the user changed the text or a speaker's name. recly-events notes a version marked `edited` as seen without announcing it when it already saw an earlier version of that file — the first version it sees is announced even if marked `edited`, since a transcript edited before the next poll shows up only that way (2026-10-07); any other version — a transcription run again, or one with no mark — is announced as before. The mark must be written in the same request as the content, or the change feed can show the new content with the old mark. Only Recly's own client sees appProperties, so with a client of the user's own an edit is announced.
-- **Titles and speaker names arrive with the transcript** (2026-10-15). When a recording's title sheet asked for them (§8 "Titles and
-  speaker names"), the device puts the title in the folder's description, and the names in the transcript, before the transcript goes
+- **Titles and speaker names arrive with the transcript** (2026-10-15; for every publication of an agreed user since 2026-10-29). When the
+  device fills them in at a publication (§8 "Titles and speaker names"), it puts the title in the folder's description, and the names in the transcript, before the transcript goes
   up, so the event of a new transcript and `get_transcript` carry them. Nothing changes here: they are a title and names like the ones a
   user gives. Filled in later from the detail, the names are an edit, marked `edited` like any other.
 - "Disconnect" in any Recly app ends its Drive access: its sign-in is a grant of Recly's Cloud project, so that revoke (§6) ends its token too and it asks to be signed in again. recly-events itself never revokes, which would disconnect every Recly device.
@@ -4531,12 +4525,12 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Organizing (2026-10-27; `Organize again`, 2026-10-28) | the same | the access token, the model Settings picked, the instructions — with the user's `Notes instructions`, `My sections` and `About you` when set — and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop and at `Organize again`, each conversation's lines with the time of each highlight in it and the words said then, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device, no title, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the final notes go to the recording's Drive or iCloud folder (§1, §1b) |
 
 - Only when the user asks: signing in, and choosing `Organize` or `Organize again`, a question in `Ask about this recording…`, `Fill in
-  title` or `Fill in speaker names` on one recording. There are two background uses. One is a recording's title or speaker names: only for a
-  recording whose title sheet after Stop was saved with `Fill in the title with ChatGPT` or `Fill in speaker names with ChatGPT` ticked,
-  and only for what is ticked — the user's express consent, which OpenAI's terms require — when this device publishes its transcript.
-  The other is organizing (2026-10-27, §8 "Organizing"): for a user who agreed — under the sign-in, or asked once at the first recording
-  of a user signed in before — every recording this device makes, part by part while it is recorded and from its transcript after
-  Stop (a watch's recording part by part as its parts arrive while the watch records, and after its transfer). The consent is kept until the user signs out of ChatGPT; there is no other switch.
+  title` or `Fill in speaker names` on one recording. There are two background uses, both for a user who agreed — under the sign-in, or
+  asked once at the first recording of a user signed in before; that consent is the user's express consent, which OpenAI's terms require.
+  One is organizing (2026-10-27, §8 "Organizing"): every recording this device makes, part by part while it is recorded and from its
+  transcript after Stop (a watch's recording part by part as its parts arrive while the watch records, and after its transfer). The other
+  is a recording's missing title and its speakers' names (2026-10-29, §8 "Titles and speaker names"): whenever this device publishes a
+  transcript. The consent is kept until the user signs out of ChatGPT; there is no other switch.
 - The tokens stay in the device's secure storage (§5, namespace `chatgpt`); the ID token's claims are checked (issuer, audience = the
   client id, expiry, `nonce`, the same `sub` on a later sign-in) without its signature, which OpenID Connect allows for a token received
   directly from the token endpoint over TLS. Requests that carry a code or token are never logged.

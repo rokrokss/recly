@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">Recly中的笔记使用你的ChatGPT套餐。你可以在ChatGPT设置中管理用量。</string>
     <string name="chatgpt_got_it">知道了</string>
     <string name="notes_consent_title">Recly边录音边整理</string>
-    <string name="notes_consent_body">登录ChatGPT期间，Recly会在录音时和停止后将每段录音的转录文本发送到你的ChatGPT套餐，并列出其中的决定、待办事项和问题。绝不发送音频。这会计入你的套餐用量。</string>
+    <string name="notes_consent_body">登录ChatGPT期间，Recly会在录音时和停止后将每段录音的转录文本发送到你的ChatGPT套餐，列出其中的决定、待办事项和问题，并补上缺少的标题和说话人姓名。绝不发送音频。这会计入你的套餐用量。</string>
+    <string name="title_auto_fill">自动填写</string>
     <string name="notes_consent_continue">继续</string>
     <string name="notes_decisions">决定</string>
     <string name="notes_todos">待办事项</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">提问</string>
     <string name="ask_running">正在提问…</string>
     <string name="ask_failed">无法回答</string>
-    <string name="fill_after_stop_note">转录完成后，会把转写文本发送给ChatGPT，以获取缺少的标题和被叫到名字的说话人名称。这会计入你的ChatGPT用量。</string>
     <string name="fill_running">正在填写…</string>
     <string name="fill_title_menu">填写标题</string>
     <string name="fill_names_menu">填写说话人名称</string>
-    <string name="fill_title_after_stop">用ChatGPT填写标题</string>
-    <string name="fill_names_after_stop">用ChatGPT填写说话人名称</string>
     <string name="fill_has_title">已有标题</string>
     <string name="fill_no_unnamed">没有未命名的说话人</string>
     <string name="fill_title_running">正在填写标题…</string>

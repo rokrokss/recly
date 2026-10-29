@@ -393,7 +393,8 @@
     <string name="chatgpt_welcome_body">โน้ตใน Recly ใช้แพ็กเกจ ChatGPT ของคุณ คุณจัดการการใช้งานได้ในการตั้งค่า ChatGPT</string>
     <string name="chatgpt_got_it">รับทราบ</string>
     <string name="notes_consent_title">Recly จัดระเบียบระหว่างที่คุณบันทึก</string>
-    <string name="notes_consent_body">ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ Recly จะส่งข้อความถอดเสียงของแต่ละการบันทึกไปยังแพ็กเกจ ChatGPT ของคุณระหว่างบันทึกและหลังจากหยุด แล้วแสดงรายการการตัดสินใจ สิ่งที่ต้องทำ และคำถาม ไม่มีการส่งเสียงไปเลย ส่วนนี้นับรวมในการใช้งานแพ็กเกจของคุณ</string>
+    <string name="notes_consent_body">ขณะที่คุณลงชื่อเข้าใช้ ChatGPT อยู่ Recly จะส่งข้อความถอดเสียงของแต่ละการบันทึกไปยังแพ็กเกจ ChatGPT ของคุณระหว่างบันทึกและหลังจากหยุด แสดงรายการการตัดสินใจ สิ่งที่ต้องทำ และคำถาม พร้อมเติมชื่อเรื่องที่ว่างอยู่และชื่อผู้พูด ไม่มีการส่งเสียงไปเลย ส่วนนี้นับรวมในการใช้งานแพ็กเกจของคุณ</string>
+    <string name="title_auto_fill">เติมให้อัตโนมัติ</string>
     <string name="notes_consent_continue">ดำเนินการต่อ</string>
     <string name="notes_decisions">การตัดสินใจ</string>
     <string name="notes_todos">สิ่งที่ต้องทำ</string>
@@ -444,12 +445,9 @@
     <string name="ask_ask">ถาม</string>
     <string name="ask_running">กำลังถาม…</string>
     <string name="ask_failed">ตอบไม่ได้</string>
-    <string name="fill_after_stop_note">เมื่อถอดเสียงเสร็จ จะส่งข้อความถอดเสียงไปยัง ChatGPT เพื่อขอชื่อที่ยังว่างและชื่อของผู้พูดที่ถูกเรียกชื่อ ซึ่งนับรวมในการใช้งาน ChatGPT ของคุณ</string>
     <string name="fill_running">กำลังเติม…</string>
     <string name="fill_title_menu">เติมชื่อ</string>
     <string name="fill_names_menu">เติมชื่อผู้พูด</string>
-    <string name="fill_title_after_stop">เติมชื่อด้วย ChatGPT</string>
-    <string name="fill_names_after_stop">เติมชื่อผู้พูดด้วย ChatGPT</string>
     <string name="fill_has_title">มีชื่อแล้ว</string>
     <string name="fill_no_unnamed">ไม่มีผู้พูดที่ยังไม่มีชื่อ</string>
     <string name="fill_title_running">กำลังเติมชื่อ…</string>
