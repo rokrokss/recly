@@ -80,8 +80,11 @@ struct RecordingView: View {
         .task(id: model.recordingId) { await model.followLiveNotes() }
         // docs/03: the title is asked for after the recording has ended, and the job is queued once
         // the answer — or the refusal — is in. A sheet rather than an alert, because the same
-        // prompt also asks how many people were in the room and an alert holds no picker.
-        .sheet(isPresented: naming) {
+        // prompt also asks how many people were in the room and an alert holds no picker. Driven by
+        // the model's `naming`, which is also what carries the recording it is about — a `Bool` of
+        // its own would be a second answer to the same question. docs/03 "Titles" · 2026-10-10 (1.3):
+        // the take leaves it only through its two answers, and a bottom sheet has no swipe down.
+        .blueprintBottomSheet(isPresented: model.naming != nil) {
             NamingSheet(
                 title: $title,
                 participants: $participants,
@@ -309,15 +312,6 @@ struct RecordingView: View {
 
     // MARK: - Naming
 
-    /// The sheet is driven by the model's `naming`, which is also what carries the recording it is
-    /// about — a `Bool` of its own would be a second answer to the same question.
-    private var naming: Binding<Bool> {
-        Binding(
-            get: { model.naming != nil },
-            set: { shown in if !shown { cancelNaming() } }
-        )
-    }
-
     private func finishNaming(with typed: String?, participants count: Int?) {
         guard model.naming != nil else { return }
         let answer = typed
@@ -392,29 +386,18 @@ private struct NamingSheet: View {
 
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
-    /// The sheet is as tall as what it asks, as a dialog's is ([BlueprintDialogSheet]).
-    @State private var height: CGFloat?
 
     /// docs/03: 2 · 3 · 4 · 5 · 6+ · unknown. docs/08 caps the hint at 10 speakers, so "6+" asks
     /// for six and lets the provider find more.
     private let choices: [Int?] = [nil, 2, 3, 4, 5, 6]
 
+    /// As tall as what it asks: the bottom sheet it is on grows to it ([blueprintBottomSheet]).
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ScreenHeader(title: loc("Recording title"))
-                HairLine()
-                fields
-            }
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+        VStack(spacing: 0) {
+            ScreenHeader(title: loc("Recording title"))
+            HairLine()
+            fields
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .dotGridBackground()
-        .presentationDetents(height.map { [.height($0)] } ?? [.medium])
-        // docs/03 "Titles" · 2026-10-10 (1.3): the take leaves this sheet only through its two answers — a swipe
-        // down was a Discard nobody chose.
-        .interactiveDismissDisabled()
     }
 
     private var fields: some View {

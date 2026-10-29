@@ -9,7 +9,8 @@ final class SpeechFileReaderTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
         defer { try? FileManager.default.removeItem(at: url) }
         let source = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1))
-        let target = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1))
+        // The analyzer's own format: since macOS 27 its input takes 16-bit integer samples only, and traps on others.
+        let target = try XCTUnwrap(AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16_000, channels: 1, interleaved: true))
         let pcm = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: source, frameCapacity: 44_100))
         pcm.frameLength = pcm.frameCapacity
         for frame in 0..<Int(pcm.frameLength) { pcm.floatChannelData![0][frame] = 0 }

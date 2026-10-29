@@ -44,8 +44,9 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             // The card is as tall as its question and no taller: a two-line dialog is a two-line
             // card. What scrolls when the body outgrows the screen is the page it sits on
-            // ([BlueprintDialogSheet]), not a region inside it — a scroll view here would claim
-            // every point the sheet offered and leave the card stretched to the bottom of it.
+            // ([BlueprintDialogSheet], the iPhone's bottom sheet), not a region inside it — a scroll
+            // view here would claim every point the sheet offered and leave the card stretched to the
+            // bottom of it.
             VStack(alignment: .leading, spacing: Space.s) {
                 content
             }
@@ -93,14 +94,21 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
 extension View {
     /// The dialog as the platform presents a modal: a sheet of the dot grid with the dialog drawn
     /// on it, the sheet's edge its card's. The one presentation both shells use for a question that
-    /// has to be answered before anything else happens.
+    /// has to be answered before anything else happens — on the iPhone the bottom sheet the title is
+    /// asked on ([blueprintBottomSheet]), which only its answers close.
     public func blueprintDialog<Content: View>(
         isPresented: Binding<Bool>,
         @ViewBuilder content: @escaping () -> Content
     ) -> some View {
+        #if os(iOS)
+        blueprintBottomSheet(isPresented: isPresented.wrappedValue) {
+            content().environment(\.blueprintDialogOnSheet, true)
+        }
+        #else
         sheet(isPresented: isPresented) {
             BlueprintDialogSheet { content() }
         }
+        #endif
     }
 
     /// The same, driven by the thing the dialog is about — which is also what carries the counts it
@@ -109,9 +117,15 @@ extension View {
         item: Binding<Item?>,
         @ViewBuilder content: @escaping (Item) -> Content
     ) -> some View {
+        #if os(iOS)
+        blueprintBottomSheet(item: item.wrappedValue) { value in
+            content(value).environment(\.blueprintDialogOnSheet, true)
+        }
+        #else
         sheet(item: item) { value in
             BlueprintDialogSheet { content(value) }
         }
+        #endif
     }
 }
 
@@ -178,20 +192,20 @@ private struct DialogOnSheetKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// The dialog is the whole of a sheet ([BlueprintDialogSheet]), which draws its edge for it.
+    /// The dialog is the whole of a sheet ([BlueprintDialogSheet], the iPhone's bottom sheet), which draws its edge for it.
     var blueprintDialogOnSheet: Bool {
         get { self[DialogOnSheetKey.self] }
         set { self[DialogOnSheetKey.self] = newValue }
     }
 }
 
-/// The page a [BlueprintDialog] is presented on: the dot grid, with the dialog drawn straight onto it, the sheet's own
-/// edge being the card's — as the iPhone's title sheet is.
+#if !os(iOS)
+/// The sheet a [BlueprintDialog] is presented on off the iPhone: the dot grid, with the dialog drawn straight onto it, the sheet's
+/// own edge being the card's — as the iPhone's bottom sheet is ([blueprintBottomSheet]).
 public struct BlueprintDialogSheet<Content: View>: View {
     private let content: Content
     /// The card's height with its margin. The sheet is that tall, so a two-line question is not
-    /// left at the top of a half-screen of empty grid; a list taller than the screen stops at the
-    /// full height and scrolls.
+    /// left above an empty band of grid; a list taller than the window scrolls.
     @State private var height: CGFloat?
 
     public init(@ViewBuilder content: () -> Content) {
@@ -208,16 +222,13 @@ public struct BlueprintDialogSheet<Content: View>: View {
         .scrollBounceBehavior(.basedOnSize)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dotGridBackground()
-        #if os(iOS)
-        .presentationDetents(height.map { [.height($0)] } ?? [.medium])
-        #else
         // As tall as the question, as on the iPhone: with no card to hold them, the answers would otherwise sit above
         // an empty band of a fixed 300. A fixed width, so a long body wraps rather than widening the sheet.
         .frame(width: 460)
         .frame(minHeight: height ?? 300)
-        #endif
     }
 }
+#endif
 
 /// docs/09: the body is 14, the app's running text, whatever it says (2026-10-28); what it means decides the colour
 /// and nothing else.

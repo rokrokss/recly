@@ -2874,6 +2874,11 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    title field's placeholder is `Filled in automatically` while an empty title will be filled in at the publication — transcription on,
    ChatGPT signed in, the notes' consent given, and on iPhone the destination allowed — and `Untitled` otherwise (2026-10-29, user
    decision; §8 "Titles and speaker names"). There is no checkbox: the two of 2026-10-15 are gone.
+   On the iPhone the title sheet after Stop, every dialog presented on a sheet of its own and the detail's `Share` sheet stand
+   on the bottom edge — the screen's full width, only the top corners rounded, as the full-height sheets (the detail, Ask)
+   do — over a dim, rising in the standard 200ms (at once with reduce motion). A question is closed by its answers only: no
+   swipe, no tap on the dim. `Share`, a list with no answers, also closes with a tap on the dim (2026-10-29, user decision:
+   iOS 26 floats a shorter system sheet as a card inset from both sides and the bottom).
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper

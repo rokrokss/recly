@@ -1409,7 +1409,8 @@ public struct RecordingDetailView: View {
         .blueprintDialogOverlay(isPresented: Binding(get: { !asking && !model.summaryConsent.isEmpty }, set: { _ in })) {
             SummaryConsentDialog(targets: model.summaryConsent, trainingOff: $trainingOff, answer: answerSummaryConsent)
         }
-        .sheet(isPresented: $sharing) { DetailShareSheet(model: model) }
+        // docs/09 "Share / export": a list to pick from rather than a question, so a tap on the dim closes it.
+        .blueprintBottomSheet(isPresented: sharing, onDismiss: { sharing = false }) { DetailShareSheet(model: model) }
         // docs/09 "Ask": a full-height sheet of its own, presented from a node of its own — the page already
         // presents Share.
         .background {

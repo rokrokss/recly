@@ -422,21 +422,16 @@ struct DetailShareSheet: View {
     @State private var preparing: ShareFormat?
     @State private var copied = false
 
+    /// As tall as its rows: the bottom sheet it is on grows to them and scrolls past the screen ([blueprintBottomSheet]).
     var body: some View {
         VStack(spacing: 0) {
             ScreenHeader(title: RecKitStrings.localized("Share"))
             HairLine()
-            ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(model.shareFormats) { format in
-                        row(format)
-                    }
-                    copyRow
-                }
+            ForEach(model.shareFormats) { format in
+                row(format)
             }
+            copyRow
         }
-        .dotGridBackground()
-        .presentationDetents([.medium, .large])
     }
 
     private func reason(_ format: ShareFormat) -> String? {
