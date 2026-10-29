@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <!--
   The README's and recly.dev's iPhone promo images, 540×1173 with rounded corners. ?lang=en|ko&shot=1..4.
+  &set=store: the App Store's set instead, square corners and no notes (README.md "App Store screenshots").
   The screens are real captures of the iPhone and Apple Watch apps on throwaway simulators holding demo
   recordings (build/app-store-assets/captures/<lang>/, README.md), framed like the Play set: dot-grid ground,
-  brand, headline, one device. Shot 4 adds the Apple Watch the subtitle names.
+  brand, headline, one device. Shot 1 adds the Apple Watch the subtitle names.
 -->
 <style>
   :root {
@@ -70,6 +71,7 @@
   const q = new URLSearchParams(location.search);
   const lang = q.get('lang') === 'ko' ? 'ko' : 'en';
   const shot = Number(q.get('shot') || 1);
+  const store = q.get('set') === 'store';
   document.documentElement.lang = lang;
 
   // The README's alt texts say the same.
@@ -87,8 +89,13 @@
       4: ['내 AI가 바로 읽는 전사본', 'Drive를 읽는 AI라면 바로 노트로 만듭니다'],
     },
   };
+  // The App Store set shows no notes, a feature the China mainland storefront does not get: its 3 is the Storage setting.
+  if (store) Object.assign(COPY.en, { 3: ['Saved where you choose', 'Your Drive, iCloud or a folder you pick.'] });
+  if (store) Object.assign(COPY.ko, { 3: ['원하는 곳에 저장', '내 드라이브, iCloud, 고른 폴더에'] });
   // 1 the Record tab with the watch, 2 a transcript after its second timestamp was tapped, 3 the same recording's notes, 4 the list.
-  const SCREEN = { 1: 'record', 2: 'detail', 3: 'notes', 4: 'list' };
+  // The App Store set's 2 is a recording without notes, so no Notes chip, and its 3 is Settings → Storage.
+  const SCREEN = store ? { 1: 'record', 2: 'transcript', 3: 'storage', 4: 'list' } : { 1: 'record', 2: 'detail', 3: 'notes', 4: 'list' };
+  if (store) document.querySelector('.card').style.borderRadius = '0';
   const [h1, sub] = COPY[lang][shot];
   document.getElementById('h1').textContent = h1;
   document.getElementById('sub').textContent = sub;

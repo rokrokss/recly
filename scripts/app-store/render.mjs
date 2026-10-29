@@ -2,6 +2,8 @@
 // Renders the README's and recly.dev's iPhone promo images (README.md) from promo.html and the captures in
 // build/app-store-assets/captures/<lang>/, into docs/design/screenshots/<lang>/0N-*.png and .webp.
 // Usage: node scripts/app-store/render.mjs. Needs Google Chrome, ffmpeg and cwebp.
+// STORE=1 renders the App Store's 6.9-inch set instead: 1320×2868, opaque, no notes, into
+// build/app-store-assets/store/<lang>/ (README.md "App Store screenshots").
 // The page is drawn at twice its size and scaled down, so the phone's 1206 px screen loses detail once.
 // It reports what spills in document.body.dataset.m; a spill stops the run.
 import { spawn, execFileSync } from 'node:child_process';
@@ -13,8 +15,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const W = 540, H = 1173, SCALE = 2;
-const NAMES = { 1: '01-record-for-your-ai', 2: '02-transcribe', 3: '03-notes', 4: '04-list' };
+const STORE = process.env.STORE === '1';
+const W = 540, H = 1173, SCALE = STORE ? 3 : 2;
+const [OUT_W, OUT_H] = STORE ? [1320, 2868] : [W, H];
+const NAMES = STORE
+  ? { 1: '01-record', 2: '02-transcribe', 3: '03-storage', 4: '04-list' }
+  : { 1: '01-record-for-your-ai', 2: '02-transcribe', 3: '03-notes', 4: '04-list' };
 
 function cdp(url) {
   const ws = new WebSocket(url);
@@ -67,7 +73,7 @@ try {
   await page.send('Emulation.setDefaultBackgroundColorOverride', { color: { r: 0, g: 0, b: 0, a: 0 } });
   for (const lang of ['en', 'ko']) {
     for (const [n, name] of Object.entries(NAMES)) {
-      const url = `${pathToFileURL(join(HERE, 'promo.html')).href}?lang=${lang}&shot=${n}`;
+      const url = `${pathToFileURL(join(HERE, 'promo.html')).href}?lang=${lang}&shot=${n}${STORE ? '&set=store' : ''}`;
       await page.send('Page.navigate', { url });
       for (let i = 0; i < 200 && (await evaluate(page, 'document.readyState').catch(() => '')) !== 'complete'; i++) await sleep(50);
       await evaluate(page, 'document.fonts.ready.then(() => true)');
@@ -76,13 +82,15 @@ try {
       const m = JSON.parse((await evaluate(page, 'document.body?.dataset.m')) ?? '{"out":[]}');
       if (m.out?.length) throw new Error(`${lang} ${name}: ${m.out.join('; ')}`);
       const shot = await page.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
-      const dir = join(ROOT, 'docs/design/screenshots', lang);
+      const dir = STORE ? join(ROOT, 'build/app-store-assets/store', lang) : join(ROOT, 'docs/design/screenshots', lang);
       mkdirSync(dir, { recursive: true });
       const raw = join(dir, `${name}.raw.png`), png = join(dir, `${name}.png`);
       writeFileSync(raw, Buffer.from(shot.data, 'base64'));
-      execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', raw, '-vf', `scale=${W}:${H}:flags=lanczos`, '-pix_fmt', 'rgba', png]);
+      // App Store Connect takes no alpha, and 3 × 1173 is a hair off 2868: the scale lands on the exact size.
+      execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', raw, '-vf', `scale=${OUT_W}:${OUT_H}:flags=lanczos`,
+        '-pix_fmt', STORE ? 'rgb24' : 'rgba', png]);
       rmSync(raw);
-      execFileSync('cwebp', ['-quiet', '-q', '82', '-m', '6', png, '-o', join(dir, `${name}.webp`)]);
+      if (!STORE) execFileSync('cwebp', ['-quiet', '-q', '82', '-m', '6', png, '-o', join(dir, `${name}.webp`)]);
       console.log(`${lang} ${name}: head ends at ${m.headBottom}px`);
     }
   }

@@ -41,3 +41,16 @@ UDID to every `simctl` call: `booted` may resolve to another simulator that is r
 5. **Render.** `node scripts/app-store/render.mjs` frames the captures in `promo.html`, writes the PNG and WebP
    for both languages, and stops if any copy spills past the edges or into the phone. Captions and the README's
    alt texts say the same thing; change both together.
+
+## App Store screenshots
+
+The iPhone 6.9-inch set for App Store Connect, in `build/app-store-assets/store/<lang>/` (not committed):
+1320×2868, opaque, square corners, the same frame and the same 01 and 04. It shows no notes and names no AI
+service, because the China mainland storefront shows the English listing and does not get notes
+(docs/app-store-copy.md): `02-transcribe` is a recording without notes, so no Notes chip, and `03-storage` is
+Settings → Storage.
+
+1. **Captures.** Seed as above, then delete the seed's `*.notes.v1.json` before `push.sh`. Capture `transcript`
+   (the first recording's Details, its second timestamp tapped) and `storage` (Settings, Local folder with a
+   folder chosen: create one in the picker's On My iPhone) next to the others.
+2. **Render.** `STORE=1 node scripts/app-store/render.mjs`.
