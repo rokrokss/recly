@@ -237,15 +237,18 @@ const val BACK_MARK: String = "‹"
 
 /**
  * One action of a [BlueprintMenu]: its words and, for one that cannot run now, why — the reason is the
- * item's second line, so a disabled item is never a riddle (the detail's More menu).
+ * item's second line, so a disabled item is never a riddle (the detail's More menu). [danger] is the red of an item
+ * that deletes for good (docs/09 "Accessibility").
  */
 @Composable
-fun MenuAction(label: String, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier) =
-    MenuAction(AnnotatedString(label), onClick, enabled, reason, modifier)
+fun MenuAction(label: String, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier,
+    danger: Boolean = false) =
+    MenuAction(AnnotatedString(label), onClick, enabled, reason, modifier, danger)
 
 /** The same, for a label with data in it — a time in monospace. */
 @Composable
-fun MenuAction(label: AnnotatedString, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier) {
+fun MenuAction(label: AnnotatedString, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier,
+    danger: Boolean = false) {
     val palette = blueprint
     Column(
         modifier = modifier
@@ -257,7 +260,11 @@ fun MenuAction(label: AnnotatedString, onClick: () -> Unit, enabled: Boolean = t
         verticalArrangement = Arrangement.Center,
     ) {
         // docs/09 "Disabled, focus and structure": a disabled item's words are `disabled`; its reason stays readable.
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) palette.text else palette.disabled)
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = when {
+            !enabled -> palette.disabled
+            danger -> palette.danger
+            else -> palette.text
+        })
         reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
     }
 }

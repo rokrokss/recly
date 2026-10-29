@@ -349,6 +349,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         return RecKitStrings.localized(key)
     }
 
+    /// Whether [transcriptMessage] is one of the two that send the user to the list for what to do next — which a page
+    /// that carries the list row's fixes itself (the phones, 2026-10-28) says with those fixes instead.
+    public var messagePointsToList: Bool {
+        !waitingForDrive && (availability == .failed || availability == .parked)
+    }
+
     /// docs/03: the name the user gave this recording, changed from the page it names. The core
     /// writes it here and pushes it to Drive, and a recording another device made is renamed the
     /// same way — the row this page opened from may be one of those.
@@ -378,14 +384,14 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// waiting for Drive. Nil where the shell offers none, and then the page shows no button.
     public var connectDrive: (() -> Void)?
 
-    /// docs/09 "Detail header and More menu" (desktop): the recording's folder — Drive's page, or Finder for an iCloud
-    /// or local-folder recording — offered from the More menu, as the list row offers it. Nil where there is no folder
-    /// yet, or where the shell has the row's own buttons for it (the phone), and then the menu shows nothing.
+    /// docs/09 "Detail header and More menu": the recording's folder — Drive's page, or Finder for an iCloud or
+    /// local-folder recording on the Mac — offered from the More menu. Nil where there is no folder yet, and then the
+    /// menu shows nothing.
     public var openInDrive: (() -> Void)?
     public var showInFinder: (() -> Void)?
 
-    /// docs/03 "Deleting in the app" (the Mac): the More menu's Delete, which asks the shell's delete question. Nil
-    /// where the shell has the list row's own Delete (the phone), and then the menu shows none.
+    /// docs/03 "Deleting in the app": the More menu's Delete, which asks the shell's delete question. Nil where the
+    /// shell offers none, and then the menu shows none.
     public var delete: (() -> Void)?
 
     /// Why `Delete` cannot run now, or nil when it can: a recording still being recorded or imported is not one to
@@ -1091,6 +1097,20 @@ private final class DriveFetchProgress: NSObject, AudioFetchProgress {
 /// so the header carries the way back — docs/08's result file, the transcript as the speaker turns
 /// it is made of.
 #if os(iOS) || os(macOS)
+/// docs/09 screen principle 2 (2026-10-28, the phone): what the list's open row carried for a recording with no
+/// transcript — how long it has waited, why, and the things to do about it — under the page's notice, since a row now
+/// opens the page. When they say why the job stands where it does ([saysWhy]), the notice's sentence that sends the user
+/// to the list for that gives way to them.
+public struct DetailFixes {
+    let saysWhy: Bool
+    let view: AnyView
+
+    public init<Content: View>(saysWhy: Bool, @ViewBuilder content: () -> Content) {
+        self.saysWhy = saysWhy
+        view = AnyView(content())
+    }
+}
+
 public struct RecordingDetailView: View {
     private struct ResultObservationID: Hashable {
         let model: ObjectIdentifier
@@ -1143,10 +1163,13 @@ public struct RecordingDetailView: View {
     /// nil where the page is the whole surface it is in — the Mac's window has nothing to go back
     /// to, and a sheet on the phone does.
     private let onClose: (() -> Void)?
+    /// Nil where the list beside the page carries the fixes (the Mac), or there is nothing to fix.
+    private let fixes: DetailFixes?
 
-    public init(model: RecordingDetailModel, onClose: (() -> Void)? = nil) {
+    public init(model: RecordingDetailModel, fixes: DetailFixes? = nil, onClose: (() -> Void)? = nil) {
         self.model = model
         _player = StateObject(wrappedValue: RecordingPlayer(gate: model.playbackGate))
+        self.fixes = fixes
         self.onClose = onClose
     }
 
@@ -1317,17 +1340,23 @@ public struct RecordingDetailView: View {
                 )
             } else if model.transcript == nil || model.availability == .empty {
                 VStack(spacing: Space.s) {
-                    Text(verbatim: model.transcriptMessage)
-                        .font(blueprint.fonts.bodySmall)
-                        .foregroundStyle(blueprint.palette.textMuted)
-                        .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("transcript-message")
+                    if fixes?.saysWhy != true || !model.messagePointsToList {
+                        Text(verbatim: model.transcriptMessage)
+                            .font(blueprint.fonts.bodySmall)
+                            .foregroundStyle(blueprint.palette.textMuted)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("transcript-message")
+                    }
                     if model.availability == .unavailable {
                         BlueprintButton(loc("Retry")) { Task { await model.reloadResults() } }
                     } else if model.transcript == nil, model.waitingForDrive, let connect = model.connectDrive {
                         // 2026-10-08 §7 · docs/09 screen principle 8: the one way out, where the user is.
                         BlueprintButton(loc("Connect Drive"), action: connect)
                             .accessibilityIdentifier("detail-connect-drive")
+                    }
+                    // Not beside Connect Drive: that is the one fix a recording waiting for Drive has.
+                    if let fixes, !model.waitingForDrive {
+                        fixes.view
                     }
                 }
                 .padding(Space.l)
@@ -2130,9 +2159,6 @@ public struct DiscardEditsDialog: View {
 /// holding up, and where the detail behind a row is opened from. RecKit's own catalog, because both
 /// Apple shells read the same sentences (docs/07 rule 1).
 public enum RecordingDetailStrings {
-    /// The row's own action, and so the word for what is behind *this* row — not the name of the
-    /// surface it opens (the Mac's window, which is titled from its own catalog).
-    public static var open: String { RecKitStrings.localized("Details") }
     public static var checkKey: String { RecKitStrings.localized("Check the key") }
 }
 

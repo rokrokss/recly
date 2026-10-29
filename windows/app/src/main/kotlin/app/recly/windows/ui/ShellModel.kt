@@ -455,15 +455,23 @@ class ShellModel(
     }
 
     /**
-     * The tray's Details on a row while the Details window is already up: the window takes it through the same leave
+     * A tray row clicked while the Details window is already up: the window takes it through the same leave
      * as its own list ([RecordingsWindow]), so a transcript or notes being edited ask before they go (D7).
      */
     var detailAsked: RecentItem? by mutableStateOf(null)
         private set
 
+    /**
+     * Counts the tray rows clicked: a row is the way into its recording (docs/09 screen principle 2, 2026-10-28), so a
+     * Details window left behind other windows comes to the front with it, as the Mac's does.
+     */
+    var recordingsRaised: Int by mutableStateOf(0)
+        private set
+
     fun showDetail(item: RecentItem) {
         if (recordingsOpen) detailAsked = item else openDetail(item)
         recordingsOpen = true
+        recordingsRaised++
     }
 
     fun detailAnswered() {
@@ -1392,20 +1400,6 @@ class ShellModel(
 
     /** docs/10 "Drive out of space": Google's own storage page — the space is Google's to give back. */
     fun openDriveStorage() = open(DRIVE_STORAGE_URL)
-
-    fun openInDrive(item: RecentItem) {
-        item.link?.let { open(it) }
-    }
-
-    /**
-     * docs/03 "Storage location": the recording's own folder in the local folder, in the file manager — what
-     * "Open in Drive" is for a Drive recording, opened the way Settings opens the data folder.
-     */
-    fun openInFolder(item: RecentItem) {
-        val root = localFolder ?: return
-        val path = item.localFolderPath ?: return
-        open(File(root, path).path)
-    }
 
     /** D24: More → Open in Drive, or Open the folder, for the recording the detail is showing. */
     fun openDetailStorage() {

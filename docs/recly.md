@@ -654,7 +654,8 @@ time it asks what to do about Drive.
 - A running (`RUNNING`) Job — an upload in progress, or one stuck in it — does not hold the deletion back (2026-10-08): the core
   stops that run first (core rule below), and the Job is deleted along with the recording, like `WAITING`/`NEEDS_AUTH`/`NEEDS_SPACE`/`FAILED`.
   The dialog is the same one; while the upload has not finished, the audio exists only here, and the line above leads it.
-  Only a row still being written — recording, importing, receiving from the watch — has no Delete (§9 principle 2).
+  Only a recording still being written — recording, importing, receiving from the watch — cannot be deleted: its page's `Delete` is disabled
+  with the reason (§9 principle 2, "Detail header and More menu").
 - **"Also delete from Drive"** is `files.delete`. **The folder id is read only from what the recording's `drive.upload` step left
   behind** — `output_json.folderId` (when the step finished or is parked), otherwise the resume state `state_json.folderId`.
   **`drive_folder_cache` is not used**: that cache is keyed by the rendered *path* (`recly/memo/2026-08`), so the folder is a parent shared by
@@ -711,7 +712,7 @@ from the Google revocation through the local cleanup. Even if the credentials or
 it does not turn into the “Connect Drive” button before completion. On completion it switches to the not-connected screen; on failure, to the existing button, which can retry.
 The internal `signOut` remains as an on-device credential cleanup used for things like auth recovery, but it is not exposed as a separate user action.
 
-The recording list does not show with separate text whether a recording is stored locally. Recordings that download only the tracks needed for playback and recordings that keep the original tracks are shown by the same list criteria. The display text for `NEEDS_AUTH` is a gray “Upload waiting”, which is separate from local storage · playback. Individual recording rows and their expanded areas do not repeat the Drive connection explanation · button. The states, logs and error codes themselves are not changed.
+The recording list does not show with separate text whether a recording is stored locally. Recordings that download only the tracks needed for playback and recordings that keep the original tracks are shown by the same list criteria. The display text for `NEEDS_AUTH` is a gray “Upload waiting”, which is separate from local storage · playback. Individual recording rows do not repeat the Drive connection explanation · button. The states, logs and error codes themselves are not changed.
 
 | | Sign out (this device) | Disconnect |
 |---|---|---|
@@ -1451,7 +1452,7 @@ The overall direction and the conditions for a real-device release follow the [f
   (2026-09-27). The user chooses the transcription method, so the card promises no outcome such as nothing being sent out once the model is downloaded. Once a recording is waiting, the card hides and the banner (with the count) is the only notice.
   Settings, banner, row and card share one download state per shell and show progress as `Downloading model… N%` (Android · Windows also show
   bytes, like `412 MB of 988 MB`; Apple shows only % because it cannot know the size). While downloading, the banner shows the progress and `Cancel download`,
-  and waiting rows hide the chip (progress appears in the banner alone). When stopped, the first action of an expanded row is the emphasized `Download model`. With a partial
+  and waiting rows hide the chip (progress appears in the banner alone). When stopped, the first of a recording's fixes (§9 principle 2) is the emphasized `Download model`. With a partial
   download it is `Resume download`, and cancelling (`Cancel download` — distinct from the form's `Cancel`) keeps the downloaded part. On Android it is a WorkManager foreground job (progress and cancel in the notification), so
   the download continues after leaving the app, and choosing `Download on Wi-Fi` waits for an unmetered connection (`Waiting for Wi-Fi`).
 - Apple's local engine is the iOS/macOS 26 `SpeechTranscriber`/`SpeechAnalyzer`, and the user requests the language asset download in settings.
@@ -2483,9 +2484,9 @@ The principle in one line: **intent, not decoration**.
   (72×72; while recording, filled + mono timer). On phones (Android · iPhone, 2026-09-29) and the desktop (Mac · Windows, 2026-10-14), **text buttons are at least 88 wide** (dp/pt):
   a two-character button such as `Open` (`열기` in Korean) does not become the narrowest thing on the screen, and short buttons side by side line up at one width. `Close` · `Delete` ·
   `Cancel` (with `Discard recording` and the desktop's `Quit`), data buttons in the fixed-width font (utterance times), glyph buttons (`⋯`) and the value of a dropdown keep their own width (user decision). At 360dp · 375pt, in Korean and English,
-  this was tuned so that no new line breaks appear — list rows were changed to the flow of screen principle 2 below, and the mobile data confirmation dialog (three buttons)
-  always stacks vertically. On the desktop a line of buttons that does not fit wraps rather than overflowing: the Windows recordings window's open row has the tray's flow with
-  `Delete` beside it, and the Mac's player bar wraps at the detail pane's narrowest. The watches are unchanged.
+  this was tuned so that no new line breaks appear — a recording's fixes wrap in a flow (screen principle 2 below), and the mobile data confirmation dialog (three buttons)
+  always stacks vertically. On the desktop a line of buttons that does not fit wraps rather than overflowing: the Details lists' open row wraps its fixes,
+  and the Mac's player bar wraps at the detail pane's narrowest. The watches are unchanged.
 - **Spacing**: multiples of 4, base rhythm 8/16/24. Visible grid: 8dp dotted background (6% opacity, off in high contrast). The named steps are
   `xxs` 2 (a label and its value) · `xs` 4 · `s` 8 · `sm` 12 · `m` 16 · `l` 24 · `xl` 32; a literal is for artwork only.
 - **Component measurements** (2026-10-15): one table for every shell, so a component is the same size wherever it is drawn. The rule that chose
@@ -2613,19 +2614,19 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    counts stay mono (Apple sets a whole string with such characters in sans, counts included). The notice banner says `Waiting for Drive: 3` for uploads that wait for Drive (on a window narrower than 600 pt/dp every
    banner line gives its sentence the full width, with its badge and button together, end-aligned, under it — 2026-10-11, both phones), and the banner of a failed job whose reason
    has no word of its own (a missing or rejected key, a quota, local transcription or speaker separation unavailable) shows `Failed`. Under the title, a row whose
-   recording has a transcript on this device shows its first words on one secondary line (`core.previews`; phones and the desktop Details lists,
-   not the popover or tray ledgers; 2026-10-08). In the desktop Details lists only the open row carries its reason, its diagnostic line and its
+   recording has a transcript on this device shows its first words on one secondary line (`core.previews`; phones and the desktop Details lists
+   2026-10-08, the popover and tray ledgers too since 2026-10-28, so the short list and the Details list read alike). In the desktop Details lists only the open row carries its reason, its diagnostic line and its
    actions (`Download model`, `Retry` by the ledger's rule, `Check the key`, `Open Drive storage` on a full Drive) — the other rows are title,
    preview, time and badge only (2026-10-11). The open row's band appears only when it has something to say or fix: `Delete` moved to the
    detail's More menu (2026-10-15, user decision — a finished row's band held Delete alone, a wide empty strip that read as an accordion to
-   collapse). The Details list is a selection, not an accordion: clicking the open row again — or a search hit or the tray's or popover's
-   `Details` for it — changes nothing, with no reload and no flicker.
+   collapse). The Details list is a selection, not an accordion: clicking the open row again — or a search hit or a tray or popover row
+   for it — changes nothing, with no reload and no flicker.
    **Three things happening elsewhere** (2026-09-04, §3 "Recordings from other devices") are read **before** the job state mapping — none of the three is a job of this
    device, so they cannot be read from the queue: `RECEIVING` (being received from the watch = `receiving`; its `status = recording`, so
    left alone it would show as `REC`) · `UPLOADING` (another device is uploading = `remoteUploading`; the **same
    word** as this device's upload — the badge says what, not where) · `TRANSCRIBING` (another device is transcribing = `remotePending` with
-   `transcribe`). All three are accent. `RECEIVING` has **no actions but `Details`** (no delete, retry or Drive link — the transfer is
-   still writing it; 2026-10-08: this sentence follows the shells, which all open the detail). Another device's `UPLOADING` has no retry or Drive link, but offers Delete (2026-10-08, four shells): the adopted-row dialog,
+   `transcribe`). All three are accent. `RECEIVING` offers **nothing but its page** (its `Delete` disabled with the reason, no retry or Drive link — the
+   transfer is still writing it; 2026-10-08: this sentence follows the shells, which all open the detail). Another device's `UPLOADING` has no retry or Drive link, but offers Delete (2026-10-08, four shells): the adopted-row dialog,
    which deletes the folder from Drive (§3 "Retention · deletion"). `TRANSCRIBING` is like an adopted `DONE`
    row (details · delete). The length column keeps the placeholder used when there is no `durationSec` (it does not make up `0:00`),
    and shells that measure the badge column width measure these words, in the current language. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Waiting for Drive`, 2026-10-08) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
@@ -2636,16 +2637,21 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    `RECEIVING` and ahead of everything else — the other things happening elsewhere and the job state mapping — and the row goes back to
    what its job says when the run ends. The header count and the row's actions still go by the job state. The row's spoken sentence says
    `Filling in` too, so a screen reader hears what the badge shows.
-   Row expansion has **actions — in one horizontal line, wrapping to the next line when they overflow (no vertical listing)**: `Open in Drive` (when there is a link) ·
-   `Retry` (**in the failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04; excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`) ·
-   `Details` (opens the detail screen — on desktop, the window of the same name) · Delete (except while recording, importing or receiving from the watch;
-   an upload, this device's or another's, offers it since 2026-10-08 — the core stops a running upload first, §3 "Retention · deletion"). On phones these
-   buttons are laid out in one flow from the row's leading gutter to the right edge (2026-10-12, both phones: from the title cell, past the time column,
-   a done row's three buttons did not fit one line on a 393–402 pt iPhone), and `Delete` stands at the right end of the last line — if there is no room
-   for it, at the right end of the next line (2026-09-29, Android `ActionFlow` · Apple `ActionFlowLayout`). Previously `Delete` stood apart in its own cell under the status badge,
-   and the other buttons wrapped by its width. An expanded row stays expanded only while the user stays on that screen: on phones, tapping the list
-   tab again or going to another tab and back shows the initial list with every row collapsed (2026-10-01, both phones). Tapping the list
-   tab while the detail is open closes the detail first (Android; the iPhone detail is a sheet that covers the tab bar). In the detail, the original is the main content: the transcript is layered on top of **local part playback** (play/pause + an `elapsed / total length` mono clock; a playhead moves over the waveform (the parts decoded into peaks of 0.25-second windows; the played section is accent), and dragging or tapping the waveform seeks to that time — Apple · Android · Windows 2026-09-03; the track is `mix` if there is one, otherwise `mono`; if the file is not on this device, `No audio on this device`). All four shells (2026-09-03; Apple uses a RecKit shared view + AVQueuePlayer, Android uses media3 ExoPlayer, Windows has the bundled ffmpeg decode to PCM and plays it through `SourceDataLine` — the JVM cannot decode AAC). For an uploaded recording, parts that are not local are fetched from Drive with `core.audio()` (`Fetching from Drive…`/`Could not fetch from Drive`). **There is no text while fetching** (2026-09-26, four shells): the waveform's place holds the
+   **A row opens its recording's page** (2026-10-28, user decision, every list: phones, popover, tray and Details lists — a tap that only
+   expanded the row, then a second tap on `Details`, was one step too many). A row carries no buttons; the popover's and tray's bring the
+   Details window to the front at the recording. What can be done about a recording is on its page: `Open in Drive` (when there is a link; the desktops'
+   `Show in Finder` / `Open the folder` for an iCloud or local-folder recording) and `Delete` (disabled with the reason while recording, importing
+   or receiving from the watch; an upload, this device's or another's, offers it since 2026-10-08 — the core stops a running upload first, §3
+   "Retention · deletion") are the More menu's last two groups ("Detail header and More menu" below). A recording with no transcript has its
+   **fixes** — the waiting line, the reason with its diagnostic, and the buttons in one flow that wraps onto further lines (no vertical listing):
+   `Download model` · `Open Drive storage` (a full Drive) · `Review transfers` (the iPhone, a job waiting for the transfer consent) · `Retry` (**in the
+   failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04;
+   excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`). On
+   the phones they stand centred under the page's transcript notice, and for a failed or waiting job their reason — or, while the model
+   downloads, its progress — takes the place of the sentence that sent the user to the list; a recording waiting for Drive keeps its
+   `Connect Drive` alone. On the desktops they
+   stand under the open row of the Details list, beside the page (above). A delete from the page closes it, and the list says how it went.
+   Tapping the list tab while the detail is open closes the detail first (Android; the iPhone detail is a sheet that covers the tab bar). In the detail, the original is the main content: the transcript is layered on top of **local part playback** (play/pause + an `elapsed / total length` mono clock; a playhead moves over the waveform (the parts decoded into peaks of 0.25-second windows; the played section is accent), and dragging or tapping the waveform seeks to that time — Apple · Android · Windows 2026-09-03; the track is `mix` if there is one, otherwise `mono`; if the file is not on this device, `No audio on this device`). All four shells (2026-09-03; Apple uses a RecKit shared view + AVQueuePlayer, Android uses media3 ExoPlayer, Windows has the bundled ffmpeg decode to PCM and plays it through `SourceDataLine` — the JVM cannot decode AAC). For an uploaded recording, parts that are not local are fetched from Drive with `core.audio()` (`Fetching from Drive…`/`Could not fetch from Drive`). **There is no text while fetching** (2026-09-26, four shells): the waveform's place holds the
 **waveform loader** (§9 "Motion" — a 10-cell band in the secondary text color passes one cell at a time from left to right over short ghost ticks in the grid
 color), and the play button's place holds **button-shaped progress** (an accent border the same size as the button fills with accent in proportion to the bytes received,
 and when it is full, that spot becomes the play button). Progress rises part by part (the core's
@@ -2693,22 +2699,18 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    icon button (`Close`) after `More` and stays swipe-dismissable except while an edit has unsaved changes. Internal IDs
    are not shown (2026-09-29 — they are not information for the user to read).
    The list's first read shows a loading notice, and a truly empty list shows a notice that this is where recordings collect (desktop windows also show a start recording button, §9 screen principle 8).
-   Delete in the recordings list stands at the right end of the action area's last line, at the row's right edge (2026-10-08: it no longer has to line up
-   with the status badge above, which the 2026-09-29 flow already did not do). The remaining actions, such as open, retry and details, wrap in the space on the left. The same rule applies to the mobile list and to the expanded list
-   in the desktop menu and tray.
    (2026-09-03: the parts table in rows was removed — part numbers, tracks, bytes and sha are not shown to the user)
    The detail additions of 2026-10-07 (§3 "Metadata", §8 "Editing" · "Exports", §10 "Re-transcription" · "Search" · "Shared rules for the shells") keep
    the rule above: the original stays the main content, the transcript a layer beside it, and nothing is offered on the user's behalf.
    - **The same list on every surface** (2026-10-15, flow-parity pass): the desktop Details windows' headers count like the phones' list
      header — `12 · 2 waiting · 1 failed` — and their rows are time · title · length · status; the popover and tray ledgers say `Loading…`
-     before their first read, as the lists do. An expanded row of a job waiting on the provider draws `Waiting for the transcription result —
-     12 min elapsed` on every surface (phones, popover, tray, Details windows), and a `Retry pending` reason is in the warning tone, not red.
-     `Retry` on a row waiting for Drive (`NEEDS_AUTH`) runs the Drive fix — the sign-in — instead of queuing a retry that cannot pass, and the
+     before their first read, as the lists do. The fixes of a job waiting on the provider draw `Waiting for the transcription result —
+     12 min elapsed` on every shell (the phones' page, the Details windows' open row), and a `Retry pending` reason is in the warning tone, not red.
+     `Retry` on a recording waiting for Drive (`NEEDS_AUTH`) runs the Drive fix — the sign-in — instead of queuing a retry that cannot pass, and the
      list banner's `Connect Drive` starts the sign-in as the detail's does; a retry the core refuses says `This cannot be retried right now`.
-     What a list action did is said above the list it was pressed in — the Details windows included, not only the popover's or tray's status
-     line; a delete that went as asked is not announced (the row leaving says it), and one the core answers `Busy` for says `Still
+     What a list or page action did is said above the list — the Details windows included; a delete that went as asked is not announced (the row leaving says it), and one the core answers `Busy` for says `Still
      transcribing on this device — try again once it has finished`. The banner's count line is `Recordings waiting: 3`. A full Drive's
-     popover and tray rows offer `Open Drive storage`, and the Details windows' More menu has `Open in Drive` (Drive) or `Show in Finder` /
+     fixes offer `Open Drive storage`, and the Details windows' More menu has `Open in Drive` (Drive) or `Show in Finder` /
      `Open the folder` (a local folder) for the open recording.
    - **Import**: phones put an `Import` icon button at the end of the list header (accessibility `Import audio`), which opens the system picker for audio
      and video; the share sheet reaches it too (Android lists `Recly` for audio and video, iPhone has the share extension `Import to Recly`, which only saves the file into the app group's inbox, says `Open Recly to import.` and closes — it does
@@ -2731,9 +2733,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in three groups parted by a hairline (2026-10-10, the same
      on every shell): `Rename` · `Edit transcript` · `Transcribe again`; `Organize` (`Organize again` once there are notes) · `Edit notes` · `Ask about this
      recording…` · `Fill in title` · `Fill in speaker names` (§9 "AI view"; the group is absent where ChatGPT is not offered); `Add highlight at 00:12:34` (the playhead).
-     The desktops add two more groups (2026-10-15): the recording's folder — `Open in Drive`, or `Show in Finder` / `Open the folder` — and last,
-     the red `Delete`, which opens the delete dialog (§3 "Deleting in the app"; no keyboard shortcut, user decision; disabled with `Still
-     recording` or the importing word while the recording is being written). The phones keep Delete in the list's expanded row. The menu
+     Two more groups follow (the desktops 2026-10-15, the phones 2026-10-28): the recording's folder — `Open in Drive` (when there is a link), or on
+     the desktops `Show in Finder` / `Open the folder` — and last, the red `Delete`, which opens the delete dialog over the page (§3 "Deleting in the
+     app"; no keyboard shortcut, user decision; disabled with `Still recording` or the importing word while the recording is being written). The menu
      is never cut short: it may be as tall as the window. An item that cannot run now stays in the menu, disabled, with the reason as its second line —
      `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `Not uploaded yet` (`Transcribe again` on a recording that has not
      reached the storage) or `Waiting for Drive` (its pending job waits for a Drive connection); `Still recording` while it is being written — for
@@ -2771,7 +2773,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      with end-aligned `Cancel` · `Save` (`Save` accent; `Done` alone while nothing changed); on phones they sit below the content, above the keyboard, as
      in principle 3. `Save` → `Saving…` → `✓` → reading mode. Leaving with changes asks `Discard your changes?` / `Your edits to this transcript will be
      lost.` with `Keep editing` · `Discard` — by any route: Back, another tab, re-tapping the list tab, another row, a search hit, the
-     popover's or tray's `Details`, closing the window (2026-10-15, every shell); a draft belongs to its recording and is never saved into another. Editing is unavailable while a transcription job of the recording runs (reason `Transcribing…`). The
+     popover or tray row, closing the window (2026-10-15, every shell); a draft belongs to its recording and is never saved into another. Editing is unavailable while a transcription job of the recording runs (reason `Transcribing…`). The
      editor's footer (secondary, 12) says `Saving updates the transcript files in your storage. It does not start your agent again.` — with iCloud or a
      local folder only its first sentence, because the agent line is about recly-events on Drive (§15 §9).
    - **Playback**: one quiet chip shows the speed (`1×`, mono) and opens a menu — `0.75×` `1×` `1.25×` `1.5×` `1.75×` `2×` (`✓` on the current one) and
@@ -2921,7 +2923,6 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      only desktop windows (Mac detail, Windows recording window) show `Start recording`. The short ledger in popovers and the tray shows only one line.
    - In the command row of the menu bar popover and the tray, the primary actions (start/stop · settings) are at the start, and secondary actions and quit at the end.
    - When dialog buttons do not fit on one line, they stack at full width and keep their order (primary action last).
-   - Exception: the expanded actions of a ledger row pin only delete to the end, as in principle 2, and the rest wrap from the start.
    - A menu item that cannot run now is not hidden: it stays, disabled, with its reason as the item's second line (More, Share; 2026-10-07).
 
 ### AI view
@@ -3057,7 +3058,7 @@ the user (it is a preference, not an accessibility toggle), and high contrast an
 confirmation dialog). The recording state is the one other red — the record and stop nodes and `Recording` — because red is the recording colour,
 not a warning; the desktop `Stop recording` belongs to it. Drive `Disconnect` is quiet (2026-10-08). A selected list row also shows a 2px accent bar on
 its start edge, not only a tint. Node borders, transcript time boxes, quiet buttons and dropdown boxes keep at least 3:1 against the background in
-light and dark, and a disabled quiet button has a dashed border and muted ink (2026-10-08). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason in the expanded row, use the same
+light and dark, and a disabled quiet button has a dashed border and muted ink (2026-10-08). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason among a recording's fixes, use the same
 warning tone as the badge or a dimmed color, and never red. `Remove highlight` and `Discard` (an edit) are not red either: they delete no recording (2026-10-07).
 **The tone of a status sentence** (2026-10-15, every shell): a failure — `Could not …`, `The recording failed`, a model download that
 failed — is red; waiting, or blocked by something the user can act on (a disconnect still owed, a Drive permission, a model to fetch), is the
@@ -3764,8 +3765,8 @@ With the built-in speakers the microphone's input node runs with voice processin
 ### Menu bar app
 
 - **Status icon**: idle / recording (red) / uploading / error. The error state is also spoken through the accessibility description.
-- **Menu bar** popover: 3 state nodes + the recent ledger (infinite scroll, 20 rows at a time; state, and when expanded, the actions of §9 principle 2 — Open in Drive · Retry · Details · Delete —
-  on one horizontal line) + actions, with a notice banner at the top.
+- **Menu bar** popover: 3 state nodes + the recent ledger (infinite scroll, 20 rows at a time; time · title with the transcript's first words
+  under it · length · state, and a click opens the recording in the Details window, §9 principle 2) + actions, with a notice banner at the top.
 - **Mac popover size**: the height is limited so the popover fits inside the current screen minus the menu bar and the Dock. Only settings and the ledger scroll, and
   Settings/Hide settings and Quit at the bottom are always shown. While settings are open, the button reads `Hide settings`.
   Hiding settings shrinks it to the ledger's size, and when the screen layout changes, the position and height are fitted again.

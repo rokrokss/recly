@@ -57,28 +57,15 @@ private struct RootTabs: View {
     @ObservedObject var language: AppLanguage
     @ObservedObject var theme: AppTheme
     @Environment(\.blueprint) private var blueprint
-    /// Counts taps on the List tab, so the list can go back to every row closed (docs/09 screen principle 2).
-    @State private var listTaps = 0
-
     /// The selection is the model's rather than this view's own state: without a binding the
     /// selection is the tab bar's and goes back to the first tab whenever the bar is rebuilt, and
-    /// docs/08 "Errors" needs "check the key", which is on the list, to land on the settings tab.
-    ///
-    /// The tab views live on behind the bar, so an open row would still be open on the way back.
-    /// A tap on the List tab — from another tab, or again on itself, which reaches this setter too
-    /// and nothing else — shows the list as it opens.
+    /// docs/08 "Errors" needs "check the key", which is on a recording's page, to land on the settings tab.
     var body: some View {
-        TabView(selection: Binding(
-            get: { model.tab },
-            set: { tab in
-                if tab == .recordings { listTaps += 1 }
-                model.tab = tab
-            }
-        )) {
+        TabView(selection: $model.tab) {
             RecordingView(model: model)
                 .tabItem { Label { Text("Record") } icon: { BlueprintIcon(.record) } }
                 .tag(PhoneTab.record)
-            RecordingsView(model: model, collapse: listTaps)
+            RecordingsView(model: model)
                 .tabItem { Label { Text("List") } icon: { BlueprintIcon(.list) } }
                 .tag(PhoneTab.recordings)
             SettingsView(model: model, language: language, theme: theme)

@@ -146,10 +146,8 @@ private const val UNKNOWN_STATE = "UNKNOWN"
  *
  * And above it, while a provider is transcribing, how many minutes it has been.
  *
- * Written once and drawn twice: the tray popup's expanded row and the recordings window's sidebar
- * are two views of the same recording, and a row that named a failure in one place and stayed
- * silent in the other was two answers to one question (the Mac's popover draws both from `row`).
- * Nothing at all for a row that is not stuck.
+ * Drawn under the recordings window's open row, where a click on a tray row lands (2026-10-28), as the
+ * Mac's Details list draws its `RowReason`. Nothing at all for a row that is not stuck.
  */
 @Composable
 fun FailureReason(item: RecentItem, strings: Strings) {
@@ -186,8 +184,8 @@ fun reasonTone(status: recly.core.job.JobStatus?): BadgeTone =
 
 /**
  * docs/09 screen principle 2 lists `Check the key` among a row's actions, in the one line the others are in —
- * so a surface that has such a line draws it there itself (the popup's expanded row, the recordings window's
- * open row since 2026-10-11, and the Mac's `MenuPopover.actions` in the same order).
+ * so a surface that has such a line draws it there itself (the recordings window's open row since 2026-10-11,
+ * and the Mac's in the same order).
  *
  * Nothing at all unless the key is what the core refused (`AUTH_REJECTED`).
  */

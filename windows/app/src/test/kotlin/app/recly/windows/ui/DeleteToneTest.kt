@@ -24,7 +24,8 @@ class DeleteToneTest {
                 if ("Str.DELETE]" in call) "${file.name}: ${call.replace(Regex("\\s+"), " ")}" else null
             }.toList()
         }
-        assertTrue(deletes.size >= 5, "the Delete buttons were not found: $deletes")
+        // Four since the tray row's went to the detail's More (2026-10-28), which the menu test below reads.
+        assertTrue(deletes.size >= 4, "the Delete buttons were not found: $deletes")
         assertEquals(emptyList(), deletes.filterNot { "ButtonTone.DANGER" in it })
     }
 

@@ -109,8 +109,6 @@ enum class Str {
     RECENT_OPEN_DRIVE,
     RECENT_RETRY,
     RECENT_RETRY_UNAVAILABLE,
-    /** The row's own action, which is not the window that names the transcript surface. */
-    RECENT_DETAILS,
 
     WINDOW_SETTINGS,
     RECORDING_TITLE,

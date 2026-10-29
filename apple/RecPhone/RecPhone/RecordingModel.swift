@@ -738,7 +738,25 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             self?.runner?.jobsDue()
             self?.background.schedule()
         }
+        // 2026-10-28: a row opens its page, so the recording's Drive page and Delete are the More menu's, as on the
+        // desktops. The link is read off the row when the page opens — a search hit older than the loaded page has none.
+        if let item = recents.first(where: { $0.id == id }), item.link != nil {
+            detail.openInDrive = { [weak self] in self?.openInDrive(item) }
+        }
+        detail.delete = { [weak self] in self?.confirmDelete(recordingId: id) }
         return detail
+    }
+
+    /// docs/03 "Deleting in the app": the page's Delete asks the question the row's did — off the row as it is when it
+    /// is chosen, or off the core for a search hit older than the loaded page.
+    private func confirmDelete(recordingId: String) {
+        let listed = recents.first { $0.id == recordingId }
+        Task {
+            var item = listed
+            if item == nil, let core = bridge?.core { item = try? await Recents.item(core: core, recordingId: recordingId) }
+            guard let item, item.canDelete else { return }
+            confirmDelete(item)
+        }
     }
 
     /// docs/08 "Organizing": the recording's notes while it is being made, for as long as the screen shows them.

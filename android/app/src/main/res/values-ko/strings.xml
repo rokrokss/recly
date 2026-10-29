@@ -153,7 +153,6 @@
     <string name="jobs_row_collapse">접기</string>
     <string name="jobs_row_description">%1$s, %2$s 녹음, 길이 %3$s, %4$s</string>
 
-    <string name="detail_open">상세</string>
     <string name="detail_rename">이름 바꾸기</string>
     <string name="detail_loading">불러오는 중…</string>
     <string name="detail_empty">아직 아무것도 없습니다 — 전사 단계가 끝나지 않았습니다.</string>

@@ -154,7 +154,7 @@ class LedgerStatusTest {
         assertFalse(ItemState.NEEDS_MODEL.inFlight())
     }
 
-    /** An expanded row's reason is red only for a failure; a wait takes its badge's warning. */
+    /** A recording's reason is red only for a failure; a wait takes its badge's warning. */
     @Test
     fun `only a failure's reason is red`() {
         assertEquals(BadgeTone.DANGER, ItemState.FAILED.reasonTone())
@@ -266,6 +266,41 @@ class LedgerStatusTest {
             item(ItemState.WAITING).copy(error = CoreMessage.ICLOUD_UNAVAILABLE.code()).waitsForFolder(),
             "another storage's wait",
         )
+    }
+
+    /**
+     * More → Delete waits only for a file still being written, and says why in the words the rest of the page uses:
+     * `Still recording`, or the row's own state word. A local transcription in flight is the core's to stop.
+     */
+    @Test
+    fun `delete waits only while the file is being written`() {
+        assertEquals(app.recly.android.R.string.detail_still_recording, item(ItemState.RECORDING).deleteReason())
+        assertEquals(app.recly.android.R.string.job_state_importing, item(ItemState.IMPORTING).deleteReason())
+        assertEquals(app.recly.android.R.string.job_state_receiving, item(ItemState.RECEIVING).deleteReason())
+        ItemState.entries.filterNot { it.inFlight() }.forEach { state ->
+            assertEquals(null, item(state).deleteReason(), "$state")
+        }
+        assertEquals(null, item(ItemState.RECORDING, localPending = true).deleteReason())
+    }
+
+    /**
+     * The detail's notice says the row's reason, except for a wait on Drive — the page's own notice says it — and for
+     * one on the model while it downloads, whose progress it says instead.
+     */
+    @Test
+    fun `the notice says the row's reason`() {
+        val idle = app.recly.android.work.ModelDownloadState()
+        val downloading = app.recly.android.work.ModelDownloadState(app.recly.android.work.ModelDownloadPhase.DOWNLOADING)
+        val failed = item(ItemState.FAILED).copy(error = CoreMessage.QUOTA.code())
+        assertEquals(CoreMessage.QUOTA.code(), failed.reason(idle))
+        assertEquals(null, item(ItemState.NEEDS_AUTH).copy(error = CoreMessage.QUOTA.code()).reason(idle))
+        val model = item(ItemState.NEEDS_MODEL).copy(error = CoreMessage.LOCAL_MODEL_REQUIRED.code())
+        assertEquals(CoreMessage.LOCAL_MODEL_REQUIRED.code(), model.reason(idle))
+        assertEquals(null, model.reason(downloading))
+        assertTrue(model.downloadingModel(downloading))
+        assertFalse(model.downloadingModel(idle))
+        assertFalse(failed.downloadingModel(downloading), "only a recording waiting for the model")
+        assertEquals(null, item(ItemState.DONE).reason(idle))
     }
 
     private fun item(state: ItemState, localPending: Boolean = false): JobItem = JobItem(

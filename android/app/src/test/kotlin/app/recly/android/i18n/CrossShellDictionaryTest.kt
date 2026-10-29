@@ -242,7 +242,7 @@ class CrossShellDictionaryTest {
                 windows = "state.remote.transcribing",
                 reckit = "Transcribing on another device",
             ),
-            // docs/09 screen principle 2: the words on an expanded ledger row's own buttons.
+            // docs/09 screen principle 2: the words on a recording's own buttons, on its detail.
             Line(
                 what = "Retry",
                 en = "Retry",
@@ -358,16 +358,6 @@ class CrossShellDictionaryTest {
                 // The Mac's own key: the title is resolved by the scene, outside the RecKit subtree
                 // whose strings the row action comes from.
                 mac = "Details",
-            ),
-            // The row action that opens it: what is behind the row is the whole of the recording,
-            // not only its transcript, so the action says so wherever a row offers it.
-            Line(
-                what = "the row's detail action",
-                en = "Details",
-                ko = "상세",
-                android = "detail_open",
-                windows = "recent.details",
-                reckit = "Details",
             ),
             // docs/03 "Titles": the recording is renamed from the page that is about it, on every
             // shell that opens one — the title reaches Drive and so every other device reads it,

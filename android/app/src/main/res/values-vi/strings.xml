@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Mở rộng</string>
     <string name="jobs_row_collapse">Thu gọn</string>
     <string name="jobs_row_description">%1$s, ghi âm lúc %2$s, thời lượng %3$s, %4$s</string>
-    <string name="detail_open">Chi tiết</string>
     <string name="detail_rename">Đổi tên</string>
     <string name="detail_loading">Đang tải…</string>
     <string name="detail_empty">Chưa có nội dung — bước chép lời chưa hoàn tất.</string>

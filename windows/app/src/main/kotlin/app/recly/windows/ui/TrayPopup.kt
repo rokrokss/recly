@@ -30,13 +30,11 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import app.recly.windows.APP_NAME
 import app.recly.windows.detect.MeetingDetectionRule
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
-import app.recly.windows.i18n.message
 import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
@@ -45,7 +43,6 @@ import app.recly.windows.ui.component.BannerRow
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.EmptyList
 import app.recly.windows.ui.component.HairLine
-import app.recly.windows.ui.component.LedgerAction
 import app.recly.windows.ui.component.LedgerHeader
 import app.recly.windows.ui.component.LedgerRow
 import app.recly.windows.ui.component.LiveWaveform
@@ -79,7 +76,6 @@ import recly.core.job.JobStatus
 @Composable
 fun TrayPopup(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
     val palette = blueprint
-    var expanded by remember { mutableStateOf<String?>(null) }
     // docs/03 "Recordings from other devices": the ledger has just come on screen, so what the other devices have
     // uploaded since is asked for now rather than at the next job pass ([ShellModel.pullRemote]).
     LaunchedEffect(Unit) { model.pullRemote() }
@@ -87,9 +83,7 @@ fun TrayPopup(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
     Column(Modifier.fillMaxSize().dotGrid(palette)) {
         Header(model, strings)
         HairLine()
-        Ledger(model, strings, expanded, Modifier.weight(1f).fillMaxWidth()) { id ->
-            expanded = if (expanded == id) null else id
-        }
+        Ledger(model, strings, Modifier.weight(1f).fillMaxWidth())
         HairLine()
         Footer(model, strings, onQuit)
     }
@@ -250,9 +244,7 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
 private fun Ledger(
     model: ShellModel,
     strings: Strings,
-    expanded: String?,
     modifier: Modifier,
-    onExpand: (String) -> Unit,
 ) {
     val palette = blueprint
     // docs/09 screen principle 2: the status column is as wide as the widest badge this ledger can wear.
@@ -278,7 +270,7 @@ private fun Ledger(
             if (item.id == model.recents.last().id) {
                 LaunchedEffect(item.id) { model.loadMoreRecents() }
             }
-            RecentRow(item, model, strings, expanded == item.id, statusWidth) { onExpand(item.id) }
+            RecentRow(item, model, strings, statusWidth)
         }
         if (model.recents.isEmpty()) {
             // Before the first read the list is not empty, it is not read yet (D15).
@@ -367,104 +359,44 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
     }
 }
 
+/**
+ * docs/09 screen principle 2 (2026-10-28): the row is the recording, as the Details list's row is — time, title with the
+ * transcript's first words under it, length, state — and a click opens it in the Details window. What can be done about
+ * it is there: the fixes under its open row, and Open in Drive, Open the folder and Delete in its More menu.
+ */
 @Composable
 private fun RecentRow(
     item: RecentItem,
     model: ShellModel,
     strings: Strings,
-    open: Boolean,
     statusWidth: Dp,
-    onClick: () -> Unit,
 ) {
     val locale = Locale.forLanguageTag(strings.language)
+    val title = item.title.text(strings)
     val length = LedgerFormat.length(item.durationSec)
+    // The transcript's first words (2026-10-08), the Details row's own, and nothing for a recording with no transcript here.
+    val preview = model.previews[item.id]
     // docs/09 screen principle 2: `Filling in` while ChatGPT fills it in, and heard so too.
     val status = item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id })
     LedgerRow(
         date = LedgerFormat.date(item.startedAt),
         time = LedgerFormat.time(item.startedAt),
-        title = item.title.text(strings),
-        subtitle = "",
+        title = title,
+        subtitle = preview.orEmpty(),
         length = length,
         status = status,
         statusWidth = statusWidth,
         announce = strings[
             Str.LEDGER_ANNOUNCE,
-            item.title.text(strings),
+            // Heard after the title, as the Details row reads them, with the sentence's own separator.
+            listOfNotNull(title, preview).joinToString(" · "),
             LedgerFormat.spoken(item.startedAt, locale),
             length,
             if (status.code == FillingStatus.code) status.label else item.state.text(strings),
         ],
-        onClick = onClick,
+        // Through the Details window's own leave when it is up, so an edit in it asks first (D7).
+        onClick = { model.showDetail(item) },
     )
-    if (open) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(blueprint.background)
-                .padding(start = EXPANSION_INSET, end = Space.m)
-                .padding(vertical = Space.sm),
-            verticalArrangement = Arrangement.spacedBy(Space.s),
-        ) {
-            // docs/08 "Errors": why this row is stuck and what to do about it, in the window the user
-            // is already in — the same block the recordings window's sidebar draws.
-            FailureReason(item, strings)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Top) {
-                FlowRow(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(Space.s),
-                    verticalArrangement = Arrangement.spacedBy(Space.s),
-                ) {
-                    // Waiting for the speech model: the download, in this recording's own language, is
-                    // the row's first action — and absent while one runs, which the banner shows.
-                    if (item.jobStatus == JobStatus.NEEDS_MODEL) {
-                        ModelDownloadChip(model, strings, item.modelLanguage)
-                    }
-                    if (item.link != null) {
-                        BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
-                    }
-                    // docs/10 "Drive out of space": freeing space is the only way past it, and the page is Google's.
-                    if (item.jobStatus == JobStatus.NEEDS_SPACE) {
-                        BlueprintButton(strings[Str.JOBS_OPEN_STORAGE], model::openDriveStorage)
-                    }
-                    // docs/03 "Storage location": a recording in the local folder has its folder there instead.
-                    if (item.localFolderPath != null) {
-                        BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], { model.openInFolder(item) })
-                    }
-                    if (retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending)) {
-                        ProcessingButton(
-                            label = strings[Str.RECENT_RETRY],
-                            state = model.action,
-                            strings = strings,
-                            onClick = { model.retry(item) },
-                        )
-                    }
-                    // docs/08 AUTH_REJECTED: the key is in the processing settings, so that is where
-                    // "check the key" lands — and it belongs in this line rather than under the reason
-                    // above it (docs/09 screen principle 2, the Mac's `MenuPopover.actions`).
-                    CheckKeyButton(item, strings) { model.settingsOpen = true }
-                    // docs/08 "Result files": the transcript, wherever it was written.
-                    // Through the window's own leave when it is up, so an edit in it asks first (D7).
-                    BlueprintButton(
-                        label = strings[Str.RECENT_DETAILS],
-                        onClick = { model.showDetail(item) },
-                    )
-                }
-                // docs/03 "Deleting in the app": the dialog asks about Drive; this only opens it. Never
-                // over a recording that is still being written ([RecentItem.deletable]).
-                if (item.deletable) {
-                    LedgerAction(statusWidth, Str.STATE_DONE.message().ledgerStatus(strings)) {
-                        BlueprintButton(
-                            label = strings[Str.DELETE],
-                            onClick = { model.askToDelete(item) },
-                            tone = ButtonTone.DANGER,
-                            minWidth = MinTouch,
-                        )
-                    }
-                }
-            }
-        }
-    }
 }
 
 /**
@@ -521,9 +453,6 @@ internal fun stateWord(code: String): Str = when (code) {
 private const val IDLE = "IDLE"
 
 private const val TICK_MS = 1_000L
-
-/** The expanded actions line up under the row's title, past its time column. */
-private val EXPANSION_INSET = 84.dp
 
 /**
  * The job states a retry can do anything about. A job on its way is on its way, and a recording with

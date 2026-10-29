@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">گسترش دادن</string>
     <string name="jobs_row_collapse">جمع کردن</string>
     <string name="jobs_row_description">%1$s، زمان ضبط %2$s، مدت %3$s، %4$s</string>
-    <string name="detail_open">جزئیات</string>
     <string name="detail_rename">تغییر نام</string>
     <string name="detail_loading">در حال بارگیری…</string>
     <string name="detail_empty">هنوز چیزی اینجا نیست؛ مرحله رونویسی تمام نشده است.</string>

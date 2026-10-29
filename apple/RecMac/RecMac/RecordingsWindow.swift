@@ -127,17 +127,16 @@ struct RecordingsWindow: View {
         // since it last looked. The rows it adopts arrive on the model's recordings observation, so
         // nothing here waits for it.
         .task { await menu.pullRemoteRecordings() }
-        // docs/03 "Deleting in the app": this window has one, so the dialog is the platform's own sheet here
-        // rather than the popover's in-place overlay — and only for the deletes it asked (the open recording's More).
-        // A question started in the popover is answered there, not on a window behind it.
+        // docs/03 "Deleting in the app": the open recording's More asks it, and this window is where every delete is
+        // asked, so the dialog is the platform's own sheet.
         .blueprintDialog(
             item: Binding(
-                get: { menu.deleteRequest?.source == .recordingsWindow ? menu.deleteRequest : nil },
+                get: { menu.deleteRequest },
                 // A sheet only ever writes nil back, and a dismissal is a cancel like any other.
                 set: { if $0 == nil { menu.cancelDelete() } }
             )
-        ) { ask in
-            DeleteDialog(request: ask.request, device: .mac) {
+        ) { request in
+            DeleteDialog(request: request, device: .mac) {
                 menu.delete($0, deleteDrive: $1)
             } cancel: {
                 menu.cancelDelete()
@@ -237,10 +236,9 @@ struct RecordingsWindow: View {
             || item.needsKey || item.alert == .needsSpace || item.waitingForModel || item.waitingMinutes != nil
     }
 
-    /// 2026-10-11 (N1): under the open row only, on its tint and behind its accent bar — the popover's
-    /// expanded row, less what the detail beside it already offers (Open, Open in Drive, Show in Finder,
-    /// and since 2026-10-15 Delete): why the job is stuck, the things to do about it, and Retry for a job that
-    /// has stopped. The other rows carry no buttons at all.
+    /// 2026-10-11 (N1): under the open row only, on its tint and behind its accent bar — what the detail beside it
+    /// does not offer (it has Open in Drive, Show in Finder, and since 2026-10-15 Delete): why the job is stuck, the
+    /// things to do about it, and Retry for a job that has stopped. The other rows carry no buttons at all.
     private func actions(_ item: RecentItem) -> some View {
         VStack(alignment: .leading, spacing: Space.s) {
             // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
@@ -286,7 +284,7 @@ struct RecordingsWindow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Under the title column (the row's inset and its time column), as the popover's expanded row is.
+        // Under the title column: the row's inset and its time column.
         .padding(.leading, Space.m + LedgerMetrics.timeColumn)
         .padding(.trailing, Space.m)
         .padding(.vertical, Space.sm)

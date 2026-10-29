@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Expandir</string>
     <string name="jobs_row_collapse">Contraer</string>
     <string name="jobs_row_description">%1$s, grabado %2$s, duración %3$s, %4$s</string>
-    <string name="detail_open">Detalles</string>
     <string name="detail_rename">Cambiar nombre</string>
     <string name="detail_loading">Cargando…</string>
     <string name="detail_empty">Aún no hay contenido: la transcripción no ha terminado.</string>

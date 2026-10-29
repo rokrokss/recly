@@ -140,7 +140,7 @@ struct DetailMoreMenu: View {
             reason: model.highlightReason,
             action: addHighlight
         )
-        // The recording's folder, as the list row offers it — only where the shell handed one over (the Mac).
+        // The recording's folder — only where the shell handed one over.
         if model.openInDrive != nil || model.showInFinder != nil { Divider() }
         if let openInDrive = model.openInDrive {
             Button(RecKitStrings.localized("Open in Drive"), action: openInDrive)

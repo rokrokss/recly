@@ -188,6 +188,7 @@ fun main(args: Array<String>) {
                 state = rememberWindowState(width = RECORDINGS_WIDTH.dp, height = RECORDINGS_HEIGHT.dp),
             ) {
                 TitleBarTheme(appDark(model, dev))
+                LaunchedEffect(model.recordingsRaised) { window.toFront() }
                 Themed(model, dev) { RecordingsWindow(model, strings, themed) }
             }
         }

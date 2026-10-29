@@ -4,18 +4,17 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// docs/09 screen principle 2, on the phone: the recordings are a ledger. One row per recording — when
-/// (monospace), what, how long, and the state as a code — and the detail is behind the row rather
-/// than in front of it: what the core last said, and the two or three things that can still be done
-/// about it (docs/13 I3 "list").
+/// (monospace), what with the transcript's first words under it, how long, and the state as a code — and a tap
+/// opens the recording's page, which carries what can still be done about it (docs/13 I3 "list").
 struct RecordingsView: View {
     @ObservedObject var model: RecordingModel
-    /// Changes whenever the List tab is tapped: the ledger goes back to every row closed.
-    var collapse = 0
     @Environment(\.blueprint) private var blueprint
-    @State private var expanded: String?
     /// docs/08 "Result files": the recording whose transcript is being read, as a page over the list —
     /// the ledger has no navigation stack to push onto (docs/09 screen principle 2).
     @State private var detail: RecordingDetailModel?
+    /// A fix on the page that lands on another tab, run once the page has gone — a tab switched under the sheet would
+    /// not be seen, and the privacy review is a sheet of its own that cannot come up while this one is still leaving.
+    @State private var afterClose: (() -> Void)?
     /// docs/10 "Search": what is typed in the search field, and what the core found for it.
     @State private var query = ""
     @State private var hits: [SearchHit] = []
@@ -115,9 +114,7 @@ struct RecordingsView: View {
             }
             .scrollDismissesKeyboard(.immediately)
         }
-        .sheet(item: $detail) { detail in
-            RecordingDetailView(model: detail) { self.detail = nil }
-        }
+        .sheet(item: $detail, onDismiss: runAfterClose) { detailPage($0) }
     }
 
     private var ledger: some View {
@@ -128,76 +125,80 @@ struct RecordingsView: View {
                 length: loc("Length"),
                 status: loc("Status")
             )
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(model.recents) { item in
-                            row(item)
-                        }
-                        if model.recents.isEmpty {
-                            // docs/09 screen principle 8: no button here — the tab bar right below already says
-                            // Record.
-                            EmptyListMessage(
-                                title: loc(model.recentsLoading ? "Loading…" : "No recordings yet"),
-                                hint: model.recentsLoading ? nil : loc("Recordings you make appear here.")
-                            )
-                        }
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(model.recents) { item in
+                        row(item)
                     }
-                }
-                // docs/03: a pull-to-refresh is the user asking for everything, this device's list and
-                // what the other devices have put in Drive — so the pull is awaited here and the list
-                // is read after it, or the gesture would end before its own answer arrived.
-                .refreshable {
-                    await model.pullRemoteRecordings()
-                    await model.refreshRecents()
-                }
-                .scrollDismissesKeyboard(.immediately)
-                // 2026-10-08 §12: an opened row's actions are brought into view rather than left under
-                // the tab bar — as little scroll as that takes, once the expansion has its height.
-                .task(id: expanded) {
-                    guard let id = expanded else { return }
-                    do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
-                    withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) {
-                        proxy.scrollTo(Self.expansionID(id), anchor: nil)
+                    if model.recents.isEmpty {
+                        // docs/09 screen principle 8: no button here — the tab bar right below already says
+                        // Record.
+                        EmptyListMessage(
+                            title: loc(model.recentsLoading ? "Loading…" : "No recordings yet"),
+                            hint: model.recentsLoading ? nil : loc("Recordings you make appear here.")
+                        )
                     }
                 }
             }
+            // docs/03: a pull-to-refresh is the user asking for everything, this device's list and
+            // what the other devices have put in Drive — so the pull is awaited here and the list
+            // is read after it, or the gesture would end before its own answer arrived.
+            .refreshable {
+                await model.pullRemoteRecordings()
+                await model.refreshRecents()
+            }
+            .scrollDismissesKeyboard(.immediately)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // 2026-10-08 badge column rule: the status column no wider than the old codes took, so a
         // phone's title column keeps its width; a longer word wraps inside its badge.
         .environment(\.ledgerStatusCapped, true)
         .dotGridBackground()
-        .onChange(of: collapse) { expanded = nil }
         .task { await model.refreshRecents() }
         // docs/03: and beside it, never in front of it — the list is drawn from what is already
         // here, and a row another device uploaded arrives on the recordings observation.
         .task { await model.pullRemoteRecordings() }
-        .sheet(item: $detail) { detail in
-            RecordingDetailView(model: detail) { self.detail = nil }
-        }
-        // docs/03 "Deleting in the app": one recording, two answers about Drive, and the default is the one
-        // that can be undone.
-        .blueprintDialog(
-            item: Binding(
-                get: { model.deleteRequest },
-                // A sheet only ever writes nil back, and a dismissal is a cancel like any other —
-                // which is what invalidates a count still being read for this question.
-                set: { if $0 == nil { model.cancelDelete() } }
-            )
-        ) { request in
-            DeleteDialog(request: request, device: .phone) {
-                model.delete($0, deleteDrive: $1)
-            } cancel: {
-                model.cancelDelete()
-            }
-        }
+        .sheet(item: $detail, onDismiss: runAfterClose) { detailPage($0) }
     }
 
-    @ViewBuilder
+    /// docs/09 screen principle 2 (2026-10-28): the page a row or a search hit opens, with what the open row used to
+    /// carry under its notice and the delete question its More menu asks drawn over it.
+    private func detailPage(_ detail: RecordingDetailModel) -> some View {
+        RecordingDetailView(model: detail, fixes: fixes(for: detail.recordingId)) { self.detail = nil }
+            // docs/03 "Deleting in the app": one recording, two answers about Drive, and the default is the one
+            // that can be undone. On the page, as a sheet over it — the list under the page cannot present one.
+            .blueprintDialog(
+                item: Binding(
+                    get: { model.deleteRequest },
+                    // A sheet only ever writes nil back, and a dismissal is a cancel like any other —
+                    // which is what invalidates a count still being read for this question.
+                    set: { if $0 == nil { model.cancelDelete() } }
+                )
+            ) { request in
+                DeleteDialog(request: request, device: .phone) {
+                    model.delete($0, deleteDrive: $1)
+                    // The page was about the recording that is going; the list says how it went.
+                    self.detail = nil
+                } cancel: {
+                    model.cancelDelete()
+                }
+            }
+    }
+
+    private func runAfterClose() {
+        afterClose?()
+        afterClose = nil
+    }
+
+    /// Closes the page and does [action] once it has gone.
+    private func closeThen(_ action: @escaping () -> Void) {
+        afterClose = action
+        detail = nil
+    }
+
     private func row(_ item: RecentItem) -> some View {
         let length = LedgerFormat.length(item.durationSec)
-        LedgerRow(
+        return LedgerRow(
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
@@ -212,30 +213,28 @@ struct RecordingsView: View {
                 length: length,
                 state: item.spokenState
             ),
-            // docs/09 "Accessibility": the row opens what is behind it, which a screen reader would
-            // otherwise only find out by tapping.
-            expanded: expanded == item.id,
-            // docs/09 "Motion": 200 ms ease-in-out, and nothing at all with reduce motion on — the
-            // row simply is open.
-            action: {
-                withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) {
-                    expanded = expanded == item.id ? nil : item.id
-                }
-            }
+            // docs/08 "Result files": the transcript of this recording, the local copy first and Drive after
+            // (`RecordingDetailModel`).
+            action: { detail = model.detail(for: item) }
         )
-        .accessibilityIdentifier("state")
-        if expanded == item.id {
-            expansion(item)
-                .id(Self.expansionID(item.id))
-        }
+        .accessibilityIdentifier("open-detail")
     }
 
-    private static func expansionID(_ id: String) -> String { "expansion-\(id)" }
+    /// The fixes for the open page's recording, read off its row as it is now — so they follow the job while the page
+    /// is up — or nil when the row has nothing to say or to fix: the Mac's open-row strip (`RecordingsWindow`), on the
+    /// page. A search hit older than the loaded page has no row, and its page shows the notice alone.
+    private func fixes(for recordingId: String) -> DetailFixes? {
+        guard let item = model.recents.first(where: { $0.id == recordingId }) else { return nil }
+        // The reason, or while the model downloads how far it is ([ModelDownloadLine]).
+        let reason = item.alert != .needsAuth && item.reason != nil
+        guard reason || item.canRetry || item.needsKey || item.alert == .needsSpace || item.alert == .needsConsent
+            || item.waitingForModel || item.waitingMinutes != nil
+        else { return nil }
+        return DetailFixes(saysWhy: reason) { fixStrip(item) }
+    }
 
-    /// docs/09 screen principle 2: what is behind the row — where the recording stands, and the two or three
-    /// things the user can do about it.
-    private func expansion(_ item: RecentItem) -> some View {
-        VStack(alignment: .leading, spacing: Space.s) {
+    private func fixStrip(_ item: RecentItem) -> some View {
+        VStack(spacing: Space.s) {
             // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has
             // been waiting — the badge's RETRY would otherwise read as "stuck".
             if item.waitingMinutes != nil {
@@ -243,7 +242,6 @@ struct RecordingsView: View {
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
             }
-
             // docs/07 §5: what the core last said about this job, with its diagnostic under it —
             // the sentence translated, the diagnostic never. For a docs/08 "Errors" the sentence is
             // what to do next and the diagnostic is the provider's own words. Red for a failure,
@@ -251,72 +249,58 @@ struct RecordingsView: View {
             if item.alert != .needsAuth {
                 RowReason(item: item, download: model.modelDownload)
             }
-
-            // docs/09 "Accessibility" · Fluid typography: several buttons across is a layout for
-            // ordinary type sizes. On a narrow phone, or at an accessibility size, the same ones
-            // wrap onto further lines — a label cut to a syllable says nothing, and a column is not
-            // what the chips elsewhere do.
-            actions(item)
-        }
-        // From the row's own leading gutter, not the title column (2026-10-12): past the time column the three
-        // buttons of a done row no longer fit one line at 393–402 pt, and Delete went to a line of its own.
-        .padding(.leading, Space.m)
-        .padding(.trailing, Space.m)
-        .padding(.vertical, Space.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(blueprint.palette.background)
-    }
-
-    /// The things that can still be done about this recording, across the row and onto a second
-    /// line when they do not fit.
-    private func actions(_ item: RecentItem) -> some View {
-        // docs/09 screen principle 2: Delete ends the last line, across the row's whole width.
-        ActionFlowLayout(trailingLast: item.canDelete) {
-            // docs/05 "Fixed processing settings": the model this recording waits for, in its own
-            // language, first — and nothing while the download runs (the banner has it).
             if item.waitingForModel, let download = model.modelDownload {
-                ModelDownloadButton(download: download, language: item.localLanguage)
-                    .accessibilityIdentifier("download-model")
+                ModelDownloadLine(download: download)
             }
-            if item.link != nil {
-                BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
-            }
-            // docs/10 "Drive out of space": nothing here retries on its own, and the only thing that
-            // changes the answer is on Google's storage page.
-            if item.alert == .needsSpace {
-                BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
-                    .accessibilityIdentifier("open-storage")
-            }
-            if item.alert == .needsConsent {
-                BlueprintButton(RecKitStrings.localized("Review transfers")) {
-                    model.fix(JobAlert(reason: .needsConsent, count: 1))
+            // docs/09 "Accessibility" · Fluid typography: on a narrow phone, or at an accessibility size, the buttons
+            // wrap onto further lines — a label cut to a syllable says nothing.
+            FlowLayout {
+                // docs/05 "Fixed processing settings": the model this recording waits for, in its own
+                // language, first — and nothing while the download runs (the banner has it).
+                if item.waitingForModel, let download = model.modelDownload {
+                    ModelDownloadButton(download: download, language: item.localLanguage)
+                        .accessibilityIdentifier("download-model")
                 }
-                .accessibilityIdentifier("review-transfers")
-            }
-            // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
-            // comes back on its own `next_run_at`, and there is nothing to ask for.
-            if item.canRetry {
-                ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
-            }
-            // docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so
-            // that is where "check the key" lands — which on a phone means the settings tab.
-            if item.needsKey {
-                BlueprintButton(RecordingDetailStrings.checkKey) { model.showProcessingSettings() }
-                    .accessibilityIdentifier("check-key")
-            }
-            // docs/08 "Result files": the transcript of this recording, the local copy first and Drive
-            // after (`RecordingDetailModel`). As wide as the detail's own Play button.
-            BlueprintButton(RecordingDetailStrings.open, minWidth: playButtonMinWidth) {
-                detail = model.detail(for: item)
-            }
-                .accessibilityIdentifier("open-detail")
-            // docs/03: a recording being written to, imported, or arriving from the watch is not one
-            // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
-            if item.canDelete {
-                BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) { model.confirmDelete(item) }
-                    .accessibilityIdentifier("delete")
+                // docs/10 "Drive out of space": nothing here retries on its own, and the only thing that
+                // changes the answer is on Google's storage page.
+                if item.alert == .needsSpace {
+                    BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
+                        .accessibilityIdentifier("open-storage")
+                }
+                if item.alert == .needsConsent {
+                    BlueprintButton(RecKitStrings.localized("Review transfers")) {
+                        closeThen { model.fix(JobAlert(reason: .needsConsent, count: 1)) }
+                    }
+                    .accessibilityIdentifier("review-transfers")
+                }
+                // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
+                // comes back on its own `next_run_at`, and there is nothing to ask for.
+                if item.canRetry {
+                    ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
+                }
+                // docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so
+                // that is where "check the key" lands — which on a phone means the settings tab.
+                if item.needsKey {
+                    BlueprintButton(RecordingDetailStrings.checkKey) { closeThen { model.showProcessingSettings() } }
+                        .accessibilityIdentifier("check-key")
+                }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .multilineTextAlignment(.center)
+    }
+}
+
+/// While the model downloads, the reason and Download model step aside — on the list the banner carries the download —
+/// so the page says how far it is instead.
+private struct ModelDownloadLine: View {
+    @ObservedObject var download: ModelDownload
+    @Environment(\.blueprint) private var blueprint
+
+    var body: some View {
+        if download.downloading {
+            Text(verbatim: ModelDownload.progressText(download.progress))
+                .font(blueprint.fonts.sans(TypeSize.small))
+                .foregroundStyle(blueprint.palette.textMuted)
+        }
     }
 }

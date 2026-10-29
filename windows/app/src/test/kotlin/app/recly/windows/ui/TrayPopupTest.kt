@@ -1,18 +1,50 @@
 package app.recly.windows.ui
 
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ImageComposeScene
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerButtons
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.unit.Density
+import app.recly.windows.FakeSettings
+import app.recly.windows.helper.FakeHelperCommand
+import app.recly.windows.i18n.AppLanguage
+import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
+import app.recly.windows.i18n.text
 import app.recly.windows.plain
+import app.recly.windows.ui.theme.ReclyDesktopTheme
+import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.Json
+import okio.Path.Companion.toPath
 import recly.core.job.JobStatus
+import recly.core.model.Track
+import recly.core.transcribe.Transcript
+import recly.core.transcribe.TranscriptProvider
+import recly.core.transcribe.TranscriptSegment
 
 /**
- * The expanded row's Retry is an offer to fix something, not a way to hurry a job along: [retryable]
+ * A row's Retry is an offer to fix something, not a way to hurry a job along: [retryable]
  * is the seam that says which rows have anything to fix. A row that is still on its way — `PENDING`,
  * `RUNNING` — would have been asked to start over, and a recording with no job at all has no upload
  * to ask for now that "Upload now" is gone.
@@ -59,26 +91,31 @@ class TrayPopupTest {
     }
 
     /**
-     * 2026-10-11 (N1, W26): the Details list's open row offers what the tray's expanded row does — the download, Retry
-     * and Check the key — by the same rules, and a row with nothing to offer has no actions line at all. 2026-10-15:
-     * Delete is not one of them (it is the detail's More), so a finished row has none.
+     * 2026-10-11 (N1, W26): the Details list's open row offers the fixes — the download, Retry, Check the key and, since
+     * a tray row opens it (2026-10-28), Drive's storage page — and a row with nothing to offer has no actions line at all.
+     * 2026-10-15: Delete is not one of them (it is the detail's More), so a finished row has none.
      */
     @Test
-    fun `the open row of the Details list offers the expanded row's actions`() {
+    fun `the open row of the Details list offers the fixes`() {
         fun row(status: JobStatus?, state: Str, lastError: String? = null) =
             app.recly.windows.jobs.RecentItem("r", "j", status, UiMessage.Text("Weekly sync"), "2026-10-11T09:00:00Z", 60.0, state.message(),
                 link = null, lastError = lastError)
         val failed = rowActions(row(JobStatus.FAILED, Str.STATE_FAILED, recly.core.message.CoreMessage.AUTH_REJECTED.code(detail = "401")))
-        assertEquals(RowActions(download = false, retry = true, checkKey = true), failed)
-        assertEquals(RowActions(download = true, retry = false, checkKey = false), rowActions(row(JobStatus.NEEDS_MODEL, Str.STATE_NEEDS_MODEL)))
+        assertEquals(RowActions(download = false, retry = true, checkKey = true, storage = false), failed)
+        assertEquals(
+            RowActions(download = true, retry = false, checkKey = false, storage = false),
+            rowActions(row(JobStatus.NEEDS_MODEL, Str.STATE_NEEDS_MODEL)),
+        )
+        // docs/10 "Drive out of space": the storage page, and Retry for once the space is freed.
+        assertEquals(RowActions(download = false, retry = true, checkKey = false, storage = true), rowActions(row(JobStatus.NEEDS_SPACE, Str.STATE_NO_SPACE)))
         // Finished, or still being written: nothing to say or fix, so no line under it.
         assertEquals(RowActions.NONE, rowActions(row(JobStatus.DONE, Str.STATE_DONE)))
         assertEquals(RowActions.NONE, rowActions(row(null, Str.STATUS_RECORDING)))
     }
 
     /**
-     * 2026-10-15: picking the recording the Details window already shows — its row, a search hit on it, the tray's
-     * Details for it — neither reloads it nor asks about an editor's changes; any other one goes through the leave.
+     * 2026-10-15: picking the recording the Details window already shows — its row, a search hit on it, its tray row —
+     * neither reloads it nor asks about an editor's changes; any other one goes through the leave.
      */
     @Test
     fun `picking the open recording again does nothing`() {
@@ -92,6 +129,75 @@ class TrayPopupTest {
         pickRecording(null, "rec-1", leave) { opened++ }
         assertEquals(2, asked)
         assertEquals(2, opened)
+    }
+
+    /**
+     * 2026-10-28: a tray row is the recording, as the Details list's row is — the transcript's first words under its
+     * title and in its sentence, one element a screen reader hears — and a click on it opens it in the Details window.
+     * Nothing opens under it any more: its Details and Delete are gone from the popup.
+     */
+    @Test
+    fun `a tray row says its first words and opens its recording in the Details window`() = runBlocking {
+        val directory = Files.createTempDirectory("recly-tray-row-").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val model = ShellModel(scope = scope, localization = Localization(
+            FakeSettings(consentReminder = false, language = AppLanguage.ENGLISH),
+        ) { StringTable.BASE })
+        suspend fun until(ready: () -> Boolean) = withTimeout(60_000) {
+            while (!ready()) delay(20)
+        }
+        try {
+            model.load(directory.absolutePath.toPath(), FakeHelperCommand.command("parts=1", "sec=2.0", "write"))
+            model.start()
+            until { model.recording && model.recents.isNotEmpty() }
+            model.stop()
+            until { !model.recording }
+            val id = model.recents.first().id
+            val folder = File(directory, "recordings").listFiles()!!.single { it.isDirectory }
+            val base = folder.listFiles()!!.first { it.name.endsWith(".meta.json") }.name.removeSuffix(".meta.json")
+            val transcript = Transcript(
+                recordingId = id,
+                track = Track.MIX,
+                language = "en",
+                provider = TranscriptProvider("assemblyai"),
+                createdAt = "2026-10-28T00:00:00Z",
+                durationSec = 2.0,
+                speakers = emptyList(),
+                segments = listOf(TranscriptSegment(0.0, 2.0, "S1", "Thanks for joining.")),
+            )
+            File(folder, "$base.transcript.json").writeText(Json.encodeToString(Transcript.serializer(), transcript))
+            // Any change to the rows reads their first words again: a highlight written to the meta is one.
+            model.setHighlights(id, listOf(1.0))
+            until { model.previews[id] != null }
+
+            val strings = model.localization.current
+            val scene = ImageComposeScene(520, 900, Density(1f)) {
+                ReclyDesktopTheme(dark = false, highContrast = false) { TrayPopup(model, strings) {} }
+            }
+            try {
+                repeat(3) { scene.render() }
+                val title = model.recents.first { it.id == id }.title.text(strings)
+                val row = scene.nodes().single { it.description()?.startsWith("$title · Thanks for joining. · ") == true }
+                assertEquals(Role.Button, row.config.getOrNull(SemanticsProperties.Role))
+                // Drawn as well as heard: the line under the title.
+                assertTrue(scene.unmergedTexts().contains("Thanks for joining."), "the first words are not drawn under the title")
+
+                val at = row.boundsInRoot.center
+                scene.sendPointerEvent(PointerEventType.Move, at)
+                scene.sendPointerEvent(PointerEventType.Press, at, buttons = PointerButtons(isPrimaryPressed = true), button = PointerButton.Primary)
+                scene.sendPointerEvent(PointerEventType.Release, at, buttons = PointerButtons(), button = PointerButton.Primary)
+                repeat(3) { scene.render() }
+                assertTrue(model.recordingsOpen, "the click did not bring the Details window up")
+                assertEquals(id, model.detail?.recordingId)
+                assertFalse(strings[Str.DELETE] in scene.unmergedTexts(), "${strings[Str.DELETE]} opened under the row")
+            } finally {
+                scene.close()
+            }
+        } finally {
+            model.shutdown()
+            scope.coroutineContext[Job]?.cancelAndJoin()
+            directory.deleteRecursively()
+        }
     }
 
     /** The UX decisions of 2026-10-08: the State and Device nodes say words in the app's language, not codes. */
@@ -131,4 +237,19 @@ class TrayPopupTest {
         assertTrue(statusLineShown(Str.STATUS_RECORDING.message(), drive))
         assertTrue(statusLineShown(UiMessage.Text("a diagnostic"), drive))
     }
+
+    /** Every node of the scene's merged tree — one per thing a screen reader stops on. */
+    @OptIn(ExperimentalComposeUiApi::class)
+    private fun ImageComposeScene.nodes(): List<SemanticsNode> =
+        semanticsOwners.flatMap { owner -> owner.rootSemanticsNode.withDescendants() }
+
+    /** Every text drawn in the scene, read off the unmerged tree — which keeps what a merged row clears for its sentence. */
+    @OptIn(ExperimentalComposeUiApi::class)
+    private fun ImageComposeScene.unmergedTexts(): List<String> =
+        semanticsOwners.flatMap { owner -> owner.unmergedRootSemanticsNode.withDescendants() }
+            .flatMap { node -> node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } }
+
+    private fun SemanticsNode.withDescendants(): List<SemanticsNode> = listOf(this) + children.flatMap { it.withDescendants() }
+
+    private fun SemanticsNode.description(): String? = config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString()
 }

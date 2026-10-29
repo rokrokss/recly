@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">展开</string>
     <string name="jobs_row_collapse">收起</string>
     <string name="jobs_row_description">%1$s，录制于%2$s，时长%3$s，%4$s</string>
-    <string name="detail_open">详情</string>
     <string name="detail_rename">重命名</string>
     <string name="detail_loading">正在加载…</string>
     <string name="detail_empty">转录步骤尚未完成，此处暂无内容。</string>

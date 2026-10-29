@@ -19,9 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
@@ -165,11 +163,7 @@ private fun Heading(text: String, modifier: Modifier = Modifier, align: TextAlig
  * One recording, as a row of the ledger: when (monospace), what, how long, and the state as a code
  * (docs/09 screen principle 2). The whole row is one accessibility node — four separate announcements of
  * `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the caller hands in the
- * sentence, with the state in words rather than as a code.
- *
- * The row also opens a block under itself, and that is a fact a screen reader can otherwise only
- * find out by tapping: [expanded] becomes the row's `expand`/`collapse` action, labelled by
- * [toggleLabel] (docs/09 "Accessibility").
+ * sentence, with the state in words rather than as a code. A tap opens the recording's detail (2026-10-28).
  */
 @Composable
 fun LedgerRow(
@@ -181,16 +175,14 @@ fun LedgerRow(
     status: LedgerStatus,
     columns: LedgerColumns,
     announce: String,
-    expanded: Boolean,
-    toggleLabel: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     layout: LedgerLayout = LedgerLayout.COLUMNS,
 ) {
     val palette = blueprint
     Column(modifier.background(palette.surface)) {
-        // One node and one tap, whichever shape the row takes: the sentence and the expand action
-        // are on the body, and the two layouts below only rearrange what it wraps.
+        // One node and one tap, whichever shape the row takes: the sentence and the tap are on the
+        // body, and the two layouts below only rearrange what it wraps.
         val body = Modifier
             .fillMaxWidth()
             .focusRing(palette)
@@ -198,11 +190,6 @@ fun LedgerRow(
             .semantics(mergeDescendants = true) {
                 contentDescription = announce
                 role = Role.Button
-                if (expanded) {
-                    collapse(label = toggleLabel) { onClick(); true }
-                } else {
-                    expand(label = toggleLabel) { onClick(); true }
-                }
             }
             // docs/09 "Component measurements": 12 top and bottom.
             .padding(horizontal = Space.m, vertical = Space.sm)

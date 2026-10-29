@@ -80,13 +80,12 @@ final class MenuModel: ObservableObject {
     /// docs/10: the user-fixable failures across the queue, folded one line per reason — the
     /// popover's banner, the menu bar icon's error state, and the local notifications.
     @Published private(set) var alerts: [JobAlert] = []
-    /// Non-nil while the docs/03 delete dialog is up — the question *and* the surface it was asked
-    /// from, which is why it is one value and not a request beside a flag (see [DeleteAsk]).
-    @Published private(set) var deleteRequest: DeleteAsk?
+    /// Non-nil while the docs/03 delete dialog is up. Only the Details window asks it — the open recording's More.
+    @Published private(set) var deleteRequest: DeleteRequest?
     /// Non-nil while the docs/03 disconnect warning is up, with the count it has to name.
     @Published var disconnectPrompt: DisconnectPrompt?
     /// Where that warning was asked from, and so where it is drawn. Written with the prompt, never
-    /// before its count is read — see [DeleteAsk].
+    /// before its count is read, or a second ask would re-point the warning that is already up.
     @Published private(set) var disconnectSource: SettingsSurface = .popover
     /// docs/06: how far the last disconnect got, and so whether one is still owed. Stored, because
     /// a relaunch is the most likely place the retry happens from — the account is gone by then and
@@ -946,13 +945,10 @@ final class MenuModel: ObservableObject {
     /// The dialog is asked every time, because the Drive half of it is a separate question whose
     /// answer is never remembered. The part count is read here rather than carried on every row.
     ///
-    /// [source] is where it was asked from, and it is written into the question rather than kept
-    /// beside it — see [DeleteAsk].
-    ///
     /// Only the newest ask becomes the question. The count is a trip to the core, so two presses in
     /// a row are two reads in flight, and the slower one finishing last would otherwise replace the
     /// dialog the user is looking at with the row they left behind.
-    func confirmDelete(_ item: RecentItem, from source: DeleteAsk.Source) {
+    func confirmDelete(_ item: RecentItem) {
         guard let core = bridge?.core else { return }
         deleteAsked += 1
         let asked = deleteAsked
@@ -961,22 +957,19 @@ final class MenuModel: ObservableObject {
             // Another device's recording is Drive's; this Mac's own may not have a folder yet.
             let storage = item.remote ? item.storage : await Retention.storage(core: core, recordingId: item.id)
             guard asked == self.deleteAsked else { return }
-            deleteRequest = DeleteAsk(
-                request: DeleteRequest(
-                    recordingId: item.id,
-                    title: item.titleLabel,
-                    unuploaded: unuploaded,
-                    remote: item.remote,
-                    hasDriveFolder: item.hasCloudFolder,
-                    icloud: storage == .icloud,
-                    folder: storage == .folder
-                ),
-                source: source
+            deleteRequest = DeleteRequest(
+                recordingId: item.id,
+                title: item.titleLabel,
+                unuploaded: unuploaded,
+                remote: item.remote,
+                hasDriveFolder: item.hasCloudFolder,
+                icloud: storage == .icloud,
+                folder: storage == .folder
             )
         }
     }
 
-    /// The answer that deletes nothing, from either surface — and the answer to a question that was
+    /// The answer that deletes nothing — and the answer to a question that was
     /// never asked, which is what a dismissal is while a count is still being read: the counter goes
     /// up, so the read that comes back has nothing left to ask about.
     func cancelDelete() {
@@ -1214,7 +1207,7 @@ final class MenuModel: ObservableObject {
             var item = listed
             if item == nil, let core = bridge?.core { item = try? await Recents.item(core: core, recordingId: recordingId) }
             guard let item, item.canDelete else { return }
-            confirmDelete(item, from: .recordingsWindow)
+            confirmDelete(item)
         }
     }
 
@@ -1486,32 +1479,9 @@ final class MenuModel: ObservableObject {
     }
 }
 
-/// docs/03 "Deleting in the app": the delete question that is up, and the surface it was asked from.
-///
-/// One value rather than a request with a flag beside it, because the two are one fact and are only
-/// true together. The count the dialog states is a read off the core, so the request is not ready
-/// until an await has come back; a flag set before that await would re-point the dialog that is
-/// *already* up the moment a second row was pressed, and a dismissal in flight would leave the
-/// popover and the window each thinking the question was theirs.
-///
-/// Mac-local, and not a field on RecKit's [DeleteRequest]: the phone has one screen to ask on.
-struct DeleteAsk: Identifiable, Equatable {
-    /// Where the question was asked, and so where it is drawn — the popover over its own ledger,
-    /// the Transcripts window as the platform's sheet.
-    enum Source {
-        case popover
-        case recordingsWindow
-    }
-
-    let request: DeleteRequest
-    let source: Source
-
-    var id: String { request.id }
-}
-
 /// The two surfaces that draw [SettingsPane] — the popover's settings and the Settings window — and
 /// so the two a disconnect can be asked from. Both can be open at once; the warning is drawn only on
-/// the one that asked, as [DeleteAsk] is.
+/// the one that asked.
 enum SettingsSurface {
     case popover
     case settingsWindow

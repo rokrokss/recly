@@ -58,7 +58,6 @@ private struct StatusColumn<Content: View>: View {
             }
             content
         }
-        .coordinateSpace(name: StatusColumnSpace.name)
     }
 }
 
@@ -106,19 +105,6 @@ extension EnvironmentValues {
     public var ledgerStatusCapped: Bool {
         get { self[LedgerStatusCappedKey.self] }
         set { self[LedgerStatusCappedKey.self] = newValue }
-    }
-}
-
-private enum StatusColumnSpace {
-    static let name = "ledger.status"
-}
-
-/// The rendered status edge, for actions in the expansion beneath this row.
-public struct LedgerStatusTrailingInset: PreferenceKey {
-    public static let defaultValue: CGFloat = 0
-
-    public static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
     }
 }
 
@@ -174,12 +160,7 @@ public struct LedgerHeader: View {
 /// One recording, as a row of the ledger: when (monospace), what, how long, and the state as a code
 /// (docs/09 screen principle 2). The whole row is one accessibility element — four separate announcements of
 /// `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the caller hands in the
-/// sentence, with the state in words rather than as a code.
-///
-/// A row that opens under itself says so: whether it is open is the element's value, and the tap is
-/// offered a second time as a named action, so a screen reader can tell an open row from a closed
-/// one without tapping it to find out (docs/09 "Accessibility", as Android's `LedgerRow` does with
-/// `expand`/`collapse`).
+/// sentence, with the state in words rather than as a code. A tap opens the recording's page (2026-10-28).
 public struct LedgerRow<Trailing: View>: View {
     @Environment(\.blueprint) private var blueprint
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -193,15 +174,10 @@ public struct LedgerRow<Trailing: View>: View {
     private let length: String
     private let status: LedgerStatus
     private let announce: String
-    private let expanded: Bool?
     private let opened: Bool
     private let action: () -> Void
     private let trailing: Trailing
 
-    /// - Parameter expanded: whether the expansion under this row is open, on the shells whose row
-    ///   opens one — nil where the tap does something else entirely (the Mac's window opens a
-    ///   detail), because a row that announces an expand action nobody can see is worse than one
-    ///   that says nothing.
     /// - Parameter opened: the recording is the one open beside the list (the Mac's Details window): the row
     ///   wears the page's tint and a 2pt accent bar at its start, as Windows' does (2026-10-10, A-A9), and a
     ///   screen reader hears it as selected.
@@ -218,7 +194,6 @@ public struct LedgerRow<Trailing: View>: View {
         length: String,
         status: LedgerStatus,
         announce: String,
-        expanded: Bool? = nil,
         opened: Bool = false,
         action: @escaping () -> Void,
         @ViewBuilder trailing: () -> Trailing
@@ -230,7 +205,6 @@ public struct LedgerRow<Trailing: View>: View {
         self.length = length
         self.status = status
         self.announce = announce
-        self.expanded = expanded
         self.opened = opened
         self.action = action
         self.trailing = trailing()
@@ -241,15 +215,7 @@ public struct LedgerRow<Trailing: View>: View {
             // Centred, so the chip lands on the line the badge is on — which is the middle of the
             // row, whether the row is two lines of columns or the stack an accessibility size gets.
             HStack(spacing: 0) {
-                if let expanded {
-                    button
-                        .accessibilityValue(Text(verbatim: openState(expanded)))
-                        .accessibilityAction(named: Text(verbatim: toggleLabel(expanded))) {
-                            action()
-                        }
-                } else {
-                    button
-                }
+                button
                 trailing
                     .fixedSize()
                     .padding(.trailing, Space.m)
@@ -282,20 +248,8 @@ public struct LedgerRow<Trailing: View>: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: announce))
         .accessibilityAddTraits(opened ? [.isButton, .isSelected] : .isButton)
-    }
-
-    /// What the tap would do, named — the same two sentences Android's row labels its
-    /// `expand`/`collapse` actions with.
-    private func toggleLabel(_ expanded: Bool) -> String {
-        expanded
-            ? RecKitStrings.localized("Collapse")
-            : RecKitStrings.localized("Expand")
-    }
-
-    /// The row's value: what a screen reader says after the sentence, so an open row and a closed
-    /// one are not announced identically.
-    private func openState(_ expanded: Bool) -> String {
-        expanded ? RecKitStrings.localized("Expanded") : RecKitStrings.localized("Collapsed")
+        // The element `children: .ignore` makes is a new one, without the button's own press.
+        .accessibilityAction { action() }
     }
 
     /// Four columns, as docs/09 screen principle 2 draws the ledger.
@@ -307,15 +261,6 @@ public struct LedgerRow<Trailing: View>: View {
             StatusColumn {
                 StatusBadge(status, wraps: true)
                     .modifier(BadgeFade(status: status))
-                    .background {
-                        // Centred in its column, so the gap before the badge is the gap after it.
-                        GeometryReader { geometry in
-                            Color.clear.preference(
-                                key: LedgerStatusTrailingInset.self,
-                                value: max(0, geometry.frame(in: .named(StatusColumnSpace.name)).minX)
-                            )
-                        }
-                    }
             }
         }
     }
@@ -377,7 +322,6 @@ extension LedgerRow where Trailing == EmptyView {
         length: String,
         status: LedgerStatus,
         announce: String,
-        expanded: Bool? = nil,
         opened: Bool = false,
         action: @escaping () -> Void
     ) {
@@ -389,7 +333,6 @@ extension LedgerRow where Trailing == EmptyView {
             length: length,
             status: status,
             announce: announce,
-            expanded: expanded,
             opened: opened,
             action: action
         ) { EmptyView() }

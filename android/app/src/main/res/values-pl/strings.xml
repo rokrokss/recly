@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Rozwiń</string>
     <string name="jobs_row_collapse">Zwiń</string>
     <string name="jobs_row_description">%1$s, nagrano %2$s, długość %3$s, %4$s</string>
-    <string name="detail_open">Szczegóły</string>
     <string name="detail_rename">Zmień nazwę</string>
     <string name="detail_loading">Wczytywanie…</string>
     <string name="detail_empty">Nic tu jeszcze nie ma — krok transkrypcji się nie zakończył.</string>

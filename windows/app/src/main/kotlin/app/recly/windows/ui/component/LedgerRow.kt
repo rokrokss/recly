@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -49,30 +48,6 @@ private val LENGTH_COLUMN = 52.dp
 @Composable
 private fun lengthColumnWidth(): Dp =
     maxOf(LENGTH_COLUMN, textColumnWidth(listOf(app.recly.windows.ui.LedgerFormat.LONGEST_LENGTH), mono.small))
-
-/**
- * Aligns an expanded row's action with the right edge of the column's centered DONE badge. [status]
- * is the ledger's measured status column ([statusColumnWidth]); [done] is that badge as it is drawn,
- * its word in the app's language.
- */
-@Composable
-fun LedgerAction(status: Dp, done: LedgerStatus, content: @Composable () -> Unit) {
-    Layout(content = {
-        Box { content() }
-        StatusBadge(done, Modifier.clearAndSetSemantics {})
-    }) { measurables, constraints ->
-        val badge = measurables[1].measure(constraints.copy(
-            minWidth = 0, maxWidth = status.roundToPx(), minHeight = 0,
-        ))
-        val inset = ((status.roundToPx() - badge.width) / 2).coerceAtLeast(0)
-        val action = measurables[0].measure(constraints.copy(
-            minWidth = 0, maxWidth = (constraints.maxWidth - inset).coerceAtLeast(0), minHeight = 0,
-        ))
-        layout(action.width + inset, action.height) {
-            action.placeRelative(0, 0)
-        }
-    }
-}
 
 /** A 1dp rule (2dp in high contrast) — the only divider this design has. */
 @Composable
@@ -190,7 +165,8 @@ fun LedgerRow(
                 if (subtitle.isNotEmpty()) {
                     Text(
                         subtitle,
-                        style = MaterialTheme.typography.bodySmall,
+                        // The transcript's first words, in the direction they take, as the Details list's row draws them.
+                        style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content),
                         color = palette.textMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">پھیلائیں</string>
     <string name="jobs_row_collapse">سمیٹیں</string>
     <string name="jobs_row_description">%1$s، ریکارڈنگ کا وقت %2$s، دورانیہ %3$s، %4$s</string>
-    <string name="detail_open">تفصیلات</string>
     <string name="detail_rename">نام تبدیل کریں</string>
     <string name="detail_loading">لوڈ ہو رہا ہے…</string>
     <string name="detail_empty">یہاں ابھی کچھ نہیں — ٹرانسکرپشن کا مرحلہ مکمل نہیں ہوا۔</string>

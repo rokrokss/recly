@@ -20,8 +20,6 @@ struct MenuPopover: View {
     @Environment(\.locale) private var locale
 
     @State private var showingSettings = false
-    @State private var statusTrailingInsets: [String: CGFloat] = [:]
-    @State private var expanded: String?
 
     var body: some View {
         // One height for the ledger and the settings: a popover that changed size on "Hide settings"
@@ -54,20 +52,6 @@ struct MenuPopover: View {
                         confirm: { model.disconnect(alsoDeleteRecordings: $0) },
                         cancel: { model.cancelDisconnect() }
                     )
-                }
-            }
-        }
-        // docs/03 "Deleting in the app": the same, for a delete started from a ledger row here. The
-        // Transcripts window keeps its own sheet for the ones its rows ask — the ask carries the
-        // surface it came from, so one question is never drawn on both.
-        .overlay {
-            if let ask = model.deleteRequest, ask.source == .popover {
-                BlueprintDialogScrim {
-                    DeleteDialog(request: ask.request, device: .mac) {
-                        model.delete($0, deleteDrive: $1)
-                    } cancel: {
-                        model.cancelDelete()
-                    }
                 }
             }
         }
@@ -298,130 +282,33 @@ struct MenuPopover: View {
         }
     }
 
-    @ViewBuilder
+    /// docs/09 screen principle 2 (2026-10-28): the row is the recording, as the Details list's is — time, title with the
+    /// transcript's first words under it, length, state — and a click opens it in the Details window. What can be done
+    /// about it is there: the fixes under its open row, Open in Drive, Show in Finder and Delete in its More menu.
     private func row(_ item: RecentItem) -> some View {
         let length = LedgerFormat.length(item.durationSec)
-        LedgerRow(
+        return LedgerRow(
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
-            subtitle: "",
+            // 2026-10-08 §8: the transcript's first words under the title, when this Mac has them.
+            subtitle: item.preview ?? "",
             length: length,
             status: item.badge,
             announce: LedgerFormat.announce(
                 title: item.titleLabel,
+                preview: item.preview,
                 at: LedgerFormat.startedAt(item.startedAt),
                 length: length,
                 state: item.spokenState
             ),
-            // docs/09 "Accessibility": the row opens what is behind it, which a screen reader would
-            // otherwise only find out by tapping — the same value and the same named action the
-            // phone's row carries.
-            expanded: expanded == item.id,
-            // docs/09 "Motion": 200 ms ease-in-out, and nothing at all with reduce motion on — the
-            // row simply is open.
             action: {
-                withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) {
-                    expanded = expanded == item.id ? nil : item.id
-                }
+                model.showDetail(item)
+                NSApp.activate(ignoringOtherApps: true)
+                openWindow(id: RecordingsWindow.id)
             }
         )
-        .onPreferenceChange(LedgerStatusTrailingInset.self) { statusTrailingInsets[item.id] = $0 }
-        if expanded == item.id {
-            VStack(alignment: .leading, spacing: Space.s) {
-                // docs/08 "Polling · status": a transcription in flight has no "when", only how long it
-                // has been waiting — the badge's RETRY would otherwise read as "stuck".
-                if item.waitingMinutes != nil {
-                    Text(verbatim: item.stateLabel)
-                        .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.textMuted)
-                }
-                // docs/07 §5: what the core last said about this job, with its diagnostic under it
-                // — the sentence translated, the diagnostic never. For a docs/08 "Errors" the
-                // sentence is what to do next and the diagnostic is the provider's own words.
-                // Red for a failure, the badge's warning tone for a job that is only waiting.
-                if item.alert != .needsAuth {
-                    RowReason(item: item, download: model.modelDownload)
-                }
-                // More buttons than a 460pt popover holds in one line, and a label cut to a
-                // syllable says nothing — so they wrap onto a second line rather than becoming a
-                // column.
-                actions(item)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Under the title column: the row's inset and its time column.
-            .padding(.leading, Space.m + LedgerMetrics.timeColumn)
-            .padding(.trailing, Space.m)
-            .padding(.vertical, Space.sm)
-            .background(blueprint.palette.background)
-        }
-    }
-
-    /// The things that can still be done about this recording, across the row and onto a second
-    /// line when they do not fit.
-    private func actions(_ item: RecentItem) -> some View {
-        HStack(alignment: .top, spacing: Space.s) {
-            FlowLayout {
-                // docs/05 "Fixed processing settings": the model this recording waits for, in its own
-                // language, first — and nothing while the download runs (the banner has it).
-                if item.waitingForModel, let download = model.modelDownload {
-                    ModelDownloadButton(download: download, language: item.localLanguage)
-                        .accessibilityIdentifier("download-model")
-                }
-                if item.link != nil {
-                    BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
-                }
-                // docs/10 "Drive out of space": nothing here retries on its own, and the only thing that changes the
-                // answer is on Google's storage page — offered on the row as on the phone's.
-                if item.alert == .needsSpace {
-                    BlueprintButton(FixSurface.driveStorage.label) { model.openDriveStorage() }
-                        .accessibilityIdentifier("open-storage")
-                }
-                // docs/03 "Storage location": an iCloud or local folder recording has no web page; its folder
-                // is in Finder.
-                if item.cloudFolder != nil {
-                    BlueprintButton(loc("Show in Finder")) { model.showInFinder(item) }
-                        .accessibilityIdentifier("show-in-finder")
-                }
-                // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
-                // comes back on its own `next_run_at`, and there is nothing to ask for.
-                if item.canRetry {
-                    ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
-                }
-                // docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so
-                // that is where "check the key" lands — which on a Mac means opening that window.
-                if item.needsKey {
-                    BlueprintButton(RecordingDetailStrings.checkKey) {
-                        NSApp.activate(ignoringOtherApps: true)
-                        openWindow(id: "processing-settings")
-                    }
-                    .accessibilityIdentifier("check-key")
-                }
-                // docs/08 "Result files": the transcript, in the window that fits it.
-                BlueprintButton(RecordingDetailStrings.open) {
-                    model.showDetail(item)
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: RecordingsWindow.id)
-                }
-                .accessibilityIdentifier("open-detail")
-            }
-            Spacer(minLength: 0)
-            // docs/03: a recording being written to, imported, or arriving from the watch is not one
-            // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
-            //
-            // The question is asked here, over the ledger it is about, the way the disconnect and
-            // the import are: sending the user to another window to answer "delete this?" is the
-            // app changing the subject in the middle of its own question.
-            if item.canDelete {
-                BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) {
-                    model.confirmDelete(item, from: .popover)
-                }
-                .accessibilityIdentifier("delete")
-                .fixedSize(horizontal: true, vertical: false)
-                .padding(.trailing, statusTrailingInsets[item.id] ?? 0)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("open-detail")
     }
 }
 

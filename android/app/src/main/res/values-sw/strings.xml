@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Panua</string>
     <string name="jobs_row_collapse">Kunja</string>
     <string name="jobs_row_description">%1$s, ilirekodiwa %2$s, muda %3$s, %4$s</string>
-    <string name="detail_open">Maelezo</string>
     <string name="detail_rename">Badilisha jina</string>
     <string name="detail_loading">Inapakia…</string>
     <string name="detail_empty">Bado hakuna kitu hapa — hatua ya unukuzi haijakamilika.</string>

@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Développer</string>
     <string name="jobs_row_collapse">Réduire</string>
     <string name="jobs_row_description">%1$s, enregistré le %2$s, durée %3$s, %4$s</string>
-    <string name="detail_open">Détails</string>
     <string name="detail_rename">Renommer</string>
     <string name="detail_loading">Chargement…</string>
     <string name="detail_empty">Rien pour l’instant : la transcription n’est pas terminée.</string>

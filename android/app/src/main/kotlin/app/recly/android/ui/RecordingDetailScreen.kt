@@ -107,6 +107,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.recly.android.R
 import app.recly.android.core.coreMessage
+import app.recly.android.core.coreMessageDetail
+import app.recly.android.ui.component.ProcessingButton
+import app.recly.android.ui.component.ProcessingState
+import app.recly.android.ui.component.ink
+import app.recly.android.work.ModelDownloadState
+import recly.core.job.StepReport
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
@@ -173,6 +179,17 @@ class DetailActions(
     /** docs/08 "Organizing": a note swiped away, for good, and the transcript around a note for its row. */
     val onDeleteNote: (String) -> Unit = {},
     val noteLines: suspend (Double) -> List<NoteLine> = { emptyList() },
+    /**
+     * What the recording's list row used to offer under itself, now under the notice of a page with no transcript
+     * (2026-10-28): Retry and where it is, Check the key, and the speech model's download for the row's language.
+     */
+    val retry: ProcessingState = ProcessingState.IDLE,
+    val onRetry: (JobItem) -> Unit = {},
+    val onCheckKey: () -> Unit = {},
+    val download: ModelDownloadState = ModelDownloadState(),
+    val onDownloadModel: (language: String?, onWifi: Boolean) -> Unit = { _, _ -> },
+    /** docs/03 "Deleting in the app": More → Delete, the question about the recording's row. */
+    val onDelete: (JobItem) -> Unit = {},
 )
 
 /**
@@ -462,6 +479,7 @@ fun RecordingDetailScreen(
                                         }
                                     }
                                 },
+                                onDelete = { detail.row?.let(actions.onDelete) },
                             ), fill = actions.fill, organizing = organizing)
                         }
                     }
@@ -526,10 +544,20 @@ fun RecordingDetailScreen(
                 )
                 // docs/03 "Recordings from other devices": the transcript is being made somewhere else.
                 transcript == null && detail.remoteTranscribing -> Notice(stringResource(R.string.job_state_remote_transcribing))
-                transcript == null -> Notice(
-                    stringResource(detail.availability.message()),
-                    onRetry = onReload.takeIf { detail.availability == TranscriptAvailability.UNAVAILABLE },
-                )
+                // 2026-10-28: and what the recording's list row said and offered, as it changes — its reason, or the
+                // model's download in progress, in place of the sentence that sent the user to the list, and under any
+                // other one.
+                transcript == null -> {
+                    val row = detail.row
+                    val reason = row?.reason(actions.download)
+                    val said = reason != null || row?.downloadingModel(actions.download) == true
+                    Notice(
+                        stringResource(detail.availability.message())
+                            .takeUnless { said && detail.availability in TO_THE_LIST },
+                        onRetry = onReload.takeIf { detail.availability == TranscriptAvailability.UNAVAILABLE },
+                        button = row?.let { { RowFixes(it, reason, actions) } },
+                    )
+                }
                 transcript.segments.none { it.text.isNotBlank() } ->
                     Notice(stringResource(R.string.detail_transcript_empty))
                 else -> Column(Modifier.fillMaxSize()) {
@@ -1199,11 +1227,12 @@ private fun fetchingLabel(folder: Boolean): Int = if (folder) R.string.player_fe
 /**
  * The whole page, when there is one line to say and nothing to read — and, under it and centred, the one
  * button that carries the recording on when there is one (docs/09 screen principle 8). [detail] is a
- * diagnostic under the line, as it came; [button] a button of the caller's own.
+ * diagnostic under the line, as it came; [button] a button of the caller's own, or lines of its own where [text]
+ * is null.
  */
 @Composable
 internal fun Notice(
-    text: String,
+    text: String?,
     onRetry: (() -> Unit)? = null,
     action: Pair<String, () -> Unit>? = null,
     detail: String? = null,
@@ -1215,17 +1244,108 @@ internal fun Notice(
         verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = blueprint.textMuted,
-            textAlign = TextAlign.Center,
-        )
+        text?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = blueprint.textMuted,
+                textAlign = TextAlign.Center,
+            )
+        }
         // A diagnostic as it came — left to right in every language.
         detail?.let { Text(it, style = mono.small.copy(textDirection = TextDirection.Ltr), color = blueprint.textMuted, textAlign = TextAlign.Center) }
         onRetry?.let { BlueprintButton(stringResource(R.string.action_retry), it) }
         action?.let { (label, onClick) -> BlueprintButton(label, onClick, modifier = Modifier.testTag("detail-connect-drive")) }
         button?.invoke()
+    }
+}
+
+/**
+ * The two sentences that send the user to the list, which the row's reason — or the model's download in progress —
+ * stands in for ([RowFixes]).
+ */
+private val TO_THE_LIST = setOf(TranscriptAvailability.FAILED, TranscriptAvailability.PARKED)
+
+/** A recording waiting for the speech model while that download runs: the download's progress is what its page says. */
+internal fun JobItem.downloadingModel(download: ModelDownloadState): Boolean = state == ItemState.NEEDS_MODEL && download.active
+
+/**
+ * The sentence the recording's row has to say about its state — a `CoreMessage` code — or null: none for a wait on
+ * Drive, which the page says on its own, nor for one on the model while it downloads, whose progress the page shows
+ * instead — "not downloaded yet" would be wrong a minute later.
+ */
+internal fun JobItem.reason(download: ModelDownloadState): String? =
+    error?.takeIf { state != ItemState.NEEDS_AUTH && !downloadingModel(download) }
+
+/**
+ * docs/09 screen principle 2: what the recording's list row used to carry under itself (2026-10-28), in the [Notice]
+ * of a page with no transcript — how long a provider has been transcribing it, why it is where it is ([reason]), and
+ * the things the user can do about it, in a line that wraps. Open in Drive and Delete are More's.
+ */
+@Composable
+private fun RowFixes(row: JobItem, reason: String?, actions: DetailActions) {
+    val palette = blueprint
+    val context = LocalContext.current
+    val metered = rememberMeteredGate(actions.download.info?.modelBytes)
+    // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been waiting.
+    row.waitingMinutes?.let { minutes ->
+        Text(stringResource(R.string.job_waiting_transcription, minutes), style = MaterialTheme.typography.bodySmall,
+            color = palette.textMuted, textAlign = TextAlign.Center)
+    }
+    // The model it waits for is downloading: its progress, as the list's banner and Settings say it.
+    if (row.downloadingModel(actions.download)) ModelDownloadLines(actions.download, actions.download.info)
+    // docs/07 §5: `last_error` is a core message key, not a sentence — and one an older build wrote is prose, which
+    // `coreMessage` shows as it stands. The diagnostic that rode along is not translated and goes under it, in
+    // monospace: for a docs/08 "Errors" that is the provider's own words, which are what a support question quotes.
+    reason?.let { error ->
+        Column(verticalArrangement = Arrangement.spacedBy(Space.xxs), horizontalAlignment = Alignment.CenterHorizontally) {
+            // Red is for a failure; a wait says what it waits for in its badge's own tone.
+            Text(coreMessage(error).text(), style = MaterialTheme.typography.bodyMedium, color = row.state.reasonTone().ink(),
+                textAlign = TextAlign.Center, modifier = Modifier.testTag("detail-reason"))
+            coreMessageDetail(error)?.let { detail ->
+                Text(detail, style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, textAlign = TextAlign.Center)
+            }
+        }
+    }
+    // The one thing that carries a waiting recording on, first and filled. Nothing while the download runs: its
+    // progress is above, and its cancel is the list's banner.
+    val model = row.state == ItemState.NEEDS_MODEL && !actions.download.active
+    val retry = when (row.state) {
+        // docs/10: a `WAITING` job is sitting out a backoff after a failed attempt, and the user who has just fixed
+        // what failed (a URL, a key, a plan) should not have to wait it out. Not while a provider is transcribing:
+        // that wait is on someone else's clock.
+        ItemState.WAITING -> row.waitingMinutes == null && !row.localPending
+        ItemState.NEEDS_AUTH, ItemState.NEEDS_SPACE, ItemState.FAILED -> true
+        else -> false
+    }
+    val key = StepReport.needsKey(row.error)
+    if (!model && !retry && !key) return
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(Space.s),
+    ) {
+        if (model) {
+            BlueprintButton(modelDownloadLabel(actions.download.info), { metered { wifi -> actions.onDownloadModel(row.modelLanguage, wifi) } },
+                tone = ButtonTone.PRIMARY, modifier = Modifier.testTag("download-model"))
+        }
+        // docs/10 "Drive out of space": nothing here retries on its own, and the only thing that changes the answer is
+        // on Google's storage page.
+        if (row.state == ItemState.NEEDS_SPACE) {
+            BlueprintButton(stringResource(R.string.jobs_open_storage), { context.openUrl(DRIVE_STORAGE_URL) },
+                modifier = Modifier.testTag("open-storage"))
+        }
+        // A retry cannot pass while Drive is not granted; the connection is what unparks these jobs (docs/06 Android).
+        if (retry && row.state == ItemState.NEEDS_AUTH) {
+            BlueprintButton(stringResource(R.string.action_retry), actions.onConnectDrive)
+        } else if (retry) {
+            ProcessingButton(stringResource(R.string.action_retry), actions.retry, { actions.onRetry(row) },
+                modifier = Modifier.testTag("detail-retry"))
+        }
+        // docs/08 AUTH_REJECTED: the key is kept in the processing settings, so that is where this goes.
+        if (key) {
+            BlueprintButton(stringResource(R.string.job_reason_check_key), actions.onCheckKey, modifier = Modifier.testTag("check-key"))
+        }
     }
 }
 

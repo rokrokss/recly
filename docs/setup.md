@@ -171,8 +171,8 @@ recording.**
 ## 6. Find your recordings
 
 - **In the app**: the **List** tab on the phones, the Mac popover or the Windows tray popup. Open a
-  recording for **Details**: the player and the transcript. **Open in Drive**, **Show in Finder**
-  (Mac) and **Open the folder** (Windows) take you to the files. Devices on the same Google account
+  recording for **Details**: the player and the transcript. Its **More** has **Open in Drive**, **Show in
+  Finder** (Mac) and **Open the folder** (Windows) for the files, and **Delete**. Devices on the same Google account
   list each other's recordings. **Search titles and transcripts** sits above the list on the phones
   and in the Mac and Windows **Details** windows.
 - **In your storage**: one folder per recording, for example
@@ -194,7 +194,8 @@ recording.**
 | **More** → **Ask about this recording…** | a follow-up email, the action items, the open questions, a translation, feedback on how you spoke, or your own question; the answer is not saved |
 | **More** → **Fill in title** | a title from your ChatGPT plan, if the recording has none. To have it before the transcript is saved, tick **Fill in the title with ChatGPT** when you name a recording after stopping it |
 | **More** → **Fill in speaker names** | the names of the speakers called by name, from your ChatGPT plan. To have them before the transcript is saved, tick **Fill in speaker names with ChatGPT** when you name a recording after stopping it |
-| a note's time, or a time such as `[00:12:34]` in an answer | plays from there |
+| a note's time | moves the playhead there, playing or paused as it was |
+| a time such as `[00:12:34]` in an answer | plays from there |
 | speed (`1×`) | 0.75× to 2×, and **Skip silence** |
 
 ### Import audio

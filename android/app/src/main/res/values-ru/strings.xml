@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Развернуть</string>
     <string name="jobs_row_collapse">Свернуть</string>
     <string name="jobs_row_description">%1$s, записано %2$s, длительность %3$s, %4$s</string>
-    <string name="detail_open">Подробности</string>
     <string name="detail_rename">Переименовать</string>
     <string name="detail_loading">Загрузка…</string>
     <string name="detail_empty">Пока пусто: расшифровка ещё не завершена.</string>

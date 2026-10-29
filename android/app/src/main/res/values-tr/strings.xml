@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Genişlet</string>
     <string name="jobs_row_collapse">Daralt</string>
     <string name="jobs_row_description">%1$s, kayıt tarihi %2$s, süre %3$s, %4$s</string>
-    <string name="detail_open">Ayrıntılar</string>
     <string name="detail_rename">Yeniden adlandır</string>
     <string name="detail_loading">Yükleniyor…</string>
     <string name="detail_empty">Henüz bir şey yok — transkripsiyon adımı tamamlanmadı.</string>

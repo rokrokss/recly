@@ -3,6 +3,7 @@
 package app.recly.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.semantics.Role
@@ -28,7 +29,6 @@ import recly.core.recording.MetaWriter
 import recly.core.ids.Ulid
 import java.io.File
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import okio.Path.Companion.toPath
 import org.junit.Rule
 import org.junit.Test
@@ -69,11 +69,14 @@ class MobileUxTest {
             ui.waitUntil(10_000) { model.state.value.detail?.let { !it.writing && !it.audio.isEmpty && it.driveFetch == DriveFetch.IDLE } == true }
             ui.onNodeWithTag("play-pause").assertIsDisplayed()
             ui.runOnIdle { model.closeDetail() }
+            // The row's tap is the recording's detail, and its Delete is the last of More (2026-10-28).
             ui.onNodeWithTag("recording-$id").performClick()
-            val delete = ui.onNodeWithTag("recording-delete-$id").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
-            val detail = ui.onNodeWithTag("open-detail").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
-            assertTrue(delete.left > detail.right, "Delete must stay to the right of the ordinary actions")
-            assertTrue(delete.center.x > ui.activity.window.decorView.width / 2f, "Delete must stay on the right")
+            ui.waitUntil(10_000) { model.state.value.detail?.let { it.recordingId == id && !it.loading } == true }
+            ui.onNodeWithTag("detail-more").performClick()
+            ui.onNodeWithTag("more-delete").assertIsDisplayed().assertIsEnabled().performClick()
+            ui.waitUntil(10_000) { model.state.value.confirmDelete?.recordingId == id }
+            ui.onNodeWithTag("delete-confirm").assertIsDisplayed()
+            ui.runOnIdle { model.cancelDelete() }
         } finally {
             ui.runOnIdle { model.closeDetail() }
             runBlocking { core.recordings.delete(id, deleteDrive = false) }

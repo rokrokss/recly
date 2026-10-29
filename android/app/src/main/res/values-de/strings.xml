@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">Ausklappen</string>
     <string name="jobs_row_collapse">Einklappen</string>
     <string name="jobs_row_description">%1$s, aufgenommen %2$s, Dauer %3$s, %4$s</string>
-    <string name="detail_open">Details</string>
     <string name="detail_rename">Umbenennen</string>
     <string name="detail_loading">Wird geladen…</string>
     <string name="detail_empty">Noch kein Inhalt. Die Transkription ist noch nicht abgeschlossen.</string>

@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">I-expand</string>
     <string name="jobs_row_collapse">I-collapse</string>
     <string name="jobs_row_description">%1$s, na-record %2$s, haba %3$s, %4$s</string>
-    <string name="detail_open">Mga Detalye</string>
     <string name="detail_rename">Palitan ang pangalan</string>
     <string name="detail_loading">Naglo-load…</string>
     <string name="detail_empty">Wala pang laman — hindi pa tapos ang hakbang ng pag-transcribe.</string>

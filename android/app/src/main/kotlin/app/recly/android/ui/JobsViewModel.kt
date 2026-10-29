@@ -269,6 +269,11 @@ data class DetailState(
     val openNotes: Boolean = false,
     /** docs/08 "Organizing": the recording's notes as they change; null until first read. */
     val notes: RecordingNotes? = null,
+    /**
+     * The recording's list row, as the list draws it and following its job — what the notice of a page with no
+     * transcript says about it and offers, and More → Open in Drive and Delete go by. Null once it is gone.
+     */
+    val row: JobItem? = null,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -323,6 +328,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     val previews = previews(core, items)
                     val open = _state.value.detail?.recordingId
                     val busy = open?.let { transcribing(core, jobs, it) }
+                    val row = open?.let { row(core, items, jobs, it) }
                     val alerts = queueAlerts(jobs) { id -> core.jobs.steps(id) }
                     _state.update {
                         it.copy(
@@ -333,7 +339,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                             // The open detail's Play goes away for as long as the recorder holds
                             // the microphone, wherever the recording was started from.
                             detail = it.detail?.copy(deviceRecording = capturing(recorder))
-                                ?.let { detail -> busy?.takeIf { detail.recordingId == open }?.applyTo(detail) ?: detail },
+                                ?.let { detail -> busy?.takeIf { detail.recordingId == open }?.applyTo(detail)?.copy(row = row) ?: detail },
                         )
                     }
                 }
@@ -728,6 +734,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         // Through [cancelDelete], so a count still on its way back cannot put a dialog up over the
         // deletion it was asked for.
         cancelDelete()
+        // The detail it was asked from goes first, and with it its player: a page left open on a recording that
+        // is about to stop existing has nothing behind it, and the list is where what the delete says is shown.
+        if (_state.value.detail?.recordingId == request.recordingId) closeDetail()
         when (val result = core().recordings.delete(request.recordingId, deleteDrive)) {
             DeleteResult.Busy -> {
                 _state.update { it.copy(message = UiMessage.Res(R.string.delete_busy)) }
@@ -763,7 +772,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun openDetail(recordingId: String, title: String?, find: FindRequest? = null, openNotes: Boolean = false) {
         val core = core()
-        val busy = transcribing(core, core.jobs.list(), recordingId)
+        val jobs = core.jobs.list()
+        val busy = transcribing(core, jobs, recordingId)
+        val row = row(core, _state.value.items, jobs, recordingId)
         _state.update {
             it.copy(
                 detail = busy.applyTo(DetailState(
@@ -772,6 +783,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     deviceRecording = capturing(RecorderService.state.value),
                     find = find,
                     openNotes = openNotes,
+                    row = row,
                 )),
             )
         }
@@ -983,37 +995,50 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun items(core: ReclyCore, jobs: List<Job>): List<JobItem> {
         val byRecording = jobs.groupBy { it.recordingId }
         val now = core.deps.clock.now()
-        return core.recordings.list(LIMIT).map { record ->
-            // One job per (recording, workflow); the newest is the one the user last asked for.
-            val job = byRecording[record.id]?.maxByOrNull { it.createdAt }
-            val steps = job?.let { core.jobs.steps(it.id) }.orEmpty()
-            // docs/08 "Organizing": only the notes left is a finished recording, with nothing to explain.
-            val notesOnly = StepReport.notesOnly(job?.workflow, steps)
-            // A snapshot this build cannot read is the whole reason the job stopped, and the steps
-            // it left behind say nothing about it (docs/10 "job snapshot").
-            val error = if (notesOnly) null else job?.snapshotError ?: blockingError(steps)
-            JobItem(
-                recordingId = record.id,
-                jobId = job?.id,
-                title = record.meta.title?.takeIf { it.isNotBlank() },
-                startedAt = record.meta.startedAt,
-                durationSec = record.meta.durationSec,
-                state = stateOf(record, job, notesOnly),
-                remote = record.remote,
-                error = error,
-                waitingMinutes = StepReport.waitingMinutes(steps, now),
-                localPending = job?.status in setOf(JobStatus.WAITING, JobStatus.PENDING, JobStatus.RUNNING) && StepReport.localPending(job?.workflow, steps),
-                localRunning = core.localTranscription.isRunning(record.id),
-                localCooling = core.localTranscription.coolingDown,
-                link = linkOf(steps) ?: record.driveFolderUrl,
-                storage = record.storage,
-                nextRunAt = job?.nextRunAt,
-                modelLanguage = job?.takeIf { it.status == JobStatus.NEEDS_MODEL }?.let { waiting ->
-                    val run = steps.firstOrNull { it.status == StepStatus.NEEDS_MODEL }
-                    (waiting.workflow?.steps?.find { it.id == run?.stepId } as? Step.LocalTranscribe)?.language?.wireTag()
-                },
-            )
-        }
+        return core.recordings.list(LIMIT).map { record -> item(core, record, byRecording[record.id].orEmpty(), now) }
+    }
+
+    /**
+     * The open detail's row ([DetailState.row]): the list's own, or — for a recording older than the list's page,
+     * which a search hit opens — the same row made for it alone. Null when the recording is gone.
+     */
+    private suspend fun row(core: ReclyCore, items: List<JobItem>, jobs: List<Job>, recordingId: String): JobItem? =
+        items.firstOrNull { it.recordingId == recordingId }
+            ?: core.recordings.get(recordingId)?.let { record ->
+                item(core, record, jobs.filter { it.recordingId == recordingId }, core.deps.clock.now())
+            }
+
+    /** One recording's row, from its [jobs]. */
+    private suspend fun item(core: ReclyCore, record: RecordingRecord, jobs: List<Job>, now: Instant): JobItem {
+        // One job per (recording, workflow); the newest is the one the user last asked for.
+        val job = jobs.maxByOrNull { it.createdAt }
+        val steps = job?.let { core.jobs.steps(it.id) }.orEmpty()
+        // docs/08 "Organizing": only the notes left is a finished recording, with nothing to explain.
+        val notesOnly = StepReport.notesOnly(job?.workflow, steps)
+        // A snapshot this build cannot read is the whole reason the job stopped, and the steps
+        // it left behind say nothing about it (docs/10 "job snapshot").
+        val error = if (notesOnly) null else job?.snapshotError ?: blockingError(steps)
+        return JobItem(
+            recordingId = record.id,
+            jobId = job?.id,
+            title = record.meta.title?.takeIf { it.isNotBlank() },
+            startedAt = record.meta.startedAt,
+            durationSec = record.meta.durationSec,
+            state = stateOf(record, job, notesOnly),
+            remote = record.remote,
+            error = error,
+            waitingMinutes = StepReport.waitingMinutes(steps, now),
+            localPending = job?.status in setOf(JobStatus.WAITING, JobStatus.PENDING, JobStatus.RUNNING) && StepReport.localPending(job?.workflow, steps),
+            localRunning = core.localTranscription.isRunning(record.id),
+            localCooling = core.localTranscription.coolingDown,
+            link = linkOf(steps) ?: record.driveFolderUrl,
+            storage = record.storage,
+            nextRunAt = job?.nextRunAt,
+            modelLanguage = job?.takeIf { it.status == JobStatus.NEEDS_MODEL }?.let { waiting ->
+                val run = steps.firstOrNull { it.status == StepStatus.NEEDS_MODEL }
+                (waiting.workflow?.steps?.find { it.id == run?.stepId } as? Step.LocalTranscribe)?.language?.wireTag()
+            },
+        )
     }
 
     /**

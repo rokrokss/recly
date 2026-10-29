@@ -187,7 +187,6 @@
     <string name="jobs_row_description">%1$s, recorded %2$s, length %3$s, %4$s</string>
 
     <!-- docs/08: the recording detail screen, and what a job that is transcribing says. -->
-    <string name="detail_open">Details</string>
     <!-- docs/03 "Titles": the detail screen names the recording it is about, and renames it. -->
     <string name="detail_rename">Rename</string>
     <string name="detail_loading">Loading…</string>

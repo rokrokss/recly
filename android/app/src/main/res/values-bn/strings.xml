@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">প্রসারিত করুন</string>
     <string name="jobs_row_collapse">সঙ্কুচিত করুন</string>
     <string name="jobs_row_description">%1$s, রেকর্ডের সময় %2$s, দৈর্ঘ্য %3$s, %4$s</string>
-    <string name="detail_open">বিবরণ</string>
     <string name="detail_rename">নাম পরিবর্তন করুন</string>
     <string name="detail_loading">লোড হচ্ছে…</string>
     <string name="detail_empty">এখানে এখনও কিছু নেই; ট্রান্সক্রাইব ধাপ শেষ হয়নি।</string>

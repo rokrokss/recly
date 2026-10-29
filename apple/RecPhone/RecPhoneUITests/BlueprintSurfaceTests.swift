@@ -62,13 +62,12 @@ final class BlueprintSurfaceTests: XCTestCase {
     /// docs/03 "Deleting in the app": two answers about Drive, and the default is the one that can be undone.
     func testTheDeleteDialogDefaultsToLeavingDriveAlone() throws {
         open(tab: "List")
-        let delete = app.buttons["delete"].firstMatch
-        try XCTSkipUnless(
-            delete.waitForExistence(timeout: 10) || expandFirstRow(),
-            "this simulator has no recording to delete"
-        )
-        attach("recordings list")
-        app.buttons["delete"].firstMatch.tap()
+        try XCTSkipUnless(openFirstRow(), "this simulator has no recording to delete")
+        attach("recording page")
+        app.buttons["detail-more"].tap()
+        let delete = app.buttons["Delete"].firstMatch
+        try XCTSkipUnless(delete.waitForExistence(timeout: 5) && delete.isEnabled, "the first recording cannot be deleted now")
+        delete.tap()
 
         XCTAssertTrue(app.buttons["delete-confirm"].waitForExistence(timeout: 5), "no delete dialog")
         // Nothing of this recording reached Drive, so there is no second answer to default.
@@ -152,13 +151,12 @@ final class BlueprintSurfaceTests: XCTestCase {
         button.tap()
     }
 
-    /// The row actions are behind the row: the ledger opens where the recording stands, and the
-    /// buttons with it.
-    private func expandFirstRow() -> Bool {
-        let row = app.buttons["state"].firstMatch
+    /// docs/09 screen principle 2: a row opens its recording's page, whose More menu ends with Delete.
+    private func openFirstRow() -> Bool {
+        let row = app.buttons["open-detail"].firstMatch
         guard row.waitForExistence(timeout: 10) else { return false }
         row.tap()
-        return app.buttons["delete"].firstMatch.waitForExistence(timeout: 5)
+        return app.buttons["detail-more"].waitForExistence(timeout: 20)
     }
 
     private func waitEnabled(_ element: XCUIElement, timeout: TimeInterval) -> Bool {

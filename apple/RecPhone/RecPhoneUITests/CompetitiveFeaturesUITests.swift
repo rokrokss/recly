@@ -50,9 +50,6 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         let row = app.staticTexts["1-Weekly meeting"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 20))
         row.tap()
-        let open = app.buttons.matching(identifier: "open-detail").firstMatch
-        XCTAssertTrue(open.waitForExistence(timeout: 5))
-        open.tap()
         XCTAssertTrue(app.buttons["detail-more"].waitForExistence(timeout: 20))
         sleep(3)
     }

@@ -133,7 +133,6 @@
     <string name="jobs_row_expand">फैलाएँ</string>
     <string name="jobs_row_collapse">समेटें</string>
     <string name="jobs_row_description">%1$s, रिकॉर्ड किया %2$s, अवधि %3$s, %4$s</string>
-    <string name="detail_open">विवरण</string>
     <string name="detail_rename">नाम बदलें</string>
     <string name="detail_loading">लोड हो रहा है…</string>
     <string name="detail_empty">अभी कुछ नहीं है; ट्रांसक्रिप्शन का चरण पूरा नहीं हुआ।</string>

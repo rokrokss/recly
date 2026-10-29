@@ -6,9 +6,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
@@ -33,7 +30,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,11 +47,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.core.coreMessage
-import app.recly.android.core.coreMessageDetail
 import app.recly.android.ui.component.BadgeTone
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintDialog
@@ -64,14 +58,10 @@ import app.recly.android.ui.component.BlueprintRadioRow
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.DialogTone
 import app.recly.android.ui.component.HairLine
-import app.recly.android.ui.component.ActionFlow
 import app.recly.android.ui.component.LedgerHeader
 import app.recly.android.ui.component.LedgerRow
 import app.recly.android.ui.component.LedgerStatus
-import app.recly.android.ui.component.ProcessingButton
-import app.recly.android.ui.component.ProcessingState
 import app.recly.android.ui.component.ScreenHeader
-import app.recly.android.ui.component.ink
 import app.recly.android.ui.component.ledgerColumns
 import app.recly.android.ui.component.ledgerLayout
 import app.recly.android.ui.theme.MinTouch
@@ -85,7 +75,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import recly.core.job.StepReport
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import app.recly.android.ui.component.focusRing
@@ -96,29 +85,22 @@ import app.recly.android.ui.component.EmptyList
 
 /**
  * docs/11 A4, drawn as docs/09 screen principle 2 asks: a ledger. One row per recording — when, what, how
- * long, and the state as a code — and the detail is behind the row rather than in front of it.
+ * long, and the state as a code — and the detail is behind the row rather than in front of it: a tap on the
+ * row opens it, and what the recording needs, Open in Drive and Delete are there (2026-10-28).
  */
 @Composable
 fun JobsScreen(
     state: JobsUiState,
-    onRetry: (JobItem) -> Unit,
-    onConfirmDelete: (JobItem) -> Unit,
-    onCancelDelete: () -> Unit,
-    onDelete: (DeleteRequest, Boolean) -> Unit,
     onOpenDetail: (JobItem) -> Unit,
-    /** docs/08 AUTH_REJECTED: "check the key" is only useful with the key's settings behind it. */
-    onCheckKey: (JobItem) -> Unit,
     /** docs/10: the banner is not a notice, it is the way to the screen that fixes the thing. */
     onFix: (JobAlert) -> Unit,
-    /** The speech model download: a waiting row's step language, or null (the banner) for the saved settings'. */
+    /** The speech model download: null (the banner) for the saved settings' language. */
     onDownloadModel: (language: String?, onWifi: Boolean) -> Unit,
     onCancelDownload: () -> Unit,
     /** docs/03: the pull — this phone's list and what the other devices have put in Drive. */
     onRefresh: () -> Unit,
     onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
-    /** Changes when the List tab is tapped again on the list: the ledger goes back to every row closed. */
-    collapse: Int = 0,
     /** docs/03 "Naming rules": the files the system picker returned, to import one after another. */
     onImport: (List<Uri>) -> Unit = {},
     onDismissImport: () -> Unit = {},
@@ -127,13 +109,8 @@ fun JobsScreen(
     onOpenHit: (SearchHit) -> Unit = {},
 ) {
     val palette = blueprint
-    var expanded by rememberSaveable(collapse) { mutableStateOf<String?>(null) }
     val metered = rememberMeteredGate(state.download.info?.modelBytes)
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> onImport(uris) }
-
-    state.confirmDelete?.let { request ->
-        DeleteDialog(request = request, onCancel = onCancelDelete, onDelete = onDelete)
-    }
 
     val resources = LocalContext.current.resources
     Column(modifier.fillMaxSize()) {
@@ -263,7 +240,6 @@ fun JobsScreen(
                     LaunchedEffect(newest) { if (ledger.firstVisibleItemIndex <= 1) ledger.scrollToItem(0) }
                     LazyColumn(modifier = Modifier.fillMaxSize(), state = ledger) {
                         items(state.items, key = { it.recordingId }) { item ->
-                            val open = expanded == item.recordingId
                             val filling = state.fills.any { it.recordingId == item.recordingId }
                             val title = item.title ?: stringResource(R.string.jobs_untitled)
                             // UX decisions of 2026-10-08: the transcript's first words under the title,
@@ -285,188 +261,17 @@ fun JobsScreen(
                                     item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
                                     label(item, filling),
                                 ),
-                                expanded = open,
-                                toggleLabel = stringResource(
-                                    if (open) R.string.jobs_row_collapse else R.string.jobs_row_expand,
-                                ),
-                                onClick = { expanded = if (open) null else item.recordingId },
+                                // docs/09 screen principle 2: the row is the recording's detail — parts, the
+                                // transcript when there is one, and what it needs — on every shell alike. A
+                                // recording still being written to is a thing to look at as well, and the detail
+                                // says so itself (`DetailState.writing`).
+                                onClick = { onOpenDetail(item) },
                                 layout = layout,
                             )
-                            if (open) {
-                                ExpandedRow(
-                                    item = item,
-                                    action = state.action,
-                                    onRetry = { onRetry(item) },
-                                    onDelete = { onConfirmDelete(item) },
-                                    onOpenDetail = { onOpenDetail(item) },
-                                    onCheckKey = { onCheckKey(item) },
-                                    onFixAuth = { onFix(JobAlert(AlertReason.NEEDS_AUTH, 1)) },
-                                    download = state.download,
-                                    onDownloadModel = { metered { wifi -> onDownloadModel(item.modelLanguage, wifi) } },
-                                )
-                            }
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-/**
- * docs/09 screen principle 2: what the row has to say about itself — why it is where it is — and the two or
- * three things the user can do about it.
- */
-@Composable
-private fun ExpandedRow(
-    item: JobItem,
-    action: ProcessingState,
-    onRetry: () -> Unit,
-    onDelete: () -> Unit,
-    onOpenDetail: () -> Unit,
-    onCheckKey: () -> Unit,
-    onFixAuth: () -> Unit,
-    download: ModelDownloadState,
-    onDownloadModel: () -> Unit,
-) {
-    val palette = blueprint
-    val context = LocalContext.current
-    // An opened row scrolls up just far enough for its actions to clear the tab bar (UX decisions of
-    // 2026-10-08) — the last rows of the ledger otherwise open below the fold.
-    val reveal = remember { BringIntoViewRequester() }
-    LaunchedEffect(item.recordingId) { reveal.bringIntoView() }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .bringIntoViewRequester(reveal)
-            .background(palette.background)
-            // From the row's own leading gutter, as on the iPhone (2026-10-12): past the time column a done
-            // row's three buttons do not always fit one line, and Delete went to a line of its own.
-            .padding(start = Space.m, end = Space.m, top = Space.s, bottom = Space.sm),
-        verticalArrangement = Arrangement.spacedBy(Space.s),
-    ) {
-        // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
-        // waiting — the badge's RETRY would otherwise read as "stuck".
-        item.waitingMinutes?.let { minutes ->
-            Text(
-                stringResource(R.string.job_waiting_transcription, minutes),
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted,
-            )
-        }
-
-        // docs/07 §5: `last_error` is a core message key, not a sentence — and a row an older build
-        // wrote is prose, which `coreMessage` shows as it stands. Whatever diagnostic rode along
-        // with the key is not translated and goes under it, in monospace: for a docs/08 "Errors" that
-        // is the provider's own words, which are what a support question quotes.
-        // A recording waiting for the model says nothing of it while the download runs: the banner
-        // carries the progress, and "not downloaded yet" would be wrong a minute later.
-        item.error?.takeIf { item.state != ItemState.NEEDS_AUTH && !(item.state == ItemState.NEEDS_MODEL && download.active) }?.let { error ->
-            Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-                Text(
-                    coreMessage(error).text(),
-                    style = MaterialTheme.typography.bodySmall,
-                    // Red is for a failure; a wait says what it waits for in its badge's own tone.
-                    color = item.state.reasonTone().ink(),
-                )
-                coreMessageDetail(error)?.let { detail ->
-                    Text(detail, style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted)
-                }
-            }
-        }
-
-        // docs/09 screen principle 2: Delete ends the last line; a recording still being written has none to offer.
-        ActionFlow(
-            modifier = Modifier.fillMaxWidth(),
-            trailing = if (item.inFlight()) {
-                null
-            } else {
-                {
-                    BlueprintButton(
-                        label = stringResource(R.string.action_delete),
-                        onClick = onDelete,
-                        tone = ButtonTone.DANGER,
-                        modifier = Modifier.testTag("recording-delete-${item.recordingId}"),
-                        minWidth = MinTouch,
-                    )
-                }
-            },
-        ) {
-            // The one thing that carries a waiting recording on, first and filled. Nothing while
-            // the download runs: the banner has its progress and its cancel.
-            if (item.state == ItemState.NEEDS_MODEL && !download.active) {
-                BlueprintButton(
-                    label = modelDownloadLabel(download.info),
-                    onClick = onDownloadModel,
-                    tone = ButtonTone.PRIMARY,
-                    modifier = Modifier.testTag("download-model"),
-                )
-            }
-            item.link?.let { link ->
-                BlueprintButton(
-                    label = stringResource(R.string.jobs_open_drive),
-                    onClick = { context.openUrl(link) },
-                )
-            }
-            when (item.state) {
-                // A retry cannot pass while Drive is not granted; the banner's fix is what
-                // unparks these jobs (docs/06 Android), so the row's Retry runs that instead.
-                ItemState.NEEDS_AUTH -> {
-                    BlueprintButton(stringResource(R.string.action_retry), onClick = onFixAuth)
-                }
-
-                // docs/10 "Drive out of space": nothing here retries on its own, and the only thing
-                // that changes the answer is on Google's storage page.
-                ItemState.NEEDS_SPACE -> {
-                    BlueprintButton(
-                        label = stringResource(R.string.jobs_open_storage),
-                        onClick = { context.openUrl(DRIVE_STORAGE_URL) },
-                        modifier = Modifier.testTag("open-storage"),
-                    )
-                    ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
-                }
-
-                ItemState.FAILED ->
-                    ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
-
-                // docs/10: a `WAITING` job is sitting out a backoff after a failed attempt, and
-                // the user who has just fixed what failed (a URL, a key, a plan) should not have
-                // to wait it out — `retry()` makes the next attempt now (Z Fold7, 2026-09-04).
-                // Not while a provider is transcribing: that wait is on someone else's clock.
-                ItemState.WAITING ->
-                    if (item.waitingMinutes == null && !item.localPending) {
-                        ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
-                    }
-
-                // A `PENDING` job is due already. A recording with no job, and one too short to
-                // have earned one, offer no upload. The three that are happening elsewhere
-                // (docs/03 "Recordings from other devices") have nothing here to retry either — the work is not
-                // this device's to make due.
-                // A recording waiting for the model has its download first in the row, above.
-                ItemState.NEEDS_CONSENT, ItemState.NEEDS_MODEL, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
-                ItemState.RECORDING, ItemState.IMPORTING, ItemState.RUNNING, ItemState.DONE,
-                ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
-                -> Unit
-            }
-            // docs/08 AUTH_REJECTED: the key is kept in the processing settings, so that is where this goes.
-            if (StepReport.needsKey(item.error)) {
-                BlueprintButton(
-                    label = stringResource(R.string.job_reason_check_key),
-                    onClick = onCheckKey,
-                    modifier = Modifier.testTag("check-key"),
-                )
-            }
-            // docs/09 screen principle 2: the row opens the recording's detail — parts, and the transcript
-            // when there is one — on every shell alike, so it is offered on every row. A recording
-            // still being written to is a thing to look at as well, and the detail says so itself
-            // rather than being hidden for it (`DetailState.writing`).
-            // The row's most used action, so it is not left the narrowest: in Korean, "상세" is two letters.
-            BlueprintButton(
-                label = stringResource(R.string.detail_open),
-                onClick = onOpenDetail,
-                    modifier = Modifier.widthIn(min = DetailMinWidth).testTag("open-detail"),
-                )
         }
     }
 }
@@ -591,9 +396,11 @@ private fun Refreshable(
  * A recording another device uploaded has no local half to keep, so there is no choice to offer:
  * deleting it is deleting the Drive folder, and the dialog says so and asks that (docs/03
  * "Recordings from other devices").
+ *
+ * Asked from the detail's More → Delete, and drawn by the List tab over whichever of its pages is up.
  */
 @Composable
-private fun DeleteDialog(
+internal fun DeleteDialog(
     request: DeleteRequest,
     onCancel: () -> Unit,
     onDelete: (DeleteRequest, Boolean) -> Unit,
@@ -698,9 +505,6 @@ fun JobItem.badge(filling: Boolean = false): LedgerStatus = when {
     else -> state.badge()
 }
 
-/** The row's Details button, as wide as the detail's own Play button. */
-private val DetailMinWidth = 120.dp
-
 private val TRANSCRIBING_BADGE = LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT)
 
 /** docs/08 "Titles and speaker names": ChatGPT is filling in the title or the names — work in hand, the loader turning. */
@@ -710,7 +514,7 @@ private val FILLING_BADGE = LedgerStatus("FILLING", BadgeTone.ACCENT, busy = tru
 private val FOLDER_BADGE = LedgerStatus("WAITING_FOLDER", BadgeTone.WARNING)
 
 /**
- * The tone of the sentence an expanded row gives for its state: red only for a failure, the warning
+ * The tone of the sentence a recording's detail gives for its state: red only for a failure, the warning
  * of a wait's own badge (`NEEDS_MODEL`, `NEEDS_CONSENT`, `NO_SPACE`, `RETRY`), and quiet otherwise.
  */
 internal fun ItemState.reasonTone(): BadgeTone = when (badge().tone) {
@@ -753,7 +557,7 @@ fun JobItem.waiting(): Boolean = localPending || state.waiting()
 
 /**
  * docs/09 screen principle 2: a recording whose file is still being written — by the recorder, an
- * import or a transfer from the watch — so there is no Delete on the row. An upload is not one:
+ * import or a transfer from the watch — so its Delete waits ([deleteReason]). An upload is not one:
  * the core stops it before deleting (docs/03 "Deleting in the app"), and neither is another
  * device's, whose folder the dialog takes from Drive (docs/03 "Recordings from other devices").
  */
@@ -766,6 +570,17 @@ fun ItemState.inFlight(): Boolean =
  * (`LocalTranscriptionService.deleting`). The iPhone offers Delete there too (`RecentItem.canDelete`).
  */
 fun JobItem.inFlight(): Boolean = !localPending && state.inFlight()
+
+/**
+ * Why the detail's More → Delete waits, or null when it does not ([inFlight]): `Still recording` the way every other
+ * item says it, or the row's own state word — `Importing`, `Receiving from the watch` (the desktops' rule).
+ */
+internal fun JobItem.deleteReason(): Int? = when {
+    !inFlight() -> null
+    state == ItemState.RECORDING -> R.string.detail_still_recording
+    state == ItemState.IMPORTING -> R.string.job_state_importing
+    else -> R.string.job_state_receiving
+}
 
 /**
  * docs/03 "Storage location": a `WAITING` job held up because the local folder cannot be used — waiting

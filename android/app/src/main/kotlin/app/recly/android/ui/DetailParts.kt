@@ -94,16 +94,19 @@ internal class MoreActions(
     val onAsk: () -> Unit,
     /** docs/08 "Titles and speaker names": Fill in title or Fill in speaker names. */
     val onFill: (FillHalf) -> Unit,
+    /** docs/03 "Deleting in the app": the delete question, about this recording. */
+    val onDelete: () -> Unit,
 )
 
 /**
  * docs/09 "Detail header and More menu" · "AI view": Rename · Edit transcript · Transcribe again ─ Organize (Organize
  * again once there are notes) · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names ─ Add
- * highlight at the playhead, in that order and in those three groups, a hairline between them. An item that cannot run is
- * shown disabled with its reason under it — every one of them `Still recording` while the recorder is writing into this
- * take; the ChatGPT items are not there at all where ChatGPT is not offered, and Edit notes not while the recording has
- * none. The menu is as tall as the window lets it be, so no item is out of sight. [fill] is the recording's fill asking
- * ChatGPT now (`observeFills()`), if any; [organizing] is a pass of its notes running here.
+ * highlight at the playhead ─ Open in Drive ─ Delete, in that order and in those groups, a hairline between them. An item
+ * that cannot run is shown disabled with its reason under it — every one of them `Still recording` while the recorder is
+ * writing into this take; the ChatGPT items are not there at all where ChatGPT is not offered, Edit notes not while the
+ * recording has none, and Open in Drive not before it has a folder there. The menu is as tall as the window lets it be, so
+ * no item is out of sight. [fill] is the recording's fill asking ChatGPT now (`observeFills()`), if any; [organizing] is a
+ * pass of its notes running here.
  */
 @Composable
 internal fun MoreButton(
@@ -176,6 +179,19 @@ internal fun MoreButton(
             val stamp = clock(playheadSec.toLong(), recordingScale(detail))
             MenuAction(monoStamp(stringResource(R.string.highlight_add_at, stamp), stamp, mono.bodySmall), pick(actions.onAddHighlight),
                 enabled = highlightReason == null, reason = highlightReason, modifier = Modifier.testTag("more-highlight"))
+            // Where the recording is kept, as its list row used to open it (2026-10-28).
+            val context = LocalContext.current
+            detail.row?.link?.let { link ->
+                HairLine()
+                MenuAction(stringResource(R.string.jobs_open_drive), pick { context.openUrl(link) }, modifier = Modifier.testTag("more-open-drive"))
+            }
+            // docs/03 "Deleting in the app": last, on its own and in red, by the row's rule — never over a recording still
+            // being written. Without a row the recording is gone, and there is nothing left to delete.
+            val row = detail.row
+            val deleteReason = row?.deleteReason()?.let { stringResource(it) }
+            HairLine()
+            MenuAction(stringResource(R.string.action_delete), pick(actions.onDelete), enabled = row != null && deleteReason == null,
+                reason = deleteReason, modifier = Modifier.testTag("more-delete"), danger = true)
         }
     }
 }

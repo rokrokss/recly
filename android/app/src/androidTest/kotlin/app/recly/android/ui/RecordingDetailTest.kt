@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package app.recly.android.ui
 
 import androidx.compose.ui.test.*
@@ -26,6 +28,30 @@ class RecordingDetailTest {
 
     private fun detail(uploaded: Boolean = true) = DetailState(recordingId = "detail-test", title = "Weekly sync",
         loading = false, transcript = transcript, driveFetch = DriveFetch.IDLE, uploaded = uploaded)
+
+    private fun row(state: ItemState, error: String? = null) = JobItem(recordingId = "detail-test", jobId = "job", title = "Weekly sync",
+        startedAt = "2026-10-07T00:00:00Z", durationSec = 30.0, state = state, error = error, waitingMinutes = null, link = null,
+        nextRunAt = null)
+
+    /** 2026-10-28: a failed recording's page says why and offers its row's Retry, rather than sending the user to the list. */
+    @Test fun aFailedRecordingSaysWhyAndRetriesFromItsPage() {
+        var retried = 0
+        ui.setContent { ReclyTheme {
+            RecordingDetailScreen(detail().copy(transcript = null, availability = TranscriptAvailability.FAILED,
+                row = row(ItemState.FAILED, "The provider refused")), {}, {}, actions = DetailActions(onRetry = { retried++ }))
+        } }
+        ui.onNodeWithTag("detail-reason").assertTextEquals("The provider refused")
+        ui.onNodeWithText(context.getString(R.string.detail_failed)).assertDoesNotExist()
+        ui.onNodeWithTag("detail-retry").performClick()
+        ui.runOnIdle { assertEquals(1, retried) }
+    }
+
+    /** More → Delete is last, and waits with its reason while the take is being written. */
+    @Test fun deleteWaitsWhileTheTakeIsWritten() {
+        ui.setContent { ReclyTheme { RecordingDetailScreen(detail().copy(writing = true, row = row(ItemState.RECORDING)), {}, {}) } }
+        ui.onNodeWithTag("detail-more").performClick()
+        ui.onNodeWithTag("more-delete").assertIsNotEnabled()
+    }
 
     @Test fun transcribeAgainWaitsForTheUpload() {
         ui.setContent { ReclyTheme { RecordingDetailScreen(detail(uploaded = false), {}, {}, actions = DetailActions(transcription = external)) } }

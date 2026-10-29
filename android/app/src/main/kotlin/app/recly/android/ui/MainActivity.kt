@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -198,9 +197,6 @@ class MainActivity : ComponentActivity() {
                         body = unsaved ?: R.string.edit_discard_body,
                     )
                 }
-                // Leaving the tab already closes the list's open row — the list leaves composition
-                // with it. A tap on the List tab while it is showing is the one that has to say so.
-                var listTaps by remember { mutableIntStateOf(0) }
                 // docs/11 A9: a tile, widget or shortcut tap is a request to record *now*, so it
                 // brings the Record tab with it. The tab is remembered across a restore, and a
                 // request left lying behind another tab used to be spent on whatever switch to
@@ -268,12 +264,11 @@ class MainActivity : ComponentActivity() {
                                     glyph = entry.glyph,
                                     label = stringResource(entry.label),
                                     selected = tab == entry,
-                                    // The List tab tapped again shows the list as it opens: from a
-                                    // recording's detail that is the way back, as Back is, and on the
-                                    // list it closes the open row (docs/09 screen principle 2).
+                                    // The List tab tapped again shows the list: from a recording's
+                                    // detail that is the way back, as Back is (docs/09 screen principle 2).
                                     onClick = {
-                                        if (entry == Tab.JOBS && tab == Tab.JOBS) {
-                                            if (jobs.detail != null) leaveDetail { jobsModel.closeDetail() } else listTaps++
+                                        if (entry == Tab.JOBS && tab == Tab.JOBS && jobs.detail != null) {
+                                            leaveDetail { jobsModel.closeDetail() }
                                         }
                                         goTo(entry)
                                     },
@@ -304,7 +299,6 @@ class MainActivity : ComponentActivity() {
                             onFix = { alert -> goFix(alert.reason) },
                             onConnectDrive = { fixAuth() },
                             modifier = content,
-                            collapse = listTaps,
                             onUnsaved = { unsaved = it },
                         )
 
@@ -484,9 +478,12 @@ private fun JobsTab(
     onFix: (JobAlert) -> Unit,
     onConnectDrive: () -> Unit,
     modifier: Modifier,
-    collapse: Int,
     onUnsaved: (Int?) -> Unit,
 ) {
+    // docs/03 "Deleting in the app": asked from the detail's More, and over whichever page is up.
+    state.confirmDelete?.let { request ->
+        DeleteDialog(request = request, onCancel = model::cancelDelete, onDelete = model::delete)
+    }
     val detail = state.detail
     if (detail != null) {
         RecordingDetailScreen(
@@ -518,24 +515,24 @@ private fun JobsTab(
                 fill = state.fills.firstOrNull { it.recordingId == detail.recordingId },
                 onDeleteNote = { model.deleteNote(detail.recordingId, it) },
                 noteLines = { model.noteLines(detail.recordingId, it) },
+                retry = state.action,
+                onRetry = model::retry,
+                onCheckKey = onCheckKey,
+                download = state.download,
+                onDownloadModel = model::downloadModel,
+                onDelete = model::confirmDelete,
             ),
         )
     } else {
         JobsScreen(
             state = state,
-            onRetry = model::retry,
-            onConfirmDelete = model::confirmDelete,
-            onCancelDelete = model::cancelDelete,
-            onDelete = model::delete,
             onOpenDetail = model::openDetail,
-            onCheckKey = { onCheckKey() },
             onFix = onFix,
             onDownloadModel = model::downloadModel,
             onCancelDownload = model::cancelDownload,
             onRefresh = model::pullToRefresh,
             onDismissMessage = model::dismissMessage,
             modifier = modifier,
-            collapse = collapse,
             onImport = model::importAudio,
             onDismissImport = model::dismissImportFailure,
             onSearch = model::search,

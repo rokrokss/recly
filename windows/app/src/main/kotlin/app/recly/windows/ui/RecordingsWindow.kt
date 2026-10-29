@@ -201,7 +201,7 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
             model.closeAnswered()
         }
     }
-    // The tray's Details on another row: the same leave as this window's own list (D7).
+    // A click on another tray row: the same leave as this window's own list (D7).
     LaunchedEffect(model.detailAsked) {
         val item = model.detailAsked ?: return@LaunchedEffect
         model.detailAnswered()
@@ -304,8 +304,8 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
 }
 
 /**
- * 2026-10-15: picking the recording the detail already shows — its row again, a search hit on it, the tray's Details for
- * it — does nothing: no reload, and no question about an editor's changes. Any other is opened through [leave].
+ * 2026-10-15: picking the recording the detail already shows — its row again, a search hit on it, its tray row — does
+ * nothing: no reload, and no question about an editor's changes. Any other is opened through [leave].
  */
 internal fun pickRecording(open: String?, recordingId: String, leave: (() -> Unit) -> Unit, then: () -> Unit) {
     if (open != recordingId) leave(then)
@@ -406,9 +406,9 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
         title = item.title.text(strings),
         selected = selected,
         onOpen = onOpen,
-        // 2026-10-11 (N1, W26): the actions are the open row's alone, as the tray's expanded row has them — every
-        // other row is its title, its first words and its state. 2026-10-15: and only while there is something to say
-        // or fix — docs/03 "Deleting in the app" is the detail's More, so a finished row has no line under it.
+        // 2026-10-11 (N1, W26): the actions are the open row's alone — every other row is its title, its first words and
+        // its state. 2026-10-15: and only while there is something to say or fix — docs/03 "Deleting in the app" is the
+        // detail's More, so a finished row has no line under it.
         controls = if (actions == RowActions.NONE) null else {
             {
                 // A line that wraps: Retry and Check the key can be here at once, and at the narrowest a worded
@@ -428,8 +428,10 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
                             onClick = { model.retry(item) },
                         )
                     }
-                    // docs/08 AUTH_REJECTED: in the actions line, as the tray's expanded row has it.
+                    // docs/08 AUTH_REJECTED: in the actions line, as the Mac's open row has it.
                     if (actions.checkKey) CheckKeyButton(item, strings) { model.settingsOpen = true }
+                    // docs/10 "Drive out of space": freeing space is the only way past it, and the page is Google's.
+                    if (actions.storage) BlueprintButton(strings[Str.JOBS_OPEN_STORAGE], model::openDriveStorage)
                 }
             }
         },
@@ -458,8 +460,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
             )
             FadingStatusBadge(item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id }))
         }
-        // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line. The popup's
-        // expanded row says the same thing about the same recording ([FailureReason]).
+        // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line ([FailureReason]).
         if (selected) FailureReason(item, strings)
     }
 }
@@ -492,20 +493,22 @@ private fun ListMessage(notice: ShellNotice, strings: Strings, onDismiss: () -> 
 }
 
 /**
- * What the open row of the list offers (2026-10-11, N1): the tray's expanded row's Download, Retry and Check the key.
- * Its Delete is the detail's More (2026-10-15).
+ * What the open row of the list offers (2026-10-11, N1): Download, Retry, Check the key and Open Drive storage — the
+ * fixes the tray's rows offered before a click on one opened it here (2026-10-28). Its Delete, Open in Drive and Open
+ * the folder are the detail's More (2026-10-15).
  */
-internal data class RowActions(val download: Boolean, val retry: Boolean, val checkKey: Boolean) {
+internal data class RowActions(val download: Boolean, val retry: Boolean, val checkKey: Boolean, val storage: Boolean) {
     companion object {
-        val NONE = RowActions(download = false, retry = false, checkKey = false)
+        val NONE = RowActions(download = false, retry = false, checkKey = false, storage = false)
     }
 }
 
-/** The tray's own rules ([retryable], [CheckKeyButton]), so the two surfaces never offer different things. */
+/** By [retryable] and [CheckKeyButton]'s rules, and the Mac's open row's for the storage page. */
 internal fun rowActions(item: RecentItem): RowActions = RowActions(
     download = item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL,
     retry = retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending),
     checkKey = recly.core.job.StepReport.needsKey(item.lastError),
+    storage = item.jobStatus == recly.core.job.JobStatus.NEEDS_SPACE,
 )
 
 @Composable

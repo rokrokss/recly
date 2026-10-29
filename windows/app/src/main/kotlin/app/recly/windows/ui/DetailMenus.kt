@@ -308,7 +308,7 @@ internal fun MoreButton(
                 enabled = highlightBlocked == null,
                 secondary = highlightBlocked?.let { strings[it] },
             )
-            // D24: where the recording is kept, the way the tray's row opens it.
+            // D24: where the recording is kept — since 2026-10-28 the only place it is opened from.
             val place = when {
                 detail.driveUrl != null -> Str.RECENT_OPEN_DRIVE
                 detail.folderPath != null -> Str.SETTINGS_OPEN_FOLDER
