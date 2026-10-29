@@ -122,6 +122,10 @@ for (const [label, expected, change] of [
   ["unknown field", false, c => { c.items[0].speakerName = "Mina"; return c; }],
   ["edited item emptied", false, c => { c.items.find(i => i.userText).userText = ""; return c; }],
   ["section name over 40", false, c => { c.sections[0].name = "x".repeat(41); return c; }],
+  ["every built-in group removed", true, c => { c.sections = c.sections.filter(s => s.kind === "section"); return c; }],
+  ["own section without a name", false, c => { c.sections.find(s => s.kind === "section").name = ""; return c; }],
+  ["built-in group under a ULID", false, c => { c.sections[0].id = "01J9ABCDEH0000000000000002"; return c; }],
+  ["section without its kind", false, c => { delete c.sections[0].kind; return c; }],
   ["future schema", false, c => { c.schema = 2; return c; }],
 ]) {
   const valid = notesSchema(change(structuredClone(notesBase)));

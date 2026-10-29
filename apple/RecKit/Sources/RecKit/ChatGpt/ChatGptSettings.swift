@@ -56,7 +56,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     @Published public var aboutMe = ""
     /// docs/08 "Organizing" — "Settings": what this device asks every recording's notes for, as saved — Settings → Notes.
     @Published public private(set) var notesPreferences = NotesPreferences(instructions: "", sections: [])
-    /// Notes instructions and My sections as their fields hold them; saved when editing ends ([saveNotes]).
+    /// Notes instructions and Sections as their fields hold them; saved when editing ends ([saveNotes]).
     @Published public var instructions = ""
     @Published public var sections: [NoteSectionDraft] = []
     /// docs/15 "iPhone providers": the transcript may go to ChatGPT now — at once where no permission is asked (the
@@ -75,6 +75,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     private var notesObserver: Task<Void, Never>?
     private var consentObserver: Task<Void, Never>?
     private var organizeObserver: Task<Void, Never>?
+    private var languageObserver: Task<Void, Never>?
     private let logger = Logger(subsystem: CoreBridge.appName, category: "chatgpt")
 
     public convenience init(core: ReclyCore_) {
@@ -118,6 +119,11 @@ public final class ChatGptSettingsModel: ObservableObject {
                 self?.adoptNotes(preferences)
             }
         }
+        languageObserver = Task { [weak self] in
+            for await _ in NotificationCenter.default.notifications(named: AppLanguage.didChange) {
+                self?.relocalizeNotes()
+            }
+        }
     }
 
     deinit {
@@ -126,6 +132,7 @@ public final class ChatGptSettingsModel: ObservableObject {
         notesObserver?.cancel()
         consentObserver?.cancel()
         organizeObserver?.cancel()
+        languageObserver?.cancel()
     }
 
     /// docs/15 "China mainland App Store": the whole section goes where ChatGPT is not offered.
@@ -244,28 +251,47 @@ public final class ChatGptSettingsModel: ObservableObject {
 
     // MARK: - Settings → Notes (docs/08 "Organizing" — "Settings")
 
-    /// `Add section`, while there are fewer than [NotesPreferences.SECTIONS_MAX]: an empty section at the end, kept in
-    /// the list until editing leaves it without a name. Answers its key, for the name field to take the focus.
+    /// `Add section` is there while the user's own sections are fewer than [NotesPreferences.SECTIONS_MAX]; the
+    /// built-in groups do not count.
+    public var addsSection: Bool { sections.filter { !$0.builtIn }.count < Int(NotesPreferences.companion.SECTIONS_MAX) }
+
+    /// `Add section`, while [addsSection]: an empty section at the end, kept in the list until editing leaves it
+    /// without a name. Answers its key, for the name field to take the focus.
     @discardableResult
     public func addSection() -> UUID? {
-        guard sections.count < Int(NotesPreferences.companion.SECTIONS_MAX) else { return nil }
+        guard addsSection else { return nil }
         let section = NoteSectionDraft()
         sections.append(section)
         return section.key
     }
 
-    /// `Remove`: gone from the list and saved at once.
+    /// `Remove`, a built-in group's or a section's: gone from the list and saved at once.
     public func removeSection(_ key: UUID) {
         sections.removeAll { $0.key == key }
         saveNotes()
     }
 
-    /// The notes fields' end of editing — focus gone, Return, the screen closed. [leaving] is the section editing has
-    /// just left, which goes from the list if it has no name; [droppingNameless] takes every such one, as the screen
-    /// goes. Nothing is saved when what the fields hold is what is saved.
+    /// `Restore defaults` is there while the built-in groups are not as they come: one removed, renamed or described anew.
+    public var restoresDefaults: Bool { shownNotes.builtInsChanged }
+
+    /// `Restore defaults`: the four built-in groups back in their own words, before the user's own sections, which
+    /// stay as they are; saved at once.
+    public func restoreDefaults() {
+        sections = NoteSection.companion.DEFAULTS.map(NoteSectionDraft.init) + sections.filter { !$0.builtIn }
+        saveNotes()
+    }
+
+    /// The notes fields' end of editing — focus gone, Return, the screen closed. [leaving] is the row editing has just
+    /// left; [droppingNameless] is every row, as the screen goes. A section of the user's own without a name goes from
+    /// the list then, and a built-in group's empty field shows its own words again — which is what it saves. Nothing
+    /// is saved when what the fields hold is what is saved.
     public func saveNotes(leaving: UUID? = nil, droppingNameless: Bool = false) {
+        for index in sections.indices where sections[index].builtIn && (droppingNameless || sections[index].key == leaving) {
+            if Self.trimmed(sections[index].name).isEmpty { sections[index].name = sections[index].defaultName }
+            if Self.trimmed(sections[index].description).isEmpty { sections[index].description = sections[index].defaultDescription }
+        }
         sections.removeAll { section in
-            (droppingNameless || section.key == leaving) && Self.trimmed(section.name).isEmpty
+            !section.builtIn && (droppingNameless || section.key == leaving) && Self.trimmed(section.name).isEmpty
         }
         guard shownNotes != notesPreferences else { return }
         let previous = notesSaving
@@ -284,34 +310,63 @@ public final class ChatGptSettingsModel: ObservableObject {
 
     private var notesSaving: Task<Void, Never>?
 
-    /// What the fields hold, as the core would keep it: trimmed, a section without a name left out.
+    /// What the fields hold, as the core would keep it ([kept]).
     var shownNotes: NotesPreferences {
-        NotesPreferences(
-            instructions: Self.trimmed(instructions),
-            sections: sections.compactMap { section in
-                let name = Self.trimmed(section.name)
-                return name.isEmpty ? nil : NoteSection(id: section.sectionId, name: name, description: Self.trimmed(section.description))
-            }
+        NotesPreferences(instructions: Self.trimmed(instructions), sections: sections.compactMap { Self.kept($0) })
+    }
+
+    /// A row as the core would keep it, trimmed: a built-in group always, a field left empty or holding the group's own
+    /// words as empty — its own; a section of the user's own only once it has a name.
+    private static func kept(_ draft: NoteSectionDraft) -> NoteSection? {
+        let name = trimmed(draft.name)
+        let description = trimmed(draft.description)
+        guard draft.builtIn else {
+            return name.isEmpty ? nil : NoteSection(id: draft.sectionId, name: name, description: description, kind: .section)
+        }
+        return NoteSection(
+            id: draft.sectionId,
+            name: name == draft.defaultName ? "" : name,
+            description: description == draft.defaultDescription ? "" : description,
+            kind: draft.kind
         )
     }
 
-    /// The saved notes preferences. A field keeps its own text while that is the saved text, trimmed, as About you does;
-    /// a section given a name takes the id the core gave it; a section still without a name stays in the list while
-    /// editing is in it. With nothing named in the list — the first read — the saved sections are the list.
+    /// The saved notes preferences. A field keeps its own text while that is the saved text as [kept] reads it, as About
+    /// you does — a built-in group's own words stay its own words; a section given a name takes the id the core gave it;
+    /// a section still without a name stays in the list while editing is in it. With nothing in the list the core would
+    /// keep — the first read — the saved sections are the list.
     func adoptNotes(_ saved: NotesPreferences) {
         notesPreferences = saved
         if Self.trimmed(instructions) != saved.instructions { instructions = saved.instructions }
-        let named = sections.indices.filter { !Self.trimmed(sections[$0].name).isEmpty }
-        if named.isEmpty {
+        let rows = sections.indices.compactMap { index in Self.kept(sections[index]).map { (index: index, shown: $0) } }
+        if rows.isEmpty {
             sections = saved.sections.map(NoteSectionDraft.init) + sections
             return
         }
         // A name typed while a save was on its way: the save that ends its editing settles the list.
-        guard named.count == saved.sections.count else { return }
-        for (index, kept) in zip(named, saved.sections) {
-            sections[index].sectionId = kept.id
-            if Self.trimmed(sections[index].name) != kept.name { sections[index].name = kept.name }
-            if Self.trimmed(sections[index].description) != kept.description_ { sections[index].description = kept.description_ }
+        guard rows.map({ $0.shown.kind }) == saved.sections.map({ $0.kind }) else { return }
+        for (row, stored) in zip(rows, saved.sections) {
+            let index = row.index
+            sections[index].sectionId = stored.id
+            if row.shown.name != stored.name {
+                sections[index].name = stored.name.isEmpty ? sections[index].defaultName : stored.name
+            }
+            if row.shown.description_ != stored.description_ {
+                sections[index].description = stored.description_.isEmpty ? sections[index].defaultDescription : stored.description_
+            }
+        }
+    }
+
+    /// docs/07 rule 3: a built-in group's field still holding its own words says them in the new language; one the user
+    /// changed stays as they wrote it.
+    private func relocalizeNotes() {
+        for index in sections.indices where sections[index].builtIn {
+            let draft = sections[index]
+            let words = NoteSectionDraft.defaults(draft.kind)
+            if Self.trimmed(draft.name) == draft.defaultName { sections[index].name = words.name }
+            if Self.trimmed(draft.description) == draft.defaultDescription { sections[index].description = words.description }
+            sections[index].defaultName = words.name
+            sections[index].defaultDescription = words.description
         }
     }
 
@@ -386,24 +441,57 @@ public final class ChatGptSettingsModel: ObservableObject {
     }
 }
 
-/// One of My sections as Settings → Notes holds it while it is edited (docs/08 "Organizing" — "Settings"). [key] is the
-/// row's own, for the list and the focus; [sectionId] is the core's, empty until the section is first saved.
+/// One row of Sections as Settings → Notes holds it while it is edited (docs/08 "Organizing" — "Settings"): a built-in
+/// group ([kind]) or a section of the user's own ([NoteKind.section]). [key] is the row's own, for the list and the
+/// focus; [sectionId] is the core's — a built-in group's kind's, a section's empty until it is first saved. A built-in
+/// group's fields hold its own words while the user has given it none.
 public struct NoteSectionDraft: Identifiable, Equatable {
     public let key = UUID()
     public var sectionId: String
+    public let kind: NoteKind
     public var name: String
     public var description: String
+    /// A built-in group's own words as its fields were given them — in the app's language then, so a field still holding
+    /// them saves as the group's own after a language change too; empty for a section of the user's own.
+    var defaultName: String
+    var defaultDescription: String
 
     public var id: UUID { key }
 
-    public init(sectionId: String = "", name: String = "", description: String = "") {
+    /// A built-in group, not a section of the user's own.
+    public var builtIn: Bool { kind != .section }
+
+    public init(sectionId: String = "", kind: NoteKind = .section, name: String = "", description: String = "") {
         self.sectionId = sectionId
+        self.kind = kind
         self.name = name
         self.description = description
+        let words = Self.defaults(kind)
+        defaultName = words.name
+        defaultDescription = words.description
     }
 
+    /// [saved] as its row shows it: a built-in group's empty name or description in the group's own words.
     init(_ saved: NoteSection) {
-        self.init(sectionId: saved.id, name: saved.name, description: saved.description_)
+        let words = Self.defaults(saved.kind)
+        self.init(
+            sectionId: saved.id,
+            kind: saved.kind,
+            name: saved.name.isEmpty ? words.name : saved.name,
+            description: saved.description_.isEmpty ? words.description : saved.description_
+        )
+    }
+
+    /// A built-in group's own words in the app's language: its heading — the notes' word for it — and what goes in it;
+    /// nothing for a section of the user's own.
+    static func defaults(_ kind: NoteKind) -> (name: String, description: String) {
+        switch kind {
+        case .point: return (NoteGroup.word(kind), RecKitStrings.localized("Anything else worth remembering — a fact, a figure, an idea, a conclusion."))
+        case .decision: return (NoteGroup.word(kind), RecKitStrings.localized("What the people settled."))
+        case .todo: return (NoteGroup.word(kind), RecKitStrings.localized("What someone said they or another person will do, with who and by when."))
+        case .question: return (NoteGroup.word(kind), RecKitStrings.localized("Questions raised and not answered."))
+        case .section: return ("", "")
+        }
     }
 }
 

@@ -29,6 +29,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
 import okio.Path.Companion.toPath
+import recly.core.DriverFactory
+import recly.core.ReclyCore
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptHarness
 import recly.core.chatgpt.SummaryPreferences
@@ -711,7 +713,7 @@ class NotesTest {
     @Test
     fun `after Stop the notes have key points and the user's own sections`() = runBlocking {
         ready()
-        val risks = notes.setPreferences(NotesPreferences(sections = listOf(NoteSection("", "Risks", "anything that could go wrong")))).sections.single()
+        val risks = notes.setPreferences(NotesPreferences(sections = NoteSection.DEFAULTS + NoteSection("", "Risks", "anything that could go wrong"))).sections.single { !it.builtIn }
         engine.answer = { meeting }
         answer(
             conversation(
@@ -735,10 +737,10 @@ class NotesTest {
         assertEquals(risks.id to "Risks", section.id to section.name)
         assertEquals(listOf(Triple(NoteKind.SECTION, "Alpha may slip", risks.id)), section.items.map { Triple(it.kind, it.text, it.section) })
         assertEquals(1, f.logger.fieldsOf("organize.final.done").single()["dropped"], "a section the user does not have")
-        assertEquals(listOf(StoredSection(risks.id, "Risks", "anything that could go wrong")), stored(meta).sections)
+        assertEquals(NoteSection.DEFAULTS.map(StoredSection::of) + StoredSection(risks.id, "Risks", "anything that could go wrong"), stored(meta).sections)
 
         // Renamed in Settings later, the section keeps the name its items were made under.
-        notes.setPreferences(NotesPreferences(sections = listOf(risks.copy(name = "Threats"))))
+        notes.setPreferences(NotesPreferences(sections = NoteSection.DEFAULTS + risks.copy(name = "Threats")))
         assertEquals("Risks", notes.get(meta.recordingId).sections.single().name)
     }
 
@@ -784,7 +786,7 @@ class NotesTest {
         val kept = notes.setPreferences(
             NotesPreferences(
                 instructions = "  " + "x".repeat(1100) + "  ",
-                sections = listOf(
+                sections = NoteSection.DEFAULTS + listOf(
                     NoteSection("", "  Risks\nand issues  ", "  " + "d".repeat(250)),
                     NoteSection("01J9SECT10N000000000000000", "Hiring", "Who to hire"),
                     NoteSection("", "   ", "a section without a name is dropped"),
@@ -795,19 +797,122 @@ class NotesTest {
         )
 
         assertEquals("x".repeat(NotesPreferences.INSTRUCTIONS_MAX), kept.instructions)
-        assertEquals(listOf("Risks and issues", "Hiring", "n".repeat(NotesPreferences.SECTION_NAME_MAX)), kept.sections.map { it.name })
-        assertEquals(listOf(NotesPreferences.DESCRIPTION_MAX, 11, 0), kept.sections.map { it.description.length })
-        assertEquals("01J9SECT10N000000000000000", kept.sections[1].id, "a section kept keeps its id")
-        assertTrue(kept.sections[0].id.isNotBlank() && kept.sections[2].id.isNotBlank() && kept.sections[0].id != kept.sections[2].id)
+        assertEquals(NoteSection.DEFAULTS, kept.sections.take(4), "the built-in groups first, as they come")
+        val own = kept.sections.drop(4)
+        assertEquals(listOf("Risks and issues", "Hiring", "n".repeat(NotesPreferences.SECTION_NAME_MAX)), own.map { it.name })
+        assertEquals(listOf(NotesPreferences.DESCRIPTION_MAX, 11, 0), own.map { it.description.length })
+        assertEquals("01J9SECT10N000000000000000", own[1].id, "a section kept keeps its id")
+        assertTrue(own[0].id.isNotBlank() && own[2].id.isNotBlank() && own[0].id != own[2].id)
         assertEquals(kept, notes.preferences())
         assertEquals(kept, notes.observePreferences().first())
         val kv = RecDatabase(f.driver).recQueries
         assertEquals(kept.instructions, kv.kvGet(Notes.PREF_INSTRUCTIONS).executeAsOneOrNull(), "kept on this device")
-        assertTrue(kept.sections[0].id in kv.kvGet(Notes.PREF_SECTIONS).executeAsOne())
+        assertTrue(own[0].id in kv.kvGet(Notes.PREF_SECTIONS).executeAsOne())
+        assertNull(kv.kvGet(Notes.PREF_BUILT_INS).executeAsOneOrNull(), "nothing kept for the built-in groups as they come")
 
         assertEquals(NotesPreferences(), notes.setPreferences(NotesPreferences(instructions = "   ")))
         assertNull(kv.kvGet(Notes.PREF_INSTRUCTIONS).executeAsOneOrNull())
         assertNull(kv.kvGet(Notes.PREF_SECTIONS).executeAsOneOrNull())
+    }
+
+    @Test
+    fun `Settings keep the built-in groups as the user left them, each once in its place, and nothing for them as they come`() = runBlocking {
+        val (points, _, todos, questions) = NoteSection.DEFAULTS
+        val kept = notes.setPreferences(
+            NotesPreferences(
+                sections = listOf(
+                    NoteSection("", "Hiring", ""),
+                    todos.copy(id = "", name = "  Action\nitems ", description = "  Anything someone promised.  "),
+                    points,
+                    todos.copy(name = "A second one"),
+                    questions.copy(name = "   "),
+                ),
+            ),
+        )
+
+        assertEquals(listOf(NoteKind.POINT, NoteKind.TODO, NoteKind.QUESTION, NoteKind.SECTION), kept.sections.map { it.kind }, "Decisions removed")
+        assertEquals(listOf("point", "todo", "question"), kept.sections.take(3).map { it.id })
+        assertEquals(NoteSection("todo", "Action items", "Anything someone promised.", NoteKind.TODO), kept.sections[1])
+        assertEquals(questions, kept.sections[2], "a name left empty is the group's own")
+        assertTrue(kept.builtInsChanged)
+        assertEquals(kept, notes.preferences())
+        val kv = RecDatabase(f.driver).recQueries
+        assertTrue("Action items" in kv.kvGet(Notes.PREF_BUILT_INS).executeAsOne())
+        val restarted = ReclyCore(f.deps, object : DriverFactory { override fun create() = f.driver })
+        assertEquals(kept, restarted.notes.preferences(), "read back from this device's store")
+
+        // Restore defaults: the four as they come, the user's own as they are.
+        val restored = notes.setPreferences(kept.copy(sections = NoteSection.DEFAULTS + kept.sections.filterNot { it.builtIn }))
+        assertEquals(NoteSection.DEFAULTS + kept.sections.last(), restored.sections)
+        assertFalse(restored.builtInsChanged)
+        assertNull(kv.kvGet(Notes.PREF_BUILT_INS).executeAsOneOrNull())
+
+        assertEquals(emptyList(), notes.setPreferences(NotesPreferences(sections = emptyList())).sections)
+        assertEquals("[]", kv.kvGet(Notes.PREF_BUILT_INS).executeAsOneOrNull(), "every group removed stays removed")
+    }
+
+    @Test
+    fun `a built-in group is asked for in the user's words with its own rules, and one the user removed is not asked for or kept`() = runBlocking {
+        ready()
+        val (points, _, todos, questions) = NoteSection.DEFAULTS
+        notes.setPreferences(NotesPreferences(sections = listOf(points, todos.copy(name = "Action items", description = "Anything someone promised."), questions)))
+        engine.answer = { meeting }
+        answer(
+            conversation(
+                "Alpha.",
+                item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3"),
+                item("todo", "Order able parts", "00:00:30", "able1 able2 able3", owner = "S2", due = "Friday"),
+            ),
+        )
+        val meta = f.recordAndRun()
+
+        val asked = instructions(0)
+        assertTrue("a summary, and its key points, to-dos and open questions.\n" in asked, asked)
+        assertTrue("\"todo\" (headed \"Action items\") for what the user describes as \"Anything someone promised.\"" in asked, asked)
+        assertFalse("\"decision\"" in asked, asked)
+        assertTrue(
+            "\n\"due\": for a todo" in asked &&
+                "A question is reported only when it is still unanswered at the end. " +
+                "Key points are the few things most worth remembering that are not already a to-do or a question.\n" in asked,
+            asked,
+        )
+        assertFalse("A decision is reported" in asked, asked)
+        val final = notes.get(meta.recordingId)
+        assertEquals(emptyList(), final.decisions)
+        assertEquals("Friday", final.todos.single().due, "a to-do keeps its due date, whatever its name")
+        assertEquals(NoteNames(todos = "Action items"), final.names)
+
+        // Restored in Settings later, the notes keep the name their items were made under.
+        notes.setPreferences(NotesPreferences())
+        assertEquals("Action items", notes.get(meta.recordingId).names.todos)
+        assertTrue("\nAction items\n- Order able parts" in notes.text(meta.recordingId)!!)
+    }
+
+    @Test
+    fun `with none of the groups that come while recording kept, a part is not transcribed or sent`() = runBlocking {
+        ready()
+        notes.setPreferences(NotesPreferences(sections = listOf(NoteSection.default(NoteKind.POINT))))
+        engine.answer = { listOf(SttSegment(0.0, 20.0, null, speech("alpha"))) }
+        val meta = startRecording()
+        file(meta, 1)
+
+        assertEquals(emptyList(), engine.requests)
+        assertEquals(0, responses().size)
+        assertEquals(NotesStage.NONE, notes.get(meta.recordingId).stage)
+    }
+
+    @Test
+    fun `with every group removed, the final pass asks for the summary alone`() = runBlocking {
+        ready()
+        notes.setPreferences(NotesPreferences(sections = emptyList()))
+        engine.answer = { meeting }
+        answer("""{"summary":"Alpha."}""")
+        val meta = f.recordAndRun()
+
+        val asked = instructions(0)
+        assertTrue("You write the notes of one conversation from its transcript: a summary.\n" in asked, asked)
+        assertTrue("{\"summary\": \"...\"}\n" in asked && "Each item" !in asked, asked)
+        assertEquals("Alpha.", notes.get(meta.recordingId).overview)
     }
 
     @Test
@@ -850,6 +955,8 @@ class NotesTest {
         assertTrue(NotesText.plain(all, korean)!!.startsWith("We met.\nWe shipped.\n\n핵심\n- Costs doubled"))
         assertTrue("\n\n질문\n- Who pays? [01:02:03]\n\nRisks\n" in NotesText.plain(all, korean)!!, "a section is headed by its own name")
         assertTrue(NotesText.markdown(all, korean)!!.startsWith("## 노트\n\n"))
+        val renamed = all.copy(names = NoteNames(decisions = "Calls"))
+        assertTrue("\n\nCalls\n- Ship on Friday [00:00:01]\n\n할 일\n" in NotesText.plain(renamed, korean)!!, "a group the user renamed is headed by that name")
 
         val decisionsOnly = RecordingNotes("01J9ABCDEF0123456789ABCDEF", NotesStage.PROVISIONAL, null, all.decisions, emptyList(), emptyList(), false)
         assertEquals("Decisions\n- Ship on Friday [00:00:01]\n", NotesText.plain(decisionsOnly, NotesHeadings()))

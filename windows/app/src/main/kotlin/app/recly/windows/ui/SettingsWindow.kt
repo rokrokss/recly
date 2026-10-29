@@ -359,9 +359,10 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
 
 /**
  * docs/09 "AI view": Settings → Notes, right after ChatGPT and there signed out too, since only organizing needs the
- * sign-in — what every recording's notes on this PC are asked for, whichever provider makes them: the instructions, up
- * to three sections of the user's own, and About you. Each field is saved when its editing ends, a section when the
- * cursor leaves it — one left without a name goes then — and Remove at once.
+ * sign-in — what every recording's notes on this PC are asked for, whichever provider makes them: the instructions, the
+ * sections — the built-in groups the user kept, then up to three of their own — and About you. Each field is saved when
+ * its editing ends, a section when the cursor leaves it — one of the user's own left without a name goes then — and
+ * Remove and Restore defaults at once.
  */
 @Composable
 private fun NotesSettings(chatGpt: ChatGptViewModel, strings: Strings) {
@@ -389,8 +390,11 @@ private fun NotesSettings(chatGpt: ChatGptViewModel, strings: Strings) {
                 SectionFields(section, chatGpt, strings, focus = focusKey == section.key, onFocused = { focusKey = null })
             }
         }
-        if (chatGpt.sections.size < NotesPreferences.SECTIONS_MAX) {
+        if (chatGpt.canAddSection) {
             BlueprintButton(strings[Str.NOTES_SECTION_ADD], { focusKey = chatGpt.addSection() }, tone = ButtonTone.QUIET)
+        }
+        if (chatGpt.builtInsChanged) {
+            BlueprintButton(strings[Str.NOTES_SECTION_RESTORE], chatGpt::restoreSections, tone = ButtonTone.QUIET)
         }
         Text(strings[Str.NOTES_SECTIONS_NOTE], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
     }
@@ -411,9 +415,10 @@ private fun NotesSettings(chatGpt: ChatGptViewModel, strings: Strings) {
 }
 
 /**
- * One of My sections: its name on one line — Return ends it — what goes in it on up to three, and a quiet Remove
- * that names it for a reader. Its editing ends when the cursor leaves both fields, the window goes behind another or
- * closes, and the section is saved then as it is ([ChatGptViewModel.endSection]).
+ * One of the sections: its name on one line — Return ends it — what goes in it on up to three, and a quiet Remove
+ * that names it for a reader. A built-in group's placeholders are its own words. Its editing ends when the cursor
+ * leaves both fields, the window goes behind another or closes, and the section is saved then as it is
+ * ([ChatGptViewModel.endSection]).
  */
 @Composable
 private fun SectionFields(section: SectionDraft, chatGpt: ChatGptViewModel, strings: Strings, focus: Boolean, onFocused: () -> Unit) {
@@ -421,12 +426,19 @@ private fun SectionFields(section: SectionDraft, chatGpt: ChatGptViewModel, stri
     var description by remember(section.description) { mutableStateOf(section.description) }
     val latestName by rememberUpdatedState(name)
     val latestDescription by rememberUpdatedState(description)
+    val (ownName, ownDescription) = builtInWords(section.kind, strings)
     val focusManager = LocalFocusManager.current
     val nameFocus = remember { FocusRequester() }
     var editing by remember { mutableStateOf(false) }
+    // The fields show what was kept: a built-in group's field left empty has its own words again.
+    fun end() = chatGpt.endSection(section.key, latestName, latestDescription)?.let {
+        name = it.name
+        description = it.description
+    }
     val windowFocused = LocalWindowInfo.current.isWindowFocused
-    LaunchedEffect(windowFocused) { if (!windowFocused) chatGpt.endSection(section.key, latestName, latestDescription) }
-    // Gone with the window; a section Remove took is not there any more, and nothing is saved for it.
+    LaunchedEffect(windowFocused) { if (!windowFocused) end() }
+    // Gone with the window; a section Remove took, or Restore defaults put back, is not there any more, and nothing is
+    // saved for it.
     DisposableEffect(section.key) { onDispose { chatGpt.endSection(section.key, latestName, latestDescription) } }
     LaunchedEffect(focus) {
         if (focus) {
@@ -436,7 +448,7 @@ private fun SectionFields(section: SectionDraft, chatGpt: ChatGptViewModel, stri
     }
     Column(
         Modifier.fillMaxWidth().onFocusChanged {
-            if (editing && !it.hasFocus) chatGpt.endSection(section.key, latestName, latestDescription)
+            if (editing && !it.hasFocus) end()
             editing = it.hasFocus
         },
         verticalArrangement = Arrangement.spacedBy(Space.s),
@@ -448,7 +460,7 @@ private fun SectionFields(section: SectionDraft, chatGpt: ChatGptViewModel, stri
             modifier = Modifier.onPreviewKeyEvent { event ->
                 (event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focusManager.clearFocus() }
             },
-            placeholder = strings[Str.NOTES_SECTION_NAME_PLACEHOLDER],
+            placeholder = if (section.builtIn) ownName else strings[Str.NOTES_SECTION_NAME_PLACEHOLDER],
             focusRequester = nameFocus,
         )
         BlueprintTextField(
@@ -458,7 +470,7 @@ private fun SectionFields(section: SectionDraft, chatGpt: ChatGptViewModel, stri
             singleLine = false,
             minLines = DESCRIPTION_LINES.first,
             maxLines = DESCRIPTION_LINES.last,
-            placeholder = strings[Str.NOTES_SECTION_DESCRIPTION_PLACEHOLDER],
+            placeholder = if (section.builtIn) ownDescription else strings[Str.NOTES_SECTION_DESCRIPTION_PLACEHOLDER],
         )
         BlueprintButton(
             strings[Str.NOTES_SECTION_REMOVE],

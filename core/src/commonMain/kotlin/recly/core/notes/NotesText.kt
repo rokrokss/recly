@@ -6,7 +6,7 @@ import recly.core.transcribe.TranscriptNormalizer
 /**
  * docs/08 "Organizing" — "Copy and share": a recording's notes as text, in the order the detail shows them — the
  * overview, then Key points, Decisions, To-dos, Questions and the user's sections, each item with its owner, due
- * date and `[HH:MM:SS]`. The headings are the app's ([NotesHeadings]).
+ * date and `[HH:MM:SS]`. The headings are the app's ([NotesHeadings]), or the names the user gave a group ([NoteNames]).
  */
 internal object NotesText {
     fun plain(notes: RecordingNotes, headings: NotesHeadings): String? {
@@ -41,10 +41,10 @@ internal object NotesText {
     private fun groups(notes: RecordingNotes, headings: NotesHeadings): List<Pair<String, List<NoteItem>>> =
         (
             listOf(
-                headings.keyPoints to notes.points,
-                headings.decisions to notes.decisions,
-                headings.todos to notes.todos,
-                headings.questions to notes.questions,
+                (notes.names.points ?: headings.keyPoints) to notes.points,
+                (notes.names.decisions ?: headings.decisions) to notes.decisions,
+                (notes.names.todos ?: headings.todos) to notes.todos,
+                (notes.names.questions ?: headings.questions) to notes.questions,
             ) + notes.sections.map { it.name to it.items }
             ).filter { it.second.isNotEmpty() }
 

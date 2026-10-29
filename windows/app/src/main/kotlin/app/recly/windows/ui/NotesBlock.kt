@@ -114,16 +114,17 @@ internal fun NotesBlock(
 }
 
 /**
- * The groups in their order, each with its header — the built-in ones, then the user's sections under the names the
- * notes were made with. A group with nothing in it is not there, header and all.
+ * The groups in their order, each with its header — the built-in ones, under the name the user gave one when the notes
+ * were made or else the app's word, then the user's sections under the names the notes were made with. A group with
+ * nothing in it is not there, header and all.
  */
 internal fun noteGroups(notes: RecordingNotes, strings: Strings): List<Pair<String, List<NoteItem>>> =
     (
         listOf(
-            strings[Str.NOTES_KEY_POINTS] to notes.points,
-            strings[Str.NOTES_DECISIONS] to notes.decisions,
-            strings[Str.NOTES_TODOS] to notes.todos,
-            strings[Str.NOTES_QUESTIONS] to notes.questions,
+            (notes.names.points ?: strings[Str.NOTES_KEY_POINTS]) to notes.points,
+            (notes.names.decisions ?: strings[Str.NOTES_DECISIONS]) to notes.decisions,
+            (notes.names.todos ?: strings[Str.NOTES_TODOS]) to notes.todos,
+            (notes.names.questions ?: strings[Str.NOTES_QUESTIONS]) to notes.questions,
         ) + notes.sections.map { it.name to it.items }
     ).filter { it.second.isNotEmpty() }
 

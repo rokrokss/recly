@@ -3,9 +3,9 @@ import ReclyCore
 import SwiftUI
 
 /// docs/09 "AI view" · docs/08 "Organizing" — "Settings": Settings → Notes, right after the ChatGPT section, signed in or
-/// not — what every recording's notes are asked for, apart from the provider that writes them: `Notes instructions`, up
-/// to three of `My sections`, and `About you`. Each field saves when editing ends; `Remove` saves at once. Nothing at
-/// all where ChatGPT is not offered.
+/// not — what every recording's notes are asked for, apart from the provider that writes them: `Notes instructions`,
+/// `Sections` — the built-in groups the user kept, then up to three of their own — and `About you`. Each field saves
+/// when editing ends; `Remove` and `Restore defaults` save at once. Nothing at all where ChatGPT is not offered.
 public struct NotesSection: View {
     @ObservedObject private var model: ChatGptSettingsModel
     /// The section `Add section` just made, whose name takes the focus as it appears.
@@ -37,7 +37,7 @@ public struct NotesSection: View {
                 )
             }
             SectionBlock {
-                Text(verbatim: loc("My sections"))
+                Text(verbatim: loc("Sections"))
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.text)
                 ForEach($model.sections) { $section in
@@ -50,16 +50,21 @@ public struct NotesSection: View {
                     )
                     .padding(.bottom, Space.s)
                 }
-                if model.sections.count < Int(NotesPreferences.companion.SECTIONS_MAX) {
+                if model.addsSection {
                     BlueprintButton(loc("Add section"), tone: .quiet) { added = model.addSection() }
                         .accessibilityIdentifier("notes-add-section")
                 }
-                Text(verbatim: loc("Each recording’s notes also list these, with when each was said."))
+                if model.restoresDefaults {
+                    BlueprintButton(loc("Restore defaults"), tone: .quiet) { model.restoreDefaults() }
+                        .accessibilityIdentifier("notes-restore-defaults")
+                }
+                Text(verbatim: loc("Each recording’s notes start with an overview, then list these, with when each was said."))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            // The screen goes: a section left without a name goes with it.
+            // The screen goes: a section of the user's own left without a name goes with it, and a built-in group's
+            // empty field shows its own words again.
             .onDisappear { model.saveNotes(droppingNameless: true) }
             SectionBlock {
                 PreferenceField(
@@ -81,8 +86,10 @@ public struct NotesSection: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// One of My sections: its one-line `Section name`, `What goes in it` under it, and a quiet `Remove`. Editing that leaves
-/// the section — neither field has the focus any more — takes it from the list when it has no name.
+/// One row of Sections: its one-line `Section name`, `What goes in it` under it, and a quiet `Remove`. A built-in group's
+/// own words are its placeholders, in the app's language now. Editing that leaves the row — neither field has the focus
+/// any more — takes a section of the user's own from the list when it has no name, and fills a built-in group's empty
+/// field with its own words again.
 private struct NoteSectionEditor: View {
     @Binding var section: NoteSectionDraft
     @Binding var focusRequested: Bool
@@ -98,7 +105,7 @@ private struct NoteSectionEditor: View {
             PreferenceField(
                 title: loc("Section name"),
                 text: $section.name,
-                placeholder: loc("e.g. Risks"),
+                placeholder: section.builtIn ? NoteSectionDraft.defaults(section.kind).name : loc("e.g. Risks"),
                 note: nil,
                 limit: Int(NotesPreferences.companion.SECTION_NAME_MAX),
                 lines: 1...1,
@@ -115,7 +122,9 @@ private struct NoteSectionEditor: View {
             PreferenceField(
                 title: loc("What goes in it"),
                 text: $section.description,
-                placeholder: loc("e.g. Anything that could delay the launch, and who raised it."),
+                placeholder: section.builtIn
+                    ? NoteSectionDraft.defaults(section.kind).description
+                    : loc("e.g. Anything that could delay the launch, and who raised it."),
                 note: nil,
                 limit: Int(NotesPreferences.companion.DESCRIPTION_MAX),
                 lines: 1...3,

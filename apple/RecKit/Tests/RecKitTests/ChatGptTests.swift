@@ -195,15 +195,19 @@ final class ChatGptSettingsTests: XCTestCase {
     }
 
     /// docs/09 "AI view" — Settings → Notes: the fields save when editing ends, trimmed, and what is being typed stays
-    /// as typed; a section editing leaves without a name goes from the list, the rest go when the screen does; three
-    /// sections at most; Remove saves at once; and the saved sections are the list the next time Settings opens.
+    /// as typed; Sections are the four built-in groups in their own words, then the user's own — a section editing
+    /// leaves without a name goes from the list, the rest go when the screen does; three of their own at most; Remove
+    /// saves at once; and the saved sections are the list the next time Settings opens.
     func testNotesSettingsSaveWhenEditingEnds() async throws {
+        AppLanguage.current = .en
+        defer { AppLanguage.current = .system }
         let bridge = try await bridge()
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
         // The saved preferences arrive first, as they do long before anyone types on a screen.
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertEqual(model.instructions, "")
-        XCTAssertTrue(model.sections.isEmpty)
+        XCTAssertEqual(model.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions"])
+        XCTAssertEqual(model.sections.map(\.sectionId), ["point", "decision", "todo", "question"])
 
         model.instructions = "Group to-dos by owner.  "
         model.saveNotes()
@@ -212,39 +216,154 @@ final class ChatGptSettingsTests: XCTestCase {
 
         let empty = try XCTUnwrap(model.addSection())
         model.saveNotes()
-        XCTAssertEqual(model.sections.count, 1, "a section editing is still in stays")
+        XCTAssertEqual(model.sections.count, 5, "a section editing is still in stays")
         model.saveNotes(leaving: empty)
-        XCTAssertTrue(model.sections.isEmpty, "left without a name, it goes")
+        XCTAssertEqual(model.sections.count, 4, "left without a name, it goes")
 
         let risks = try XCTUnwrap(model.addSection())
-        model.sections[0].name = " Risks "
-        model.sections[0].description = "Anything that could delay the launch "
+        model.sections[4].name = " Risks "
+        model.sections[4].description = "Anything that could delay the launch "
         model.saveNotes(leaving: risks)
-        try await until { model.notesPreferences.sections.count == 1 }
+        try await until { model.notesPreferences.sections.count == 5 }
         let saved = try await bridge.core.notes.preferences()
-        XCTAssertEqual(saved.sections.map(\.name), ["Risks"])
-        XCTAssertEqual(saved.sections.map(\.description_), ["Anything that could delay the launch"])
+        XCTAssertEqual(saved.sections.map(\.name), ["", "", "", "", "Risks"])
+        XCTAssertEqual(saved.sections.last?.description_, "Anything that could delay the launch")
         XCTAssertEqual(model.sections.map(\.sectionId), saved.sections.map(\.id), "the section takes the id the core gave it")
-        XCTAssertEqual(model.sections.map(\.name), [" Risks "])
+        XCTAssertEqual(model.sections.last?.name, " Risks ")
 
         XCTAssertNotNil(model.addSection())
         XCTAssertNotNil(model.addSection())
-        XCTAssertNil(model.addSection(), "three at most")
-        XCTAssertEqual(model.sections.count, 3)
+        XCTAssertNil(model.addSection(), "three of their own at most")
+        XCTAssertEqual(model.sections.count, 7)
         model.saveNotes(droppingNameless: true)
-        XCTAssertEqual(model.sections.map(\.name), [" Risks "], "the screen goes, and the nameless ones with it")
+        XCTAssertEqual(
+            model.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions", " Risks "],
+            "the screen goes, and the nameless ones with it"
+        )
 
         let reopened = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
-        try await until { reopened.sections.count == 1 }
-        XCTAssertEqual(reopened.sections.map(\.name), ["Risks"])
+        try await until { reopened.sections.count == 5 }
+        XCTAssertEqual(reopened.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions", "Risks"])
         XCTAssertEqual(reopened.instructions, "Group to-dos by owner.")
 
-        model.removeSection(model.sections[0].key)
-        XCTAssertTrue(model.sections.isEmpty)
-        try await until { model.notesPreferences.sections.isEmpty }
+        model.removeSection(model.sections[4].key)
+        XCTAssertEqual(model.sections.count, 4)
+        try await until { model.notesPreferences.sections.count == 4 }
         let last = try await bridge.core.notes.preferences()
-        XCTAssertTrue(last.sections.isEmpty)
+        XCTAssertEqual(last.sections, NoteSection.companion.DEFAULTS)
         XCTAssertEqual(last.instructions, "Group to-dos by owner.")
+    }
+
+    /// docs/09 "AI view": a built-in group's fields hold its own words while the user has given it none, and those save
+    /// as empty — its own — so an untouched group is as it comes and nothing is saved for it. A field left blank stays
+    /// in the list, saves as its own and shows its own words again once editing leaves the row.
+    func testABuiltInGroupInItsOwnWordsOrLeftBlankSavesAsItsOwn() async throws {
+        AppLanguage.current = .en
+        defer { AppLanguage.current = .system }
+        let bridge = try await bridge()
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(model.sections.map(\.description), [
+            "Anything else worth remembering — a fact, a figure, an idea, a conclusion.",
+            "What the people settled.",
+            "What someone said they or another person will do, with who and by when.",
+            "Questions raised and not answered.",
+        ])
+        XCTAssertEqual(model.shownNotes.sections.map(\.name), ["", "", "", ""], "untouched, a group is its own")
+        XCTAssertEqual(model.shownNotes.sections.map(\.description_), ["", "", "", ""])
+        XCTAssertEqual(model.shownNotes, model.notesPreferences, "nothing to save")
+        XCTAssertFalse(model.restoresDefaults)
+
+        let decisions = model.sections[1].key
+        model.sections[1].name = "  "
+        model.sections[1].description = ""
+        XCTAssertEqual(model.shownNotes.sections.map(\.name), ["", "", "", ""], "a blank name is the group's own")
+        XCTAssertEqual(model.shownNotes.sections[1].description_, "")
+        model.saveNotes()
+        XCTAssertEqual(model.sections[1].name, "  ", "editing is still in the row")
+        model.saveNotes(leaving: decisions)
+        XCTAssertEqual(model.sections.count, 4, "a built-in group left blank stays")
+        XCTAssertEqual(model.sections[1].name, "Decisions")
+        XCTAssertEqual(model.sections[1].description, "What the people settled.")
+        XCTAssertEqual(model.shownNotes, model.notesPreferences, "still nothing to save")
+
+        model.sections[0].name = "Highlights "
+        model.saveNotes(leaving: model.sections[0].key)
+        try await until { model.notesPreferences.sections.first?.name == "Highlights" }
+        XCTAssertEqual(model.sections[0].name, "Highlights ", "what is typed stays as typed")
+        XCTAssertEqual(model.notesPreferences.sections.first?.description_, "", "what goes in it is still its own")
+        XCTAssertTrue(model.restoresDefaults)
+        let saved = try await bridge.core.notes.preferences()
+        XCTAssertEqual(saved.sections.map(\.name), ["Highlights", "", "", ""])
+    }
+
+    /// docs/09 "AI view": Remove takes a built-in group like any section. `Restore defaults` is there while a built-in
+    /// group is removed, renamed or described anew; it brings the four back in their own words, leaves the user's own
+    /// sections as they are — named or not — and saves at once.
+    func testRestoreDefaultsBringsTheBuiltInGroupsBackAndKeepsTheUsersOwn() async throws {
+        AppLanguage.current = .en
+        defer { AppLanguage.current = .system }
+        let bridge = try await bridge()
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await Task.sleep(for: .milliseconds(300))
+        let risks = try XCTUnwrap(model.addSection())
+        model.sections[4].name = "Risks"
+        model.saveNotes(leaving: risks)
+        model.sections[2].description = "Only what the team owns."
+        model.saveNotes(leaving: model.sections[2].key)
+        model.removeSection(model.sections[0].key)
+        XCTAssertEqual(model.sections.map(\.name), ["Decisions", "To-dos", "Questions", "Risks"])
+        XCTAssertTrue(model.restoresDefaults)
+        try await until { model.notesPreferences.sections.map { $0.kind } == [.decision, .todo, .question, .section] }
+        let changed = try await bridge.core.notes.preferences()
+        XCTAssertEqual(changed.sections[1].description_, "Only what the team owns.")
+
+        let unnamed = try XCTUnwrap(model.addSection())
+        model.restoreDefaults()
+        XCTAssertEqual(model.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions", "Risks", ""], "the user's own stay")
+        XCTAssertEqual(model.sections[2].description, "What someone said they or another person will do, with who and by when.")
+        XCTAssertEqual(model.sections.last?.key, unnamed)
+        XCTAssertFalse(model.restoresDefaults)
+        try await until { model.notesPreferences.sections.count == 5 && !model.notesPreferences.builtInsChanged }
+        let restored = try await bridge.core.notes.preferences()
+        XCTAssertEqual(Array(restored.sections.prefix(4)), NoteSection.companion.DEFAULTS)
+        XCTAssertEqual(restored.sections.last?.name, "Risks")
+        XCTAssertEqual(model.sections[4].sectionId, restored.sections.last?.id, "kept, with the id it had")
+    }
+
+    /// docs/09 "AI view": `Add section` counts the user's own sections only — three of them beside the four built-in
+    /// groups, and no more with the built-in groups removed.
+    func testAddSectionCountsTheUsersOwnSectionsOnly() async throws {
+        let bridge = try await bridge()
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(model.sections.count, 4)
+        XCTAssertTrue(model.addsSection)
+        for _ in 0..<3 { XCTAssertNotNil(model.addSection()) }
+        XCTAssertFalse(model.addsSection)
+        XCTAssertNil(model.addSection(), "three of their own at most")
+        XCTAssertEqual(model.sections.count, 7)
+        for key in model.sections.filter(\.builtIn).map(\.key) { model.removeSection(key) }
+        XCTAssertEqual(model.sections.count, 3)
+        XCTAssertNil(model.addSection(), "the built-in groups gone make no room")
+    }
+
+    /// docs/07 rule 3: a built-in group's field still in its own words says them in the new language and still saves as
+    /// its own; one the user changed stays as they wrote it.
+    func testABuiltInGroupsOwnWordsFollowTheAppLanguage() async throws {
+        AppLanguage.current = .en
+        defer { AppLanguage.current = .system }
+        let bridge = try await bridge()
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await Task.sleep(for: .milliseconds(300))
+        model.sections[1].name = "Agreed"
+        AppLanguage.current = .ko
+        NotificationCenter.default.post(name: AppLanguage.didChange, object: nil)
+        try await until { model.sections[0].name == "핵심" }
+        XCTAssertEqual(model.sections.map(\.name), ["핵심", "Agreed", "할 일", "질문"])
+        XCTAssertEqual(model.sections[3].description, "나왔지만 답이 나오지 않은 질문.")
+        XCTAssertEqual(model.shownNotes.sections.map(\.name), ["", "Agreed", "", ""])
+        XCTAssertEqual(model.shownNotes.sections.map(\.description_), ["", "", "", ""])
     }
 
     /// docs/09 "AI view": About you, under Notes, saves when its editing ends, trimmed; the field keeps what is typed.

@@ -63442,145 +63442,1003 @@
         }
       }
     },
-    "My sections": {
+    "Sections": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "My sections"
+            "value": "Sections"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "내 섹션"
+            "value": "섹션"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "マイセクション"
+            "value": "セクション"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "我的分区"
+            "value": "分区"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "我的區段"
+            "value": "區段"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mis secciones"
+            "value": "Secciones"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mes sections"
+            "value": "Sections"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eigene Abschnitte"
+            "value": "Abschnitte"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Minhas seções"
+            "value": "Seções"
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "As minhas secções"
+            "value": "Secções"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أقسامي"
+            "value": "الأقسام"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "मेरे सेक्शन"
+            "value": "सेक्शन"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Мои разделы"
+            "value": "Разделы"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le mie sezioni"
+            "value": "Sezioni"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Moje sekcje"
+            "value": "Sekcje"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bölümlerim"
+            "value": "Bölümler"
           }
         },
         "fil": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aking mga seksyon"
+            "value": "Mga seksyon"
           }
         },
         "bn": {
           "stringUnit": {
             "state": "translated",
-            "value": "আমার বিভাগ"
+            "value": "বিভাগ"
           }
         },
         "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "میرے حصے"
+            "value": "حصے"
           }
         },
         "sw": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sehemu zangu"
+            "value": "Sehemu"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mục của tôi"
+            "value": "Mục"
           }
         },
         "fa": {
           "stringUnit": {
             "state": "translated",
-            "value": "بخش‌های من"
+            "value": "بخش‌ها"
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "ส่วนของฉัน"
+            "value": "ส่วน"
+          }
+        }
+      }
+    },
+    "Each recording’s notes start with an overview, then list these, with when each was said.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each recording’s notes start with an overview, then list these, with when each was said."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹음마다 정리는 개요로 시작하고 이 섹션들이 이어지며, 항목마다 말한 시각을 붙입니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録音ごとの整理は概要から始まり、これらのセクションが続きます。各項目には発言した時刻が付きます。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每条录音的笔记以概览开头，然后列出这些分区，并附上每条内容的说出时间。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每段錄音的筆記以概覽開頭，接著列出這些區段，並附上每項內容說出的時間。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notas de cada grabación empiezan con un resumen y luego incluyen estas secciones, con el momento en que se dijo cada cosa."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les notes de chaque enregistrement commencent par une vue d’ensemble, puis listent ces sections, avec le moment où chaque point a été dit."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Notizen jeder Aufnahme beginnen mit einem Überblick und listen dann diese – jeweils mit dem Zeitpunkt, an dem es gesagt wurde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As notas de cada gravação começam com uma visão geral e depois listam estas seções, com o momento em que cada coisa foi dita."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As notas de cada gravação começam com uma visão geral e depois listam estas secções, com o momento em que cada coisa foi dita."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبدأ ملاحظات كل تسجيل بنظرة عامة، ثم تسرد هذه الأقسام، مع وقت قول كل بند."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हर रिकॉर्डिंग के नोट्स एक सारांश से शुरू होते हैं, फिर इन्हें दिखाते हैं, हर बात कब कही गई उसके साथ।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заметки каждой записи начинаются с обзора, а затем перечисляют эти разделы — с моментом, когда было сказано каждое."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli appunti di ogni registrazione iniziano con una panoramica, poi elencano queste sezioni, con il momento in cui è stata detta ogni cosa."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki każdego nagrania zaczynają się od przeglądu, a potem wymieniają te sekcje, z momentem, w którym padła każda rzecz."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her kaydın notları bir genel bakışla başlar, ardından bunları listeler; her birinin ne zaman söylendiğiyle birlikte."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagsisimula ang mga tala ng bawat recording sa isang pangkalahatang-ideya, saka inililista ang mga ito, kasama kung kailan sinabi ang bawat isa."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রতিটি রেকর্ডিংয়ের নোট একটি সারসংক্ষেপ দিয়ে শুরু হয়, তারপর এগুলো থাকে, প্রতিটি কখন বলা হয়েছিল তা সহ।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ہر ریکارڈنگ کے نوٹس ایک جائزے سے شروع ہوتے ہیں، پھر ان حصوں کو درج کرتے ہیں، ہر بات کب کہی گئی اس کے ساتھ۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Madokezo ya kila rekodi huanza na muhtasari, kisha huorodhesha sehemu hizi, pamoja na wakati kila jambo liliposemwa."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi chú của mỗi bản ghi âm bắt đầu bằng phần tổng quan, sau đó liệt kê các mục này, kèm thời điểm mỗi điều được nói."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یادداشت‌های هر ضبط با یک نمای کلی شروع می‌شوند و سپس این بخش‌ها را فهرست می‌کنند، همراه با زمان گفته شدن هر مورد."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โน้ตของแต่ละการบันทึกจะเริ่มด้วยภาพรวม แล้วตามด้วยส่วนเหล่านี้ พร้อมเวลาที่พูดแต่ละเรื่อง"
+          }
+        }
+      }
+    },
+    "Restore defaults": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore defaults"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기본값으로 되돌리기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デフォルトに戻す"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復預設值"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar valores predeterminados"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rétablir les valeurs par défaut"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard wiederherstellen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar padrões"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repor predefinições"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استعادة الإعدادات الافتراضية"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "डिफ़ॉल्ट पर लौटाएँ"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановить по умолчанию"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina predefiniti"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywróć domyślne"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varsayılanlara döndür"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ibalik ang mga default"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ডিফল্টে ফেরান"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ڈیفالٹ بحال کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejesha chaguo-msingi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục mặc định"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بازگرداندن پیش‌فرض‌ها"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คืนค่าเริ่มต้น"
+          }
+        }
+      }
+    },
+    "Anything else worth remembering — a fact, a figure, an idea, a conclusion.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything else worth remembering — a fact, a figure, an idea, a conclusion."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "그 밖에 기억해 둘 것 — 사실, 수치, 아이디어, 결론."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "そのほか覚えておくべきこと — 事実、数字、アイデア、結論。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他值得记住的内容——事实、数字、想法、结论。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他值得記住的內容——事實、數字、想法、結論。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cualquier otra cosa que valga la pena recordar: un dato, una cifra, una idea, una conclusión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout autre élément à retenir : un fait, un chiffre, une idée, une conclusion."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles andere, was man sich merken sollte – eine Tatsache, eine Zahl, eine Idee, ein Fazit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualquer outra coisa que valha lembrar — um fato, um número, uma ideia, uma conclusão."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualquer outra coisa que valha a pena lembrar — um facto, um número, uma ideia, uma conclusão."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أي شيء آخر يستحق التذكّر — حقيقة أو رقم أو فكرة أو استنتاج."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "याद रखने लायक कोई और बात — कोई तथ्य, आँकड़ा, विचार या निष्कर्ष।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё остальное, что стоит запомнить, — факт, цифра, идея, вывод."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualsiasi altra cosa da ricordare: un fatto, un numero, un’idea, una conclusione."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko inne, co warto zapamiętać — fakt, liczba, pomysł, wniosek."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akılda tutmaya değer başka her şey — bir olgu, bir sayı, bir fikir, bir sonuç."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anumang iba pang dapat tandaan — isang katotohanan, numero, ideya, o konklusyon."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মনে রাখার মতো আর যা কিছু — তথ্য, সংখ্যা, ভাবনা, উপসংহার।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یاد رکھنے کے لائق کوئی اور بات — کوئی حقیقت، عدد، خیال یا نتیجہ۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jambo jingine lolote la kukumbuka — ukweli, takwimu, wazo, hitimisho."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bất cứ điều gì khác đáng nhớ — một sự thật, con số, ý tưởng, kết luận."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هر چیز دیگری که ارزش به خاطر سپردن دارد — یک واقعیت، یک عدد، یک ایده، یک نتیجه."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เรื่องอื่นที่ควรจำ เช่น ข้อเท็จจริง ตัวเลข ไอเดีย ข้อสรุป"
+          }
+        }
+      }
+    },
+    "What the people settled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What the people settled."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사람들이 정한 것."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参加者が決めたこと。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大家定下来的事。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大家決定的事。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que se acordó."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce que les participants ont décidé."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was die Beteiligten festgelegt haben."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que as pessoas decidiram."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que as pessoas decidiram."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما اتفق عليه المتحدثون."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जो लोगों ने तय किया।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "То, о чём договорились участники."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciò che è stato deciso."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co ustalili rozmówcy."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katılımcıların karara bağladığı şeyler."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ang napagkasunduan ng mga tao."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "যা সবাই মিলে ঠিক করেছে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جو لوگوں نے طے کیا۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kile watu walichokubaliana."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Những gì mọi người đã thống nhất."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آنچه افراد درباره‌اش به توافق رسیدند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สิ่งที่ทุกคนตกลงกัน"
+          }
+        }
+      }
+    },
+    "What someone said they or another person will do, with who and by when.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What someone said they or another person will do, with who and by when."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "누가 하겠다고 하거나 다른 사람이 하기로 한 일, 맡은 사람과 기한."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "誰かが自分や他の人がやると言ったこと。担当者と期限も。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有人说自己或他人要做的事，以及由谁做、何时完成。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有人說自己或他人要做的事，以及由誰做、何時完成。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que alguien dijo que hará él u otra persona: quién y para cuándo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce que quelqu’un a dit que lui ou une autre personne fera : qui et pour quand."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was jemand sagte, dass er oder eine andere Person tun wird – wer und bis wann."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que alguém disse que ele ou outra pessoa vai fazer: quem e até quando."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que alguém disse que ele ou outra pessoa vai fazer: quem e até quando."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما قال أحدهم إنه أو شخص آخر سيفعله، ومن ومتى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जो किसी ने कहा कि वह या कोई और करेगा, कौन और कब तक।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "То, что кто-то обещал сделать сам или поручил другому, — кто и к какому сроку."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciò che qualcuno ha detto che farà lui o un’altra persona: chi ed entro quando."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co ktoś zapowiedział, że zrobi on sam lub ktoś inny — kto i do kiedy."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birinin kendisinin ya da başkasının yapacağını söylediği işler; kim ve ne zamana kadar."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ang sinabi ng isang tao na gagawin niya o ng iba, kung sino at kailan."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কেউ বলেছে নিজে বা অন্য কেউ যা করবে, কে এবং কবের মধ্যে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جو کسی نے کہا کہ وہ خود یا کوئی اور کرے گا، کون اور کب تک۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kile mtu alichosema yeye au mtu mwingine atafanya: nani na hadi lini."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc ai đó nói mình hoặc người khác sẽ làm: ai làm và hạn khi nào."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کاری که کسی گفت خودش یا دیگری انجام می‌دهد، چه کسی و تا کی."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สิ่งที่มีคนบอกว่าตัวเองหรือคนอื่นจะทำ ใครทำและภายในเมื่อไร"
+          }
+        }
+      }
+    },
+    "Questions raised and not answered.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questions raised and not answered."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나왔지만 답이 나오지 않은 질문."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出たまま答えが出ていない質問。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提出了但没有得到回答的问题。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提出了但沒有得到回答的問題。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preguntas planteadas sin respuesta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les questions posées restées sans réponse."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestellte Fragen ohne Antwort."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perguntas feitas e não respondidas."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perguntas feitas e sem resposta."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أسئلة طُرحت ولم تُجب."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जो सवाल उठे और जिनका जवाब नहीं मिला।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заданные вопросы, на которые нет ответа."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domande poste e rimaste senza risposta."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytania, które padły i zostały bez odpowiedzi."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorulup yanıtlanmayan sorular."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga tanong na naitanong at hindi nasagot."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "যে প্রশ্ন উঠেছে কিন্তু উত্তর মেলেনি।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جو سوال اٹھے اور جن کا جواب نہیں ملا۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maswali yaliyoulizwa bila kujibiwa."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Câu hỏi được nêu ra nhưng chưa có câu trả lời."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "پرسش‌هایی که مطرح شد و پاسخی نگرفت."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำถามที่ถูกถามแต่ยังไม่มีคำตอบ"
           }
         }
       }
@@ -64439,149 +65297,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "เพิ่มส่วน"
-          }
-        }
-      }
-    },
-    "Each recording’s notes also list these, with when each was said.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Each recording’s notes also list these, with when each was said."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "녹음마다 정리에 이 섹션도 만들고, 항목마다 말한 시각을 붙입니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "録音ごとの整理にこれらのセクションも加わり、各項目に発言した時刻が付きます。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每条录音的笔记也会列出这些分区，并附上每条内容的说出时间。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每段錄音的筆記也會列出這些區段，並附上每項內容說出的時間。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las notas de cada grabación también incluyen estas secciones, con el momento en que se dijo cada cosa."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les notes de chaque enregistrement listent aussi ces sections, avec le moment où chaque point a été dit."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Notizen jeder Aufnahme listen auch diese – jeweils mit dem Zeitpunkt, an dem es gesagt wurde."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As notas de cada gravação também listam estas seções, com o momento em que cada coisa foi dita."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As notas de cada gravação também listam estas secções, com o momento em que cada coisa foi dita."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تسرد ملاحظات كل تسجيل هذه الأقسام أيضاً، مع وقت قول كل بند."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हर रिकॉर्डिंग के नोट्स इन्हें भी दिखाते हैं, हर बात कब कही गई उसके साथ।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заметки каждой записи перечисляют и эти разделы — с моментом, когда было сказано каждое."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gli appunti di ogni registrazione elencano anche queste, con il momento in cui è stata detta ogni cosa."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notatki każdego nagrania wymieniają też te sekcje, z momentem, w którym padła każda rzecz."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Her kaydın notları bunları da listeler; her birinin ne zaman söylendiğiyle birlikte."
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inililista rin ng mga tala ng bawat recording ang mga ito, kasama kung kailan sinabi ang bawat isa."
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "প্রতিটি রেকর্ডিংয়ের নোটে এগুলোও থাকে, প্রতিটি কখন বলা হয়েছিল তা সহ।"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ہر ریکارڈنگ کے نوٹس ان حصوں کو بھی درج کرتے ہیں، ہر بات کب کہی گئی اس کے ساتھ۔"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Madokezo ya kila rekodi pia huorodhesha sehemu hizi, pamoja na wakati kila jambo liliposemwa."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ghi chú của mỗi bản ghi âm cũng liệt kê các mục này, kèm thời điểm mỗi điều được nói."
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "یادداشت‌های هر ضبط این بخش‌ها را هم فهرست می‌کنند، همراه با زمان گفته شدن هر مورد."
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "โน้ตของแต่ละการบันทึกจะมีส่วนเหล่านี้ด้วย พร้อมเวลาที่พูดแต่ละเรื่อง"
           }
         }
       }

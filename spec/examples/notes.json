@@ -99,9 +99,34 @@
   "modelName": "GPT-6.1 Terra",
   "sections": [
     {
+      "id": "point",
+      "name": "",
+      "description": "",
+      "kind": "point"
+    },
+    {
+      "id": "decision",
+      "name": "",
+      "description": "",
+      "kind": "decision"
+    },
+    {
+      "id": "todo",
+      "name": "Action items",
+      "description": "",
+      "kind": "todo"
+    },
+    {
+      "id": "question",
+      "name": "",
+      "description": "",
+      "kind": "question"
+    },
+    {
       "id": "01J9ABCDEH0000000000000001",
       "name": "Customer requests",
-      "description": "Features or changes a customer asked for, with the customer's name when said."
+      "description": "Features or changes a customer asked for, with the customer's name when said.",
+      "kind": "section"
     }
   ],
   "createdAt": "2026-08-26T01:15:30.000Z",

@@ -566,6 +566,11 @@ enum class Str {
     NOTES_SECTION_REMOVE,
     NOTES_SECTION_ADD,
     NOTES_SECTIONS_NOTE,
+    NOTES_SECTION_RESTORE,
+    NOTES_KEY_POINTS_ABOUT,
+    NOTES_DECISIONS_ABOUT,
+    NOTES_TODOS_ABOUT,
+    NOTES_QUESTIONS_ABOUT,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

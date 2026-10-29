@@ -9,6 +9,7 @@ import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
+import app.recly.windows.i18n.WORD_JOINER
 import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.ui.theme.Motion
@@ -38,6 +39,7 @@ import recly.core.chatgpt.SummaryCitations
 import recly.core.chatgpt.SummaryPreferences
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import recly.core.notes.NoteKind
 import recly.core.notes.NoteSection
 import recly.core.notes.Notes
 import recly.core.notes.NotesPreferences
@@ -55,10 +57,31 @@ sealed interface ChatGptNotice {
 }
 
 /**
- * One of Settings → Notes' My sections as the window edits it (docs/09 "AI view"). [key] is the window's own, so a
- * section keeps its fields while the core gives it its [id]; an empty [id] is one not kept yet.
+ * One of Settings → Notes' sections as the window edits it (docs/09 "AI view"): a built-in group, of its [kind], or one
+ * of the user's own ([NoteKind.SECTION]). [key] is the window's own, so a section keeps its fields while the core gives
+ * it its [id]; an empty [id] is one not kept yet. A built-in group's field it keeps as its own holds the group's own
+ * words in the app's language ([builtInWords]).
  */
-data class SectionDraft(val key: Int, val id: String, val name: String, val description: String)
+data class SectionDraft(val key: Int, val id: String, val name: String, val description: String, val kind: NoteKind = NoteKind.SECTION) {
+    val builtIn: Boolean get() = kind != NoteKind.SECTION
+}
+
+/**
+ * A built-in group's own words in [strings] — its name and what goes in it — as a field holds them: without the joiners
+ * the Korean table holds its words together with for drawing ([WORD_JOINER]), which text typed on from them must not
+ * carry. Empty for a section of the user's own, which has none.
+ */
+internal fun builtInWords(kind: NoteKind, strings: Strings): Pair<String, String> {
+    val (name, about) = when (kind) {
+        NoteKind.POINT -> Str.NOTES_KEY_POINTS to Str.NOTES_KEY_POINTS_ABOUT
+        NoteKind.DECISION -> Str.NOTES_DECISIONS to Str.NOTES_DECISIONS_ABOUT
+        NoteKind.TODO -> Str.NOTES_TODOS to Str.NOTES_TODOS_ABOUT
+        NoteKind.QUESTION -> Str.NOTES_QUESTIONS to Str.NOTES_QUESTIONS_ABOUT
+        NoteKind.SECTION -> return "" to ""
+    }
+    fun plain(key: Str) = strings[key].replace(WORD_JOINER.toString(), "")
+    return plain(name) to plain(about)
+}
 
 /**
  * docs/15 §10 "Sign in with ChatGPT", the shell's half: the loopback and the browser. The core owns the
@@ -79,6 +102,8 @@ class ChatGptViewModel(
     private val receiver: LoopbackReceiver,
     private val scope: CoroutineScope,
     private val logger: Logger,
+    /** The app's table now: the built-in groups' own words, which their fields show while the user keeps them. */
+    private val strings: () -> Strings,
     private val browser: suspend (String) -> Unit = { openInSystemBrowser(it) },
     /** How long the loopback waits for the browser to come back (docs/15 §10: five minutes). */
     private val timeout: Duration = SIGN_IN_TIMEOUT,
@@ -97,14 +122,23 @@ class ChatGptViewModel(
 
     /**
      * docs/09 "AI view": Settings → Notes' instructions as last typed — shown at once, the core's trimmed copy once
-     * it has kept them — and My sections as the window edits them ([sections]).
+     * it has kept them — and the sections as the window edits them ([sections]).
      */
     var notesInstructions: String by mutableStateOf("")
         private set
 
-    /** My sections, in order: the kept ones and any just added that has no name yet. */
+    /**
+     * The sections, in order: the built-in groups kept, in the notes' order, then the user's own — the kept ones and
+     * any just added that has no name yet.
+     */
     var sections: List<SectionDraft> by mutableStateOf(emptyList())
         private set
+
+    /** Add section: the user's own are fewer than [NotesPreferences.SECTIONS_MAX]; the built-in groups are not counted. */
+    val canAddSection: Boolean get() = sections.count { !it.builtIn } < NotesPreferences.SECTIONS_MAX
+
+    /** Restore defaults has something to do: the built-in groups, as they would be saved, are not as they come. */
+    val builtInsChanged: Boolean get() = NoteSection.changed(sections.map { stored(it) })
 
     /** What the core holds now, so a save that would change nothing sends nothing. */
     private var notesKept: NotesPreferences? = null
@@ -167,7 +201,7 @@ class ChatGptViewModel(
                 notesSaving.withLock {
                     notesKept = stored
                     notesInstructions = stored.instructions
-                    sections = stored.sections.map { SectionDraft(nextSectionKey++, it.id, it.name, it.description) }
+                    sections = stored.sections.map { draft(nextSectionKey++, it) }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -314,11 +348,11 @@ class ChatGptViewModel(
     }
 
     /**
-     * Add section: an empty one at the end, while there are fewer than [NotesPreferences.SECTIONS_MAX] — kept only
-     * once it has a name. The key of the one added, for its name to take the cursor; null when there is no room.
+     * Add section: an empty one of the user's own at the end, while [canAddSection] — kept only once it has a name.
+     * The key of the one added, for its name to take the cursor; null when there is no room.
      */
     fun addSection(): Int? {
-        if (sections.size >= NotesPreferences.SECTIONS_MAX) return null
+        if (!canAddSection) return null
         val key = nextSectionKey++
         sections = sections + SectionDraft(key, "", "", "")
         return key
@@ -326,43 +360,85 @@ class ChatGptViewModel(
 
     /**
      * A section's editing ended — the cursor left it, Return in its name, the window put behind another or closed —
-     * with its fields as they are: saved, or gone from the list without a name. A section removed meanwhile is left
-     * alone.
+     * with its fields as they are: saved, or, for one of the user's own, gone from the list without a name. A built-in
+     * group's field left empty has the group's own words again. The section as it is now, for its fields to show; null
+     * once it is gone — or when it was removed meanwhile, which is left alone.
      */
-    fun endSection(key: Int, name: String, description: String) {
+    fun endSection(key: Int, name: String, description: String): SectionDraft? {
         val at = sections.indexOfFirst { it.key == key }
-        if (at < 0) return
-        sections = if (name.isBlank()) {
-            sections - sections[at]
-        } else {
-            sections.toMutableList().also { it[at] = it[at].copy(name = name, description = description) }
+        if (at < 0) return null
+        val section = sections[at]
+        if (!section.builtIn && name.isBlank()) {
+            sections = sections - section
+            saveNotes()
+            return null
         }
+        val (ownName, ownDescription) = builtInWords(section.kind, strings())
+        val ended = section.copy(name = name.ifBlank { ownName }, description = description.ifBlank { ownDescription })
+        sections = sections.toMutableList().also { it[at] = ended }
         saveNotes()
+        return ended
     }
 
-    /** Remove: saved at once, without asking. */
+    /** Remove: saved at once, without asking — a built-in group too, which Restore defaults brings back. */
     fun removeSection(key: Int) {
         val section = sections.firstOrNull { it.key == key } ?: return
         sections = sections - section
         saveNotes()
     }
 
+    /** Restore defaults: the four built-in groups as they come, first, and the user's own as they are — saved at once. */
+    fun restoreSections() {
+        sections = NoteSection.DEFAULTS.map { draft(nextSectionKey++, it) } + sections.filterNot { it.builtIn }
+        saveNotes()
+    }
+
     /**
-     * Sends the instructions and the named sections as they are when its turn comes, one save at a time, and gives a
-     * new section the id the core gave it — under the key it was edited by, so its fields stay where they are.
+     * The app's language changed from [before]'s ([ShellModel.selectLanguage]): a built-in group's field in its own
+     * words takes the new language's, so it is still the group's own when it is saved.
+     */
+    fun languageChanged(before: Strings) {
+        sections = sections.map { draft(it.key, stored(it, before)) }
+    }
+
+    /**
+     * [section] as the window edits it, under [key]: a built-in group's empty field — its own — shows the group's
+     * words in [words].
+     */
+    private fun draft(key: Int, section: NoteSection, words: Strings = strings()): SectionDraft {
+        val (ownName, ownDescription) = builtInWords(section.kind, words)
+        return SectionDraft(key, section.id, section.name.ifEmpty { ownName }, section.description.ifEmpty { ownDescription }, section.kind)
+    }
+
+    /**
+     * [draft] as it is sent: a built-in group's field empty or in the group's own words in [words] is its own (""),
+     * otherwise trimmed. One of the user's own goes as it is; the core trims it.
+     */
+    private fun stored(draft: SectionDraft, words: Strings = strings()): NoteSection {
+        if (!draft.builtIn) return NoteSection(draft.id, draft.name, draft.description)
+        val (ownName, ownDescription) = builtInWords(draft.kind, words)
+        fun field(text: String, own: String) = text.trim().takeUnless { it == own }.orEmpty()
+        return NoteSection(draft.id, field(draft.name, ownName), field(draft.description, ownDescription), draft.kind)
+    }
+
+    /**
+     * Sends the instructions, every built-in group kept and the named sections as they are when its turn comes, one
+     * save at a time, and gives a new section the id the core gave it — under the key it was edited by, so its fields
+     * stay where they are.
      */
     private fun saveNotes() {
         scope.launch {
             notesSaving.withLock {
-                val sent = sections.filter { it.name.isNotBlank() }
-                val wanted = NotesPreferences(notesInstructions, sent.map { NoteSection(it.id, it.name, it.description) })
+                val sent = sections.filter { it.builtIn || it.name.isNotBlank() }
+                val wanted = NotesPreferences(notesInstructions, sent.map { stored(it) })
                 if (wanted == notesKept) return@withLock
                 try {
                     val kept = notes.setPreferences(wanted)
                     notesKept = kept
-                    // In the order sent: the core keeps every named section, and only cuts them to its limits.
+                    // In the order sent: the core keeps the built-in groups first, in the notes' order — the window's
+                    // order too — then every named section, and only cuts them to its limits.
                     val byKey = sent.map { it.key }.zip(kept.sections).toMap()
-                    sections = sections.map { draft -> byKey[draft.key]?.let { draft.copy(id = it.id, name = it.name, description = it.description) } ?: draft }
+                    sections = sections.map { shown -> byKey[shown.key]?.let { draft(shown.key, it) } ?: shown }
                     if (notesInstructions == wanted.instructions) notesInstructions = kept.instructions
                 } catch (e: CancellationException) {
                     throw e

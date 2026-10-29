@@ -124,28 +124,64 @@
       "minLength": 1
     },
     "sections": {
-      "description": "The user's own sections (Settings → ChatGPT → My sections) the notes were made with, in order: up to three from Settings, plus an earlier one still holding an item the user edited — so the list itself is not capped.",
+      "description": "The sections the notes were made with (Settings → Notes → Sections), in order: the built-in groups the user kept — each its kind, with the name and description the user gave it, empty for the group's own — then up to three of the user's own, plus an earlier section still holding an item the user edited, so the list itself is not capped. A built-in group's name heads its items; empty, the app's word for it does.",
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": [
           "id",
-          "name"
+          "name",
+          "kind"
         ],
         "properties": {
           "id": {
-            "$ref": "#/$defs/ulid"
+            "description": "A section of the user's own: its ULID. A built-in group: its kind.",
+            "type": "string"
           },
           "name": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 40
           },
           "description": {
             "description": "What goes in it, as the user wrote it; may be empty.",
             "type": "string",
             "maxLength": 200
+          },
+          "kind": {
+            "description": "section: one of the user's own; any other: that built-in group.",
+            "$ref": "#/$defs/kind"
+          }
+        },
+        "if": {
+          "properties": {
+            "kind": {
+              "const": "section"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/ulid"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": [
+                "decision",
+                "todo",
+                "question",
+                "point"
+              ]
+            }
           }
         }
       }

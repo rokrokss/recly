@@ -337,35 +337,52 @@ class Notes internal constructor(
 
     @Throws(Throwable::class)
     suspend fun preferences(): NotesPreferences = prefs.value ?: withContext(deps.io) {
+        fun read(key: String) = db.recQueries.kvGet(key).executeAsOneOrNull()?.let { json ->
+            runCatching { recJson.decodeFromString<List<StoredSection>>(json) }.getOrNull()
+        }?.map { it.section() }
+        // Nothing stored for the built-in groups: all four, as they come.
+        val groups = read(PREF_BUILT_INS)?.let { builtIns(it) } ?: NoteSection.DEFAULTS
         NotesPreferences(
             instructions = db.recQueries.kvGet(PREF_INSTRUCTIONS).executeAsOneOrNull().orEmpty(),
-            sections = db.recQueries.kvGet(PREF_SECTIONS).executeAsOneOrNull()?.let { json ->
-                runCatching { recJson.decodeFromString<List<StoredSection>>(json) }.getOrNull()
-            }.orEmpty().map { NoteSection(it.id, it.name, it.description) },
+            sections = groups + read(PREF_SECTIONS).orEmpty().filterNot { it.builtIn },
         )
     }.also { loaded -> prefs.compareAndSet(null, loaded) }
 
     /**
-     * Kept trimmed and cut to [NotesPreferences]' limits: a section without a name is dropped, at most
-     * [NotesPreferences.SECTIONS_MAX] are kept, and a new one gets its id. Answers what was kept.
+     * Kept trimmed and cut to [NotesPreferences]' limits. The built-in groups come first, in their order, each once,
+     * with their kinds' ids; one without a name or a description keeps its own. Then the user's own sections: one
+     * without a name is dropped, at most [NotesPreferences.SECTIONS_MAX] are kept, and a new one gets its id. Answers
+     * what was kept.
      */
     @Throws(Throwable::class)
     suspend fun setPreferences(preferences: NotesPreferences): NotesPreferences {
+        val trimmed = preferences.sections.map {
+            it.copy(
+                name = it.name.trim().lineSequence().joinToString(" ").take(NotesPreferences.SECTION_NAME_MAX),
+                description = it.description.trim().take(NotesPreferences.DESCRIPTION_MAX),
+            )
+        }
+        val builtIns = builtIns(trimmed)
+        val own = trimmed.filterNot { it.builtIn }
+            .filter { it.name.isNotEmpty() }
+            .take(NotesPreferences.SECTIONS_MAX)
+            .map { if (it.id.isBlank()) it.copy(id = ulid()) else it }
         val kept = NotesPreferences(
             instructions = preferences.instructions.trim().take(NotesPreferences.INSTRUCTIONS_MAX),
-            sections = preferences.sections
-                .map { NoteSection(it.id, it.name.trim().lineSequence().joinToString(" ").take(NotesPreferences.SECTION_NAME_MAX), it.description.trim().take(NotesPreferences.DESCRIPTION_MAX)) }
-                .filter { it.name.isNotEmpty() }
-                .take(NotesPreferences.SECTIONS_MAX)
-                .map { if (it.id.isBlank()) it.copy(id = ulid()) else it },
+            sections = builtIns + own,
         )
         withContext(deps.io) {
             db.recQueries.transaction {
                 if (kept.instructions.isEmpty()) db.recQueries.kvDelete(PREF_INSTRUCTIONS) else db.recQueries.kvSet(PREF_INSTRUCTIONS, kept.instructions)
-                if (kept.sections.isEmpty()) {
+                if (builtIns == NoteSection.DEFAULTS) {
+                    db.recQueries.kvDelete(PREF_BUILT_INS)
+                } else {
+                    db.recQueries.kvSet(PREF_BUILT_INS, recJson.encodeToString(builtIns.map(StoredSection::of)))
+                }
+                if (own.isEmpty()) {
                     db.recQueries.kvDelete(PREF_SECTIONS)
                 } else {
-                    db.recQueries.kvSet(PREF_SECTIONS, recJson.encodeToString(kept.sections.map { StoredSection(it.id, it.name, it.description) }))
+                    db.recQueries.kvSet(PREF_SECTIONS, recJson.encodeToString(own.map(StoredSection::of)))
                 }
             }
         }
@@ -373,11 +390,19 @@ class Notes internal constructor(
         return kept
     }
 
+    /** The built-in groups of [sections], each once, in the notes' order, under their kinds' ids. */
+    private fun builtIns(sections: List<NoteSection>): List<NoteSection> =
+        NoteSection.BUILT_IN.mapNotNull { kind -> sections.firstOrNull { it.kind == kind }?.copy(id = NoteSection.id(kind)) }
+
     /** What a request adds from Settings: the sections and instructions here, About you from the ChatGPT settings. */
     private suspend fun ask(): NotesAsk {
         val preferences = preferences()
         return NotesAsk(preferences.sections, preferences.instructions, summaries.preferences().aboutMe)
     }
+
+    /** [ask] for a part of a recording in progress: the sections it started with stay its sections while it records. */
+    private suspend fun ask(current: NotesFile?): NotesAsk =
+        ask().let { asked -> if (current?.sections?.isNotEmpty() == true) asked.copy(sections = current.sections.map { it.section() }) else asked }
 
     /**
      * The transcript's lines around [atSec] — from [BEFORE_SEC] before it to [AFTER_SEC] after, at most [MAX_LINES] —
@@ -412,6 +437,8 @@ class Notes internal constructor(
                 )
             }
         val sections = items.filter { it.kind == NoteKind.SECTION }.groupBy { it.section }
+        // A built-in group heads its items under the name it had when they were made, if the user gave it one.
+        fun named(kind: NoteKind) = file.sections.firstOrNull { it.kind == kind }?.name?.takeIf { it.isNotEmpty() }
         return RecordingNotes(
             recordingId = recordingId,
             stage = if (file.isFinal) NotesStage.FINAL else NotesStage.PROVISIONAL,
@@ -422,9 +449,11 @@ class Notes internal constructor(
             organizing = organizing,
             points = items.filter { it.kind == NoteKind.POINT },
             // In the order the notes were made with; a section no item of which is left is not there.
-            sections = file.sections.mapNotNull { section -> sections[section.id]?.let { NoteSectionItems(section.id, section.name, it) } },
+            sections = file.sections.filter { it.kind == NoteKind.SECTION }
+                .mapNotNull { section -> sections[section.id]?.let { NoteSectionItems(section.id, section.name, it) } },
             failure = failure,
             model = file.modelName ?: file.model,
+            names = NoteNames(named(NoteKind.POINT), named(NoteKind.DECISION), named(NoteKind.TODO), named(NoteKind.QUESTION)),
         )
     }
 
@@ -517,6 +546,8 @@ class Notes internal constructor(
         if (!open) return
         val notes = readNotes(record)
         if (notes?.isFinal == true || notes?.parts?.contains(part.part) == true) return
+        // Every group that comes while recording removed in Settings: nothing to ask, nothing to transcribe a part for.
+        if (!ask(notes).whileRecording) return
         // The settings the recording froze when it started, as its own job will run them.
         val step = settings.recordingSnapshot(recordingId)?.let(ProcessingPlan::compile)?.steps
             ?.firstOrNull { it is Step.Transcribe || it is Step.LocalTranscribe } ?: return
@@ -632,8 +663,7 @@ class Notes internal constructor(
         val previous = readProvisional(record.id, part.part - 1)
         val current = readNotes(record)
         val shown = current?.items.orEmpty()
-        // The sections a recording started with stay its sections while it records.
-        val ask = ask().let { asked -> if (current?.sections?.isNotEmpty() == true) asked.copy(sections = current.sections.map { NoteSection(it.id, it.name, it.description) }) else asked }
+        val ask = ask(current)
         val placeholders = Placeholders()
         val input = placeholders.hide(
             NotesPrompts.provisionalInput(
@@ -682,7 +712,7 @@ class Notes internal constructor(
                 parts = (file.parts + part.part).distinct().sorted(),
                 model = model,
                 modelName = account.modelLabel(model),
-                sections = file.sections.ifEmpty { ask.sections.map { StoredSection(it.id, it.name, it.description) } },
+                sections = file.sections.ifEmpty { ask.sections.map(StoredSection::of) },
                 updatedAt = now,
             )
         }
@@ -884,8 +914,11 @@ class Notes internal constructor(
             }
             // An item the user edited is theirs, made again or not. One from a part keeps no owner: a part's label is its own.
             val edited = earlier.filter { it.editedAt != null }.map { if (it.provisional) it.copy(provisional = false, owner = null) else it }
-            val sections = ask.sections.map { StoredSection(it.id, it.name, it.description) }
-            val keptSections = sections + current?.sections.orEmpty().filter { old -> old.id !in sections.map { it.id } && edited.any { it.section == old.id } }
+            val sections = ask.sections.map(StoredSection::of)
+            // A section no longer asked for stays while an item the user edited is in it, under the name it had.
+            val keptSections = sections + current?.sections.orEmpty().filter { old ->
+                old.id !in sections.map { it.id } && edited.any { if (old.kind == NoteKind.SECTION) it.section == old.id else it.kind == old.kind }
+            }
             NotesFile(
                 recordingId = recordingId, stage = NotesFile.FINAL,
                 overview = if (current?.overviewEditedAt != null) current.overview else overview,
@@ -1021,6 +1054,9 @@ class Notes internal constructor(
         private const val ON = "1"
         const val PREF_INSTRUCTIONS = "notes/prefs/instructions"
         const val PREF_SECTIONS = "notes/prefs/sections"
+
+        /** The built-in groups as the user left them; absent while they are as they come. */
+        const val PREF_BUILT_INS = "notes/prefs/builtIns"
 
         /** A part or a conversation with fewer words than this is not asked about. */
         const val MIN_WORDS = 40

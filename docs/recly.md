@@ -2193,14 +2193,26 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   person only as the transcript names them or their role, since a label left in the text stays after the user names that speaker,
   beside the owner's name.
 - **Settings** (Settings → Notes; `notes.preferences()`, `setPreferences`, `observePreferences`). `NotesPreferences(instructions,
-  sections)`, this device's, in `kv` (`notes/prefs/instructions`, `notes/prefs/sections`). `Notes instructions`, up to 1,000 characters,
-  trimmed: the user's own words on how to write the notes ("to-dos grouped by owner", "keep technical terms in English"), which every
-  request follows where they do not change the answer's format, the kinds or the evidence rules. `My sections`: up to three, each a name
-  (up to 40 characters, one line) and what goes in it (up to 200); a section without a name is dropped, and a new one gets an id. Each is
-  asked for as a kind of its own (`section1`…) and listed like the built-in groups, with evidence; an item that fits a user's section goes
-  there. The sections a recording's notes were made with are kept in its notes file, so their headers read the same on every device and
-  after Settings change; a recording keeps the sections it started with while it records, and `Organize again` uses Settings as they are
-  then.
+  sections)`, this device's, in `kv` (`notes/prefs/instructions`, `notes/prefs/builtIns`, `notes/prefs/sections`). `Notes instructions`,
+  up to 1,000 characters, trimmed: the user's own words on how to write the notes ("to-dos grouped by owner", "keep technical terms in
+  English"), which every request follows where they do not change the answer's format, the kinds or the evidence rules. `Sections`
+  (2026-10-29, the user's decision: the user sees every section the notes are made of, and edits them all): one list (`NoteSection(id,
+  name, description, kind)`) — the built-in groups first, in their order `Key points` · `Decisions` · `To-dos` · `Questions`, then up to
+  three sections of the user's own. Each has a name (up to 40 characters, one line) and what goes in it (up to 200).
+  - A built-in group's id is its kind (`point`, `decision`, `todo`, `question`). An empty name or description is its own: the app's
+    words, in the app's language (the `Key points` heading; `Anything else worth remembering — a fact, a figure, an idea, a conclusion.`,
+    `What the people settled.`, `What someone said they or another person will do, with who and by when.`, `Questions raised and not
+    answered.`), and the fixed meaning in the request. The user may rename it, describe it anew — the request then asks for it in their
+    words — or remove it, and it is no longer asked for: an answer that gives one anyway is not kept. Whatever its words, a group keeps
+    its rules: a to-do's owner and due date, a decision as it stands at the end, a question only while unanswered, key points after Stop
+    only and apart from the other groups. Nothing is stored for the groups as they come; the user's way is kept in `notes/prefs/builtIns`,
+    each group once, in its place. With every group removed and no section of the user's own, nothing is asked while recording — no part
+    is transcribed for notes — and after Stop each conversation is asked for its summary alone, which the overview is made of.
+  - A section of the user's own without a name is dropped, and a new one gets an id. Each is asked for as a kind of its own
+    (`section1`…) and listed like the built-in groups, with evidence; an item that fits a user's section goes there.
+  - The sections a recording's notes were made with are kept in its notes file — a built-in group with the name the user gave it — so
+    their headers read the same on every device and after Settings change; a recording keeps the sections it started with while it
+    records, and `Organize again` uses Settings as they are then.
 - **Quote check.** An item is kept only when its quote, normalized (case and full-width Latin folded, everything but letters and
   digits dropped), matches at least 0.8 (difflib's partial ratio) the transcript's text whose words overlap ±10 s of its time —
   running on past the window by as many words as the quote has; a segment without word timings counts whole. The rule is the
@@ -2283,7 +2295,8 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   `To-dos`, `Questions` and the user's sections, each a heading over `- ` items with ` — owner`, ` · due` and `[HH:MM:SS]` — for `Copy
   all` and Share → `Notes` (§8 "Exports"); the Markdown transcript the share sheet gets carries the same as its own section. The headings
   are the app's: each shell passes its resources' words with `notes.setHeadings(NotesHeadings(…))` at start and whenever the app's
-  language changes, as it passes the locale.
+  language changes, as it passes the locale — except a built-in group the user renamed, which is headed by that name
+  (`RecordingNotes.names`, `NoteNames`).
 - **Storage.** `{base}.notes.v1.json` beside the parts (`spec/notes.schema.json`): the stage, the overview (and when the user edited it),
   the items — each with its provisional flag, owner label, evidence, conversation, section and the user's words — the tombstones of
   deleted items, the sections the notes were made with, the conversations' spans and summaries, the parts the provisional pass is done
@@ -2945,14 +2958,19 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   sits under `Notes`.
 - **Settings → Notes** (2026-10-28), right after ChatGPT, signed in or not: `Notes instructions`, a field of two lines growing to eight
   (placeholder `e.g. Group to-dos by owner. Keep technical terms in English.`; under it `Every recording’s notes follow this.`);
-  `My sections`, a label over up to three sections — each a one-line `Section name` field (placeholder `e.g. Risks`), a `What goes in it`
-  field of up to three lines (placeholder `e.g. Anything that could delay the launch, and who raised it.`) and a quiet `Remove` (its
-  accessibility label `Remove {name}`) — then a quiet `Add section` while there are fewer than three, which adds an empty section and
-  focuses its name (under them `Each recording’s notes also list these, with when each was said.`); then `About you`, a field of up to
-  three lines (`Notes and answers use this to judge what matters to you.`). The fields save when editing ends (`notes.setPreferences`,
-  and About you as before); a section left without a name is not kept and goes from the list then; `Remove` saves at once. Return adds
-  a line in the instructions and in what goes in a section, and ends a section's name and About you. A change applies to what is
-  organized from then on; notes already made keep their sections until `Organize again`.
+  `Sections`, a label over every section the notes are made of (2026-10-29) — the built-in groups the user kept, then theirs — each
+  the same row: a one-line `Section name` field, a `What goes in it` field of up to three lines and a quiet `Remove` (its accessibility
+  label `Remove {name}`). A built-in group's fields hold its own words while the user has not changed them — its heading and what goes
+  in it, in the app's language — and those words are their placeholders; a section of the user's own has the placeholders `e.g. Risks`
+  and `e.g. Anything that could delay the launch, and who raised it.`. Under the rows a quiet `Add section` while the user has fewer
+  than three of their own, which adds an empty section and focuses its name; then a quiet `Restore defaults` while a built-in group is
+  removed, renamed or described anew, which brings the four back in their own words and leaves the user's sections as they are, saved
+  at once; under them `Each recording’s notes start with an overview, then list these, with when each was said.`. Then `About you`, a
+  field of up to three lines (`Notes and answers use this to judge what matters to you.`). The fields save when editing ends
+  (`notes.setPreferences`, and About you as before); a built-in group's field left empty, or holding its own words, saves as its own and
+  shows them again; a section of the user's own left without a name is not kept and goes from the list then; `Remove` saves at once.
+  Return adds a line in the instructions and in what goes in a section, and ends a section's name and About you. A change applies to
+  what is organized from then on; notes already made keep their sections until `Organize again`.
 - Both sections and the More items are absent where the core says `Unavailable` (§15 "China mainland App Store").
 - **The detail.** More → `Organize` — `Organize again` once the recording has notes — then `Edit notes` and `Ask about this recording…`,
   disabled with their reason like the other items: `No transcript yet`, `Transcribing…`, `Still recording`, `Sign in to ChatGPT in
@@ -3008,8 +3026,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
 says provisional or edited: the notes simply change when a pass lands.
 
 - **The detail** (Android phone, iPhone, Mac, Windows). The `Notes` chip's body (§9 "AI view"). The overview comes first (plain
-  text), then the groups in the order `Key points` · `Decisions` · `To-dos` · `Questions`, then the user's sections under their names,
-  each a section header over table rows. A group with no items is absent, header included; with no overview and no items there is no
+  text), then the groups in the order `Key points` · `Decisions` · `To-dos` · `Questions` — under the name the user gave a group, if
+  they did — then the user's sections under their names, each a section header over table rows. A group with no items is absent, header included; with no overview and no items there is no
   block and no empty state. The `Organizing…` line or the failure notice stays on top.
 - **A row** is at least 44 high: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
   present, the due date muted. At its end the item's time in the recording's time format, as the transcript's quiet monospace time button:
@@ -4247,7 +4265,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | Voice embeddings that link a long recording's pieces (§8 "Length · size limits") | Memory, while the pieces are put together | **Never leaves**: computed on the device from its own part files and discarded after the merge, never stored |
 | App settings such as language and Wi-Fi only | Platform settings store | Does not leave (not a sync target) |
 | Notes (`{base}.notes.v1.json`), the parts' transcripts made while recording (`.provisional-p001.json`) and the consent to organizing (`notes/consent`) (2026-10-27) | The recording's folder; the local database | The text they are made from goes to OpenAI (§10). Final notes, with the user's edits, go to the recording's Drive or iCloud folder as `{base}.notes.json` (§1, §1b, 2026-10-28); with a local folder they stay here. The parts' transcripts are deleted once the final notes are written; the consent does not leave |
-| The chosen ChatGPT model, Notes instructions and My sections (`notes/prefs/instructions`, `notes/prefs/sections`), About you (`summary/prefs/…`) and Ask answers | The local database; Ask answers in memory only | The notes instructions and sections go to OpenAI with each notes request, About you with each notes request and question (§10); nothing else leaves |
+| The chosen ChatGPT model, Notes instructions and Sections (`notes/prefs/instructions`, `notes/prefs/builtIns`, `notes/prefs/sections`), About you (`summary/prefs/…`) and Ask answers | The local database; Ask answers in memory only | The notes instructions and sections go to OpenAI with each notes request, About you with each notes request and question (§10); nothing else leaves |
 
 ### §1 Google Drive — the user's own Drive
 
@@ -4522,7 +4540,7 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`); Recly offers those marked `list`, less `HIDDEN_MODELS` (§8) |
 | Ask | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `About you` when set — and **the recording's transcript text with its times and the speakers' names**, and the preset's question or the user's own — no title, never audio | the answer as a stream (`store: false`); kept in memory only |
 | Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu — the names also with `Organize` |
-| Organizing (2026-10-27; `Organize again`, 2026-10-28) | the same | the access token, the model Settings picked, the instructions — with the user's `Notes instructions`, `My sections` and `About you` when set — and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop and at `Organize again`, each conversation's lines, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device, no title, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the final notes go to the recording's Drive or iCloud folder (§1, §1b) |
+| Organizing (2026-10-27; `Organize again`, 2026-10-28) | the same | the access token, the model Settings picked, the instructions — with the user's `Notes instructions`, `Sections` — the built-in groups kept, in the user's words, and their own — and `About you` when set — and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop and at `Organize again`, each conversation's lines, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device, no title, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the final notes go to the recording's Drive or iCloud folder (§1, §1b) |
 
 - Only when the user asks: signing in, and choosing `Organize` or `Organize again`, a question in `Ask about this recording…`, `Fill in
   title` or `Fill in speaker names` on one recording. There are two background uses, both for a user who agreed — under the sign-in, or

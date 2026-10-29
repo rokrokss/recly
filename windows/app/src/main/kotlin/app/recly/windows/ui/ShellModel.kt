@@ -810,7 +810,7 @@ class ShellModel(
         consentReminder = settings.consentReminder
         microphone = microphoneAccess(logger)
         micAccess = microphone.state()
-        chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.core.notes, graph.loopback, scope, logger).also { it.start() }
+        chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.core.notes, graph.loopback, scope, logger, localization::current).also { it.start() }
         graph.core.notes.setHeadings(notesHeadings(localization.current))
 
         val command = helperCommand
@@ -2392,12 +2392,15 @@ class ShellModel(
      * language the moment this returns — the tables behind them are one [Localization] state.
      */
     fun selectLanguage(choice: AppLanguage) {
+        val before = localization.current
         localization.language = choice
         language = choice
         // Notes, Ask's presets and its Translate follow the app's language without a restart (2026-10-10) —
-        // the same tag the core was opened with ([AppGraph]) — and so do the headings of the notes as text.
+        // the same tag the core was opened with ([AppGraph]) — and so do the headings of the notes as text, and
+        // Settings → Notes' built-in sections where they keep their own words.
         graph?.core?.summaries?.setLocale(choice.tag.ifEmpty { Host.language() })
         graph?.core?.notes?.setHeadings(notesHeadings(localization.current))
+        chatGpt?.languageChanged(before)
     }
 
     fun selectTheme(choice: AppTheme) {

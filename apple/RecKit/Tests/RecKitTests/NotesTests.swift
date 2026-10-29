@@ -73,6 +73,19 @@ final class NoteGroupsTests: XCTestCase {
         XCTAssertFalse(NoteGroups.isEmpty(pointsOnly, showsOverview: true))
     }
 
+    /// docs/09 "Notes view": a built-in group the user renamed is headed by the name it had when the notes were made; the
+    /// others by the app's words.
+    func testARenamedBuiltInGroupIsHeadedByItsName() {
+        let notes = Self.notes(
+            points: [Self.item("p1", .point)],
+            decisions: [Self.item("d1", .decision)],
+            todos: [Self.item("t1", .todo)],
+            names: NoteNames(points: nil, decisions: "Agreed", todos: nil, questions: "Unused")
+        )
+        XCTAssertEqual(NoteGroups.of(notes).map(\.title), ["Key points", "Agreed", "To-dos"])
+        XCTAssertEqual(NoteGroups.of(notes).map(\.kind), [.point, .decision, .todo], "a name does not change which group it is")
+    }
+
     /// docs/08 "Organizing" — "Copy and share": the headings the core writes the notes' text under, in the app's
     /// language.
     func testTheHeadingsAreTheAppsWords() {
@@ -149,7 +162,8 @@ final class NoteGroupsTests: XCTestCase {
         questions: [NoteItem] = [],
         sections: [NoteSectionItems] = [],
         failure: String? = nil,
-        model: String? = nil
+        model: String? = nil,
+        names: NoteNames = NoteNames(points: nil, decisions: nil, todos: nil, questions: nil)
     ) -> RecordingNotes {
         RecordingNotes(
             recordingId: "01J9REC0000000000000000000",
@@ -162,7 +176,8 @@ final class NoteGroupsTests: XCTestCase {
             points: points,
             sections: sections,
             failure: failure,
-            model: model
+            model: model,
+            names: names
         )
     }
 

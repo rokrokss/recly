@@ -175,7 +175,7 @@ recording.**
 | **More** → **Transcribe again** | transcribe with the current settings; replaces your edits |
 | **More** → **Rename** | change the title |
 | **More** → **Organize** | after **Settings** → **ChatGPT** → **Continue with ChatGPT**: the recording's notes from your ChatGPT plan — an overview, key points, decisions, to-dos, questions and your own sections — under **Notes**; **Organize again** once it has notes. Once you agree after signing in, recordings are also organized while you record and after you stop (not on the China mainland App Store) |
-| **Settings** → **Notes** | **Notes instructions**: how every recording's notes are written. **My sections**: up to three sections of your own, each with what goes in it. **About you**: what matters to you, for notes and answers |
+| **Settings** → **Notes** | **Notes instructions**: how every recording's notes are written. **Sections**: key points, decisions, to-dos and questions, then up to three sections of your own — rename any, change what goes in it, or remove it; **Restore defaults** brings the first four back. **About you**: what matters to you, for notes and answers |
 | **More** → **Edit notes** | fix the overview or a note's words, or empty a note to delete it; in Google Drive or iCloud your other devices show the edit, with a local folder it stays on this device |
 | **More** → **Ask about this recording…** | a follow-up email, the action items, the open questions, a translation, feedback on how you spoke, or your own question; the answer is not saved |
 | **More** → **Fill in title** | a title from your ChatGPT plan, if the recording has none. Signed in and agreed to notes, every recording gets one before its transcript is saved: leave the title empty when you name it |

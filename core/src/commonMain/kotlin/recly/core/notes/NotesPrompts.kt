@@ -36,17 +36,63 @@ internal object NotesPrompts {
 
     private const val JSON_ONLY = "Answer with one JSON object and nothing else: no Markdown, no code fence, no other text.\n"
 
+    /** What each built-in group is for, unless the user described it in their own words. */
+    private val MEANING = mapOf(
+        NoteKind.DECISION to "something the people settled",
+        NoteKind.TODO to "something someone said they or another person will do",
+        NoteKind.QUESTION to "a question raised and not answered",
+        NoteKind.POINT to "a key point: something else said that is worth remembering — a fact, a figure, an idea, a conclusion",
+    )
+
+    /** The built-in groups in the order the request names them; key points only after Stop. */
+    private fun builtIns(ask: NotesAsk, points: Boolean): List<NoteSection> =
+        listOfNotNull(
+            ask.builtIn(NoteKind.DECISION), ask.builtIn(NoteKind.TODO), ask.builtIn(NoteKind.QUESTION),
+            ask.builtIn(NoteKind.POINT)?.takeIf { points },
+        )
+
+    /** Anything at all to ask for: a built-in group or a section of the user's own. */
+    private fun asksItems(ask: NotesAsk, points: Boolean) = builtIns(ask, points).isNotEmpty() || ask.own.isNotEmpty()
+
+    /** "its key points, decisions, to-dos and open questions, and the items of the user's own sections". */
+    private fun asked(ask: NotesAsk, points: Boolean): String {
+        val groups = builtIns(ask, points).sortedBy { NoteSection.BUILT_IN.indexOf(it.kind) }.map {
+            when (it.kind) {
+                NoteKind.POINT -> "key points"
+                NoteKind.DECISION -> "decisions"
+                NoteKind.TODO -> "to-dos"
+                else -> "open questions"
+            }
+        }
+        val own = "the items of the user's own sections"
+        return when {
+            groups.isEmpty() -> own
+            ask.own.isEmpty() -> "its " + series(groups, "and")
+            else -> "its " + series(groups, "and") + ", and " + own
+        }
+    }
+
+    /** `a, b and c`. */
+    private fun series(words: List<String>, last: String): String =
+        if (words.size < 2) words.joinToString() else words.dropLast(1).joinToString(", ") + " $last " + words.last()
+
     private fun item(language: String, ask: NotesAsk, points: Boolean) = buildString {
         append("Each item is an object with:\n")
-        append("\"kind\": \"decision\" for something the people settled, \"todo\" for something someone said they or another person will do, ")
-        append("\"question\" for a question raised and not answered")
-        if (points) append(", \"point\" for a key point: something else said that is worth remembering — a fact, a figure, an idea, a conclusion")
-        ask.sections.forEachIndexed { index, section ->
-            append(", \"").append(NotesAsk.key(index)).append("\" for the user's own section \"").append(section.name).append('"')
-            section.description.trim().takeIf { it.isNotEmpty() }?.let { append(" (").append(it).append(')') }
+        val kinds = builtIns(ask, points).map { group ->
+            buildString {
+                append('"').append(NoteSection.id(group.kind)).append('"')
+                group.name.trim().takeIf { it.isNotEmpty() }?.let { append(" (headed \"").append(it).append("\")") }
+                val described = group.description.trim()
+                if (described.isEmpty()) append(" for ").append(MEANING.getValue(group.kind)) else append(" for what the user describes as \"").append(described).append('"')
+            }
+        } + ask.own.mapIndexed { index, section ->
+            buildString {
+                append('"').append(NotesAsk.key(index)).append("\" for the user's own section \"").append(section.name).append('"')
+                section.description.trim().takeIf { it.isNotEmpty() }?.let { append(" (").append(it).append(')') }
+            }
         }
-        append(";\n")
-        if (ask.sections.isNotEmpty()) append("An item that fits one of the user's own sections takes that section's kind.\n")
+        append("\"kind\": ").append(kinds.joinToString(", ")).append(";\n")
+        if (ask.own.isNotEmpty()) append("An item that fits one of the user's own sections takes that section's kind.\n")
         append(
             """"text": the item in one short sentence, in $language;
 "owner": for a todo, the speaker label of the person who will do it when the transcript makes that clear, else null; null for the other kinds;
@@ -63,9 +109,8 @@ internal object NotesPrompts {
 
     /** While recording: the new items of one part, never the ones already shown. Key points wait for the final pass. */
     fun provisional(language: String, ask: NotesAsk = NotesAsk()): String = buildString {
-        append("You keep running notes of a conversation while it is being recorded, one part of the recording at a time: its decisions, to-dos and open questions")
-        if (ask.sections.isNotEmpty()) append(", and the items of the user's own sections")
-        append(".\n")
+        append("You keep running notes of a conversation while it is being recorded, one part of the recording at a time: ")
+        append(asked(ask, points = false)).append(".\n")
         append(LINES)
         append("The message holds $SO_FAR (what the user already sees), $PREVIOUS and $THIS_PART.\n")
         append(JSON_ONLY)
@@ -81,20 +126,42 @@ internal object NotesPrompts {
 
     /** After Stop: one conversation's summary and items. */
     fun conversation(language: String, ask: NotesAsk = NotesAsk()): String = buildString {
-        append("You write the notes of one conversation from its transcript: a summary, and its key points, decisions, to-dos and open questions")
-        if (ask.sections.isNotEmpty()) append(", and the items of the user's own sections")
+        // Every group removed in Settings: the summary alone, which the overview is made of.
+        val items = asksItems(ask, points = true)
+        append("You write the notes of one conversation from its transcript: a summary")
+        if (items) append(", and ").append(asked(ask, points = true))
         append(".\n")
         append(LINES)
         append(JSON_ONLY)
-        append("""{"summary": "...", "items": [...]}""").append('\n')
+        append(if (items) """{"summary": "...", "items": [...]}""" else """{"summary": "..."}""").append('\n')
         append("\"summary\": three to five sentences in $language on what the conversation was about and where it ended. Plain text.\n")
-        append(item(language, ask, points = true))
-        append("A decision is reported as it stands at the end: one changed later is reported as changed. A question is reported only when it is still unanswered at the end. ")
-        append("Key points are the few things most worth remembering that are not already a decision, a to-do or a question.\n")
+        if (items) {
+            append(item(language, ask, points = true))
+            append(rules(ask))
+        }
         append(NO_LABELS)
-        append(EVIDENCE)
+        if (items) append(EVIDENCE)
         append(user(ask))
-        append("""When there is nothing to note, answer with the summary and "items": [].""")
+        if (items) append("""When there is nothing to note, answer with the summary and "items": [].""")
+    }
+
+    /** What holds for the built-in groups the user kept, whatever they call them. */
+    private fun rules(ask: NotesAsk): String {
+        val rules = listOfNotNull(
+            "A decision is reported as it stands at the end: one changed later is reported as changed.".takeIf { ask.asks(NoteKind.DECISION) },
+            "A question is reported only when it is still unanswered at the end.".takeIf { ask.asks(NoteKind.QUESTION) },
+            if (ask.asks(NoteKind.POINT)) {
+                val others = listOfNotNull(
+                    "a decision".takeIf { ask.asks(NoteKind.DECISION) },
+                    "a to-do".takeIf { ask.asks(NoteKind.TODO) },
+                    "a question".takeIf { ask.asks(NoteKind.QUESTION) },
+                )
+                "Key points are the few things most worth remembering" + (if (others.isEmpty()) "." else " that are not already " + series(others, "or") + ".")
+            } else {
+                null
+            },
+        )
+        return if (rules.isEmpty()) "" else rules.joinToString(" ") + "\n"
     }
 
     /** The user's own words, after the fixed rules they cannot change: their instructions and About you. */
@@ -131,7 +198,7 @@ internal object NotesPrompts {
         append(SO_FAR).append('\n')
         if (shown.isEmpty()) append("(none yet)\n")
         shown.forEach { note ->
-            val kind = note.section?.let { id -> ask.sections.indexOfFirst { it.id == id }.takeIf { it >= 0 }?.let(NotesAsk::key) } ?: note.kind.wire()
+            val kind = note.section?.let { id -> ask.own.indexOfFirst { it.id == id }.takeIf { it >= 0 }?.let(NotesAsk::key) } ?: note.kind.wire()
             append("- ").append(kind).append(": ").append(note.shown)
             note.due?.let { append(" (due: ").append(it).append(')') }
             append(" [").append(TranscriptNormalizer.clock(note.evidence.atSec)).append("]\n")
@@ -163,23 +230,38 @@ internal object NotesPrompts {
 }
 
 /**
- * What the user's settings add to a request (docs/08 "Organizing"): their sections, asked for as kinds `section1`…,
- * their instructions and About you. [version] tells a try after a wait whether what it would ask changed.
+ * What the user's settings add to a request (docs/08 "Organizing"): the built-in groups they kept, in their words,
+ * their own sections, asked for as kinds `section1`…, their instructions and About you. [version] tells a try after
+ * a wait whether what it would ask changed.
  */
 internal data class NotesAsk(
-    val sections: List<NoteSection> = emptyList(),
+    val sections: List<NoteSection> = NoteSection.DEFAULTS,
     val instructions: String = "",
     val aboutMe: String = "",
 ) {
     val version: String
         get() = buildString {
-            sections.forEach { append(it.id).append('\u0000').append(it.name).append('\u0000').append(it.description).append('\u0001') }
+            sections.forEach {
+                append(it.kind.name).append('\u0000').append(it.id).append('\u0000').append(it.name).append('\u0000').append(it.description).append('\u0001')
+            }
             append('\u0002').append(instructions).append('\u0002').append(aboutMe)
         }
 
-    /** The section a kind of the answer names, by its place in [sections]. */
+    /** The user's own sections, in the order their kinds are numbered. */
+    val own: List<NoteSection> get() = sections.filterNot { it.builtIn }
+
+    /** [kind]'s built-in group, unless the user removed it. */
+    fun builtIn(kind: NoteKind): NoteSection? = sections.firstOrNull { it.builtIn && it.kind == kind }
+
+    fun asks(kind: NoteKind): Boolean = builtIn(kind) != null
+
+    /** Anything to ask while recording, where key points are not asked for yet. */
+    val whileRecording: Boolean
+        get() = own.isNotEmpty() || asks(NoteKind.DECISION) || asks(NoteKind.TODO) || asks(NoteKind.QUESTION)
+
+    /** The section a kind of the answer names, by its place in [own]. */
     fun section(kind: String): NoteSection? =
-        KIND.matchEntire(kind)?.groupValues?.get(1)?.toIntOrNull()?.let { sections.getOrNull(it - 1) }
+        KIND.matchEntire(kind)?.groupValues?.get(1)?.toIntOrNull()?.let { own.getOrNull(it - 1) }
 
     companion object {
         private val KIND = Regex("""section(\d)""")
@@ -218,9 +300,9 @@ internal object NotesAnswer {
     }
 
     /**
-     * The well-formed items of [json]: a known kind, a text, a time and a quote; [restore] puts the placeholders
-     * back. An owner that is not a speaker label is dropped, and owners only go with to-dos. Items that come
-     * without what they need are counted, not kept.
+     * The well-formed items of [json]: a kind [ask] asked for, a text, a time and a quote; [restore] puts the
+     * placeholders back. An owner that is not a speaker label is dropped, and owners only go with to-dos. Items that
+     * come without what they need are counted, not kept.
      */
     fun items(json: JsonObject, restore: (String) -> String, ask: NotesAsk = NotesAsk(), points: Boolean = false): List<Extracted> =
         (json["items"] as? JsonArray).orEmpty().mapNotNull { element ->
@@ -237,6 +319,8 @@ internal object NotesAnswer {
                     NoteKind.SECTION
                 }
             }
+            // A group the user removed is not asked for, and an answer that gives one anyway is not kept.
+            if (kind != NoteKind.SECTION && !ask.asks(kind)) return@mapNotNull null
             val text = string(item["text"])?.let(restore)?.trim()?.lineSequence()?.joinToString(" ")?.takeIf { it.isNotEmpty() }?.take(TEXT_MAX)
                 ?: return@mapNotNull null
             val atSec = seconds(item["at"] ?: item["atSec"]) ?: return@mapNotNull null

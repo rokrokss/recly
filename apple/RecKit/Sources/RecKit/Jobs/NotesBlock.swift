@@ -5,31 +5,35 @@ import SwiftUI
 #endif
 
 /// One of the notes block's groups (docs/08 "Organizing"): its header and its items, newest first as the core gives
-/// them — a built-in group, or one of the user's own sections under the name the notes were made with.
+/// them — a built-in group, or one of the user's own sections — under the name the notes were made with.
 public struct NoteGroup: Identifiable, Equatable {
     public let kind: NoteKind
     public let items: [NoteItem]
     /// The user's section this group is ([NoteKind.section]); nil for the built-in groups.
     public let sectionId: String?
-    public let sectionName: String?
+    /// The name the user gave it: a section's always, a built-in group's once they renamed it ([NoteNames]).
+    public let name: String?
 
-    init(kind: NoteKind, items: [NoteItem], sectionId: String? = nil, sectionName: String? = nil) {
+    init(kind: NoteKind, items: [NoteItem], sectionId: String? = nil, name: String? = nil) {
         self.kind = kind
         self.items = items
         self.sectionId = sectionId
-        self.sectionName = sectionName
+        self.name = name
     }
 
     public var id: String { sectionId.map { "section-\($0)" } ?? "\(kind)" }
 
-    /// The group's header: the app's word for a built-in group, the user's own name for a section.
-    public var title: String {
+    /// The group's header: the name the user gave it, else the app's word for a built-in group.
+    public var title: String { name ?? Self.word(kind) }
+
+    /// The app's word for a built-in group, in the app's language; nothing for a section, which has only its name.
+    public static func word(_ kind: NoteKind) -> String {
         switch kind {
         case .point: return RecKitStrings.localized("Key points")
         case .decision: return RecKitStrings.localized("Decisions")
         case .todo: return RecKitStrings.localized("To-dos")
         case .question: return RecKitStrings.localized("Questions")
-        case .section: return sectionName ?? ""
+        case .section: return ""
         }
     }
 }
@@ -37,18 +41,19 @@ public struct NoteGroup: Identifiable, Equatable {
 /// docs/08 "Organizing": what the notes block makes of a recording's notes — the rules the detail and the iPhone's
 /// recording screen draw by, apart from the drawing so a test can hold them.
 public enum NoteGroups {
-    /// docs/09 "Notes view": Key points · Decisions · To-dos · Questions, then the user's sections in the order the
-    /// notes were made with. A group with no items is not there, header and all. [keyPoints] false leaves the key
-    /// points out — the recording screen's, as they come after Stop.
+    /// docs/09 "Notes view": Key points · Decisions · To-dos · Questions — each under the name the user gave it, if
+    /// they did — then the user's sections in the order the notes were made with. A group with no items is not there,
+    /// header and all. [keyPoints] false leaves the key points out — the recording screen's, as they come after Stop.
     public static func of(_ notes: RecordingNotes?, keyPoints: Bool = true) -> [NoteGroup] {
         guard let notes else { return [] }
+        let names = notes.names
         let builtIn = [
-            NoteGroup(kind: .point, items: keyPoints ? notes.points : []),
-            NoteGroup(kind: .decision, items: notes.decisions),
-            NoteGroup(kind: .todo, items: notes.todos),
-            NoteGroup(kind: .question, items: notes.questions),
+            NoteGroup(kind: .point, items: keyPoints ? notes.points : [], name: names.points),
+            NoteGroup(kind: .decision, items: notes.decisions, name: names.decisions),
+            NoteGroup(kind: .todo, items: notes.todos, name: names.todos),
+            NoteGroup(kind: .question, items: notes.questions, name: names.questions),
         ]
-        let sections = notes.sections.map { NoteGroup(kind: .section, items: $0.items, sectionId: $0.id, sectionName: $0.name) }
+        let sections = notes.sections.map { NoteGroup(kind: .section, items: $0.items, sectionId: $0.id, name: $0.name) }
         return (builtIn + sections).filter { !$0.items.isEmpty }
     }
 

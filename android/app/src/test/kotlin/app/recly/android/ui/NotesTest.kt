@@ -28,6 +28,7 @@ import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteKind
 import recly.core.notes.NoteLine
+import recly.core.notes.NoteNames
 import recly.core.notes.NoteSection
 import recly.core.notes.NoteSectionItems
 import recly.core.notes.NotesStage
@@ -38,7 +39,7 @@ import recly.core.storage.StorageKind
 /**
  * docs/08 "Organizing" · docs/09 "AI view" on the phone: which groups a recording's notes show and in what order, when
  * there is no block at all, what a row says, which line under it is the note's own, when the chips are there, what Edit
- * notes saves and says, how My sections are saved, that a job with only its notes left is a done row, and that a start
+ * notes saves and says, how Sections are saved, that a job with only its notes left is a done row, and that a start
  * from the record screen asks about organizing first — the decisions the screens make, as the pure steps they apply.
  */
 class NotesTest {
@@ -70,6 +71,15 @@ class NotesTest {
         assertEquals(listOf(null, null, null, "Risks", "Budget"), groups.map { it.name })
         // The record screen has no key points: they come after Stop. The user's sections still follow Questions.
         assertEquals(listOf(R.string.notes_decisions, R.string.notes_questions, null, null), noteGroups(notes, keyPoints = false).map { it.header })
+    }
+
+    @Test
+    fun `a built-in group the user renamed is headed by that name`() {
+        val notes = notes(decisions = listOf(item("d", NoteKind.DECISION)), todos = listOf(item("t", NoteKind.TODO))).copy(names = NoteNames(decisions = "Agreed"))
+
+        val groups = noteGroups(notes)
+        assertEquals(listOf(R.string.notes_decisions, R.string.notes_todos), groups.map { it.header })
+        assertEquals(listOf("Agreed", null), groups.map { it.name })
     }
 
     @Test
@@ -137,14 +147,83 @@ class NotesTest {
     }
 
     @Test
-    fun `My sections saves the named ones, in order, and a new one keeps the id it was given`() {
-        val drafts = listOf(SectionDraft(0, "s1", " Risks ", "What could slip"), SectionDraft(1, "", "", "half written"), SectionDraft(2, "", "Budget", ""))
+    fun `Sections saves the built-in groups and the named sections, in order, and a new one keeps the id it was given`() {
+        val drafts = listOf(
+            SectionDraft(0, "decision", "Decisions", "What the people settled.", NoteKind.DECISION),
+            SectionDraft(1, "s1", " Risks ", "What could slip"),
+            SectionDraft(2, "", "", "half written"),
+            SectionDraft(3, "", "Budget", ""),
+        )
 
-        assertEquals(listOf(NoteSection("s1", "Risks", "What could slip"), NoteSection("", "Budget", "")), keptSections(drafts))
-        val kept = listOf(NoteSection("s1", "Risks", "What could slip"), NoteSection("new", "Budget", ""))
-        assertEquals(listOf("s1", "", "new"), withIds(drafts, sent = listOf(0, 2), kept = kept).map { it.id })
+        val sent = listOf(NoteSection.default(NoteKind.DECISION), NoteSection("s1", "Risks", "What could slip"), NoteSection("", "Budget", ""))
+        assertEquals(sent, keptSections(drafts, WORDS))
+        assertEquals(listOf(0, 1, 3), drafts.filter { it.sent }.map { it.key })
+        val kept = listOf(NoteSection.default(NoteKind.DECISION), NoteSection("s1", "Risks", "What could slip"), NoteSection("new", "Budget", ""))
+        assertEquals(listOf("decision", "s1", "", "new"), withIds(drafts, sent = listOf(0, 1, 3), kept = kept).map { it.id })
         // A section removed before the save came back is not given anything.
-        assertEquals(listOf("s1"), withIds(drafts.take(1), sent = listOf(0, 2), kept = kept).map { it.id })
+        assertEquals(listOf("decision", "s1"), withIds(drafts.take(2), sent = listOf(0, 1, 3), kept = kept).map { it.id })
+    }
+
+    @Test
+    fun `a built-in group shows its own words, and sends them as empty`() {
+        val drafts = sectionDrafts(NoteSection.DEFAULTS + NoteSection("s1", "Risks", "What could slip"), WORDS)
+
+        assertEquals(listOf("Key points", "Decisions", "To-dos", "Questions", "Risks"), drafts.map { it.name })
+        assertEquals("What the people settled.", drafts[1].description)
+        // Untouched, the groups are as they come: nothing to save, nothing to restore.
+        assertEquals(NoteSection.DEFAULTS + NoteSection("s1", "Risks", "What could slip"), keptSections(drafts, WORDS))
+        assertFalse(NoteSection.changed(keptSections(drafts, WORDS)))
+
+        // A new name is sent trimmed; typed back as it was, it is the group's own again.
+        val renamed = drafts.map { if (it.kind == NoteKind.DECISION) it.copy(name = " Agreed ") else it }
+        assertEquals(NoteSection("decision", "Agreed", "", NoteKind.DECISION), keptSections(renamed, WORDS)[1])
+        assertTrue(NoteSection.changed(keptSections(renamed, WORDS)))
+        val back = renamed.map { if (it.kind == NoteKind.DECISION) it.copy(name = "Decisions ") else it }
+        assertEquals(NoteSection.default(NoteKind.DECISION), keptSections(back, WORDS)[1])
+        // A name the user gave it is what its field shows.
+        assertEquals("Agreed", sectionDrafts(listOf(NoteSection("decision", "Agreed", "", NoteKind.DECISION)), WORDS).single().name)
+    }
+
+    @Test
+    fun `a built-in group left blank stays, in its own words, and an unnamed section of the user's goes`() {
+        val drafts = sectionDrafts(NoteSection.DEFAULTS, WORDS).map { if (it.kind == NoteKind.TODO) it.copy(name = " ", description = "") else it } +
+            SectionDraft(4, "", "", "half written")
+
+        assertEquals(NoteSection.DEFAULTS, keptSections(drafts, WORDS), "the blank group is sent as its own, the unnamed section not at all")
+        val ended = endEditing(drafts, key = null, WORDS)
+        assertEquals(listOf("Key points", "Decisions", "To-dos", "Questions"), ended.map { it.name })
+        assertEquals("What someone will do.", ended[2].description)
+        // Only the row whose editing ended changes.
+        val todo = endEditing(drafts, key = 2, WORDS)
+        assertEquals("To-dos", todo[2].name)
+        assertEquals("half written", todo.last().description)
+    }
+
+    @Test
+    fun `Restore defaults brings the four groups back as they come and keeps the user's own sections`() {
+        val drafts = listOf(
+            SectionDraft(0, "todo", "Actions", "", NoteKind.TODO),
+            SectionDraft(1, "s1", "Risks", "What could slip"),
+            SectionDraft(2, "", "", ""),
+        )
+        assertTrue(NoteSection.changed(keptSections(drafts, WORDS)))
+
+        val restored = restoredDrafts(drafts, WORDS, firstKey = 3)
+        assertEquals(listOf(3, 4, 5, 6, 1, 2), restored.map { it.key })
+        assertEquals(drafts.drop(1), restored.drop(4), "the user's own, as they were")
+        assertEquals(NoteSection.DEFAULTS + NoteSection("s1", "Risks", "What could slip"), keptSections(restored, WORDS))
+        assertFalse(NoteSection.changed(keptSections(restored, WORDS)))
+    }
+
+    @Test
+    fun `Add section counts only the user's own sections`() {
+        val builtIns = sectionDrafts(NoteSection.DEFAULTS, WORDS)
+        val own = (4..6).map { SectionDraft(it, "s$it", "Section $it", "") }
+
+        assertTrue(addsSection(builtIns + own.take(2)))
+        assertFalse(addsSection(builtIns + own))
+        assertFalse(addsSection(own))
+        assertTrue(addsSection(emptyList()))
     }
 
     @Test
@@ -275,5 +354,13 @@ class NotesTest {
 
     private companion object {
         const val ID = "01J0NOTES"
+
+        /** The built-in groups' own words, as the app's resources give them. */
+        val WORDS = mapOf(
+            NoteKind.POINT to GroupWords("Key points", "Anything else worth remembering."),
+            NoteKind.DECISION to GroupWords("Decisions", "What the people settled."),
+            NoteKind.TODO to GroupWords("To-dos", "What someone will do."),
+            NoteKind.QUESTION to GroupWords("Questions", "Questions not answered."),
+        )
     }
 }

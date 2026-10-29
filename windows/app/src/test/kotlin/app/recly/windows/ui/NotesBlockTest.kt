@@ -29,6 +29,7 @@ import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteKind
 import recly.core.notes.NoteLine
+import recly.core.notes.NoteNames
 import recly.core.notes.NoteSectionItems
 import recly.core.notes.NotesStage
 import recly.core.notes.RecordingNotes
@@ -77,6 +78,16 @@ class NotesBlockTest {
             ),
         )
         assertEquals(emptyList(), noteGroups(notes(overview = "We met."), base))
+    }
+
+    @Test
+    fun `a built-in group the user renamed is headed by that name, the others by the app's word`() {
+        val decision = item("d", NoteKind.DECISION)
+        val todo = item("t", NoteKind.TODO)
+        assertEquals(
+            listOf("Agreed" to listOf(decision), "To-dos" to listOf(todo)),
+            noteGroups(notes(decisions = listOf(decision), todos = listOf(todo)).copy(names = NoteNames(decisions = "Agreed")), base),
+        )
     }
 
     @Test

@@ -146,7 +146,7 @@ class NoteTextTest {
               {"kind":"section2","text":"No such section","at":"00:00:03","quote":"nothing"}
             ]}""",
         )
-        val ask = NotesAsk(sections = listOf(NoteSection("01J9SECT10N000000000000000", "Risks", "")))
+        val ask = NotesAsk(sections = NoteSection.DEFAULTS + NoteSection("01J9SECT10N000000000000000", "Risks", ""))
         assertEquals(
             listOf(Extracted(NoteKind.SECTION, "May slip", null, null, 2.0, "it may slip", section = "01J9SECT10N000000000000000")),
             NotesAnswer.items(json, { it }, ask),

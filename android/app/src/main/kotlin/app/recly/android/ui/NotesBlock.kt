@@ -61,8 +61,9 @@ import recly.core.notes.RecordingNotes
 import recly.core.storage.StorageKind
 
 /**
- * docs/08 "Organizing": one group of a recording's notes — its [header], or for one of the user's own sections its
- * [name] — and its items, newest first as the core gives them.
+ * docs/08 "Organizing": one group of a recording's notes — its [name], the user's own for one of their sections or the
+ * one they gave a built-in group, else the app's word for it, [header] — and its items, newest first as the core gives
+ * them.
  */
 internal data class NoteGroup(@param:StringRes val header: Int?, val items: List<NoteItem>, val name: String? = null)
 
@@ -73,16 +74,16 @@ internal data class NoteGroup(@param:StringRes val header: Int?, val items: List
  */
 internal fun noteGroups(notes: RecordingNotes, keyPoints: Boolean = true): List<NoteGroup> = (
     listOfNotNull(
-        NoteGroup(R.string.notes_key_points, notes.points).takeIf { keyPoints },
-        NoteGroup(R.string.notes_decisions, notes.decisions),
-        NoteGroup(R.string.notes_todos, notes.todos),
-        NoteGroup(R.string.notes_questions, notes.questions),
+        NoteGroup(R.string.notes_key_points, notes.points, notes.names.points).takeIf { keyPoints },
+        NoteGroup(R.string.notes_decisions, notes.decisions, notes.names.decisions),
+        NoteGroup(R.string.notes_todos, notes.todos, notes.names.todos),
+        NoteGroup(R.string.notes_questions, notes.questions, notes.names.questions),
     ) + notes.sections.map { NoteGroup(null, it.items, it.name) }
 ).filter { it.items.isNotEmpty() }
 
-/** The group's header: the app's word for a built-in group, the user's own name for a section. */
+/** The group's header: the name the user gave it, else the app's word for a built-in group. */
 @Composable
-private fun NoteGroup.title(): String = header?.let { stringResource(it) } ?: name.orEmpty()
+private fun NoteGroup.title(): String = name ?: header?.let { stringResource(it) }.orEmpty()
 
 /** The two or three lines over the whole recording, when the final pass wrote any. */
 internal fun noteOverview(notes: RecordingNotes): String? = notes.overview?.trim()?.takeIf { it.isNotEmpty() }

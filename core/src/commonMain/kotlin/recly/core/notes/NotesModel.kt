@@ -60,11 +60,23 @@ data class NoteItem(
 data class NoteSectionItems(val id: String, val name: String, val items: List<NoteItem>)
 
 /**
+ * The names the user gave the built-in groups when a recording's notes were made (Settings → Notes); null where a
+ * group kept its own name — the app's word for it, in the app's language.
+ */
+data class NoteNames(
+    val points: String? = null,
+    val decisions: String? = null,
+    val todos: String? = null,
+    val questions: String? = null,
+)
+
+/**
  * A recording's notes (`Notes.observe`): the [overview] once the final pass has written one, and the items by
  * kind, each list newest first (latest [NoteItem.atSec] first) — [points] (key points) after Stop only, and the
- * user's [sections] in the order they were made with. [organizing] is true while a part or the final pass is being
- * worked on in this process. [failure] is the `CoreMessage` wire code of the last Organize again of this recording
- * that failed here, until the next one starts. [model] is the plan's name for the model the notes were made with.
+ * user's [sections] in the order they were made with. [names] heads a built-in group the user renamed. [organizing]
+ * is true while a part or the final pass is being worked on in this process. [failure] is the `CoreMessage` wire
+ * code of the last Organize again of this recording that failed here, until the next one starts. [model] is the
+ * plan's name for the model the notes were made with.
  */
 data class RecordingNotes(
     val recordingId: String,
@@ -78,6 +90,7 @@ data class RecordingNotes(
     val sections: List<NoteSectionItems> = emptyList(),
     val failure: String? = null,
     val model: String? = null,
+    val names: NoteNames = NoteNames(),
 ) {
     val isEmpty: Boolean
         get() = overview == null && points.isEmpty() && decisions.isEmpty() && todos.isEmpty() && questions.isEmpty() &&
@@ -86,23 +99,60 @@ data class RecordingNotes(
 
 /**
  * docs/08 "Organizing": what this device asks every recording's notes for — Settings → Notes. [instructions] are
- * the user's own words on how to write them; [sections] are up to [SECTIONS_MAX] sections of their own, each listed
- * with evidence like the built-in groups. Kept on this device, like About you.
+ * the user's own words on how to write them; [sections] are the built-in groups the user kept, in their order, then
+ * up to [SECTIONS_MAX] sections of the user's own, each listed with evidence. Kept on this device, like About you.
  */
 data class NotesPreferences(
     val instructions: String = "",
-    val sections: List<NoteSection> = emptyList(),
+    val sections: List<NoteSection> = NoteSection.DEFAULTS,
 ) {
+    /** `Restore defaults` has something to do: a built-in group was removed, renamed or described anew. */
+    val builtInsChanged: Boolean get() = NoteSection.changed(sections)
+
     companion object {
         const val INSTRUCTIONS_MAX: Int = 1000
+
+        /** The user's own sections; the built-in groups are not counted. */
         const val SECTIONS_MAX: Int = 3
         const val SECTION_NAME_MAX: Int = 40
         const val DESCRIPTION_MAX: Int = 200
     }
 }
 
-/** One of the user's own sections: its [name] heads it, its [description] tells ChatGPT what goes in it. An empty [id] is a new one. */
-data class NoteSection(val id: String, val name: String, val description: String)
+/**
+ * One section of the notes: a built-in group — [NoteKind.POINT], [NoteKind.DECISION], [NoteKind.TODO] or
+ * [NoteKind.QUESTION], whose [id] is its kind's (`decision`) — or one of the user's own ([NoteKind.SECTION]), whose
+ * empty [id] is a new one. Its [name] heads it and its [description] tells ChatGPT what goes in it. A built-in group's
+ * empty name or description is its own: the app's words, in the app's language, and its fixed meaning in the request.
+ * Whatever its words, a built-in group keeps its rules — a to-do's owner and due date, a decision as it stands at the
+ * end, a question only while unanswered, key points after Stop.
+ */
+data class NoteSection(val id: String, val name: String, val description: String, val kind: NoteKind = NoteKind.SECTION) {
+    val builtIn: Boolean get() = kind != NoteKind.SECTION
+
+    companion object {
+        /** The built-in groups, in the order the notes list them. */
+        val BUILT_IN: List<NoteKind> = listOf(NoteKind.POINT, NoteKind.DECISION, NoteKind.TODO, NoteKind.QUESTION)
+
+        /** The built-in groups as they come: all four, in their own words. */
+        val DEFAULTS: List<NoteSection> = BUILT_IN.map(::default)
+
+        /** [kind]'s built-in group as it comes. */
+        fun default(kind: NoteKind): NoteSection = NoteSection(id(kind), "", "", kind)
+
+        /** A built-in group's id: its kind as the notes file writes it. */
+        fun id(kind: NoteKind): String = when (kind) {
+            NoteKind.POINT -> "point"
+            NoteKind.DECISION -> "decision"
+            NoteKind.TODO -> "todo"
+            NoteKind.QUESTION -> "question"
+            NoteKind.SECTION -> "section"
+        }
+
+        /** Whether [sections] hold the built-in groups otherwise than as they come ([DEFAULTS]). */
+        fun changed(sections: List<NoteSection>): Boolean = sections.filter { it.builtIn } != DEFAULTS
+    }
+}
 
 /** The user's words for one item, from Edit notes (`Notes.edit`); empty deletes it. */
 data class NoteEdit(val itemId: String, val text: String)
@@ -137,8 +187,9 @@ data class NoteLine(
 
 /**
  * `{base}.notes.v1.json` beside the recording's parts (`spec/notes.schema.json`); once final, it also goes to the
- * recording's Drive or iCloud folder as `{base}.notes.json` ([NotesFolder]). [sections] are the user's sections the
- * items were made with; [overviewEditedAt] is set once the user changed the overview, which then stays theirs.
+ * recording's Drive or iCloud folder as `{base}.notes.json` ([NotesFolder]). [sections] are the sections the items
+ * were made with — the built-in groups asked for, then the user's own; [overviewEditedAt] is set once the user changed
+ * the overview, which then stays theirs.
  */
 @Serializable
 internal data class NotesFile(
@@ -196,8 +247,15 @@ internal data class StoredNote(
     val shown: String get() = userText ?: text
 }
 
+/** A [NoteSection] as Settings and the notes file keep it. */
 @Serializable
-internal data class StoredSection(val id: String, val name: String, val description: String = "")
+internal data class StoredSection(val id: String, val name: String, val description: String = "", val kind: NoteKind = NoteKind.SECTION) {
+    fun section(): NoteSection = NoteSection(id, name, description, kind)
+
+    companion object {
+        fun of(section: NoteSection): StoredSection = StoredSection(section.id, section.name, section.description, section.kind)
+    }
+}
 
 @Serializable
 internal data class NoteEvidence(val atSec: Double, val quote: String)

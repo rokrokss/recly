@@ -188,7 +188,7 @@ class ShotsTest {
         chatGpt.connection = ChatGptConnection.SignedIn("me@example.com", listOf(ChatGptModel("gpt-5.4", "GPT-5.4")), "gpt-5.4")
         chatGpt.saveNotesInstructions("Short lines. Name who owns each to-do.")
         chatGpt.endSection(chatGpt.addSection()!!, "Risks", "What could go wrong, and who is watching it.")
-        until { chatGpt.sections.singleOrNull()?.id?.isNotEmpty() == true }
+        until { chatGpt.sections.lastOrNull { !it.builtIn }?.id?.isNotEmpty() == true }
         for (ko in listOf(false, true)) {
             model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
             val lang = if (ko) "ko" else "en"
