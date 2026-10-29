@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import app.recly.windows.ui.theme.Space
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -75,6 +76,9 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
             style = mono.small.forWord(status.label),
             color = status.tone.ink(),
             textAlign = TextAlign.Center,
+            // On the sans 12's line box, as a compact control's label is: Consolas' own box is 2 shorter than Segoe UI's,
+            // and a time drawn at the badge's size must be one height with it (docs/09 "Component measurements").
+            modifier = Modifier.onLabelBaseline(MaterialTheme.typography.labelMedium),
         )
     }
 }

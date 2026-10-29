@@ -218,7 +218,7 @@ internal fun CompactControl(
  * ascent and descent instead, Consolas sat a pixel and a half above Segoe UI on Windows, where SF Mono and SF agree:
  * the box is a sans label's — one line of it, and each further line of the label — with the label's first baseline on
  * the sans one, so it centres as a sans label does. Ink that reaches past the sans face's ascent or descent hangs over.
- * A compact control's 12 is set on [sansStyle] at 12 the same way.
+ * A compact control's 12 is set on [sansStyle] at 12 the same way, and so is a status badge's word, so the two are one height.
  */
 @Composable
 internal fun Modifier.onLabelBaseline(sansStyle: TextStyle = MaterialTheme.typography.labelLarge): Modifier {
