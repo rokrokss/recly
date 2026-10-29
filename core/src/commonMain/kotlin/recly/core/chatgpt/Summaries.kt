@@ -345,8 +345,10 @@ class Summaries internal constructor(
          * twelve transcripts (Korean, English, Japanese, mixed; memos, calls, a lecture, names only talked about), twice
          * each. `gpt-6.1-sol` at `low` named all 56 speakers right and invented none, in 7.5 s (median); `gpt-5.6-terra` at
          * `medium` invented one, in 5.9 s; `gpt-6-luna` invented two or three at any effort, and `gpt-6-astra` took 50 s.
+         * `gpt-6.1-terra` took `gpt-5.6-terra`'s place on 2026-10-29 (user decision, 5.6 outdated) at its own default
+         * effort, `low`, without being measured.
          */
-        val FILL_MODELS: List<Pair<String, String>> = listOf("gpt-6.1-sol" to "low", "gpt-5.6-terra" to "medium")
+        val FILL_MODELS: List<Pair<String, String>> = listOf("gpt-6.1-sol" to "low", "gpt-6.1-terra" to "low")
 
         /** The longest question the user can ask in their own words. */
         const val ASK_MAX = 500

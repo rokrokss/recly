@@ -653,8 +653,8 @@ class ChatGptAccount internal constructor(
         const val PIECE = 2000
         const val MODEL_KEY = "chatgpt/model"
 
-        /** Listed by the plan but not offered for summaries (docs/09 "AI view", user decision 2026-10-09). */
-        val HIDDEN_MODELS = setOf("gpt-6-sol", "gpt-5.6-sol", "gpt-5.6-luna")
+        /** Listed by the plan but not offered for summaries (docs/09 "AI view", user decisions 2026-10-09 and 2026-10-29). */
+        val HIDDEN_MODELS = setOf("gpt-6-sol", "gpt-5.6-sol", "gpt-5.6-luna", "gpt-5.6-terra")
 
         /** docs "Refresh errors" (checked 2026-10-09). */
         val UNUSABLE_GRANT = setOf(

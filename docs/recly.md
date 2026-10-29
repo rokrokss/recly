@@ -2141,7 +2141,8 @@ succeeded.
 ChatGPT plan — a recording's notes (§8 "Organizing"), a question about it (§8 "Ask") and its title and speaker names (§8 "Titles and
 speaker names") — goes through `POST https://api.openai.com/v1/responses` (`store: false`, `stream: true`; `Summaries.complete`), with
 the model chosen in Settings → ChatGPT, OpenAI's first listed model by default (§15 §10). The model list leaves out `gpt-6-sol`,
-`gpt-5.6-sol` and `gpt-5.6-luna` (`ChatGptAccount.HIDDEN_MODELS`, 2026-10-09, user decision). Only text goes: audio never does, since the
+`gpt-5.6-sol` and `gpt-5.6-luna` (`ChatGptAccount.HIDDEN_MODELS`, 2026-10-09, user decision), and `gpt-5.6-terra` since `gpt-6.1-terra`
+came (2026-10-29, user decision). Only text goes: audio never does, since the
 plan's API takes neither audio nor transcription, which is why transcription stays the processing plan's (§8 "Providers").
 
 - **Language.** Notes and answers are written in one language named in English with its tag (`Korean (ko)`) (`SummaryLanguage`,
@@ -2376,12 +2377,13 @@ the user chose automatic instead.)
   most 60 characters, and `speakers`, each asked id's name only as the transcript gives it — what they call themselves, or what the others
   call them when talking to them, without honorifics that go with a name (`님`, `씨`, `さん`, `Mr.`), a form of address used alone
   (`팀장님`) kept — else null. A name said to someone is the listener's, and someone only talked about is no speaker. The
-  model is the first of `Summaries.FILL_MODELS` the plan offers — `gpt-6.1-sol` at reasoning effort `low`, then `gpt-5.6-terra` at
-  `medium` — else the one Settings picked, at its own effort; a plan that refuses `reasoning` is asked again without it (it is not in OpenAI's list of fields to leave
+  model is the first of `Summaries.FILL_MODELS` the plan offers — `gpt-6.1-sol` at reasoning effort `low`, then `gpt-6.1-terra` at
+  `low` — else the one Settings picked, at its own effort; a plan that refuses `reasoning` is asked again without it (it is not in OpenAI's list of fields to leave
   out; a real request on the Mac on 2026-10-15, gpt-6.1-sol at `low`, was accepted). The order was measured with Codex CLI on 2026-10-15: twelve transcripts in
   Korean, English, Japanese and a mix — meetings, a call, a lecture, a memo, names only talked about — twice each; `gpt-6.1-sol` at
   `low` named all 56 speakers right and invented none, in 7.5 s median, `gpt-5.6-terra` at `medium` invented one in 5.9 s, `gpt-6-luna`
-  invented two or three at any effort, and `gpt-6-astra` took about 50 s. It is given two minutes (`Summaries.FILL_TIMEOUT_SEC`).
+  invented two or three at any effort, and `gpt-6-astra` took about 50 s. `gpt-6.1-terra` took `gpt-5.6-terra`'s place on 2026-10-29 (user
+  decision, 5.6 outdated) at its own default effort, without being measured. It is given two minutes (`Summaries.FILL_TIMEOUT_SEC`).
 - **The answer** is read leniently (`FillAnswer.parse`: the object inside any fence or prose) and only for what was asked: the title's
   first line, cut to 100 characters; a name for an asked id only, up to 100 characters (§8 "Editing"), never `Me` or an id, and never
   one two speakers were both given — neither gets it.

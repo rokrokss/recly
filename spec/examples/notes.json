@@ -95,8 +95,8 @@
     2,
     3
   ],
-  "model": "gpt-5.6-terra",
-  "modelName": "GPT-5.6 Terra",
+  "model": "gpt-6.1-terra",
+  "modelName": "GPT-6.1 Terra",
   "sections": [
     {
       "id": "01J9ABCDEH0000000000000001",
