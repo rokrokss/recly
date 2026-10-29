@@ -153,7 +153,7 @@ object RecordingWaveform {
      * `selection.totalSec` long however the files decode.
      *
      * Off the main thread, because this reads every byte of the recording, and asked between
-     * buffers whether it is still wanted: a part is fifteen minutes (docs/03), which is fifteen
+     * buffers whether it is still wanted: a part is five minutes (docs/03), which is five
      * minutes of decoding for a bar that has already been replaced.
      *
      * A part that could not be decoded throws rather than shortening the timeline: half a shape

@@ -86,7 +86,7 @@ struct Options {
     /// Print whether the connection is metered and exit — asked before a model download.
     network_cost: bool,
     /// Overrides the `segmentSec` of the `start` command, and takes a fraction of a second — a test
-    /// cannot wait fifteen minutes for a boundary.
+    /// cannot wait five minutes for a boundary.
     segment_sec: Option<f64>,
     /// Overrides how long the watchdog's notice is kept ([`watchdog::LINGER`]), in seconds — a test
     /// cannot wait twelve hours for the helper to exit.

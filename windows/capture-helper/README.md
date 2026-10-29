@@ -8,7 +8,7 @@ the app takes `part_done` and writes it into the meta.
 ```
 Mic (WASAPI shared mode, event driven)      ─┐
                                              ├─► DriftCompensator ─► mic / sys / mix segments → .m4a
-System (default render endpoint loopback,   ─┘                       (900-second boundaries, the same
+System (default render endpoint loopback,   ─┘                       (300-second boundaries, the same
         a timer inserts silence frames                               part number on all three tracks)
         through silent stretches)
 ```
@@ -20,7 +20,7 @@ per line.
 
 | Direction | Line |
 |---|---|
-| App → helper | `{"command":"start","dir":…,"base":…,"segmentSec":900,"tracks":["mic","sys","mix"],"watchdog":{"title":…,"body":…}}` |
+| App → helper | `{"command":"start","dir":…,"base":…,"segmentSec":300,"tracks":["mic","sys","mix"],"watchdog":{"title":…,"body":…}}` |
 | App → helper | `{"command":"stop"}` · `{"command":"detect","on":true}` |
 | Helper → app | `{"event":"part_done","part":1,"track":"mic","file":…,"bytes":…,"sha256":…,"startOffsetSec":0.0,"durationSec":900.0}` |
 | Helper → app | `{"event":"mic_in_use","app":"Zoom.exe","inUse":true}` · `{"event":"error","message":…,"fatal":true}` |
@@ -67,7 +67,7 @@ sine waves **in real time**. That runs the whole path (resample → drift → mi
 
 ```bash
 cargo build
-{ echo '{"command":"start","dir":"/tmp/rec","base":"b","segmentSec":900,"tracks":["mic","sys","mix"]}'
+{ echo '{"command":"start","dir":"/tmp/rec","base":"b","segmentSec":300,"tracks":["mic","sys","mix"]}'
   sleep 4; echo '{"command":"stop"}'; } \
 | ./target/debug/recly-capture-helper --fake-source sine --segment-sec 1.5 --encoder ffmpeg
 ```

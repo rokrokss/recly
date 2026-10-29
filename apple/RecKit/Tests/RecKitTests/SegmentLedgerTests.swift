@@ -90,13 +90,13 @@ final class SegmentLedgerTests: XCTestCase {
         XCTAssertEqual(splitter.framesInSegment, 1)
     }
 
-    /// 900 s × 16 kHz, the real number, and it fits in the 32-bit frame count AVFoundation counts in.
-    func testTheRealSegmentIsFourteenPointFourMillionFrames() {
+    /// 300 s × 16 kHz, the real number, and it fits in the 32-bit frame count AVFoundation counts in.
+    func testTheRealSegmentIsFourPointEightMillionFrames() {
         let splitter = SegmentSplitter(
             framesPerSegment: AVAudioFrameCount(SegmentedRecorder.defaultSegmentSec * SegmentedRecorder.sampleRateHz)
         )
 
-        XCTAssertEqual(splitter.framesPerSegment, 14_400_000)
+        XCTAssertEqual(splitter.framesPerSegment, 4_800_000)
     }
 
     // MARK: - Names and offsets

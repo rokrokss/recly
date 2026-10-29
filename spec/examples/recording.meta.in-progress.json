@@ -7,13 +7,13 @@
   "deviceName": "Galaxy Watch7",
   "startedAt": "2026-08-26T01:00:00.000Z",
   "timezone": "Asia/Seoul",
-  "audio": { "codec": "aac-lc", "container": "m4a", "sampleRateHz": 16000, "channels": 1, "bitrateKbps": 32, "segmentSec": 900 },
+  "audio": { "codec": "aac-lc", "container": "m4a", "sampleRateHz": 16000, "channels": 1, "bitrateKbps": 32, "segmentSec": 300 },
   "tracks": ["mono"],
   "parts": [
-    { "part": 1, "track": "mono", "file": "20260826T010000Z_watch_01J9WATC_p001_mono.m4a", "bytes": 3601234,
-      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", "startOffsetSec": 0, "durationSec": 900 },
-    { "part": 2, "track": "mono", "file": "20260826T010000Z_watch_01J9WATC_p002_mono.m4a", "bytes": 3600871,
-      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09", "startOffsetSec": 900, "durationSec": 900 }
+    { "part": 1, "track": "mono", "file": "20260826T010000Z_watch_01J9WATC_p001_mono.m4a", "bytes": 1201234,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", "startOffsetSec": 0, "durationSec": 300 },
+    { "part": 2, "track": "mono", "file": "20260826T010000Z_watch_01J9WATC_p002_mono.m4a", "bytes": 1200871,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09", "startOffsetSec": 300, "durationSec": 300 }
   ],
   "status": "recording"
 }

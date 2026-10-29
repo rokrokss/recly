@@ -216,7 +216,7 @@ internal class AudioImport(
 
     companion object {
         /** ADR-006's nominal part length. */
-        const val SEGMENT_SEC: Int = 900
+        const val SEGMENT_SEC: Int = 300
 
         /** Beside the recordings, so nothing that scans a recording's directory meets a half-made part. */
         private const val STAGING = "import-tmp"

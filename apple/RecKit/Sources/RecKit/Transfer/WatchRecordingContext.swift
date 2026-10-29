@@ -14,7 +14,7 @@ public enum WatchRecordingState: Equatable, Sendable {
 
 /// docs/03 "Watch → phone transfer contract": the watch's own `updateApplicationContext` payload, and the same
 /// dictionary as a live message while the phone is reachable — a context does not wake the iPhone app. It is
-/// apart from the parts because the first part only comes a segment (15 minutes) in.
+/// apart from the parts because the first part only comes a segment (5 minutes) in.
 ///
 /// Like [WatchContext] it is a *replacing* snapshot: the phone keeps the newest one and draws it, and none of
 /// it reaches the core or Drive (docs/15 §4). Linked by both apps and by neither extension.

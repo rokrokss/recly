@@ -46,7 +46,7 @@ data class RecordingOutcome(
  * The boundary itself is gapless because the platform, not this class, switches the file:
  * `setNextOutputFile` is armed one segment ahead and `MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED`
  * says the previous one is closed and safe to hash. Tearing the recorder down and building a new
- * one would cost a `gaps` entry every fifteen minutes.
+ * one would cost a `gaps` entry every five minutes.
  *
  * Not thread-safe by accident: `start`/`stop` and the segment callback all mutate the same session
  * under [mutex], because the callback arrives on the platform's thread and the caller's is a
@@ -391,8 +391,8 @@ class SegmentedRecorder(
     private fun audioManager(): AudioManager = context.getSystemService(AudioManager::class.java)
 
     companion object {
-        /** ADR-006. Overridable so a smoke test does not have to run for fifteen minutes. */
-        const val DEFAULT_SEGMENT_SEC: Int = 900
+        /** ADR-006. Overridable so a smoke test does not have to run for five minutes. */
+        const val DEFAULT_SEGMENT_SEC: Int = 300
         const val BITRATE_KBPS: Int = 32
         const val PREFERRED_SAMPLE_RATE_HZ: Int = 16_000
 

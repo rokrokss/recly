@@ -245,8 +245,8 @@ object RecordingWaveform {
      * part contributes exactly `durationSec / windowSec` windows, rounded up, padded with silence
      * or truncated. So the peaks are `selection.totalSec` long however the files decode.
      *
-     * Asked between parts and between reads whether it is still wanted, because a part is fifteen
-     * minutes (docs/03) — which is fifteen minutes of decoding for a bar that has already been
+     * Asked between parts and between reads whether it is still wanted, because a part is five
+     * minutes (docs/03) — which is five minutes of decoding for a bar that has already been
      * replaced. What it has got so far is handed back then, for the caller to throw away.
      *
      * @param onProcess the decoder of the part being read, and null once it is gone. A flag alone

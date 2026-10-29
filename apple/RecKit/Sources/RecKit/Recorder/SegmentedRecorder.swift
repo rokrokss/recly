@@ -22,8 +22,8 @@ import ReclyCore
 /// frames with it (docs/03 "the same start time and segment boundaries"). The system stream is put on that timeline
 /// by `DriftCompensator` before it ever gets here.
 public final class SegmentedRecorder {
-    /// ADR-006. Overridable so a smoke test does not have to run for fifteen minutes.
-    public static let defaultSegmentSec = 900
+    /// ADR-006. Overridable so a smoke test does not have to run for five minutes.
+    public static let defaultSegmentSec = 300
     public static let bitrateKbps = 32
     /// docs/03: 16 kHz mono. Unlike Android there is no fallback rate to negotiate — the device's
     /// own rate is whatever it is and `AVAudioConverter` resamples it, so the file always gets the

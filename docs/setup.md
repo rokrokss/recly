@@ -162,7 +162,7 @@ recording.**
   list each other's recordings. **Search titles and transcripts** sits above the list on the phones
   and in the Mac and Windows **Details** windows.
 - **In your storage**: one folder per recording, for example
-  `recly/memo/2026-10/20261006T010000Z_phone_01J9ABCD/`, holding the audio in parts of about 15
+  `recly/memo/2026-10/20261006T010000Z_phone_01J9ABCD/`, holding the audio in parts of about 5
   minutes, `….meta.json`, with transcription `….transcript.txt` and `….transcript.json`, and in Google
   Drive or iCloud the recording's notes as `….notes.json` once organized. With a
   local folder you can choose **Monthly folders** or **One folder** (`recly/memo/`) under **Recording processing** →

@@ -128,7 +128,7 @@ class WindowsRecorder(
     ) {
         /**
          * The end of the furthest part filed so far. A maximum and not a sum: the three tracks
-         * cover the same fifteen minutes, and adding them up would report an hour as three.
+         * cover the same five minutes, and adding them up would report an hour as three.
          */
         @Volatile var recordedSec: Double = 0.0
 
@@ -465,7 +465,7 @@ class WindowsRecorder(
 
     companion object {
         /** ADR-006. */
-        const val DEFAULT_SEGMENT_SEC: Int = 900
+        const val DEFAULT_SEGMENT_SEC: Int = 300
         const val BITRATE_KBPS: Int = 32
         const val SAMPLE_RATE_HZ: Int = 16_000
 

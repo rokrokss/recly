@@ -40,7 +40,7 @@ class AudioImportTest {
         val started = CompletableDeferred<String>()
 
         override suspend fun transcode(sourcePath: String, outDir: String, segmentSec: Int): TranscodeResult {
-            assertEquals(900, segmentSec)
+            assertEquals(300, segmentSec)
             started.complete(outDir.toPath().name)
             hold?.await()
             failure?.let { throw it }
@@ -49,7 +49,7 @@ class AudioImportTest {
                 (1..count).map { index ->
                     val name = "out-$index.m4a"
                     f.fs.write(outDir.toPath() / name) { writeUtf8("audio") }
-                    ImportedPart(name, if (index < count) 900.0 else 61.5)
+                    ImportedPart(name, if (index < count) 300.0 else 61.5)
                 },
             )
         }
@@ -66,11 +66,11 @@ class AudioImportTest {
         assertEquals("Interview.final", record.meta.title)
         assertEquals("2026-08-20T09:30:00.000Z", record.meta.startedAt)
         assertEquals(fileDate, recly.core.ids.Ulid.timestamp(id), "the id dates the file, as a recording's dates its start")
-        assertEquals(961.5, record.meta.durationSec)
+        assertEquals(361.5, record.meta.durationSec)
         val base = MetaWriter.baseName(record.meta)
         assertTrue(base.startsWith("20260820T093000Z_import_"))
         assertEquals(listOf("${base}_p001_mono.m4a", "${base}_p002_mono.m4a"), record.meta.parts.map { it.file })
-        assertEquals(listOf(0.0, 900.0), record.meta.parts.map { it.startOffsetSec })
+        assertEquals(listOf(0.0, 300.0), record.meta.parts.map { it.startOffsetSec })
         assertEquals(PartHasher.sha256("audio".encodeToByteArray()), record.meta.parts.first().sha256)
         assertTrue(record.meta.parts.all { f.fs.exists(record.dir / it.file) })
         assertFalse(f.fs.exists("/data/import-tmp/$id".toPath()))

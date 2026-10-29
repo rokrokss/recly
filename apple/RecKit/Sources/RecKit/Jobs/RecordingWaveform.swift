@@ -117,8 +117,8 @@ enum RecordingWaveform {
         var counted = 0
         var loudest: Float = 0
         while let buffer = output.copyNextSampleBuffer() {
-            // Every buffer and not only every part: a part is fifteen minutes (docs/03), which is
-            // fifteen minutes of decoding for a page that has already been replaced. The reader is
+            // Every buffer and not only every part: a part is five minutes (docs/03), which is
+            // five minutes of decoding for a page that has already been replaced. The reader is
             // told to stop as well, because it has its own thread ahead of this loop.
             guard !Task.isCancelled else {
                 reader.cancelReading()

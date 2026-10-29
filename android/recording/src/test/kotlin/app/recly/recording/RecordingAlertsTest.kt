@@ -15,7 +15,7 @@ class RecordingAlertsTest {
 
     @Test
     fun `the watchdog waits two segments, so one late boundary is not a dead recording`() {
-        assertEquals(30 * minute, RecordingAlerts.watchdogDelayMs(SegmentedRecorder.DEFAULT_SEGMENT_SEC))
+        assertEquals(10 * minute, RecordingAlerts.watchdogDelayMs(SegmentedRecorder.DEFAULT_SEGMENT_SEC))
         assertEquals(20_000L, RecordingAlerts.watchdogDelayMs(10))
     }
 

@@ -80,7 +80,7 @@ the current rule.
 | ADR-003 | When the phone and the watch record at the same time, there are two files and they are not linked. `recordingId` is an independent per-device ULID, and there is no session linking (session id) |
 | ADR-004 | The workflow engine, Drive client, webhooks, sync and job queue live in a single Kotlin Multiplatform `core/`. Workflow logic is not written twice. (Webhooks retired 2026-09-24) |
 | ADR-005 | Shells: Android/Wear are Kotlin + Compose, iOS · watchOS · macOS are SwiftUI + KMP XCFramework, Windows is Compose Desktop (JVM) + a Rust capture helper |
-| ADR-006 | Audio is AAC-LC `.m4a`, 16 kHz mono 32 kbps, nominal 900-second segments. Mobile and watch have one track, `mono`; desktop has three tracks, `mic` · `sys` · `mix`. A file the user imports is transcoded on the device into the same format, one `mono` track (2026-10-07, §3 "Naming rules") |
+| ADR-006 | Audio is AAC-LC `.m4a`, 16 kHz mono 32 kbps, nominal 300-second segments — the parts a recording is transcribed in while it records (2026-10-29, §8 "Organizing"). Mobile and watch have one track, `mono`; desktop has three tracks, `mic` · `sys` · `mix`. A file the user imports is transcoded on the device into the same format, one `mono` track (2026-10-07, §3 "Naming rules") |
 | ADR-007 | Workflow definitions are a single **device-local document**, with no backend and no sync. Moving them between devices is the settings export/import (§5) — the file format is the document serialization as is (retired 2026-09-24) |
 | ADR-008 | Workflow JSON carries only the secret's **name** (`secretRef`); the value is in each device's secure storage. On a device without the value, that step fails with `MISSING_SECRET`. Values are not synchronized and never go into an export file — keys are entered on each device. (2026-09-24: workflow JSON retired — the same rule applies to `secretRef` in the recording processing settings) |
 | ADR-009 | The only OAuth scope is `drive.file`, and the consent screen is in Production. The full `drive` scope is never requested |
@@ -186,7 +186,7 @@ rules on all six platforms; the two that are pure logic — the silence rule and
 
 | Rule | What happens | Galaxy Watch · Android phone | Apple Watch · iPhone | Mac | Windows |
 |---|---|---|---|---|---|
-| **Watchdog** | If the recording process dies, `Recording may have stopped` / `Open Recly to check.` Tap → the app (Windows: the click only dismisses it — the helper does not start the app). On the phones, watches and the Mac a notice is scheduled `2 × segmentSec` ahead (30 min at 900 s) when the recording starts and pushed back at every part boundary; the stop, a fatal failure and the wait below withdraw it, and a dead process cannot, so it fires. Windows records in a separate process, the capture helper, which outlives the app: when the app dies under a recording — no `stop`, and the app's end of the helper's stdout gone with its process (a write fails) — the helper closes the open segment (the next launch's recovery files it), raises the same notice at once and then exits (§14 "Long recordings") | ✓ alarm | ✓ | ✓ | ✓ the helper |
+| **Watchdog** | If the recording process dies, `Recording may have stopped` / `Open Recly to check.` Tap → the app (Windows: the click only dismisses it — the helper does not start the app). On the phones, watches and the Mac a notice is scheduled `2 × segmentSec` ahead (10 min at 300 s) when the recording starts and pushed back at every part boundary; the stop, a fatal failure and the wait below withdraw it, and a dead process cannot, so it fires. Windows records in a separate process, the capture helper, which outlives the app: when the app dies under a recording — no `stop`, and the app's end of the helper's stdout gone with its process (a write fails) — the helper closes the open segment (the next launch's recovery files it), raises the same notice at once and then exits (§14 "Long recordings") | ✓ alarm | ✓ | ✓ | ✓ the helper |
 | **Reminder** | 2026-10-27: when nobody has spoken for 10 minutes while the recording runs — a recording forgotten or walked away from — `Still recording` / `No one has spoken for 10 minutes.`, posted at once, with one `Stop` that stops like the ongoing notification's or Live Activity's stop — no title is asked, the recording is handed over as it is. Once per silence: after speech, the next 10 silent minutes remind again; never during a conversation. Heard by the recording process itself from the live strip's 0.1 s peak windows — on Windows the capture helper's `level` lines, the strip's windows there (the core's `SilenceReminder`): the floor is the quietest window of the last minute; a window sounds at ≥ floor + 10 dB and ≥ about −55 dBFS, so no microphone gain is assumed; speech is ≥ 2 s of sounding windows within the last 10 s, and only speech resets the 10 minutes (a cough, a door or a chime is shorter). A steady noise — a fan, an air conditioner — becomes the floor within a minute and counts as silence. A window of digital zero (a microphone taken away, e.g. by a call) neither counts nor resets. A reminder's Stop only stops the recording it was posted for. On the desktops the windows are the `mix` track's, so the other side of a call speaking is speech | ✓ | ✓ | ✓ | ✓ a tray balloon **without** `Stop` — an AWT balloon has no buttons; clicking it opens the tray popup, where the stop is |
 | **Battery stop** | Battery ≤ 5 % and not charging → the recording is stopped the same way (the open part is filed, the recording handed over, no title asked), then `Recording stopped: battery low`. Not for a recording that **started** at ≤ 5 % unplugged: that was the user's choice, and stopping it at once would leave next to nothing. An unreadable level stops nothing (the core's `BatteryStop`, fed a whole percent). Android reads the sticky `ACTION_BATTERY_CHANGED` at every change; the others every 60 s — `UIDevice` / `WKInterfaceDevice`, the Mac's IOKit power sources (`IOPSCopyPowerSourcesInfo`), Windows' `GetSystemPowerStatus` | ✓ | ✓ | ✓ laptops | ✓ laptops |
 | **Waiting to resume** | When a restart after an interruption runs out of its 10 attempts, the recording does not end: the open part is filed where it stands (on the Apple Watch it goes to the phone like any part filed while recording, §3 "Watch → phone transfer contract"), the watchdog and a reminder still shown are withdrawn, `Recording paused` / `Open Recly to keep recording.` is posted. When the app next becomes active it reattaches once; success writes one `gaps` range over the whole wait (reason unchanged) and re-arms the watchdog, failure keeps waiting. No audio arrives while it waits, so the silence reminder's 10 minutes do not run. A stop while waiting finalizes normally. No timeout — a suspended iOS app runs no timers | — | ✓ | — | — |
@@ -497,7 +497,7 @@ Schema: [`spec/recording.meta.schema.json`](../spec/recording.meta.schema.json).
 | Sample rate | 16,000 Hz (if the device does not support it, fall back to 44,100 Hz and record that in the meta) |
 | Channels | Mono |
 | Bitrate | 32 kbps |
-| Segment | Nominally 900 seconds. Boundaries are lossless — Android uses `setMaxFileSize(900 s × bitrate × 1.07)` + `setNextOutputFile` (`setMaxDuration` is not used because it **stops** the recording instead of rolling over to the next file; the actual length is therefore ± a few % by bytes), Apple swaps the `AVAudioFile`, and on Windows the helper cuts the PCM and hands it to ffmpeg. Each part's `durationSec` is canonical; `audio.segmentSec` is the nominal value. Unavoidable gaps are recorded in the meta's `gaps` |
+| Segment | Nominally 300 seconds. Boundaries are lossless — Android uses `setMaxFileSize(300 s × bitrate × 1.07)` + `setNextOutputFile` (`setMaxDuration` is not used because it **stops** the recording instead of rolling over to the next file; the actual length is therefore ± a few % by bytes), Apple swaps the `AVAudioFile`, and on Windows the helper cuts the PCM and hands it to ffmpeg. Each part's `durationSec` is canonical; `audio.segmentSec` is the nominal value. Unavoidable gaps are recorded in the meta's `gaps` |
 | **Tracks** | Mobile · watch: `mono`. Desktop: `mic`, `sys`, `mix` — each with the settings above, and they share **the same start time and segment boundaries** |
 
 Size: 14.4 MB per track per hour, 3.6 MB per segment. Desktop with 3 tracks: 43 MB per hour. Because one segment is 3.6 MB,
@@ -561,11 +561,11 @@ After `stop`, `status: finalized`.
   "endedAt": "2026-08-26T02:00:12.400Z",
   "durationSec": 3612.4,
   "timezone": "Asia/Seoul",
-  "audio": { "codec": "aac-lc", "container": "m4a", "sampleRateHz": 16000, "channels": 1, "bitrateKbps": 32, "segmentSec": 900 },
+  "audio": { "codec": "aac-lc", "container": "m4a", "sampleRateHz": 16000, "channels": 1, "bitrateKbps": 32, "segmentSec": 300 },
   "tracks": ["mic", "sys", "mix"],
   "parts": [
     { "part": 1, "track": "mic", "file": "20260826T010000Z_desktop_01J9ABCD_p001_mic.m4a",
-      "bytes": 3601234, "sha256": "…", "startOffsetSec": 0, "durationSec": 900 }
+      "bytes": 1201234, "sha256": "…", "startOffsetSec": 0, "durationSec": 300 }
   ],
   "gaps": [ { "startSec": 1800.0, "endSec": 1800.3, "reason": "segment_restart" } ],
   "silenced": [ { "startSec": 120.0, "endSec": 125.5, "reason": "mic_taken" } ],
@@ -1135,7 +1135,7 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   is `RecordingRecord.receiving` (the table at the end of §3 "Recordings from other devices").
 - **The phone shows that the watch is recording** (2026-10-28, both watches alike). The watch publishes its recorder's state apart
   from the parts — `{recordingId, startedAt}` while it records, nothing once it stops — because the first part only comes a segment
-  (15 minutes) in. It is written when the recorder starts recording, when it stops, and at app start when nothing is recording, so a
+  (5 minutes) in. It is written when the recorder starts recording, when it stops, and at app start when nothing is recording, so a
   process that died mid-recording leaves nothing standing once the app runs again. Galaxy Watch: a Data Layer item at `/rec/recording`
   (urgent), its payload hand-written JSON `{"recordingId":"…","startedAt":"…"}` (ISO-8601, UTC), deleted the moment the recorder leaves
   recording (before the finalize) — the watch's own item only, by its node id, so a phone paired with two watches keeps the other's. Apple Watch: the
@@ -1893,8 +1893,8 @@ limits decide (2026-10-27, `TranscribeChunks`):
   under the `UNSUPPORTED_AUDIO` sentence.
 - **Over them**, it goes as **overlapping pieces of the same track**, planned from the meta's part list. A piece is consecutive whole parts
   within **90%** of every declared limit (the margin covers the joined file's container), and every piece after the first starts with
-  **the last part of the one before** — a whole part, 15 minutes, of overlap — then new parts. The plan has the fewest pieces that fit, as
-  even as they can be: `clova`'s 2 hours hold seven parts, so 3 hours (12 parts) go as parts 1–6 and 6–12. Only when no plan can — one
+  **the last part of the one before** — a whole part, 5 minutes, of overlap — then new parts. The plan has the fewest pieces that fit, as
+  even as they can be: `clova`'s 2 hours hold twenty-one parts, so 3 hours (36 parts) go as parts 1–18 and 18–36. Only when no plan can — one
   part alone, or two parts in a row, over 90% of a limit — does it fail with `UNSUPPORTED_AUDIO` before sending any bytes, the detail naming
   both; for a provider that took 25 minutes, `45m exceeds {provider}'s 25m; parts 1 and 2 together are 30m, over 90% of 25m`.
 - The pieces go **one after another**, each joined, checked and submitted like a whole recording; a synchronous provider answers each in
@@ -2211,8 +2211,9 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   eight digits or more become `[phone#1]`, `[email#1]` and `[number#1]` — the same value the same placeholder within a request — and
   are put back into the answer on the device, before the quote check. With the lines: the user's instructions and About you (§8
   "AI requests"). No title, never audio.
-- **While recording (provisional).** Each part of the transcription track (`mono`, else `mix`) that the recorder files while a
-  recording of this device is in progress (`RecordingRepository.addPart`) — and, on the phone, each part of a watch's recording that
+- **While recording (provisional).** Each part of the transcription track (`mono`, else `mix`) — one every 5 minutes (ADR-006) — that
+  the recorder files while a recording of this device is in progress (`RecordingRepository.addPart`) — and, on the phone, each part
+  of a watch's recording that
   arrives while the watch still records (2026-10-27, §3 "Watch → phone transfer contract": filed and listed by its in-progress meta,
   `TransferReceiver.partReceived`), but not an import, and never on the watch itself — is transcribed **on its own** with the settings
   the recording froze when it started (§5; a watch's, when its first in-progress meta arrived):
@@ -2294,7 +2295,8 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   device reads (§1c). It survives the 7-day audio cleanup and goes with the recording. The parts' transcripts made while recording are
   deleted once the final notes are written.
 - **Cost.** With an external provider each part is transcribed twice — once on its own while recording, once in the whole after
-  Stop — and the provider bills both; every part and conversation is a request that counts toward the ChatGPT plan's usage.
+  Stop — and the provider bills both; every part (up to twelve an hour while recording) and conversation is a request that counts toward the
+  ChatGPT plan's usage.
 - **Log events**: `organize.consent` and `organize.consent.cleared`; while recording `organize.part.transcribed` (part, provider,
   segments), `organize.part.start` (part, model, how many values became placeholders), `organize.part.done` (items, and how many were
   dropped, matched a deletion or repeated), `organize.part.skipped` (`reason`: `short`, `not_offered`, `consent`, `provider`,
