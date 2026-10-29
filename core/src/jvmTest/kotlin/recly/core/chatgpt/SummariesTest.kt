@@ -15,7 +15,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okio.Path.Companion.toPath
 import recly.core.message.CoreMessage
-import recly.core.model.Highlight
 import recly.core.model.Track
 import recly.core.privacy.TransferConsents
 import recly.core.privacy.TransferTargets
@@ -31,7 +30,6 @@ import recly.core.transcribe.TranscriptSpeaker
 class SummariesTest {
     private class Fixture(
         val transcript: Transcript? = TRANSCRIPT,
-        highlights: List<Highlight> = emptyList(),
         requireTransferConsent: Boolean = false,
         locale: String = "en",
     ) {
@@ -39,7 +37,7 @@ class SummariesTest {
         val recordings = RecordingRepository(h.db, h.deps)
         val consents = TransferConsents(h.db, h.deps)
         val summaries = Summaries(h.db, h.deps, h.account, recordings, { transcript }, consents)
-        val meta = testMeta(title = "Weekly sync").copy(highlights = highlights)
+        val meta = testMeta(title = "Weekly sync")
         val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
 
         suspend fun ready() {
@@ -79,7 +77,6 @@ class SummariesTest {
         assertTrue("You answer a question about a recording's transcript." in instructions)
         assertTrue("Mina: We ship on Friday." in input)
         assertFalse("Weekly sync" in input, "the transcript's text only — not the title")
-        assertFalse(MARKED in input, "no marks, no heading")
         assertTrue(input.endsWith("${Summaries.QUESTION_HEADING}\n${Summaries.presetQuestion(AskPreset.FOLLOW_UP_EMAIL)}\n"))
         assertTrue("summary.ask.done" in f.h.logger.events)
 
@@ -102,8 +99,8 @@ class SummariesTest {
     }
 
     @Test
-    fun `About you and the marked moments shape the question`() = runBlocking {
-        val f = Fixture(highlights = listOf(Highlight(2.0)))
+    fun `About you shapes the question`() = runBlocking {
+        val f = Fixture()
         f.ready()
         assertEquals("Product manager", f.summaries.setPreferences(SummaryPreferences(aboutMe = "  Product manager  ")).aboutMe)
         f.h.server.reply(stream("- Mina: ship"), headers = SSE)
@@ -112,8 +109,6 @@ class SummariesTest {
 
         val (instructions, input) = f.request()
         assertTrue("About the person who made the recording, to judge what matters to them: Product manager\n" in instructions)
-        assertTrue("moments they marked as important" in instructions)
-        assertTrue("$MARKED\n- [00:00:02] We ship on Friday.\n\n${Summaries.QUESTION_HEADING}\n" in input, input)
         assertFalse("Weekly sync" in input, "still no title")
         assertEquals(SummaryPreferences.ABOUT_MAX, f.summaries.setPreferences(SummaryPreferences(aboutMe = "x".repeat(400))).aboutMe.length)
     }
@@ -279,7 +274,6 @@ class SummariesTest {
 
     private companion object {
         const val ID = "01J9ABCDEF0123456789ABCDEF"
-        const val MARKED = Summaries.MARKED_HEADING
         val SSE = mapOf("Content-Type" to "text/event-stream")
 
         val TRANSCRIPT = Transcript(

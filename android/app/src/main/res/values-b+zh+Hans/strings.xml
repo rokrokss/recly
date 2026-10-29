@@ -292,11 +292,6 @@
     <string name="processing_language_auto">自动</string>
     <string name="processing_language_mixed">韩语和英语</string>
     <string name="processing_language_unsupported">所选转录方式不支持此语言。</string>
-    <string name="highlight">标记</string>
-    <string name="highlight_status">标记 · %1$s</string>
-    <string name="highlight_tick">标记%1$s</string>
-    <string name="highlight_remove">移除标记</string>
-    <string name="highlight_add_at">在%1$s添加标记</string>
     <string name="detail_share">分享</string>
     <string name="detail_more">更多</string>
     <string name="detail_edit">编辑转录文本</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">请在浏览器中完成登录</string>
     <string name="chatgpt_sign_in_failed">无法登录ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">已在此设备上退出登录，但OpenAI未确认。你可以在ChatGPT设置中移除Recly。</string>
-    <string name="chatgpt_footnote">笔记和提问会把转写文本、你标记的时刻以及你的笔记设置发送给 OpenAI——绝不发送音频——并计入你的 ChatGPT 套餐用量。</string>
+    <string name="chatgpt_footnote">笔记和提问会把转写文本以及你的笔记设置发送给 OpenAI——绝不发送音频——并计入你的 ChatGPT 套餐用量。</string>
     <string name="chatgpt_welcome_title">你正在使用ChatGPT套餐</string>
     <string name="chatgpt_welcome_body">Recly中的笔记使用你的ChatGPT套餐。你可以在ChatGPT设置中管理用量。</string>
     <string name="chatgpt_got_it">知道了</string>

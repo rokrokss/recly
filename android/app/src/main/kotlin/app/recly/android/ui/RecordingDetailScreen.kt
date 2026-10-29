@@ -70,11 +70,6 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.activity.compose.BackHandler
@@ -129,13 +124,10 @@ import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
 import kotlinx.coroutines.delay
 import recly.core.transcribe.TranscriptAvailability
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.runtime.CompositionLocalProvider
 
 /**
- * What the detail can do beyond reading — the More menu, Share, the editor, playback speed and the
- * highlights — and this device's playback preferences. [MainActivity] builds it from [JobsViewModel].
+ * What the detail can do beyond reading — the More menu, Share, the editor and playback speed — and
+ * this device's playback preferences. [MainActivity] builds it from [JobsViewModel].
  */
 class DetailActions(
     val playbackSpeed: Float = 1f,
@@ -144,7 +136,6 @@ class DetailActions(
     val transcription: ProcessingTranscription? = null,
     val onSpeed: (Float) -> Unit = {},
     val onSkipSilence: (Boolean) -> Unit = {},
-    val onHighlights: (List<Double>) -> Unit = {},
     val onExport: suspend (ExportFormat) -> String? = { null },
     val onEdit: suspend (TranscriptEdit) -> EditResult = { EditResult.NoTranscript },
     val onRetranscribe: suspend () -> RetranscribeResult? = { null },
@@ -352,7 +343,6 @@ fun RecordingDetailScreen(
             saveNow(group, TranscriptEdit.RenameSpeaker(id, name))
         }, onCancel = { speakerNaming = null })
     }
-    var highlightMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
     // docs/09 "AI view": which of the two the page shows — the transcript whenever it opens, unless a search found the
     // notes alone.
     var view by remember(detail.recordingId) { mutableStateOf(if (detail.openNotes) DetailView.NOTES else DetailView.TRANSCRIPT) }
@@ -460,11 +450,10 @@ fun RecordingDetailScreen(
                         // `Still recording` — the core refuses to rename or edit one. Not before the load has said
                         // which of the two this is.
                         if (!detail.loading) {
-                            MoreButton(detail, transcription, player.positionSec, actions.chatGpt, MoreActions(
+                            MoreButton(detail, transcription, actions.chatGpt, MoreActions(
                                 onRename = { renaming = true },
                                 onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
                                 onRetranscribe = { askAgain = true },
-                                onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
                                 onOrganize = organize,
                                 onEditNotes = {
                                     detail.notes?.takeIf(::hasNotes)?.let { notesDraft = NotesDraft.of(it); view = DetailView.NOTES }
@@ -585,15 +574,6 @@ fun RecordingDetailScreen(
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         positionSec = player.positionSec,
                         playing = player.isPlaying,
-                        highlights = detail.highlights,
-                        onHighlight = { highlightMenu = it },
-                        highlightMenuFor = highlightMenu,
-                        highlightMenu = {
-                            highlightMenu?.let { at ->
-                                HighlightMenu(at, scale, onGo = { seek(at) }, onRemove = { actions.onHighlights(detail.highlights - at) },
-                                    onDismiss = { highlightMenu = null })
-                            }
-                        },
                         onSpeaker = { speakerMenu = it },
                         // D13: nor while a job of this recording may still rewrite the transcript — the reason is
                         // the More menu's own for Edit transcript (`Transcribing…` while one really runs).
@@ -746,8 +726,6 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer, actions: Det
     // and the clock follow it rather than the player: the seek happens when the finger lets go, and
     // a bar that only moved then would not be a scrub.
     var scrubSec by remember(detail.audio) { mutableStateOf<Double?>(null) }
-    // docs/09 "Highlights": the tick whose Go to / Remove menu is open.
-    var tickMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -769,16 +747,8 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer, actions: Det
                 WaveformSlot.LOADING -> WaveformLoader(label = stringResource(R.string.player_waveform_loading))
                 // No seek while this phone is recording, as the transcript's times allow none: the
                 // microphone is the recorder's, and the player was stopped for it.
-                WaveformSlot.WAVEFORM -> Box {
-                    Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
-                        onScrub = { scrubSec = it }, onSeek = { if (!detail.deviceRecording) player.seek(detail.audio, it) }, growIn = fetched,
-                        highlights = detail.highlights, onHighlight = { tickMenu = it },
-                        onRemoveHighlight = { at -> actions.onHighlights(detail.highlights - at) })
-                    tickMenu?.let { at ->
-                        HighlightMenu(at, recordingScale(detail), onGo = { if (!detail.deviceRecording) player.seek(detail.audio, at) },
-                            onRemove = { actions.onHighlights(detail.highlights - at) }, onDismiss = { tickMenu = null })
-                    }
-                }
+                WaveformSlot.WAVEFORM -> Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
+                    onScrub = { scrubSec = it }, onSeek = { if (!detail.deviceRecording) player.seek(detail.audio, it) }, growIn = fetched)
             }
         }
         if (LocalConfiguration.current.screenHeightDp < 480 && shown) {
@@ -813,10 +783,6 @@ internal fun Waveform(
     onScrub: (Double?) -> Unit,
     onSeek: (Double) -> Unit,
     growIn: Boolean = false,
-    /** docs/09 "Highlights": the marks, drawn as accent ticks with a square cap; a tap near one opens its menu. */
-    highlights: List<Double> = emptyList(),
-    onHighlight: (Double) -> Unit = {},
-    onRemoveHighlight: (Double) -> Unit = {},
 ) {
     val palette = blueprint
     val hair = palette.line
@@ -831,20 +797,11 @@ internal fun Waveform(
     // so it calls whatever the caller passed last — a seek refused since then stays refused.
     val scrub by rememberUpdatedState(onScrub)
     val seek by rememberUpdatedState(onSeek)
-    val marks by rememberUpdatedState(highlights)
-    val mark by rememberUpdatedState(onHighlight)
-    val slop = LocalViewConfiguration.current.touchSlop
-    val near = with(LocalDensity.current) { TICK_REACH.toPx() }
     // docs/09 Accessibility: the row reports itself as the recording's position, and a reader that cannot
     // see the shape moves the playhead by setting it — and hears where it is as the clock beside
     // it says it, because that is what the playhead is.
     val label = stringResource(R.string.player_position)
     val stamp = hms(positionSec.toLong())
-    // docs/09 "Disabled, focus and structure": times, the waveform and its ticks run left to right in every
-    // language. The bars are drawn at absolute x, so the tick targets below are laid out left to right as
-    // well — in Arabic, Persian and Urdu a mirrored `offset` put each target on the other side from its tick.
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-    Box(Modifier.fillMaxWidth()) {
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
@@ -881,20 +838,15 @@ internal fun Waveform(
                     scrub(sec)
                     down.consume()
                     var pressed = true
-                    var moved = false
                     while (pressed) {
                         val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
                         sec = second(change.position.x, size.width, totalSec)
                         scrub(sec)
                         change.consume()
                         pressed = change.pressed
-                        if (kotlin.math.abs(change.position.x - down.position.x) > slop) moved = true
                     }
-                    // A tap on a tick is a question about that mark, not a seek beside it.
-                    val tick = if (moved || totalSec <= 0) null else marks.minByOrNull { kotlin.math.abs(it / totalSec * size.width - down.position.x) }
-                        ?.takeIf { kotlin.math.abs(it / totalSec * size.width - down.position.x) <= near }
                     scrub(null)
-                    if (tick != null) mark(tick) else seek(sec)
+                    seek(sec)
                 }
             },
     ) {
@@ -931,49 +883,13 @@ internal fun Waveform(
                 size = Size(WaveformBar.toPx(), height),
             )
         }
-        // Above the bars, under the playhead: a 2dp tick over the whole height with a 6dp square cap at its top.
-        if (totalSec > 0) highlights.forEach { at ->
-            val x = (size.width * at / totalSec).toFloat().coerceIn(0f, size.width - TICK.toPx())
-            drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TICK.toPx(), size.height))
-            val cap = TICK_CAP.toPx()
-            drawRect(palette.accent, topLeft = Offset((x + TICK.toPx() / 2 - cap / 2).coerceIn(0f, size.width - cap), 0f), size = Size(cap, cap))
-        }
         drawRect(
             color = palette.accent,
             topLeft = Offset(playhead.coerceIn(0f, size.width - line), 0f),
             size = Size(line, size.height),
         )
     }
-    // docs/09 "Highlights": each tick is an element of its own for a screen reader, with Go to and Remove.
-    if (totalSec > 0 && highlights.isNotEmpty()) {
-        val remove = stringResource(R.string.highlight_remove)
-        val goLabels = highlights.map { stringResource(R.string.transcript_seek, hms(it.toLong())) }
-        val names = highlights.map { stringResource(R.string.highlight_tick, hms(it.toLong())) }
-        BoxWithConstraints(Modifier.matchParentSize()) {
-            highlights.forEachIndexed { index, at ->
-                Box(
-                    Modifier
-                        .offset(x = maxWidth * (at / totalSec).toFloat() - TICK_REACH)
-                        .size(TICK_REACH * 2, MinTouch)
-                        .clearAndSetSemantics {
-                            contentDescription = names[index]
-                            customActions = listOf(
-                                CustomAccessibilityAction(goLabels[index]) { onSeek(at); true },
-                                CustomAccessibilityAction(remove) { onRemoveHighlight(at); true },
-                            )
-                        },
-                )
-            }
-        }
-    }
-    }
-    }
 }
-
-/** docs/09 "Highlights": the tick, its square cap, and how near a tap must be to mean it. */
-private val TICK: Dp = 2.dp
-private val TICK_CAP: Dp = 6.dp
-private val TICK_REACH: Dp = 12.dp
 
 /** What the player bar's waveform row holds (see [PlayerBar]). */
 internal enum class WaveformSlot {

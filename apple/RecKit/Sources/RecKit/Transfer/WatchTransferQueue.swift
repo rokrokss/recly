@@ -385,8 +385,8 @@ public actor WatchTransferQueue {
 
         let meta = directory.appendingPathComponent(item.metaFile)
         if item.recording == true {
-            // docs/03: the recording as it stands — start, time zone, segment length, highlights so far and every
-            // part filed so far — ahead of the parts it lists, so the phone knows each part's place when it lands.
+            // docs/03: the recording as it stands — start, time zone, segment length and every part filed so far —
+            // ahead of the parts it lists, so the phone knows each part's place when it lands.
             // Not acked; the next part brings a fresher one, and the final meta waits for the recording to end.
             if !handing.isEmpty, let newest = item.parts.map(\.part).max(),
                FileManager.default.fileExists(atPath: meta.path) {

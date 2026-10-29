@@ -77,21 +77,19 @@ struct ReasonedMenuItem: View {
 }
 
 /// docs/09 "Detail header and More menu" · "AI view": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again ─ Organize · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names ─ Add highlight —
-/// with the ones that cannot run now shown off, and why. The three groups are parted by a hairline, and a group with
-/// nothing in it (no ChatGPT) takes its divider with it (2026-10-10, 2.2). On the Mac a fourth group is the
-/// recording's folder — Open in Drive, or Show in Finder — where the shell hands the page one, and the last is the
-/// red Delete (2026-10-15), which only the Mac hands in: the phone's list row has its own.
+/// again ─ Organize · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names — with the ones
+/// that cannot run now shown off, and why. The two groups are parted by a hairline, and a group with nothing in it
+/// (no ChatGPT) takes its divider with it (2026-10-10, 2.2). On the Mac a third group is the recording's folder —
+/// Open in Drive, or Show in Finder — where the shell hands the page one, and the last is the red Delete
+/// (2026-10-15), which only the Mac hands in: the phone's list row has its own.
 struct DetailMoreMenu: View {
     @ObservedObject var model: RecordingDetailModel
-    let positionSec: Double
     let rename: () -> Void
     let edit: () -> Void
     let transcribeAgain: () -> Void
     let organize: () -> Void
     let editNotes: () -> Void
     let askAbout: () -> Void
-    let addHighlight: () -> Void
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -134,12 +132,6 @@ struct DetailMoreMenu: View {
                 Task { await model.fill(.names) }
             }
         }
-        Divider()
-        ReasonedMenuItem(
-            title: RecKitStrings.localized("Add highlight at %@", model.stamp(positionSec)),
-            reason: model.highlightReason,
-            action: addHighlight
-        )
         // The recording's folder — only where the shell handed one over.
         if model.openInDrive != nil || model.showInFinder != nil { Divider() }
         if let openInDrive = model.openInDrive {
@@ -154,33 +146,6 @@ struct DetailMoreMenu: View {
             Divider()
             ReasonedMenuItem(title: RecKitStrings.localized("Delete"), reason: model.deleteReason, role: .destructive, action: delete)
         }
-    }
-}
-
-/// docs/09 "Highlights": a marked moment's two actions, from its tick on the waveform or its square in the
-/// transcript. Removing one is not deleting a recording, so it is not red.
-struct HighlightMenu<Label: View>: View {
-    let atSec: Double
-    /// The moment as the page draws its times (2026-10-08 §3); what a screen reader hears stays the
-    /// full `00:12:34`.
-    let stamp: String
-    let go: () -> Void
-    let remove: () -> Void
-    @ViewBuilder let label: () -> Label
-
-    var body: some View {
-        Menu {
-            Button(RecKitStrings.localized("Go to %@", stamp), action: go)
-            Button(RecKitStrings.localized("Remove highlight"), action: remove)
-        } label: {
-            label()
-        }
-        .menuIndicator(.hidden)
-        .buttonStyle(.plain)
-        .pointerCursor()
-        .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Highlight %@", LedgerFormat.clock(Int(atSec)))))
-        .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(atSec)))), go)
-        .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Remove highlight")), remove)
     }
 }
 

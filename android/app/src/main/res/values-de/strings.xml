@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Automatisch</string>
     <string name="processing_language_mixed">Koreanisch und Englisch</string>
     <string name="processing_language_unsupported">Die gewählte Transkriptionsmethode unterstützt diese Sprache nicht.</string>
-    <string name="highlight">Markieren</string>
-    <string name="highlight_status">Markierung · %1$s</string>
-    <string name="highlight_tick">Markierung %1$s</string>
-    <string name="highlight_remove">Markierung entfernen</string>
-    <string name="highlight_add_at">Markierung bei %1$s hinzufügen</string>
     <string name="detail_share">Teilen</string>
     <string name="detail_more">Mehr</string>
     <string name="detail_edit">Transkript bearbeiten</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Anmeldung im Browser abschließen</string>
     <string name="chatgpt_sign_in_failed">Anmeldung bei ChatGPT fehlgeschlagen</string>
     <string name="chatgpt_revoke_unconfirmed">Auf diesem Gerät abgemeldet, aber OpenAI hat es nicht bestätigt. Recly lässt sich in den ChatGPT-Einstellungen entfernen.</string>
-    <string name="chatgpt_footnote">Notizen und Fragen senden den Transkripttext, die markierten Momente und deine Notizen-Einstellungen an OpenAI – nie das Audio – und zählen zur Nutzung deines ChatGPT-Tarifs.</string>
+    <string name="chatgpt_footnote">Notizen und Fragen senden den Transkripttext und deine Notizen-Einstellungen an OpenAI – nie das Audio – und zählen zur Nutzung deines ChatGPT-Tarifs.</string>
     <string name="chatgpt_welcome_title">Du verwendest dein ChatGPT-Abo</string>
     <string name="chatgpt_welcome_body">Notizen in Recly nutzen dein ChatGPT-Abo. Die Nutzung lässt sich in den ChatGPT-Einstellungen verwalten.</string>
     <string name="chatgpt_got_it">Verstanden</string>

@@ -87,7 +87,6 @@ internal class MoreActions(
     val onRename: () -> Unit,
     val onEdit: () -> Unit,
     val onRetranscribe: () -> Unit,
-    val onAddHighlight: () -> Unit,
     /** docs/09 "AI view": Organize or Organize again, which asks nothing; and Edit notes. */
     val onOrganize: () -> Unit,
     val onEditNotes: () -> Unit,
@@ -100,19 +99,18 @@ internal class MoreActions(
 
 /**
  * docs/09 "Detail header and More menu" · "AI view": Rename · Edit transcript · Transcribe again ─ Organize (Organize
- * again once there are notes) · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names ─ Add
- * highlight at the playhead ─ Open in Drive ─ Delete, in that order and in those groups, a hairline between them. An item
- * that cannot run is shown disabled with its reason under it — every one of them `Still recording` while the recorder is
- * writing into this take; the ChatGPT items are not there at all where ChatGPT is not offered, Edit notes not while the
- * recording has none, and Open in Drive not before it has a folder there. The menu is as tall as the window lets it be, so
- * no item is out of sight. [fill] is the recording's fill asking ChatGPT now (`observeFills()`), if any; [organizing] is a
- * pass of its notes running here.
+ * again once there are notes) · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names ─ Open
+ * in Drive ─ Delete, in that order and in those groups, a hairline between them. An item that cannot run is shown
+ * disabled with its reason under it — every one of them `Still recording` while the recorder is writing into this take;
+ * the ChatGPT items are not there at all where ChatGPT is not offered, Edit notes not while the recording has none, and
+ * Open in Drive not before it has a folder there. The menu is as tall as the window lets it be, so no item is out of
+ * sight. [fill] is the recording's fill asking ChatGPT now (`observeFills()`), if any; [organizing] is a pass of its notes
+ * running here.
  */
 @Composable
 internal fun MoreButton(
     detail: DetailState,
     transcription: ProcessingTranscription?,
-    playheadSec: Double,
     chatGpt: ChatGptConnection,
     actions: MoreActions,
     fill: FillRun? = null,
@@ -174,11 +172,6 @@ internal fun MoreButton(
                         reason = reason, modifier = Modifier.testTag("more-fill-${half.name.lowercase()}"))
                 }
             }
-            HairLine()
-            val highlightReason = writing ?: if (detail.audio.isEmpty) stringResource(R.string.player_no_audio) else null
-            val stamp = clock(playheadSec.toLong(), recordingScale(detail))
-            MenuAction(monoStamp(stringResource(R.string.highlight_add_at, stamp), stamp, mono.bodySmall), pick(actions.onAddHighlight),
-                enabled = highlightReason == null, reason = highlightReason, modifier = Modifier.testTag("more-highlight"))
             // Where the recording is kept, as its list row used to open it (2026-10-28).
             val context = LocalContext.current
             detail.row?.link?.let { link ->
@@ -386,16 +379,6 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 SwitchTrack(skipSilence)
             }
         }
-    }
-}
-
-/** docs/09 "Highlights": what a tick or a square marker offers — go there, or take the mark away (not red: no recording is deleted). */
-@Composable
-internal fun HighlightMenu(atSec: Double, scaleSec: Long?, onGo: () -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
-    BlueprintMenu(onDismissRequest = onDismiss) {
-        val stamp = clock(atSec.toLong(), scaleSec)
-        MenuAction(monoStamp(stringResource(R.string.transcript_seek, stamp), stamp, mono.bodySmall), { onDismiss(); onGo() }, modifier = Modifier.testTag("highlight-go"))
-        MenuAction(stringResource(R.string.highlight_remove), { onDismiss(); onRemove() }, modifier = Modifier.testTag("highlight-remove"))
     }
 }
 

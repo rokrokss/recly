@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Kiotomatiki</string>
     <string name="processing_language_mixed">Kikorea na Kiingereza</string>
     <string name="processing_language_unsupported">Njia ya unukuzi uliyochagua haitumii lugha hii.</string>
-    <string name="highlight">Weka alama</string>
-    <string name="highlight_status">Alama · %1$s</string>
-    <string name="highlight_tick">Alama %1$s</string>
-    <string name="highlight_remove">Ondoa alama</string>
-    <string name="highlight_add_at">Ongeza alama kwenye %1$s</string>
     <string name="detail_share">Shiriki</string>
     <string name="detail_more">Zaidi</string>
     <string name="detail_edit">Hariri nakala</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Maliza kuingia kwenye kivinjari chako</string>
     <string name="chatgpt_sign_in_failed">Imeshindwa kuingia kwenye ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Umetoka kwenye kifaa hiki, lakini OpenAI haijathibitisha. Unaweza kuondoa Recly kwenye mipangilio ya ChatGPT.</string>
-    <string name="chatgpt_footnote">Madokezo na maswali hutuma maandishi ya nakala, nyakati ulizoangazia na mipangilio yako ya madokezo kwa OpenAI — kamwe si sauti — na huhesabiwa katika matumizi ya mpango wako wa ChatGPT.</string>
+    <string name="chatgpt_footnote">Madokezo na maswali hutuma maandishi ya nakala na mipangilio yako ya madokezo kwa OpenAI — kamwe si sauti — na huhesabiwa katika matumizi ya mpango wako wa ChatGPT.</string>
     <string name="chatgpt_welcome_title">Unatumia mpango wako wa ChatGPT</string>
     <string name="chatgpt_welcome_body">Madokezo katika Recly hutumia mpango wako wa ChatGPT. Unaweza kudhibiti matumizi kwenye mipangilio ya ChatGPT.</string>
     <string name="chatgpt_got_it">Nimeelewa</string>

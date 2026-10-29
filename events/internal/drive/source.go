@@ -125,7 +125,7 @@ func (s *Source) Recordings(ctx context.Context, limit int, cursor string) ([]li
 		metaID, metaTitle := "", ""
 		if it.meta != nil {
 			metaID, metaTitle = it.meta.RecordingID, it.meta.Title
-			rec.DurationSec, rec.HighlightCount = it.meta.DurationSec, len(it.meta.HighlightTimes())
+			rec.DurationSec = it.meta.DurationSec
 		}
 		rec.RecordingID = library.RecordingIDOf(metaID, folder.AppProperties["recordingId"], it.base.Name)
 		// The folder's description is the canonical title on Drive (docs/recly.md §3 "Titles").
@@ -266,7 +266,7 @@ func (s *Source) transcript(ctx context.Context, b library.Base, want string) (*
 	if want != "" && library.IsRecordingID(t.RecordingID) && t.RecordingID != want {
 		return nil, errOther
 	}
-	t.Title, t.StartedAt, t.Highlights = library.TitleOf(folder.Description, metaTitle), library.StartedAtOf(b), meta.HighlightTimes()
+	t.Title, t.StartedAt = library.TitleOf(folder.Description, metaTitle), library.StartedAtOf(b)
 	return t, nil
 }
 

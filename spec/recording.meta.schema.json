@@ -54,19 +54,6 @@
     },
     "gaps": { "$ref": "#/$defs/ranges" },
     "silenced": { "$ref": "#/$defs/ranges" },
-    "highlights": {
-      "description": "Moments the user marked, on the recording's own axis (the same one transcript segments use): ascending, no two within 1 second, at most 500. See docs/recly.md section 3 \"Metadata\".",
-      "type": "array",
-      "maxItems": 500,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["atSec"],
-        "properties": {
-          "atSec": { "type": "number", "minimum": 0 }
-        }
-      }
-    },
     "context": {
       "type": "object",
       "additionalProperties": false,

@@ -40,15 +40,6 @@ final class RecordingIntentTests: XCTestCase {
         XCTAssertEqual(commands.starts, 0)
     }
 
-    /// docs/09 "Highlights": "Add a highlight with Recly" marks the running recording — one call into the model.
-    func testTheHighlightIntentMarksTheRecording() async throws {
-        _ = try await AddHighlightIntent().perform()
-
-        XCTAssertEqual(commands.highlights, 1)
-        XCTAssertEqual(commands.starts, 0)
-        XCTAssertEqual(commands.stops, 0)
-    }
-
     func testTheStopIntentStopsTheRecording() async throws {
         _ = try await StopRecordingIntent().perform()
 
@@ -63,7 +54,6 @@ final class RecordingIntentTests: XCTestCase {
 
         _ = try await StopRecordingIntent().perform()
         _ = try await StartRecordingIntent().perform()
-        _ = try await AddHighlightIntent().perform()
     }
 }
 
@@ -84,11 +74,5 @@ final class FakeRecordingCommands: RecordingCommands {
 
     func stopFromIntent() async {
         stops += 1
-    }
-
-    private(set) var highlights = 0
-
-    func highlightFromIntent() async {
-        highlights += 1
     }
 }

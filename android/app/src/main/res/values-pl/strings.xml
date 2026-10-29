@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Automatycznie</string>
     <string name="processing_language_mixed">Koreański i angielski</string>
     <string name="processing_language_unsupported">Wybrana metoda transkrypcji nie obsługuje tego języka.</string>
-    <string name="highlight">Zaznacz</string>
-    <string name="highlight_status">Znacznik · %1$s</string>
-    <string name="highlight_tick">Znacznik %1$s</string>
-    <string name="highlight_remove">Usuń znacznik</string>
-    <string name="highlight_add_at">Dodaj znacznik w %1$s</string>
     <string name="detail_share">Udostępnij</string>
     <string name="detail_more">Więcej</string>
     <string name="detail_edit">Edytuj transkrypcję</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Dokończ logowanie w przeglądarce</string>
     <string name="chatgpt_sign_in_failed">Nie można zalogować się do ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Wylogowano na tym urządzeniu, ale OpenAI tego nie potwierdziło. Recly możesz usunąć w ustawieniach ChatGPT.</string>
-    <string name="chatgpt_footnote">Notatki i pytania wysyłają do OpenAI tekst transkrypcji, zaznaczone momenty i Twoje ustawienia notatek — nigdy dźwięk — i wliczają się do wykorzystania Twojego planu ChatGPT.</string>
+    <string name="chatgpt_footnote">Notatki i pytania wysyłają do OpenAI tekst transkrypcji i Twoje ustawienia notatek — nigdy dźwięk — i wliczają się do wykorzystania Twojego planu ChatGPT.</string>
     <string name="chatgpt_welcome_title">Korzystasz ze swojego planu ChatGPT</string>
     <string name="chatgpt_welcome_body">Notatki w Recly korzystają z Twojego planu ChatGPT. Użyciem możesz zarządzać w ustawieniach ChatGPT.</string>
     <string name="chatgpt_got_it">Rozumiem</string>

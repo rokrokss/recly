@@ -1085,8 +1085,7 @@ public final class SegmentedRecorder {
             silenced: [],
             context: context,
             drive: nil,
-            status: RecordingStatus.recording,
-            highlights: []
+            status: RecordingStatus.recording
         )
     }
 

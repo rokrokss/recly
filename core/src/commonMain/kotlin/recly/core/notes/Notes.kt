@@ -802,7 +802,6 @@ class Notes internal constructor(
         var state = OrganizeState.from(saved)?.takeIf { it.transcript == version } ?: OrganizeState(version)
         val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         val language = summaries.language(transcript.language)
-        val highlights = recordings.get(recordingId)?.meta?.highlights.orEmpty()
         if (state.spans == null) {
             val spans = ConversationSplit.blocks(segments).flatMapIndexed { index, block ->
                 if (block.endSec - block.startSec <= ConversationSplit.LONG_SEC) return@flatMapIndexed listOf(block)
@@ -827,11 +826,7 @@ class Notes internal constructor(
         while (results.size < spans.size) results += null
         for (index in spans.indices) {
             if (results[index] != null) continue
-            val span = spans[index]
-            val marked = highlights.filter { it.atSec >= span.startSec && it.atSec <= span.endSec }.map { highlight ->
-                "[${TranscriptNormalizer.clock(highlight.atSec)}]" + (TranscriptNormalizer.spokenAt(transcript, highlight.atSec)?.let { " $it" } ?: "")
-            }
-            results[index] = conversation(model, language, grouped[index], transcript, ask, marked)
+            results[index] = conversation(model, language, grouped[index], transcript, ask)
             state = state.copy(done = results.toList())
             save(state.toJson())
         }
@@ -907,20 +902,19 @@ class Notes internal constructor(
         }))
     }
 
-    /** One conversation's summary and items; too little said, and nothing is asked. [marked] are its highlights. */
+    /** One conversation's summary and items; too little said, and nothing is asked. */
     private suspend fun conversation(
         model: String,
         language: String,
         segments: List<TranscriptSegment>,
         transcript: Transcript,
         ask: NotesAsk,
-        marked: List<String>,
     ): ConversationResult {
         if (NoteText.words(segments.joinToString(" ") { it.text }) < MIN_WORDS) return ConversationResult()
         val placeholders = Placeholders()
         val answer = summaries.complete(
-            model, NotesPrompts.conversation(language, ask, marked.isNotEmpty()),
-            placeholders.hide(NotesPrompts.transcriptInput(NoteLines.render(NoteLines.of(segments)), marked)),
+            model, NotesPrompts.conversation(language, ask),
+            placeholders.hide(NotesPrompts.transcriptInput(NoteLines.render(NoteLines.of(segments)))),
         )
         val json = NotesAnswer.parse(answer)
         val items = NotesAnswer.items(json, placeholders::restore, ask, points = true)

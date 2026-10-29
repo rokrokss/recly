@@ -22,7 +22,6 @@ import recly.core.drive.DriveUploadState
 import recly.core.job.JobStatus
 import recly.core.model.Context
 import recly.core.model.DriveLocation
-import recly.core.model.Highlight
 import recly.core.model.Part
 import recly.core.model.Range
 import recly.core.model.RecordingMeta
@@ -462,71 +461,6 @@ class RecordingRepository(
     }
 
     /**
-     * docs/03 "Metadata": a moment marked on this device — the recorder's button, a tile, the popover, an App
-     * Intent — written into the row and `meta.json` at once. Cheap and safe from any thread: one
-     * locked write. A mark within [Highlight.MERGE_SEC] of one already there is the same mark, so a
-     * double tap adds one.
-     *
-     * While the recording is still running nothing leaves the device (the meta goes up with the
-     * upload). Marked on a finished recording, it is also a pending write for Drive, like
-     * [setHighlights].
-     *
-     * @return true when a mark was added; false for a repeat, a full list ([Highlight.MAX]), a time
-     * before the start, or a recording that is not this device's.
-     */
-    @Throws(Throwable::class)
-    suspend fun addHighlight(recordingId: String, atSec: Double): Boolean = locked {
-        val record = record(recordingId) ?: return@locked false
-        val current = record.meta.highlights
-        if (record.remote || !atSec.isFinite() || atSec < 0 || current.size >= Highlight.MAX) return@locked false
-        if (current.any { kotlin.math.abs(it.atSec - atSec) < Highlight.MERGE_SEC }) return@locked false
-        writeHighlights(record, Highlight.normalize(current.map { it.atSec } + atSec))
-        true
-    }
-
-    /**
-     * The detail screen's highlight editor: the whole list at once, normalized ([Highlight.normalize]).
-     * Any recording this device lists — its own or another device's (docs/03 "Recordings from other
-     * devices") — except a placeholder still being uploaded elsewhere. Written here at once, and carried
-     * to the folder's `meta.json` by [RemoteRecordings.pushMeta].
-     *
-     * @return false when there is nothing to write to.
-     */
-    @Throws(Throwable::class)
-    suspend fun setHighlights(recordingId: String, atSecs: List<Double>): Boolean = locked {
-        val record = record(recordingId) ?: return@locked false
-        if (record.remoteUploading) return@locked false
-        val highlights = Highlight.normalize(atSecs)
-        if (highlights != record.meta.highlights) writeHighlights(record, highlights)
-        true
-    }
-
-    private fun writeHighlights(record: RecordingRecord, highlights: List<Highlight>) {
-        val meta = record.meta.copy(highlights = highlights)
-        db.transaction {
-            writeMeta(meta)
-            // What is still being recorded goes up with its upload; anything later has to be sent.
-            if (meta.status != RecordingStatus.RECORDING) queries.kvSet(META_PREFIX + record.id, pendingStamp())
-        }
-        MetaWriter.write(deps.fileSystem, record.dir, meta)
-        deps.logger.log(
-            Logger.Level.INFO,
-            "rec.highlights",
-            mapOf("recordingId" to record.id, "count" to highlights.size),
-        )
-    }
-
-    /** Recordings whose `meta.json` changed here after it went up, by id, with the stamp of that change. */
-    suspend fun pendingMeta(): Map<String, String> = locked {
-        queries.kvSelectPrefix(META_PREFIX).executeAsList().associate { it.key.removePrefix(META_PREFIX) to it.value_ }
-    }
-
-    /** The meta push landed. Cleared only if no newer change was written over it meanwhile. */
-    suspend fun metaPushed(recordingId: String, stamp: String): Unit = locked {
-        queries.kvDeleteIfValue(META_PREFIX + recordingId, stamp)
-    }
-
-    /**
      * docs/08 "Editing": a transcript edited here that the recording's folder has not received yet, by id,
      * with the stamp of the edit. Written by the editor, cleared by [transcriptPushed].
      */
@@ -587,7 +521,7 @@ class RecordingRepository(
     internal suspend fun <T> notesWrite(block: suspend () -> T): T = notesWrites.withLock { block() }
 
     private fun forgetPending(recordingId: String) {
-        for (prefix in listOf(TITLE_PREFIX, META_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, NOTES_PREFIX, NOTES_SEEN_PREFIX)) {
+        for (prefix in listOf(TITLE_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, NOTES_PREFIX, NOTES_SEEN_PREFIX)) {
             queries.kvDelete(prefix + recordingId)
         }
     }
@@ -718,7 +652,7 @@ class RecordingRepository(
                 if (running && !stopped) return@transactionWithResult Removal.Busy
                 val folderId = driveFolderId(recordingId) ?: row.drive_folder_id
                 if (!deleteDrive && folderId != null) queries.kvSet(IGNORED_PREFIX + recordingId, folderId)
-                // A rename, highlights or an edit that never reached Drive go with the recording: pushed
+                // A rename or an edit that never reached Drive goes with the recording: pushed
                 // later, they would land on whatever another device has since put in the folder.
                 forgetPending(recordingId)
                 queries.syncDelete("processing/recording/" + recordingId)
@@ -1086,9 +1020,6 @@ class RecordingRepository(
 
         /** `kv` rows: `title/pending/{recordingId}` → the title Drive still has to be told. */
         private const val TITLE_PREFIX: String = "title/pending/"
-
-        /** `kv` rows: `meta/pending/{recordingId}` → a stamp; the folder's `meta.json` is older than the row. */
-        private const val META_PREFIX: String = "meta/pending/"
 
         /** `kv` rows: `transcript/pending/{recordingId}` → a stamp; an edit the folder has not received. */
         private const val TRANSCRIPT_PREFIX: String = "transcript/pending/"

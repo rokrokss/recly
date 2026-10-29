@@ -47,7 +47,7 @@ func setupSource(t *testing.T) (*Source, *fakeDrive) {
 			"notMeta": {ID: "notMeta", Name: "2026 budget.meta.json", Parents: []string{"root"}},
 		},
 		content: map[string]string{
-			"metaA": `{"recordingId":"` + idA + `","title":"Old title","durationSec":95.5,"highlights":[{"atSec":12.5}]}`,
+			"metaA": `{"recordingId":"` + idA + `","title":"Old title","durationSec":95.5}`,
 			"jsonA": `{"recordingId":"` + idA + `","language":"en","speakers":[{"id":"S1","name":"Kim"}],"segments":[{"start":0,"end":2,"speaker":"S1","text":"Hello."}]}`,
 			"txtA":  "[00:00:00] S1: not read, the JSON is there\n",
 			"metaB": `{"recordingId":"` + idB + `","title":"Board"}`,
@@ -79,7 +79,7 @@ func TestSourceListsRecordingsNewestFirstByPage(t *testing.T) {
 	if b.RecordingID != idB || b.Title == nil || *b.Title != "Board" || !b.HasTranscript || b.StartedAt != "2026-10-02T09:00:00Z" {
 		t.Fatalf("B = %+v", b)
 	}
-	if a.RecordingID != idA || *a.Title != "Weekly sync" || *a.DurationSec != 95.5 || a.HighlightCount != 1 || !a.HasTranscript {
+	if a.RecordingID != idA || *a.Title != "Weekly sync" || *a.DurationSec != 95.5 || !a.HasTranscript {
 		t.Fatalf("A = %+v", a)
 	}
 	// The folder template's own folder starts with the year too; it is not a recording.
@@ -98,7 +98,7 @@ func TestSourceReadsATranscriptByIDOrBaseName(t *testing.T) {
 			t.Fatalf("%s: %v", id, err)
 		}
 		if tr.RecordingID != idA || *tr.Title != "Weekly sync" || tr.Language != "en" || len(tr.Lines) != 1 ||
-			tr.Lines[0].Text != "[00:00:00] Kim: Hello." || len(tr.Highlights) != 1 || tr.StartedAt != "2026-10-01T06:45:03Z" {
+			tr.Lines[0].Text != "[00:00:00] Kim: Hello." || tr.StartedAt != "2026-10-01T06:45:03Z" {
 			t.Fatalf("%s: %+v", id, tr)
 		}
 	}

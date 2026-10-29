@@ -130,7 +130,6 @@ class RecorderService : Service() {
             )
             try {
                 val recordingId = recorder.start(title)
-                capture = recorder
                 session.started(recorder, recordingId, core.deps.clock.now())
                 startLevels(recorder)
                 // Not for a stop that raced the start: `started` has just replayed it.
@@ -264,7 +263,6 @@ class RecorderService : Service() {
     }
 
     override fun onDestroy() {
-        capture = null
         // The backstop for a watchdog armed after the stop took it down, by a boundary that was
         // being filed as the stop came.
         stopAlerts()
@@ -354,15 +352,6 @@ class RecorderService : Service() {
 
         /** The live levels, oldest first — empty while nothing is recording. */
         fun livePeaks(): List<Float> = waveform.peaks
-
-        /** The recorder of the last start; it answers nothing once its recording has stopped. */
-        @Volatile private var capture: SegmentedRecorder? = null
-
-        /**
-         * docs/03 "Metadata" (D6): the audio the recording that is running has written so far, in seconds —
-         * the clock a highlight is marked on. Null while nothing records.
-         */
-        suspend fun recordedSec(): Double? = capture?.recordedSec()
 
         /** Outlives the service on purpose — see [RecorderSession.stop]. */
         private val completionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

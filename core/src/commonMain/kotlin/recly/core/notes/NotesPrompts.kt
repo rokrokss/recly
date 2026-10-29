@@ -23,7 +23,6 @@ internal object NotesPrompts {
     const val THIS_PART = "THIS PART:"
     const val TRANSCRIPT = "TRANSCRIPT:"
     const val CONVERSATIONS = "CONVERSATIONS:"
-    const val MARKED = "MARKED MOMENTS:"
 
     private const val LINES = "Each transcript line starts with [HH:MM:SS], its time on the recording, then a speaker label such as S1 when there is one " +
         "— a label only tells voices apart and is not a name — and what was said.\n"
@@ -76,12 +75,12 @@ internal object NotesPrompts {
         append("When this part changes one of them — a decision reversed, a question answered, a deadline moved — add a new item that says so.\n")
         append(NO_LABELS)
         append(EVIDENCE)
-        append(user(ask, marked = false))
+        append(user(ask))
         append("""When there is nothing new, answer {"items": []}.""")
     }
 
     /** After Stop: one conversation's summary and items. */
-    fun conversation(language: String, ask: NotesAsk = NotesAsk(), marked: Boolean = false): String = buildString {
+    fun conversation(language: String, ask: NotesAsk = NotesAsk()): String = buildString {
         append("You write the notes of one conversation from its transcript: a summary, and its key points, decisions, to-dos and open questions")
         if (ask.sections.isNotEmpty()) append(", and the items of the user's own sections")
         append(".\n")
@@ -94,15 +93,12 @@ internal object NotesPrompts {
         append("Key points are the few things most worth remembering that are not already a decision, a to-do or a question.\n")
         append(NO_LABELS)
         append(EVIDENCE)
-        append(user(ask, marked))
+        append(user(ask))
         append("""When there is nothing to note, answer with the summary and "items": [].""")
     }
 
-    /**
-     * The user's own words, after the fixed rules they cannot change: their instructions, About you, and — after Stop —
-     * the moments they marked, which follow the transcript under [MARKED].
-     */
-    private fun user(ask: NotesAsk, marked: Boolean) = buildString {
+    /** The user's own words, after the fixed rules they cannot change: their instructions and About you. */
+    private fun user(ask: NotesAsk) = buildString {
         ask.instructions.trim().takeIf { it.isNotEmpty() }?.let {
             append("The user's own instructions for their notes follow. Follow them where they do not change the JSON format, the kinds or the evidence rules:\n")
             append(it).append('\n')
@@ -110,7 +106,6 @@ internal object NotesPrompts {
         ask.aboutMe.trim().takeIf { it.isNotEmpty() }?.let {
             append("About the person who made the recording, to judge what matters to them: ").append(it).append('\n')
         }
-        if (marked) append("After the transcript, $MARKED lists moments the user marked as important, each with its time and the words said then. Make sure the notes cover what was said around each of them.\n")
     }
 
     /** After Stop, for a long stretch without a long silence: where its conversations change. */
@@ -146,12 +141,8 @@ internal object NotesPrompts {
         append(THIS_PART).append('\n').append(part).append('\n')
     }
 
-    fun transcriptInput(lines: String, marked: List<String> = emptyList()): String = buildString {
+    fun transcriptInput(lines: String): String = buildString {
         append(TRANSCRIPT).append('\n').append(lines).append('\n')
-        if (marked.isNotEmpty()) {
-            append('\n').append(MARKED).append('\n')
-            marked.forEach { append("- ").append(it).append('\n') }
-        }
     }
 
     fun overviewInput(conversations: List<NoteConversation>): String = buildString {

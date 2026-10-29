@@ -85,10 +85,9 @@ type Recording struct {
 	Title       *string `json:"title"`
 	StartedAt   string  `json:"startedAt"`
 	// DurationSec is null while the meta has none (a recording still going).
-	DurationSec    *float64 `json:"durationSec"`
-	Source         string   `json:"source"`
-	HasTranscript  bool     `json:"hasTranscript"`
-	HighlightCount int      `json:"highlightCount"`
+	DurationSec   *float64 `json:"durationSec"`
+	Source        string   `json:"source"`
+	HasTranscript bool     `json:"hasTranscript"`
 
 	// base sorts the list and is the cursor of a folder listing.
 	base string
@@ -112,10 +111,9 @@ type Transcript struct {
 	Title       *string
 	StartedAt   string
 	// Language is empty when only the .txt was there.
-	Language   string
-	Speakers   []Speaker
-	Highlights []float64
-	Lines      []Line
+	Language string
+	Speakers []Speaker
+	Lines    []Line
 }
 
 // Source is where recordings are read from.
@@ -128,15 +126,11 @@ type Source interface {
 }
 
 // Meta is what the tools read from `{base}.meta.json` (spec/recording.meta.schema.json).
-// Highlights is read when the apps write it; recordings without it have none.
 type Meta struct {
 	RecordingID string   `json:"recordingId"`
 	Title       string   `json:"title"`
 	DurationSec *float64 `json:"durationSec"`
-	Highlights  []struct {
-		AtSec *float64 `json:"atSec"`
-	} `json:"highlights"`
-	Parts []struct {
+	Parts       []struct {
 		Part           int      `json:"part"`
 		Track          string   `json:"track"`
 		File           string   `json:"file"`
@@ -153,20 +147,6 @@ func ParseMeta(b []byte) (*Meta, error) {
 		return nil, err
 	}
 	return &m, nil
-}
-
-// HighlightTimes returns the highlights' offsets, in seconds on the recording's timeline.
-func (m *Meta) HighlightTimes() []float64 {
-	if m == nil {
-		return nil
-	}
-	var out []float64
-	for _, h := range m.Highlights {
-		if h.AtSec != nil && *h.AtSec >= 0 {
-			out = append(out, *h.AtSec)
-		}
-	}
-	return out
 }
 
 // FolderTitle reads the title from iCloud's `{base}.folder.json`.

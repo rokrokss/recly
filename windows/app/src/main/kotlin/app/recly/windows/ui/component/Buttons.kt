@@ -233,7 +233,7 @@ internal fun Modifier.onLabelBaseline(sansStyle: TextStyle = MaterialTheme.typog
 
 /**
  * docs/09 "Disabled, focus and structure" (2026-10-28): the pointing hand over anything that can be pressed now — a
- * button, a mark such as a field's × or the highlight square, a chip, a menu and its items, a link, a row that opens,
+ * button, a mark such as a field's ×, a chip, a menu and its items, a link, a row that opens,
  * expands or toggles — and the arrow over one that cannot: disabled, or showing its own work. Never over plain text or a
  * field. Placed with the control's own click, on the same box.
  */

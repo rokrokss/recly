@@ -15,9 +15,6 @@ protocol RecordingCommands: AnyObject {
     func startFromIntent() async -> String?
 
     func stopFromIntent() async
-
-    /// docs/09 "Highlights": a mark on the recording that is running, at the recorder's clock.
-    func highlightFromIntent() async
 }
 
 /// What the intent tells the user when the app would not start a recording — a disconnect is running. `AppIntents` reads a thrown `CustomLocalizedStringResourceConvertible` out
@@ -71,21 +68,6 @@ struct StopRecordingIntent: LiveActivityIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         await RecordingIntentTarget.commands?.stopFromIntent()
-        return .result()
-    }
-}
-
-/// docs/09 "Highlights": "Add a highlight with Recly" — a mark on the running recording, the iPhone's counterpart
-/// of the Mac's intent. A `LiveActivityIntent` for the stop's reason: it runs in the app's process, where the
-/// recording is, without bringing the app to the front.
-struct AddHighlightIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Add Highlight"
-
-    init() {}
-
-    @MainActor
-    func perform() async throws -> some IntentResult {
-        await RecordingIntentTarget.commands?.highlightFromIntent()
         return .result()
     }
 }

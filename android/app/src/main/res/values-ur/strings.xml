@@ -292,11 +292,6 @@
     <string name="processing_language_auto">خودکار</string>
     <string name="processing_language_mixed">کوریائی اور انگریزی</string>
     <string name="processing_language_unsupported">منتخب کردہ ٹرانسکرپشن کا طریقہ اس زبان کو سپورٹ نہیں کرتا۔</string>
-    <string name="highlight">ہائی لائٹ کریں</string>
-    <string name="highlight_status">ہائی لائٹ · %1$s</string>
-    <string name="highlight_tick">ہائی لائٹ %1$s</string>
-    <string name="highlight_remove">ہائی لائٹ ہٹائیں</string>
-    <string name="highlight_add_at">%1$s پر ہائی لائٹ شامل کریں</string>
     <string name="detail_share">شیئر کریں</string>
     <string name="detail_more">مزید</string>
     <string name="detail_edit">ٹرانسکرپٹ میں ترمیم کریں</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">اپنے براؤزر میں سائن اِن مکمل کریں</string>
     <string name="chatgpt_sign_in_failed">ChatGPT میں سائن اِن نہیں ہو سکا</string>
     <string name="chatgpt_revoke_unconfirmed">اس آلے پر سائن آؤٹ ہو گیا، لیکن OpenAI نے اس کی تصدیق نہیں کی۔ آپ ChatGPT کی ترتیبات میں Recly کو ہٹا سکتے ہیں۔</string>
-    <string name="chatgpt_footnote">نوٹس اور سوالات ٹرانسکرپٹ کا متن، آپ کے نمایاں کیے گئے لمحات اور آپ کی نوٹس کی ترتیبات OpenAI کو بھیجتے ہیں — آڈیو کبھی نہیں — اور یہ آپ کے ChatGPT پلان کے استعمال میں شمار ہوتے ہیں۔</string>
+    <string name="chatgpt_footnote">نوٹس اور سوالات ٹرانسکرپٹ کا متن اور آپ کی نوٹس کی ترتیبات OpenAI کو بھیجتے ہیں — آڈیو کبھی نہیں — اور یہ آپ کے ChatGPT پلان کے استعمال میں شمار ہوتے ہیں۔</string>
     <string name="chatgpt_welcome_title">آپ اپنا ChatGPT پلان استعمال کر رہے ہیں</string>
     <string name="chatgpt_welcome_body">Recly میں نوٹس آپ کا ChatGPT پلان استعمال کرتے ہیں۔ آپ ChatGPT کی ترتیبات میں استعمال کا انتظام کر سکتے ہیں۔</string>
     <string name="chatgpt_got_it">سمجھ گیا</string>

@@ -34,8 +34,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     @Published private(set) var failed = 0
     /// A refusal is not something the app can retry its way out of; the screen says so.
     @Published private(set) var microphoneDenied = false
-    /// docs/09 "Highlights": the moment the last Highlight marked — the status line says it for 2 s.
-    @Published private(set) var highlightedAtSec: Double?
 
     private let logger = Logger(subsystem: CoreBridge.appName, category: "shell")
     private let dataDirectory: URL
@@ -53,9 +51,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     private var languageObserver: NSObjectProtocol?
     private var ticker: Timer?
     private var startedAt: Date?
-    /// The recording being made, for the marks Highlight puts on it. They ride to the phone in its
-    /// `meta.json`, which the transfer sends last (docs/03).
-    private var recordingId: String?
     private var loading: Task<Void, Never>?
 
     init(
@@ -193,21 +188,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         Task { await finish() }
     }
 
-    /// docs/09 "Highlights": a mark at the recorder's own clock — the button below the stop square, or Double
-    /// Tap.
-    func highlight() {
-        guard isRecording, let id = recordingId, let core = bridge?.core, let recorder else { return }
-        let at = recorder.recordedSec
-        Task {
-            guard (try? await core.recordings.addHighlight(recordingId: id, atSec: at))?.boolValue == true else { return }
-            WKInterfaceDevice.current().play(.click)
-            highlightedAtSec = at
-            logger.info("shell.highlight id=\(id, privacy: .public) atSec=\(at, privacy: .public)")
-            try? await Task.sleep(for: .seconds(2))
-            if highlightedAtSec == at { highlightedAtSec = nil }
-        }
-    }
-
     func startFromIntent() async {
         await loaded()
         await startRecording()
@@ -222,7 +202,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         guard let session, isReady else { return }
         do {
             guard let recordingId = try await session.start() else { return }
-            self.recordingId = recordingId
             let startedAt = Date()
             self.startedAt = startedAt
             microphoneDenied = false
@@ -359,8 +338,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         if !isRecording, wasRecording {
             stopTicking()
             startedAt = nil
-            recordingId = nil
-            highlightedAtSec = nil
             // The stop, however it came: there is nothing on the phone to show from here on.
             link.publish(.idle)
         }

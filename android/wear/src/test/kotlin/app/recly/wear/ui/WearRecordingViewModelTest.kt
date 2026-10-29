@@ -14,7 +14,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -48,23 +47,6 @@ private class FakeRecorder : RecorderControl {
     override fun stop() {
         stops++
         _state.value = RecorderState.Stopping
-    }
-
-    val highlights: MutableList<Pair<String, Double>> = mutableListOf()
-
-    /** When set, a highlight write waits for it — a slow disk. */
-    var slowWrite: CompletableDeferred<Unit>? = null
-
-    /** The written-audio clock the screen marks a highlight on (D6) — null while nothing records. */
-    var audioSec: Double? = null
-
-    override suspend fun recordedSec(): Double? = audioSec
-
-    override suspend fun highlight(recordingId: String, atSec: Double): Boolean {
-        slowWrite?.await()
-        if (highlights.any { it.first == recordingId && kotlin.math.abs(it.second - atSec) < 1.0 }) return false
-        highlights += recordingId to atSec
-        return true
     }
 
     fun recording(id: String = "01J9") {
@@ -107,10 +89,6 @@ private class FakeHaptics : Haptics {
 
     override fun doubleClick() {
         fired += "doubleClick"
-    }
-
-    override fun tick() {
-        fired += "tick"
     }
 
     override fun success() {
@@ -319,76 +297,5 @@ class WearRecordingViewModelTest {
         // The next start clears it: a stale refusal over a running recording would be a lie.
         vm.start()
         assertNull(vm.state.value.message)
-    }
-
-    @Test
-    fun `a highlight is said for two seconds, and a repeat is not news`() = runTest(dispatcher) {
-        val vm = viewModel()
-        recorder.recording("01J9")
-        runCurrent()
-
-        recorder.audioSec = 754.0
-        vm.highlight()
-        runCurrent()
-        assertEquals(listOf("01J9" to 754.0), recorder.highlights)
-        assertEquals(754L, vm.state.value.highlightedSec)
-        assertEquals(listOf("tick"), haptics.fired, "a kept mark is felt once")
-
-        dispatcher.scheduler.advanceTimeBy(HIGHLIGHT_NEWS_MS + 1)
-        runCurrent()
-        assertNull(vm.state.value.highlightedSec)
-
-        recorder.audioSec = 754.4
-        vm.highlight()
-        runCurrent()
-        assertNull(vm.state.value.highlightedSec)
-        assertEquals(listOf("tick"), haptics.fired, "a repeat the core did not keep is not felt")
-    }
-
-    @Test
-    fun `a slow highlight of a stopped recording is not news on the next one`() = runTest(dispatcher) {
-        val vm = viewModel()
-        val write = CompletableDeferred<Unit>()
-        recorder.slowWrite = write
-        recorder.recording("01J9")
-        runCurrent()
-
-        recorder.audioSec = 754.0
-        vm.highlight()
-        runCurrent()
-        recorder.idle()
-        runCurrent()
-        recorder.recording("01JA")
-        runCurrent()
-        write.complete(Unit)
-        runCurrent()
-
-        assertEquals(listOf("01J9" to 754.0), recorder.highlights)
-        assertNull(vm.state.value.highlightedSec)
-    }
-
-    @Test
-    fun `nothing is marked while the watch is not recording`() = runTest(dispatcher) {
-        val vm = viewModel()
-        runCurrent()
-
-        recorder.audioSec = 5.0
-        vm.highlight()
-        runCurrent()
-        assertEquals(emptyList(), recorder.highlights)
-    }
-
-    /** D6: the mark is at the audio the recorder has written, whatever the wall clock says since the start. */
-    @Test
-    fun `a highlight is marked on the written-audio clock`() = runTest(dispatcher) {
-        val vm = viewModel()
-        recorder.recording("01J9")
-        runCurrent()
-
-        recorder.audioSec = 61.5
-        vm.highlight()
-        runCurrent()
-
-        assertEquals(listOf("01J9" to 61.5), recorder.highlights)
     }
 }

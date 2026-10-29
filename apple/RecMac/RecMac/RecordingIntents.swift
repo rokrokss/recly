@@ -1,7 +1,7 @@
 import AppIntents
 
-/// docs/12 "Menu bar app": Shortcuts, Siri and Spotlight start and stop a recording and mark a moment
-/// of it. The intents run in the app's own process, on the one [MenuModel] the popover is drawn from.
+/// docs/12 "Menu bar app": Shortcuts, Siri and Spotlight start and stop a recording. The intents run in
+/// the app's own process, on the one [MenuModel] the popover is drawn from.
 struct StartRecordingIntent: AppIntent {
     static var title: LocalizedStringResource = "Start recording"
     static var description = IntentDescription("Start a recording with Recly.")
@@ -32,21 +32,8 @@ struct StopRecordingIntent: AppIntent {
     }
 }
 
-struct AddHighlightIntent: AppIntent {
-    static var title: LocalizedStringResource = "Add Highlight"
-
-    init() {}
-
-    @MainActor
-    func perform() async throws -> some IntentResult {
-        await MenuModel.shared.whenReady()
-        await MenuModel.shared.addHighlight()
-        return .result()
-    }
-}
-
-/// The phrases, the iPhone's (`ReclyShortcuts`) plus the highlight. In the app target because that is
-/// the only place App Intents metadata is extracted from; translated in `AppShortcuts.xcstrings`.
+/// The phrases, the iPhone's (`ReclyShortcuts`). In the app target because that is the only place App
+/// Intents metadata is extracted from; translated in `AppShortcuts.xcstrings`.
 struct ReclyShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -65,15 +52,6 @@ struct ReclyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Stop recording",
             systemImageName: "stop.circle"
-        )
-        AppShortcut(
-            intent: AddHighlightIntent(),
-            phrases: [
-                "Add a highlight with \(.applicationName)",
-            ],
-            shortTitle: "Add Highlight",
-            // docs/09 "Highlights": the filled square every highlight is drawn with — never a flag.
-            systemImageName: "square.inset.filled"
         )
     }
 }

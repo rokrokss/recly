@@ -9,7 +9,6 @@ import app.recly.recording.RecorderState
 import app.recly.wear.transfer.TransferQueue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,8 +31,6 @@ data class WearUiState(
     /** Recordings the phone refused outright. Their audio is still here — docs/11 W4. */
     val failed: Int = 0,
     val message: WearMessage? = null,
-    /** The second the Highlight button just marked, for the two seconds the status line says so. */
-    val highlightedSec: Long? = null,
 ) {
     /** Only a settled recorder takes a tap; Starting and Stopping are both "wait". */
     val canStart: Boolean get() = recorder == RecorderState.Idle
@@ -96,9 +93,7 @@ class WearRecordingViewModel(
         viewModelScope.launch { queue.sending.collect { now -> _state.update { it.copy(sending = now) } } }
     }
 
-    private fun onRecorder(recorder: RecorderState) = _state.update {
-        it.copy(recorder = recorder, highlightedSec = it.highlightedSec.takeIf { recorder is RecorderState.Recording })
-    }
+    private fun onRecorder(recorder: RecorderState) = _state.update { it.copy(recorder = recorder) }
 
     /**
      * docs/11 W6: the haptic fires on the tap, not on the service confirming. The user has already
@@ -118,29 +113,6 @@ class WearRecordingViewModel(
     }
 
     fun micDenied(permanent: Boolean = false) = _state.update { it.copy(message = WearMessage.MicDenied(permanent)) }
-
-    /** Marks kept so far: only the newest one's two seconds end the news. */
-    private var marks = 0
-
-    /**
-     * docs/03 "Metadata": marks this moment of the running recording — on the recorder's written-audio clock,
-     * not the wall clock since the start (D6). A mark the core kept is felt as a light tick (P3) and said on
-     * the status line for [HIGHLIGHT_NEWS_MS], then the line goes back to its own rule.
-     */
-    fun highlight() {
-        val recording = _state.value.recorder as? RecorderState.Recording ?: return
-        viewModelScope.launch {
-            val atSec = recorder.recordedSec() ?: return@launch
-            if (!recorder.highlight(recording.recordingId, atSec)) return@launch
-            // A slow write may land after that recording stopped and another started: its time is not the new one's news.
-            if ((_state.value.recorder as? RecorderState.Recording)?.recordingId != recording.recordingId) return@launch
-            haptics.tick()
-            val mark = ++marks
-            _state.update { it.copy(highlightedSec = atSec.toLong()) }
-            delay(HIGHLIGHT_NEWS_MS)
-            if (mark == marks) _state.update { it.copy(highlightedSec = null) }
-        }
-    }
 
     /**
      * Only what the user is told. The recording itself is already the shell's business by the time
@@ -162,6 +134,3 @@ class WearRecordingViewModel(
         }
     }
 }
-
-/** docs/09 §7: how long the status line says what the Highlight button marked. */
-internal const val HIGHLIGHT_NEWS_MS: Long = 2_000

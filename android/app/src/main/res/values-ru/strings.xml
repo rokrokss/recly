@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Автоматически</string>
     <string name="processing_language_mixed">Корейский и английский</string>
     <string name="processing_language_unsupported">Выбранный способ расшифровки не поддерживает этот язык.</string>
-    <string name="highlight">Отметить</string>
-    <string name="highlight_status">Отметка · %1$s</string>
-    <string name="highlight_tick">Отметка %1$s</string>
-    <string name="highlight_remove">Удалить отметку</string>
-    <string name="highlight_add_at">Добавить отметку на %1$s</string>
     <string name="detail_share">Поделиться</string>
     <string name="detail_more">Ещё</string>
     <string name="detail_edit">Изменить расшифровку</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Завершите вход в браузере</string>
     <string name="chatgpt_sign_in_failed">Не удалось войти в ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Вы вышли на этом устройстве, но OpenAI это не подтвердила. Recly можно удалить в настройках ChatGPT.</string>
-    <string name="chatgpt_footnote">Заметки и вопросы отправляют в OpenAI текст расшифровки, отмеченные вами моменты и ваши настройки заметок, — но никогда не аудио — и учитываются в использовании вашего плана ChatGPT.</string>
+    <string name="chatgpt_footnote">Заметки и вопросы отправляют в OpenAI текст расшифровки и ваши настройки заметок, — но никогда не аудио — и учитываются в использовании вашего плана ChatGPT.</string>
     <string name="chatgpt_welcome_title">Вы используете свой тариф ChatGPT</string>
     <string name="chatgpt_welcome_body">Заметки в Recly используют ваш тариф ChatGPT. Использованием можно управлять в настройках ChatGPT.</string>
     <string name="chatgpt_got_it">Понятно</string>

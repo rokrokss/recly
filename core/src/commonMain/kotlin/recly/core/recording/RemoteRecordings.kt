@@ -182,17 +182,6 @@ class RemoteRecordings(
     }
 
     /**
-     * The same for a `meta.json` changed after it went up — the highlights (docs/03 "Metadata"): the file
-     * in the folder is overwritten with this device's, and a local folder's Markdown transcript, which
-     * lists them, is written again. Like a rename, two devices changing it leave the later write.
-     */
-    suspend fun pushMeta(): Unit = pushing.withLock {
-        push(recordings.pendingMeta(), "remote.meta.pushed", "remote.meta.push.failed", recordings::metaPushed) { record, folderId, _ ->
-            pushMetaFile(record, folderId)
-        }
-    }
-
-    /**
      * docs/08 "Editing": a transcript edited here, carried to the recording's folder — `.json` and `.txt`
      * marked `edited` ([TranscriptMarks]), a local folder's `.md` written again — and the folder's
      * `transcriptAt` moved on, so the other devices take the edit in at their next pull.
@@ -295,8 +284,8 @@ class RemoteRecordings(
     }
 
     /**
-     * The Markdown transcript in a local folder carries the title and the highlights (docs/08 "Result
-     * files"), so a rename or new highlights write it again from the local transcript — when both are there.
+     * The Markdown transcript in a local folder carries the title (docs/08 "Result files"), so a rename
+     * writes it again from the local transcript — when both are there.
      */
     private suspend fun rewriteMarkdown(record: RecordingRecord, folderId: String) {
         val base = MetaWriter.baseName(record.meta)
@@ -505,7 +494,6 @@ class RemoteRecordings(
             if (recordings.applyTitle(recordingId, title)) retitled++
         }
         pushTitles()
-        pushMeta()
         pushTranscripts()
         pushNotes()
         refreshTranscripts(folders, ::covered)

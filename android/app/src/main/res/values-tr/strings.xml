@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Otomatik</string>
     <string name="processing_language_mixed">Korece ve İngilizce</string>
     <string name="processing_language_unsupported">Bu dil, seçilen transkripsiyon yöntemi tarafından desteklenmiyor.</string>
-    <string name="highlight">İşaretle</string>
-    <string name="highlight_status">İşaret · %1$s</string>
-    <string name="highlight_tick">İşaret %1$s</string>
-    <string name="highlight_remove">İşareti kaldır</string>
-    <string name="highlight_add_at">%1$s konumuna işaret ekle</string>
     <string name="detail_share">Paylaş</string>
     <string name="detail_more">Diğer</string>
     <string name="detail_edit">Transkripti düzenle</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Oturum açmayı tarayıcınızda tamamlayın</string>
     <string name="chatgpt_sign_in_failed">ChatGPT’de oturum açılamadı</string>
     <string name="chatgpt_revoke_unconfirmed">Bu cihazda oturum kapatıldı ancak OpenAI bunu onaylamadı. Recly’yi ChatGPT ayarlarından kaldırabilirsiniz.</string>
-    <string name="chatgpt_footnote">Notlar ve sorular; döküm metnini, vurguladığınız anları ve not ayarlarınızı OpenAI\'ye gönderir — sesi asla göndermez — ve ChatGPT planınızın kullanımına sayılır.</string>
+    <string name="chatgpt_footnote">Notlar ve sorular; döküm metnini ve not ayarlarınızı OpenAI\'ye gönderir — sesi asla göndermez — ve ChatGPT planınızın kullanımına sayılır.</string>
     <string name="chatgpt_welcome_title">ChatGPT planınızı kullanıyorsunuz</string>
     <string name="chatgpt_welcome_body">Recly’deki notlar ChatGPT planınızı kullanır. Kullanımı ChatGPT ayarlarından yönetebilirsiniz.</string>
     <string name="chatgpt_got_it">Anladım</string>

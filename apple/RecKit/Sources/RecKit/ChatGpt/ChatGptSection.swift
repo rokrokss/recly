@@ -36,7 +36,7 @@ public struct ChatGptSection: View {
                 }
             }
             failure
-            SectionFootnote(loc("Notes and questions send the transcript text, the moments you highlighted and your notes settings to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
+            SectionFootnote(loc("Notes and questions send the transcript text and your notes settings to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
         }
     }
 

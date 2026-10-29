@@ -82,7 +82,6 @@ import recly.core.chatgpt.FillRun
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
-import recly.core.model.Highlight
 import recly.core.model.RecordingStatus
 import recly.core.notes.NoteEdit
 import recly.core.notes.NoteLine
@@ -193,8 +192,6 @@ data class RecordingDetail(
     val driveUrl: String? = null,
     /** Its folder under the local folder, once its files are there — More → Open the folder (D24). */
     val folderPath: String? = null,
-    /** docs/03 "Metadata": the moments the user marked, in seconds of the recording. */
-    val highlights: List<Double> = emptyList(),
     /** The recording's whole length as its meta records it, which picks how its times are drawn (2026-10-08). */
     val lengthSec: Double? = null,
     /** A job of this recording has not settled: editing and transcribing again wait for it (docs/08 "Editing"). */
@@ -1450,18 +1447,11 @@ class ShellModel(
     }
 
     /**
-     * What the detail's menus and lines depend on besides the transcript: the highlights, which the audio
-     * observation does not follow, whether a job of this recording — a re-transcription among them —
-     * is still in flight, and its list row ([RecordingDetail.row]).
+     * What the detail's menus and lines depend on besides the transcript: whether a job of this recording — a
+     * re-transcription among them — is still in flight, and its list row ([RecordingDetail.row]).
      */
     suspend fun followDetailState(recordingId: String) = coroutineScope {
         val graph = graph ?: return@coroutineScope
-        launch {
-            graph.core.recordings.observe()
-                .map { graph.core.recordings.get(recordingId)?.meta?.highlights?.map { it.atSec }.orEmpty() }
-                .distinctUntilChanged()
-                .collect { highlights -> updateDetail(recordingId) { it.copy(highlights = highlights) } }
-        }
         // More → Delete: the recording's row read on its own rather than found in [recents], whose pages a search hit
         // can open past — again whenever a recording or a job changes, as the list's rows are.
         launch {
@@ -1505,36 +1495,6 @@ class ShellModel(
     }
 
     // --- the detail's tools (docs/08 "Editing" · "Exports", docs/10 "Re-transcription" · "Search") ----------
-
-    /**
-     * The whole list at once, saved as it is changed — no Save button (docs/03 "Metadata"). Shown as the core
-     * will keep it: a mark within a second of another, or past the limit, is not drawn for a moment first.
-     */
-    fun setHighlights(recordingId: String, atSecs: List<Double>) {
-        val graph = graph ?: return
-        updateDetail(recordingId) { it.copy(highlights = Highlight.normalize(atSecs).map { mark -> mark.atSec }) }
-        scope.launch(graph.core.deps.io) { graph.core.setHighlights(recordingId, atSecs) }
-    }
-
-    /**
-     * docs/03 "Metadata": the moment the recording that is running has reached, marked from the tray. The clock is the
-     * recorder's written audio ([WindowsRecorder.writtenSec]), so the mark is where that moment is in the file.
-     */
-    fun highlightNow() {
-        val graph = graph ?: return
-        if (!recording) return
-        val recordingId = recorder?.recordingId ?: return
-        // The written audio's clock, not the wall's: the mark is where that moment is in the file.
-        val atSec = recorder?.writtenSec() ?: return
-        scope.launch {
-            if (!graph.core.recordings.addHighlight(recordingId, atSec)) return@launch
-            // For two seconds, then the line is the recording's again.
-            val marked = Str.HIGHLIGHT_MARKED.message(LedgerFormat.clock((atSec * 1000).toLong()))
-            status = marked
-            delay(HIGHLIGHT_LINE_MS)
-            if (status == marked && recording) status = Str.STATUS_RECORDING.message()
-        }
-    }
 
     /** docs/08 "Editing": an edit saved here at once and carried to the recording's folder by the core. */
     suspend fun editTranscript(recordingId: String, edit: TranscriptEdit): EditResult {
@@ -2650,8 +2610,6 @@ class ShellModel(
         /** The job states that are over: anything else may still write the transcript. */
         private val SETTLED = setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)
 
-        /** How long the tray's line says a highlight was marked. */
-        private const val HIGHLIGHT_LINE_MS = 2_000L
         /** How long the detail says why Transcribe again did not start. */
         private const val NOTICE_MS = 4_000L
 

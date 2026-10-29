@@ -286,7 +286,7 @@ in):
 - `transfer` — helpers for watch→phone receiver-side verification and ack (sending is a platform API, so it is in the
   shell)
 - `disconnect(alsoDeleteRecordings)` — the local-cleanup half of disconnecting
-- (2026-10-07) `recordings.addHighlight` · `setHighlights` (§3 "Metadata"), `importAudio` · `dropAbandonedImport` (§3 "Naming rules"),
+- (2026-10-07) `importAudio` · `dropAbandonedImport` (§3 "Naming rules"),
   `retranscribe` (§10 "Re-transcription"), `editTranscript` (§8 "Editing"), `exportFile` (§8 "Exports"), `search` (§10 "Search"), and the
   pure rules every shell applies the same way — `SpeakerTurns`, `SilenceRanges`, and (2026-10-27) `SilenceReminder`, `BatteryStop`
   (§10 "Shared rules for the shells")
@@ -569,7 +569,6 @@ After `stop`, `status: finalized`.
   ],
   "gaps": [ { "startSec": 1800.0, "endSec": 1800.3, "reason": "segment_restart" } ],
   "silenced": [ { "startSec": 120.0, "endSec": 125.5, "reason": "mic_taken" } ],
-  "highlights": [ { "atSec": 125.0 }, { "atSec": 1820.5 } ],
   "context": {
     "app": "us.zoom.xos",
     "participants": 3
@@ -592,7 +591,6 @@ After `stop`, `status: finalized`.
 | `silenced` | Spans where the microphone was taken away, such as Android `isClientSilenced` or an Apple interruption. **Known limitation**: on Android, if stop is delayed (when unregistered parts are left over and handed to recovery), this span stays only in the log and does not go into the meta |
 | `context` | Optional. `app` is the bundle id of the detected meeting app, desktop only. `participants` (integer, head count including the user) is filled from the selection in the dialog after stop — the speaker-count hint for `transcribe` (§8). **There is no `context.calendar`** — calendar reading was removed from the whole product |
 | `drive` | Optional. This recording's Drive folder `folderId` · `folderUrl` (`webViewLink`). Right after `drive.upload` creates or finds the folder, and **before** it uploads the meta, it writes them to the row and to the local `meta.json` (`RecordingRepository.setDriveFolder`), so the copy in Drive and the devices that adopted it have the same values. Agent skills use it as the "Recording" link on the Notion page (2026-09-05). Absent before upload, or for a folder whose link was not received. Absent for iCloud recordings — there is no web link (§3 "Storage location") |
-| `highlights` | Optional (2026-10-07). Moments the user marked — `{ "atSec": … }`, on the recording's own axis (the one transcript segments use), ascending, no two within 1 second, at most 500; left out of the file while there are none. Marked while recording from the recorder, a watch, a tile, the desktop popover or an App Intent through `recordings.addHighlight(recordingId, atSec)` — one locked write of the row and `meta.json`, callable from any thread, a second mark within 1 second of one already there ignored. Edited later, as a whole list, with `ReclyCore.setHighlights(recordingId, atSecs)`, for this device's recordings and other devices' alike: written here at once and carried to the folder's `meta.json` the way a title is (§3 "Titles" — pending as `meta/pending/{recordingId}` in `kv` until it lands, retried by every pull; a local folder's `.transcript.md` is written again with it). A watch's marks travel in the meta it sends (§3 "Watch → phone transfer contract"). **Known limitation**: other devices that already adopted the recording keep the highlights they read; a later write of the meta by any device (a rename, highlights) leaves that device's list. Agents should weigh them — they are what the user thought mattered |
 | `status` | `recording` → `finalized` → (watch) `transferred` |
 
 The participant options are `2 · 3 · 4 · 5 · 6+ · Unknown`, and the default is "Unknown" (unknown) — if the user picks nothing, the field is omitted.
@@ -1076,7 +1074,7 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   dictionary of `WCSession.transferFile` (`{recordingId, part, track, sha256, file}`, `{recordingId, progress}`, `{recordingId}`).
 - **Parts go while the watch is still recording** (2026-10-27, both watches alike). Each part is queued **as soon as its boundary
   files it**, and the pass that sends it puts an **in-progress meta** ahead of it: the recording's `meta.json` as it stands —
-  `status: recording`, start time, time zone, segment length, tracks, the highlights so far and every part filed so far with its offset
+  `status: recording`, start time, time zone, segment length, tracks and every part filed so far with its offset
   and length. It is refreshed with each part, never acked, and finalizes nothing; a pass with no new part sends none. Galaxy Watch:
   `/rec/progress/{recordingId}`, one `RecorderHost.onPartFiled` → one WorkManager pass per part. Apple Watch: `{recordingId, progress: n}`
   with `n` the newest part it lists — the key that tells the one for the next part from a resend of this one while `WCSession` still
@@ -1115,7 +1113,7 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
 - The watch only **records** part acks and keeps the files; only after receiving `ack-meta ok:true` does it delete the parts · meta · directory · local row
   (if a later part or the meta gets a fatal nack, the parts acked earlier must still be there for resending · recovery to be possible).
   A `SHA256_MISMATCH` nack resends that part once; the second time it is fatal.
-- The phone files the meta the watch sent as it is — every field, the highlights marked on the watch among them (2026-10-07) — and
+- The phone files the meta the watch sent as it is — every field — and
   registers the recording in `recordings` and creates the Job when it receives the meta. The `recordingId` in the meta body must match the one in the path
   (mismatch → `RECORDING_ID_MISMATCH` nack, no core call), and **`ack-meta ok:true` is sent only after enqueue and waking the runner
   have finished** — if something fails before that, it does not ack and leaves it to the watch's resend (`acceptMeta` · `enqueue` are idempotent).
@@ -2032,8 +2030,8 @@ screen; kept regardless of the part deletion rules).
 | File | Contents |
 |---|---|
 | `{base}.transcript.json` | The schema below. The canonical copy for machines |
-| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text` — or `[HH:MM:SS] Minsu: text` once the user named that speaker (2026-10-07, §8 "Editing"); a segment without a speaker has no label. A line break when the speaker changes or a segment passes 60 seconds. It carries no highlights: agents parse these lines, and the marks are in `meta.json` |
-| `{base}.transcript.md` | **Local folder only** (§3 "Storage location"), for notes apps such as Obsidian that open only Markdown (2026-10-03). Front matter `title` (only when there is one; a JSON string, which YAML reads as a double-quoted scalar) · `recordingId` · `startedAt` · `highlights` (2026-10-07, when the recording has any: their clock times as quoted strings — YAML 1.1 reads a bare `00:02:05` as a number), then a `## Highlights` list — each clock time with the words of the segment being spoken then — and the lines of `.txt`, each its own paragraph. A rename, an edit and new highlights rewrite it |
+| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text` — or `[HH:MM:SS] Minsu: text` once the user named that speaker (2026-10-07, §8 "Editing"); a segment without a speaker has no label. A line break when the speaker changes or a segment passes 60 seconds |
+| `{base}.transcript.md` | **Local folder only** (§3 "Storage location"), for notes apps such as Obsidian that open only Markdown (2026-10-03). Front matter `title` (only when there is one; a JSON string, which YAML reads as a double-quoted scalar) · `recordingId` · `startedAt`, then the lines of `.txt`, each its own paragraph. A rename and an edit rewrite it |
 
 Drive writes follow the same idempotency rule as `drive.upload` (same name + same md5 is skipped; otherwise it is **overwritten** — after a rerun the latest
 result is canonical).
@@ -2109,7 +2107,7 @@ recordings and other devices' alike. `TranscriptEdit` is one of four concrete cl
 ### Exports
 
 2026-10-07. `ReclyCore.exportFile(recordingId, format): String?` writes one file for a share sheet and returns its path, or null when there
-is nothing in that format. `ExportFormat` is `TXT` (the `.txt` lines), `MD` (the `.md` above, highlights included, and — 2026-10-28 —
+is nothing in that format. `ExportFormat` is `TXT` (the `.txt` lines), `MD` (the `.md` above and — 2026-10-28 —
 the recording's notes as their own section (`notes.markdown`, §8 "Organizing") before a `## Transcript` one; the `.md` in a local folder
 is written without them), `NOTES` (the notes as text, `notes.text`, `… .notes.txt`), `SRT` and `VTT` —
 one cue per segment, the speaker's name or id in front when speakers were identified; a segment longer than 7 seconds or 84 characters is
@@ -2212,8 +2210,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   20 seconds each (a longer segment with word timings is split, as in the evaluation). Phone numbers, e-mail addresses and runs of
   eight digits or more become `[phone#1]`, `[email#1]` and `[number#1]` — the same value the same placeholder within a request — and
   are put back into the answer on the device, before the quote check. With the lines: the user's instructions and About you (§8
-  "AI requests"), and after Stop the highlights within each conversation — their times and the words said then, hidden the same way
-  — to be covered. No title, never audio.
+  "AI requests"). No title, never audio.
 - **While recording (provisional).** Each part of the transcription track (`mono`, else `mix`) that the recorder files while a
   recording of this device is in progress (`RecordingRepository.addPart`) — and, on the phone, each part of a watch's recording that
   arrives while the watch still records (2026-10-27, §3 "Watch → phone transfer contract": filed and listed by its in-progress meta,
@@ -2311,7 +2308,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
 ### Ask
 
 2026-10-10 (user decision). More → `Ask about this recording…` asks ChatGPT one question about one recording (§8 "AI requests")
-— the transcript's lines with the speakers' names, the marked moments, About you and `Me`, then `Question:` and the question — and shows the answer.
+— the transcript's lines with the speakers' names, About you and `Me`, then `Question:` and the question — and shows the answer.
 `summaries.ask(recordingId, preset, question)` takes the user's own words (up to 500 characters, answered in the question's language) or
 an `AskPreset`, answered in the notes' language: `FOLLOW_UP_EMAIL` (a draft with a subject line and placeholders for names the
 transcript does not give), `ACTION_ITEMS`, `OPEN_QUESTIONS`, `TRANSLATE` (the whole transcript, line by line, into the app's language —
@@ -2373,7 +2370,7 @@ the user chose automatic instead.)
   others"); of these, only the halves asked. Nothing is sent when there is nothing to fill: nothing said, or the half asked already
   there.
 - **The request** is §8 "AI requests"'s (§15 §10) with its own instructions: the transcript's lines with their times and the speakers' names — no
-  title, no highlights, never audio — and the answer asked for is one JSON object: `title` in the notes' language (§8 "AI requests"), at
+  title, never audio — and the answer asked for is one JSON object: `title` in the notes' language (§8 "AI requests"), at
   most 20 characters in Korean, Japanese or Chinese and 40 in any other language, in a few words rather than a sentence (2026-10-29,
   user request: titles of 60 ran long), and `speakers`, each asked id's name only as the transcript gives it — what they call themselves, or what the others
   call them when talking to them, without honorifics that go with a name (`님`, `씨`, `さん`, `Mr.`), a form of address used alone
@@ -2475,9 +2472,9 @@ The principle in one line: **intent, not decoration**.
     slot or on a curved label; the Wear tile the watch's label 13 and small 12. On Apple they grow with the user's text size by the factor the
     app measures. A tile can draw only Roboto, so its words are in the sans; a Wear complication is drawn by the watch face in its own type.
 - **Time format** (2026-10-08, user decision): under an hour `MM:SS` (`02:03`), from an hour `HH:MM:SS` (`01:02:03`). Every time inside one
-  recording's screen — the detail clock, transcript time buttons, highlight ticks and their menus, find and search hit times — takes its format
-  from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches, the `Highlight · …`
-  confirmation) follow the elapsed time itself. Exported files (`.txt`, `.md`, `.srt`, `.vtt`) and spoken times keep their own formats, and an
+  recording's screen — the detail clock, transcript time buttons, find and search hit times — takes its format
+  from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches) follow the
+  elapsed time itself. Exported files (`.txt`, `.md`, `.srt`, `.vtt`) and spoken times keep their own formats, and an
   Ask answer's citations show as ChatGPT wrote them (`[00:12:34]`), since they are part of its text (2026-10-10), and Apple's widgets,
   Live Activity and watch complication use the system's self-updating timer (`0:12`), the only text a widget can update every second (2026-10-11).
   Examples elsewhere in this document written `00:12:34` stand for a time in this format.
@@ -2516,8 +2513,6 @@ The principle in one line: **intent, not decoration**.
   at most 800ms). **With `reduce motion`, "instant transition + text status only"** — what is turned off is the *transition*; the text
   status itself, such as "…" and "✓", stays.
 - **Icons**: geometric thin lines (1.5dp), platform system icons first (Material Symbols Outlined / SF Symbols light).
-  **No flag icon anywhere** (2026-10-07, user decision): a highlight is Blueprint's record-square motif — a small filled accent square —
-  wherever it is shown or made (screen principles 1, 2, 6, 7).
 
 ### App icon
 
@@ -2593,11 +2588,6 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      **Phones (Android · iPhone) borrow one more**: when idle and there is a row being received from the watch, it shows `RECEIVING` (accent, the same
      loader) (2026-09-04). If a job on this device is running, `UPLOADING` wins, and while recording, `REC` beats both.
      Desktop has nothing to receive, so it is unchanged.
-   - The **highlight node** (phones, 2026-10-07, §3 "Metadata"): while recording, a second square node — 56, radius 4, 1.5 accent border, a filled
-     14 accent square inside, no text; accessibility name `Highlight` — stands 24 to the end side of the record node, vertically centred with it. The record
-     node stays exactly centred, and idle shows nothing. A tap marks the moment (`recordings.addHighlight`, at the recorder's written-audio time, not the wall clock — 2026-10-15,
-     every shell): a light haptic, the node filled accent for
-     150 ms (instant with reduce motion), and `Highlight · 00:12:34` (mono time) on the line below the record node, under that line's rule above.
    - **Quick start** (iPhone, 2026-10-07): a Home Screen widget (small: the square record node; while recording, the mono timer and a stop node) and Lock
      Screen widgets (circular: the record icon or the timer; rectangular: `Recly` + `Record` or the timer) run the existing start and stop App Intents,
      opening the app where iOS requires it, like the Control. Gallery name `Record`, description `Start or stop a recording.`
@@ -2732,9 +2722,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      focuses the list's field. No results: the centred
      `No recordings match` over the dimmed `Search looks in titles and in transcripts on this device.`
    - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
-     keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in three groups parted by a hairline (2026-10-10, the same
+     keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in two groups parted by a hairline (2026-10-10, the same
      on every shell): `Rename` · `Edit transcript` · `Transcribe again`; `Organize` (`Organize again` once there are notes) · `Edit notes` · `Ask about this
-     recording…` · `Fill in title` · `Fill in speaker names` (§9 "AI view"; the group is absent where ChatGPT is not offered); `Add highlight at 00:12:34` (the playhead).
+     recording…` · `Fill in title` · `Fill in speaker names` (§9 "AI view"; the group is absent where ChatGPT is not offered).
      Two more groups follow (the desktops 2026-10-15, the phones 2026-10-28): the recording's folder — `Open in Drive` (when there is a link), or on
      the desktops `Show in Finder` / `Open the folder` — and last, the red `Delete`, which opens the delete dialog over the page (§3 "Deleting in the
      app"; no keyboard shortcut, user decision; disabled with `Still recording` or the importing word while the recording is being written). The menu
@@ -2762,11 +2752,6 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      colours** — not on the waveform bars, not as tinted rows (2026-10-02 user decision, restated 2026-10-07). While a re-transcription runs, the old text
      stays under a one-line status, the square loader and `Transcribing again…` (external) or `Transcribing on this device` (local), until the new
      transcript replaces it (the reading position goes back to the top only if the user had not scrolled).
-   - **Highlights**: on the waveform, a 2 px accent line over the full height with a 6×6 filled accent square on top, above the bars and under the
-     playhead; a tap or click within 12 px seeks there. In the transcript, the group that holds a highlight shows a 6×6 filled accent square right after
-     its time button, vertically centred with it. Both open `Go to 00:12:34` · `Remove highlight`, and screen readers get each tick as an element
-     `Highlight 00:12:34` with those two actions. More's `Add highlight at …` marks the playhead (disabled while no audio is ready); the desktops also
-     have a `Highlight` button in the playback bar. Changes save at once (`setHighlights`) — there is no Save button.
    - **Editing and speakers**: the speaker menu (from a badge) has `Rename speaker` and `Change speaker for this line` → every speaker by name or id,
      and `New speaker`. `Rename speaker` is a dialog — `Speaker name`, the field `Name` prefilled, `Cancel` · `Save`; an empty name clears it and the id
      shows again. Changes from the menu save at once (`editTranscript`, inline `Saving…` → `✓`). **Edit mode** (More → `Edit transcript`) turns the
@@ -2782,7 +2767,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      a toggle row `Skip silence`. With skip silence on, the chip carries a small accent dot at its top-end corner (accessibility value
      `Speed 1.5×, skip silence on`). Pitch is preserved, and both are this device's preferences, not synced. Skip silence seeks over the core's
      `SilenceRanges` (§10 "Shared rules for the shells"); the clock always shows the real position in the recording. Phones: the waveform, then
-     elapsed / total (start) · the speed chip · Play (end, ≥ 120). Desktop: Play · elapsed / total · the speed chip · `Highlight`.
+     elapsed / total (start) · the speed chip · Play (end, ≥ 120). Desktop: Play · elapsed / total · the speed chip.
 3. **Workflow editor = node graph** — **retired (2026-09-24)**: the user workflow editor and list were removed. The sentences about the editor and
    list are a record; the general layout rules at the end (from "iPhone supports portrait and left/right landscape") and the unsaved key
    input rule remain valid. Record: trigger (device) → step nodes → end. Nodes are square, connectors straight, and the selected node has an
@@ -2880,8 +2865,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
    sends peaks of 0.1-second windows as `level {peaks[]}` events (2026-09-03). The Android recording screen has the same band under the timer —
    it reads `MediaRecorder.getMaxAmplitude()` every 0.1 seconds (2026-09-03).
-   While recording, the command row of the popover and the tray has a `Highlight` text button right after Stop (2026-10-07, text only), and the line
-   under it says `Highlight · 00:12:34` for 2 seconds. The Mac also has the App Intents `Start recording` · `Stop recording` · `Add Highlight`.
+   The Mac also has the App Intents `Start recording` · `Stop recording`.
    There is no global keyboard shortcut (removed 2026-10-09, user decision).
 7. **Watch**: mono timer + square start/stop, **one-line status**, recordings still waiting to transfer — while the transfer pass is finding the phone and handing over files,
    the same recordings are spoken as `Sending` (2026-09-04; tiles and complications follow the same rule).
@@ -2892,16 +2876,13 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    and the number does not change what they do (2026-10-05, both watches, tiles and complications included). The line says one thing, in this order: what a stop had to report
    (a failure, a deferred save), what the recorder is doing, transfers the phone refused (Wear), then recordings still on the watch. Idle with nothing
    left, it is blank and keeps its height, because the hollow button already says the watch is ready. A stop that went as asked is not announced.
-   While recording, both watches have the phone's highlight node below the stop square — 48, radius 4, a 1.5 accent border, a filled 12 accent
-   square inside, no text; accessibility name `Highlight` (2026-10-08: the word was dropped, as on the phones; 2026-10-07 it was a text button). On Apple Watch, Double Tap marks a highlight (watchOS 11 and later; it used to stop — Stop stays on the square); the Galaxy Watch
-   has no gesture. The status line says `Highlight · 00:12:34` in the accent for 2 seconds (both watches), then goes back to its rule.
    The Galaxy Watch tile draws the app's square record node (outlined; filled with the inner square while recording), not a Material pill button,
    and says nothing when idle with nothing to send (2026-10-08).
    **Both watches alike** (2026-10-15): the screen reads timer (`00:00` when idle) → status line → record node; the recorder's words are the
    phones' — `Starting`, `Saving` — on the screen, the Galaxy Watch's tile and complication (the Apple Watch complication keeps its idle and
    recording looks: a widget timeline is too slow for a state that lasts a second); a recording that failed says `The recording failed` without the
    platform's reason; a transfer the phone refused says `Transfer failed`, tiles and complications included; the node is disabled while
-   starting and saving. Haptics: start, stop, a light tick when a highlight is kept, and the success haptic when the phone acks a recording's
+   starting and saving. Haptics: start, stop, and the success haptic when the phone acks a recording's
    meta — the transfer is complete only then, not when the recording is queued. A tap on a complication never stops a recording (a face is
    brushed by accident): the Apple Watch's starts one when idle and only opens the app while recording; the Galaxy Watch's only opens the app,
    because its one-tap starts are the tile and `Recly Quick Rec`. The Galaxy Watch's setup guide (double home key) has no Apple Watch
@@ -2935,8 +2916,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   `Sign out` (no confirmation — signing in again restores it; when OpenAI did not confirm the revocation, a muted footnote under the
   account row says so, on every shell — 2026-10-11) and, under that line, the text link `Manage usage` (ChatGPT's usage
   settings, principle 4), then a `Model` picker of the plan's models (hidden when the list could not be read). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
-  to sign in again.` in the warning tone, with `Continue with ChatGPT`. The footnote ends the section: what goes — the transcript text,
-  the highlighted moments and the notes settings, never the audio — for notes and questions, and that they count toward the plan. The
+  to sign in again.` in the warning tone, with `Continue with ChatGPT`. The footnote ends the section: what goes — the transcript text
+  and the notes settings, never the audio — for notes and questions, and that they count toward the plan. The
   first sign-in on a device shows once `You’re using your ChatGPT plan` / `Notes in Recly use your ChatGPT plan. You can manage usage in
   ChatGPT settings.` with `Manage usage` and `Got it`. The section holds the provider alone — its sign-in and its model — so that another
   AI provider can take its place later (2026-10-28, the user's direction); what the notes are asked for belongs to no provider and
@@ -3057,7 +3038,7 @@ confirmation dialog). The recording state is the one other red — the record an
 not a warning; the desktop `Stop recording` belongs to it. Drive `Disconnect` is quiet (2026-10-08). A selected list row also shows a 2px accent bar on
 its start edge, not only a tint. Node borders, transcript time boxes, quiet buttons and dropdown boxes keep at least 3:1 against the background in
 light and dark, and a disabled quiet button has a dashed border and muted ink (2026-10-08). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason among a recording's fixes, use the same
-warning tone as the badge or a dimmed color, and never red. `Remove highlight` and `Discard` (an edit) are not red either: they delete no recording (2026-10-07).
+warning tone as the badge or a dimmed color, and never red. `Discard` (an edit) is not red either: it deletes no recording (2026-10-07).
 **The tone of a status sentence** (2026-10-15, every shell): a failure — `Could not …`, `The recording failed`, a model download that
 failed — is red; waiting, or blocked by something the user can act on (a disconnect still owed, a Drive permission, a model to fetch), is the
 warning tone; an informational limitation (`… is not supported here`, `… is unavailable on this device`) is muted.
@@ -3077,8 +3058,8 @@ arrow over a disabled one or one showing its own work (2026-10-28); the phones a
 (`heading()`, `.isHeader`); a status line that changes while the user looks at it — the record screens', both watches', the popover's and the
 tray's — is announced politely (a polite live region; on Apple an announcement when its text changes). Windows ships `jdk.accessibility` in its
 runtime, so NVDA and JAWS read the app through the Java Access Bridge (turned on with `jabswitch /enable`), and it follows the system text size
-(`TextScaleFactor`), the animation setting above, and the app's light or dark choice in its title bars. Times, the waveform and its highlight
-ticks are laid out left to right in every language, so what is drawn and what is tapped stay in one place in Arabic, Persian and Urdu.
+(`TextScaleFactor`), the animation setting above, and the app's light or dark choice in its title bars. Times and the waveform
+are laid out left to right in every language, so what is drawn and what is tapped stay in one place in Arabic, Persian and Urdu.
 
 ---
 
@@ -3521,7 +3502,6 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Delete (`RecordingDeleteTest`, `DeleteDuringRunTest`) | the four tables deleted, `RUNNING` → `Busy` without an executor, local data is deleted even if `deleteDrive` fails and `driveError` is set, delete vs `claimRunning` race, cancellation at commit time; with the executor: an upload hanging in the transport is cancelled and its recording deleted while the same pass runs the next job, a run cancelling cannot reach is let go of and its late write refused, a Job left `RUNNING` by a killed run goes with its recording |
 | Recordings from other devices (`RemoteRecordingsTest`) | list folders → adopt (parts `deleted=1`+`drive_file_id`, `meta.json` written), sorted by start time, the second fetch makes 1 request, folders without meta are held back, own rows are not overwritten, only adopted rows whose folder vanished are deleted, two folders with the same id · move to a rerun folder (both the old folder vanishing and the new folder completing), rejects id mismatch · non-ULID · forged part file names, no account · throttle · fetch failure, "Delete local only" does not come back (+ the record is cleaned up when the folder vanishes, re-adoption after `clearIgnored`, via `drive_folder_id` even after the queue is emptied, `adopt` rejects inside the transaction), `uploaded` true · `enqueue`=`PartsPurged`, playback fetches by file id, sweep after 7 days, Drive deletion uses `drive_folder_id`, titles: rename→description+meta push, adopted rows too, pending on failure then the next fetch, description→applied to the row (pending wins), empty description ignored |
 | Disconnect (`ReclyCoreTest`) | deletion order, recordings and `recording` rows kept, `busyRecordings`, Drive `files.delete` not called |
-| Highlights (`HighlightsTest`) | marks while recording (one per second), survive the stop, pushed to Drive's meta after upload, pending offline then the next pull, other devices' recordings, a watch's marks arrive on the phone |
 | Import (`AudioImportTest`) | the importing row, staging, parts named and finalized at once, the plan queued; unreadable · unsupported · cancelled leave nothing; recovery leaves an import in progress alone and drops an abandoned one |
 | Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next, no retry on the old plan with transcription off, a failed folder stamp fails and is retried, `Started` after a cancellation once queued |
 | Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
@@ -3627,7 +3607,7 @@ android/
 | W3 | `OngoingActivity` (Wear OS 6) / Live Updates (7): watch face chip, tapping opens the app |
 | W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. While recording (2026-10-27, §3): each part filed (`RecorderHost.onPartFiled`) queues the recording and runs one pass, which sends `/rec/progress/{recordingId}` (the in-progress `meta.json`, not acked) and then the new part; a pass finds no work in a recording whose filed parts are all acked and opens no channel for it; the final meta goes after the stop. A trigger that finds a pass already sending also arms the 60-second follow-up, so a stop during a part's pass does not wait for the next trigger. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
 | W5 | Entry points: tile (`launchAction`), complication (state — the app's square record glyph; while recording the filled square and the elapsed time the face counts itself, where the slot has room, instead of `REC`; 2026-10-11), **a second launcher item "Recly Quick Rec"** with its own icon (§9 "App icon"; 2026-10-14) (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
-| W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, TICK on a kept highlight, and the transfer-complete haptic when the phone acks a recording's meta (2026-10-15, as the Apple Watch) |
+| W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, and the transfer-complete haptic when the phone acks a recording's meta (2026-10-15, as the Apple Watch) |
 | W7 | Battery: no Wi-Fi request while recording, no keep-screen-on; transfer prefers charging (optional) |
 
 ### Caveats
@@ -3780,11 +3760,8 @@ With the built-in speakers the microphone's input node runs with voice processin
   consent questions) comes up above it even when macOS does not bring the app to the front (2026-10-29).
 - **Runner**: the app process calls `runDueJobs()` (a) right after a Job is created (b) on a 5-minute timer (c) when the network returns (`NWPathMonitor`)
   (d) as the `nextRunAt` follow-up. Launch at login via `SMAppService`.
-- **Highlight** (2026-10-07): while recording, the popover's command row has `Highlight` right after `Stop recording`; it calls
-  `recordings.addHighlight(id, recordedSec)` (the recording's own clock, a second mark within 1 s ignored) and the line under the row says
-  `Highlight · 00:12:34` for 2 seconds.
-- **Quick start** (2026-10-07): App Intents `Start recording`, `Stop recording` and `Add Highlight`, with App Shortcuts phrases like the iPhone's
-  (`Start recording with Recly`, `Recly start recording`, `Stop recording with Recly`, `Add a highlight with Recly`; `AppShortcuts.xcstrings`).
+- **Quick start** (2026-10-07): App Intents `Start recording` and `Stop recording`, with App Shortcuts phrases like the iPhone's
+  (`Start recording with Recly`, `Recly start recording`, `Stop recording with Recly`; `AppShortcuts.xcstrings`).
   They run in the app's process on the menu's own model, waiting up to 10 s for the core to open when the intent launched the app; a start still asks the
   consent question (M8).
 - **Details window** (2026-10-07): the toolbar's `Share` menu lists `Transcript` (`.txt`), `Transcript for notes` (`.md`), `Subtitles` (`.srt`),
@@ -3917,8 +3894,7 @@ macOS.
     words below the clock, where a long translation has the width). It ends from the background on the watch's stop, and is not renewed at
     ActivityKit's 8-hour limit (that needs the app in front): past it, only the widgets show the watch's recording. The phone's own
     recording takes precedence on both. Like every iPhone Live Activity, it also shows in the watch's Smart Stack.
-- **Entry points**: App Intents `StartRecordingIntent`, `StopRecordingIntent` and `AddHighlightIntent` (2026-10-15, as the Mac's
-  `Add Highlight`) → Siri · Shortcuts · Action button.
+- **Entry points**: App Intents `StartRecordingIntent` and `StopRecordingIntent` → Siri · Shortcuts · Action button.
   An iOS 18 Control starts by opening the app with `OpenIntent` (starting a long-running audio session from a widget extension is unreliable).
   A quick start while the consent reminder is owed opens the Record tab, asks, and starts on confirmation (2026-10-15; it used to be refused
   with `Open Recly once to answer the recording reminder`).
@@ -4002,7 +3978,7 @@ and the transfers it was sent behind may still be on their way.
 | WA1 | Target · RecKit (watchOS slice) |
 | WA2 | Recording + background audio |
 | WA3 | `transferFile` queue + ack |
-| WA4 | Complication · App Shortcut · Double Tap |
+| WA4 | Complication · App Shortcut |
 | WA5 | Haptics (`WKInterfaceDevice.play(.start/.stop/.success)`) — the third haptic (transfer complete) means "it has now left my hands", so it plays when the phone acks the recording's meta, not when it is queued (2026-10-15) |
 | WA6 | Interruption (phone call · Siri) handling |
 
@@ -4152,7 +4128,7 @@ Recly **has no server.** Data goes to (1) the user's Google Drive (§1, includin
 (§1b) if iCloud was chosen on iPhone · Mac, (2) the STT provider (§3), **only when the user chose external API
 transcription** in the recording processing settings, and (3) **the user's own other paired device** (watch ↔ phone,
 §4) — the first two go with the user's account and the user's keys, and the third stays between two of the user's own
-devices. (4) OpenAI receives a recording's transcript text — with its highlighted moments, the user's `About you` and, for its notes, the user's notes instructions and sections — only when the user signed in with ChatGPT and asks a question about it or to organize it again (§10), and — for a user who signed in and agreed to organizing — the text of each recording made on the device, part by part while it is recorded and again after Stop, with numbers and addresses left out, to organize its notes (§10, 2026-10-27). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
+devices. (4) OpenAI receives a recording's transcript text — with the user's `About you` and, for its notes, the user's notes instructions and sections — only when the user signed in with ChatGPT and asks a question about it or to organize it again (§10), and — for a user who signed in and agreed to organizing — the text of each recording made on the device, part by part while it is recorded and again after Stop, with numbers and addresses left out, to organize its notes (§10, 2026-10-27). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
 links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
@@ -4485,7 +4461,7 @@ connections:
 | Path | To | What is sent | What comes back |
 |---|---|---|---|
 | Google sign-in, Drive | `accounts.google.com` (consent in the user's browser), `oauth2.googleapis.com`, `www.googleapis.com/drive/v3` (`changes`, `files`, `files/{id}?alt=media`, `about`) | Recly's own desktop OAuth client (the Windows app's, compiled into the `events-v…` release archives) and its token, scope `drive.file`, so Drive shows it only the files Recly's apps created; built from source without that client, it takes the user's own client and `drive.readonly` instead (until 2026-10-07 `drive.metadata.readonly`, which cannot read a transcript) | names, IDs, folder descriptions (Recly titles), the folder's `recordingId` and links, and, for the CLI's `init` check, the account's opaque `permissionId`. **File contents only when the agent asks** (2026-10-07): `list_recordings` downloads the listed recordings' `{base}.meta.json`, and `get_transcript` that recording's meta and transcript (`.transcript.json`, else `.txt`). Audio is never downloaded |
-| OpenAI Secure MCP Tunnel | `api.openai.com` (`/v1/tunnel…`, long polling by the embedded `tunnel-client`) | the tunnel ID, a runtime key restricted to Tunnels Read + Use, and the answers to ChatGPT's MCP requests: the event inbox (recording name, title, start time, device, Drive IDs and links); `list_recordings` (recording IDs, titles, start times, lengths, sources, whether a transcript exists, the number of highlights); `get_transcript` (the transcript text, its language, the speakers' names the user gave and the highlight times) | ChatGPT's MCP requests: discovery, tool calls, `events/subscribe` |
+| OpenAI Secure MCP Tunnel | `api.openai.com` (`/v1/tunnel…`, long polling by the embedded `tunnel-client`) | the tunnel ID, a runtime key restricted to Tunnels Read + Use, and the answers to ChatGPT's MCP requests: the event inbox (recording name, title, start time, device, Drive IDs and links); `list_recordings` (recording IDs, titles, start times, lengths, sources, whether a transcript exists); `get_transcript` (the transcript text, its language and the speakers' names the user gave) | ChatGPT's MCP requests: discovery, tool calls, `events/subscribe` |
 | Event delivery | the callback URL from `events/subscribe`, only when its host is in `callbackHosts` (default `connectors.api.openai.com`), port 443, public addresses only, no redirects | a Standard Webhooks-signed `recording.transcribed` event with the fields above | 2xx, 410 (ends the subscription) or a retry |
 
 - No audio, STT key or long-lived Recly credential passes through it. Transcript text does, on request only: when the agent calls `get_transcript`, recly-events downloads that transcript from Drive, keeps it in memory for that answer only, and sends it to the user's ChatGPT through the user's tunnel, marked as untrusted content (what people said, not instructions). The event delivery itself still carries names and links only, and nothing is read from Drive for it beyond metadata (2026-10-07). The agent therefore needs no Google Drive connector of its own (2026-10-07); a Work chat that has one can still open the files by the event's Drive IDs.
@@ -4523,9 +4499,9 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Tokens | `https://auth.openai.com/api/accounts/oauth/token` | the code and verifier, or the refresh token; the client id; `resource` | access token (1 hour), rotating refresh token (30 days), ID token (`sub`, `email`), `earliest_refresh_at` |
 | Sign-out | the `revocation_endpoint` from `https://auth.openai.com/.well-known/openid-configuration` | the refresh token and client id | 200 |
 | Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`); Recly offers those marked `list`, less `HIDDEN_MODELS` (§8) |
-| Ask | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `About you` when set — and **the recording's transcript text with its times and the speakers' names**, plus each highlight's time and the words said then, and the preset's question or the user's own — no title, never audio | the answer as a stream (`store: false`); kept in memory only |
-| Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, no highlights, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu |
-| Organizing (2026-10-27; `Organize again`, 2026-10-28) | the same | the access token, the model Settings picked, the instructions — with the user's `Notes instructions`, `My sections` and `About you` when set — and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop and at `Organize again`, each conversation's lines with the time of each highlight in it and the words said then, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device, no title, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the final notes go to the recording's Drive or iCloud folder (§1, §1b) |
+| Ask | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `About you` when set — and **the recording's transcript text with its times and the speakers' names**, and the preset's question or the user's own — no title, never audio | the answer as a stream (`store: false`); kept in memory only |
+| Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names** — no title, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu |
+| Organizing (2026-10-27; `Organize again`, 2026-10-28) | the same | the access token, the model Settings picked, the instructions — with the user's `Notes instructions`, `My sections` and `About you` when set — and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop and at `Organize again`, each conversation's lines, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device, no title, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the final notes go to the recording's Drive or iCloud folder (§1, §1b) |
 
 - Only when the user asks: signing in, and choosing `Organize` or `Organize again`, a question in `Ask about this recording…`, `Fill in
   title` or `Fill in speaker names` on one recording. There are two background uses, both for a user who agreed — under the sign-in, or
@@ -4655,7 +4631,7 @@ violation prints 400. `--fail-first 1` answers 500 to the first delivery of a gi
 | **Android phone** | 1 **Retired (2026-09-24)** ~~New install → two default workflows are created locally, and the one in use on this phone is Memo~~ → New install → the recording processing settings are ready with their defaults (§5 "Fixed processing settings"). 2 One-hour recording (screen off) → stop → enter title → within 30 seconds, 4 parts + meta in Drive `recly/memo/2026-08/{base}/`~~, one webhook received (signature verification passes)~~ (webhook part retired 2026-09-24). 3 Record in airplane mode → turn it off → automatic upload. 4 Force-quit the app during upload → WorkManager finishes it (no duplicate files in Drive). 5 **Retired (2026-09-24)** ~~webhook 500 → retry → success~~. 6 `MISSING_SECRET` on a device without the secret~~, and with `continue` the next step proceeds~~ (user `onError` retired 2026-09-24). 7 Under 30 seconds → `SKIPPED_SHORT`, and the row has no retry or upload button. 8 Rotate during the consent screen (activity re-creation) → authorization completes |
 | **Galaxy Watch** | 1 Tap the tile → recording starts immediately, the watch face chip shows, and it continues after the app is closed. 2 Two 20-minute recordings without the phone → connect the phone → both transferred · acked · deleted on the watch · uploaded to Drive from the phone. 3 BT drops during transfer → on reconnect, resumes from the un-acked parts, no duplicates on the phone. 4 **Retired (2026-09-24)** ~~Rename a workflow on the phone → reflected in the watch's choices~~ |
 | **macOS** | 1 **"One notice on joining Zoom"** → click → three-track recording → stop → mic/sys/mix + meta in Drive~~, webhook~~ (retired 2026-09-24). 2 Clap offset < 20 ms after a one-hour meeting. 3 **Retired (2026-09-24)** ~~A workflow made on the phone appears in the Mac editor and merges with two-way edits without conflicts~~. 4 Install the DMG on a new Mac → passes Gatekeeper → two permission prompts (microphone → system audio) |
-| **iPhone + Apple Watch** | 1 Action button → record → locked for 3 hours → stop → go to the home screen → upload completes while locked (background URLSession). 2 Watch 20-minute recordings × 2 → iPhone receives automatically · acks · runs. 3 Double Tap marks a highlight (watchOS 11 and later; Stop is on the square) |
+| **iPhone + Apple Watch** | 1 Action button → record → locked for 3 hours → stop → go to the home screen → upload completes while locked (background URLSession). 2 Watch 20-minute recordings × 2 → iPhone receives automatically · acks · runs. |
 | **Windows** | **1 "Join Teams → notice"** → record → Drive~~ + webhook~~ (retired 2026-09-24). 2 No SmartScreen warning when installing the MSI. |
 | **Transcription** | 1 On the phone, with ~~the "Minutes" workflow~~ the external API transcription settings, record 3 minutes or more (2 parts or more) → choose the head count → parts · meta · `*.transcript.json/.txt` appear in the Drive folder and the transcript by speaker shows on the detail screen. The transcript's `start/end` places the second part's span after 900 seconds (remux + offset verification). 2 Process killed right after submission → the next `runDueJobs` does not submit again but polls with the same `jobRef` until completion (`attempts` does not go up). 3 No key → `MISSING_SECRET` (immediately), wrong key → `AUTH_REJECTED` + "Check the key". 4 Desktop three tracks → `mix` is chosen as the input and ~~a `transcript` entry in the webhook `files[]`~~ (retired 2026-09-24) `*.transcript.json/.txt` in the Drive folder |
 

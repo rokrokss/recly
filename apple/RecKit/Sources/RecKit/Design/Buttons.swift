@@ -163,7 +163,7 @@ public struct BlueprintButton: View {
 }
 
 /// docs/09 "Component measurements" — Time and speaker button: the box is drawn at the status badge's size, and the
-/// target around it is still the touch minimum each way, as the highlight square's is.
+/// target around it is still the touch minimum each way.
 struct TouchTarget: ViewModifier {
     var active = true
 

@@ -202,9 +202,8 @@ private fun ButtonBox(
 /**
  * docs/09 "Component measurements" — Time and speaker button (2026-10-28): a compact control. Its box — [box]'s fill and
  * edge around padding 8 × 4, with no minimum — is drawn at the status badge's measure, centred in a target of at least
- * [MinTouch] each way that is laid out as such, as the highlight square's is. The target takes the tap, the focus and
- * the caller's [modifier] (a tag, what a screen reader hears); the box draws the press and the focus ring, so both are
- * the size the eye sees.
+ * [MinTouch] each way that is laid out as such. The target takes the tap, the focus and the caller's [modifier] (a tag,
+ * what a screen reader hears); the box draws the press and the focus ring, so both are the size the eye sees.
  */
 @Composable
 internal fun CompactTarget(

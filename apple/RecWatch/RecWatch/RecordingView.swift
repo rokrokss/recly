@@ -39,11 +39,6 @@ struct RecordingView: View {
 
             button
 
-            // docs/09 "Highlights": below the stop square while recording; Double Tap is this button's now.
-            if model.isRecording {
-                highlightButton
-            }
-
             if model.microphoneDenied {
                 // 2026-10-10 (2.10): something to put right in Settings, not a failure — the warning tone.
                 Text("Turn the microphone on in Settings > Privacy")
@@ -62,10 +57,7 @@ struct RecordingView: View {
     /// move when something comes back to say.
     @ViewBuilder
     private var statusLine: some View {
-        if let at = model.highlightedAtSec {
-            HighlightNews(atSec: at)
-                .foregroundStyle(blueprint.palette.accent)
-        } else if !model.status.isEmpty {
+        if !model.status.isEmpty {
             Text(verbatim: model.status)
                 .foregroundStyle(blueprint.palette.text)
         } else if model.failed > 0 {
@@ -106,41 +98,5 @@ struct RecordingView: View {
         // Off while the recorder is Starting or Saving, as on every shell — Record or Stop, never in between.
         .disabled(!model.buttonEnabled)
         .accessibilityLabel(model.canStop ? Text("Stop") : Text("Record"))
-    }
-
-    /// docs/09 screen principle 7: the phone's highlight node — an accent outline and a small filled accent
-    /// square, no word. The name is for VoiceOver only.
-    private var highlightButton: some View {
-        Button { model.highlight() } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: Radius.node)
-                    .strokeBorder(blueprint.palette.accent, lineWidth: 1.5)
-                RoundedRectangle(cornerRadius: Radius.badge)
-                    .fill(blueprint.palette.accent)
-                    .frame(width: 12, height: 12)
-            }
-            .frame(width: 48, height: 48)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Highlight")))
-        .accessibilityIdentifier("highlight")
-        .modifier(DoubleTapHighlight(armed: model.isRecording))
-    }
-}
-
-/// docs/09 "Highlights" (2026-10-07): Double Tap marks a highlight — it used to stop, and Stop stays on the
-/// square. `handGestureShortcut` is watchOS 11 API and RecKit's floor is 10, so on watchOS 10 the button is
-/// only a button — and the gesture is armed only while recording, so a double tap on the idle screen does
-/// nothing.
-private struct DoubleTapHighlight: ViewModifier {
-    let armed: Bool
-
-    func body(content: Content) -> some View {
-        if #available(watchOS 11.0, *), armed {
-            content.handGestureShortcut(.primaryAction)
-        } else {
-            content
-        }
     }
 }

@@ -101,8 +101,6 @@ class ShotsTest {
 
         model.openDetail(model.recents.first())
         until { model.detail?.transcript != null }
-        model.setHighlights(model.detail!!.recordingId, listOf(8.0, 27.5))
-        until { model.detail?.highlights?.size == 2 }
 
         for (ko in listOf(false, true)) {
             model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
@@ -114,13 +112,9 @@ class ShotsTest {
             shot("recordings-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
             shot("recordings-speed-$lang", 1000, 680, ko, clicks = listOf(SPEED)) { window() }
             shot("recordings-speaker-$lang", 1000, 680, ko, clicks = listOf(BADGE)) { window() }
-            shot("recordings-tick-$lang", 1000, 680, ko, clicks = listOf(TICK)) { window() }
             shot("recordings-edit-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_EDIT)) { window() }
             shot("recordings-edit-changed-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_EDIT, EDIT_FIELD), typed = "!") { window() }
             shot("recordings-speaker-change-$lang", 1000, 680, ko, clicks = listOf(BADGE, BADGE_CHANGE)) { window() }
-            shot("recordings-flag-$lang", 1000, 680, ko, clicks = listOf(FLAG)) { window() }
-            shot("recordings-flag-remove-$lang", 1000, 680, ko, clicks = listOf(FLAG, FLAG_REMOVE)) { window() }
-            model.setHighlights(model.detail!!.recordingId, listOf(8.0, 27.5))
             shot("recordings-search-$lang", 1000, 680, ko, clicks = listOf(SEARCH), typed = "release") { window() }
             shot("recordings-search-none-$lang", 1000, 680, ko, clicks = listOf(SEARCH), typed = "zzzz") { window() }
             val hit = model.search("release").first()
@@ -266,7 +260,7 @@ class ShotsTest {
         val reader: @Composable () -> Unit = {
             TranscriptReader(
                 transcript, recly.core.transcribe.TranscriptDocument(transcript), canSeek = true, onSeek = {}, positionSec = 182.0, playing = true,
-                highlights = listOf(8.0, 27.5), onRemoveHighlight = {}, matches = emptyList(), currentMatch = null,
+                matches = emptyList(), currentMatch = null,
                 onChangeSpeaker = { _, _, _ -> }, onRenameSpeaker = { _, _ -> }, saving = mapOf(2 to InlineSave.SAVING),
                 strings = model.localization.current, modifier = androidx.compose.ui.Modifier.fillMaxSize(),
             )
@@ -290,13 +284,12 @@ class ShotsTest {
         shot("recordings-import-en", 1000, 680, false) { RecordingsWindow(model, strings) { it() } }
         shot("popup-importing-en", 520, 560, false) { TrayPopup(model, strings) {} }
 
-        // The tray popup while a recording runs, before and after its Highlight.
+        // The tray popup while a recording runs.
         val before = model.recents.map { it.id }.toSet()
         model.start()
         until { model.recording }
         delay(1_500)
         shot("popup-recording-en", 520, 560, false) { TrayPopup(model, strings) {} }
-        shot("popup-highlighted-en", 520, 560, false, clicks = listOf(POPUP_HIGHLIGHT)) { TrayPopup(model, strings) {} }
         // 2026-10-15: More over the take still being written — every item waits, Delete too, each saying why.
         until { model.recents.any { it.id !in before } }
         model.openDetail(model.recents.first { it.id !in before })
@@ -359,14 +352,14 @@ class ShotsTest {
                 """"conversation":0$extra,"createdAt":"2026-10-09T10:05:00Z"}"""
         val items = listOf(
             item("n1", "point", "The import button moved to the list header.", 6.0, "The import button is in the list header now"),
-            item("n2", "point", "The highlight ticks show on the waveform.", 20.0, "They did"),
+            item("n2", "point", "The speed controls show on the player bar.", 20.0, "They did"),
             item("n3", "decision", "Ship the release on Friday.", 31.0, "let's ship the release on Friday"),
             item("n4", "todo", "Publish the release notes by Thursday.", 20.0, "the release notes mention the waveform change", ""","owner":"S1","due":"Thursday""""),
-            item("n5", "question", "Did the highlight ticks land on the waveform?", 11.5, "Did the highlight ticks land on the waveform"),
+            item("n5", "question", "Did the speed controls land on the player bar?", 11.5, "Did the speed controls land on the player bar"),
             item("n6", "section", "The waveform change could be missed in the notes.", 20.0, "mention the waveform change", ""","section":"s1""""),
         )
         return """{"schema":1,"recordingId":"$recordingId","stage":"final",""" +
-            """"overview":"A short release review: the import button and the highlight ticks are in, and the release ships on Friday.",""" +
+            """"overview":"A short release review: the import button and the speed controls are in, and the release ships on Friday.",""" +
             """"items":[${items.joinToString(",")}],"conversations":[{"startSec":0.0,"endSec":40.0}],"model":"gpt-5.4","modelName":"GPT-5.4",""" +
             """"sections":[{"id":"s1","name":"Risks","description":"What could go wrong."}],""" +
             """"createdAt":"2026-10-09T10:00:00Z","updatedAt":"2026-10-09T10:05:00Z","finalizedAt":"2026-10-09T10:05:00Z"}"""
@@ -384,7 +377,7 @@ class ShotsTest {
         segments = listOf(
             TranscriptSegment(0.0, 6.0, "S1", "Thanks for joining. Let's go over the release notes for Recly first."),
             TranscriptSegment(6.0, 11.5, "S1", "The import button is in the list header now."),
-            TranscriptSegment(11.5, 20.0, "S2", "Good. Did the highlight ticks land on the waveform as well?"),
+            TranscriptSegment(11.5, 20.0, "S2", "Good. Did the speed controls land on the player bar as well?"),
             TranscriptSegment(20.0, 31.0, "S1", "They did, and the release notes mention the waveform change too."),
             TranscriptSegment(31.0, 40.0, "S2", "Then let's ship the release on Friday."),
         ),
@@ -468,21 +461,17 @@ class ShotsTest {
         val MORE = Offset(966f, 38f)
         val SPEED = Offset(560f, 150f)
         val BADGE = Offset(420f, 215f)
-        val TICK = Offset(451f, 100f)
         val MORE_EDIT = Offset(835f, 130f)
         val EDIT_FIELD = Offset(700f, 250f)
         val BADGE_CHANGE = Offset(534f, 307f)
         val SEARCH = Offset(150f, 103f)
-        val FLAG = Offset(387f, 215f)
-        val FLAG_REMOVE = Offset(454f, 307f)
         val FIND_NEXT = Offset(900f, 210f)
-        val POPUP_HIGHLIGHT = Offset(179f, 263f)
         val MORE_EDIT_NOTES = Offset(835f, 265f)
         // The decision's field in Edit notes, past the end of its words.
         val NOTES_FIELD = Offset(900f, 513f)
         const val SETTINGS_HEIGHT = 3100
 
         const val ANSWER = "- Mina: publish the release notes by Thursday [00:00:20]\n" +
-            "- Unassigned: check the highlight ticks on the waveform [00:00:11]\n- Ship the release on Friday [00:00:31]"
+            "- Unassigned: check the speed controls on the player bar [00:00:11]\n- Ship the release on Friday [00:00:31]"
     }
 }

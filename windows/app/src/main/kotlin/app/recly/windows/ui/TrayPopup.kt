@@ -142,8 +142,6 @@ private fun Header(model: ShellModel, strings: Strings) {
                     onClick = model::stop,
                     tone = ButtonTone.DANGER,
                 )
-                // docs/03 "Metadata": the moment the timer is at, marked; the line under this row says when.
-                BlueprintButton(strings[Str.HIGHLIGHT], model::highlightNow, enabled = model.transition == null)
             } else {
                 ProcessingButton(
                     label = strings[Str.TRAY_START],
@@ -161,30 +159,14 @@ private fun Header(model: ShellModel, strings: Strings) {
                 }
             }
         }
-        // `Highlight · 00:12:34`, under the button that marked it rather than at the foot of the ledger (2026-10-10).
-        // The line is there for the whole recording, blank until a mark, so the ledger does not move when one comes
-        // and goes.
-        if (model.recording) {
-            Text(
-                model.status.takeIf { it.isHighlightLine() }?.text(strings).orEmpty(),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted,
-                maxLines = 1,
-            )
-        }
     }
 }
 
-/** The status is the line [ShellModel.highlightNow] says for a moment. */
-private fun UiMessage.isHighlightLine(): Boolean = (this as? UiMessage.Res)?.key == Str.HIGHLIGHT_MARKED
-
 /**
- * Whether the ledger's last line says the status (2026-10-10): not while a line above says the same — the highlight
- * just marked, under the Highlight button, or the wait for Drive that the banner counts.
+ * Whether the ledger's last line says the status (2026-10-10): not while a line above says the same — the wait for
+ * Drive that the banner counts.
  */
 internal fun statusLineShown(status: UiMessage, alerts: List<JobAlert>): Boolean = when {
-    status.isHighlightLine() -> false
     (status as? UiMessage.Res)?.key == Str.STATUS_SIGN_IN_NEEDED -> alerts.none { it.reason == AlertReason.NEEDS_AUTH }
     else -> true
 }

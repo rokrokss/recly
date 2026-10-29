@@ -68,10 +68,9 @@ that stays on.
   or by a provider that can, or not at all. Notes are your agent's job, not a paid tier — or your own
   ChatGPT plan's after **Continue with ChatGPT**: key points, decisions, to-dos, questions and sections
   of your own, organized as you record and after you stop, which you can edit.
-- **Mark it, fix it, find it.** Tap **Highlight** while recording, on the phone, either watch or the
-  desktop, and the moment goes into the recording's files for your agent. Afterwards, fix a word,
-  name the speakers, transcribe again with your current settings, search every title and
-  transcript, or share the transcript as `.txt`, `.md`, `.srt` or `.vtt` and the audio as `.m4a`.
+- **Fix it, find it.** After a recording, fix a word, name the speakers, transcribe again with your
+  current settings, search every title and transcript, or share the transcript as `.txt`, `.md`,
+  `.srt` or `.vtt` and the audio as `.m4a`.
   A vocabulary of names and terms helps them come out spelled right, and audio or video files from
   elsewhere can be imported as recordings.
 - **Nothing covert.** Recording is always visible. Desktops detect a meeting, ask, and only then
@@ -85,7 +84,7 @@ that stays on.
 | Storage | Your Google Drive (or your iCloud on iPhone and Mac, or a local folder you pick on iPhone, Mac, Windows and Android) | To Google Drive or iCloud: the audio parts and a small metadata file, to your own account. A local folder: nothing leaves the device. |
 | Transcription | On device, or a provider you chose with your own key | On device: no audio goes to a speech service. External: the joined audio goes to the provider you selected, with your vocabulary if you set one. Results are written next to the recording. |
 | Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your storage and writes the notes wherever you keep them (Notion, in the example skills). If you run recly-events for automatic minutes, it tells your ChatGPT agent about each new transcript through OpenAI: the recording's name, title and Drive links, and the transcript when the agent asks for it; never the audio. |
-| Notes in the app (optional) | Your ChatGPT plan, once you sign in with ChatGPT and agree to organizing, and when you choose **Organize** on a recording | The transcript text — while you record and after you stop — with your highlights and what you wrote in **Settings** → **Notes**, to OpenAI, with phone numbers, emails and long numbers replaced first; never the audio. **Ask about this recording** sends the transcript, your highlights and About you with your question. The notes, which you can edit, are kept with the recording in Drive or iCloud for your other devices, or on the device with a local folder. |
+| Notes in the app (optional) | Your ChatGPT plan, once you sign in with ChatGPT and agree to organizing, and when you choose **Organize** on a recording | The transcript text — while you record and after you stop — with what you wrote in **Settings** → **Notes**, to OpenAI, with phone numbers, emails and long numbers replaced first; never the audio. **Ask about this recording** sends the transcript and About you with your question. The notes, which you can edit, are kept with the recording in Drive or iCloud for your other devices, or on the device with a local folder. |
 | Processing settings and API keys | Your device | Nothing is synced. **Settings file** → **Export settings** moves configuration only; enter keys separately on each device. |
 
 The full list of every network path, with nothing left out, is in the
@@ -125,7 +124,7 @@ Windows PC. Please report what you find in [Issues](https://github.com/rokrokss/
 
 1. **Record.** Tap Record on the watch (a Galaxy Watch can bind it to a double press of the home
    key), or the menu-bar icon on a Mac or the tray icon on Windows. Desktops notice when a meeting
-   app opens your mic and ask whether to record. **Highlight** marks a moment while you record (Double Tap on an Apple Watch).
+   app opens your mic and ask whether to record.
 2. **Upload.** When you stop, the recording goes to your storage as it is: Google Drive, or the
    iCloud or local folder you chose. Watches hand off to the phone first. If the network is down, it
    waits and retries. The original is never deleted before the upload is confirmed.

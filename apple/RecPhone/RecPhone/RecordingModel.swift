@@ -99,12 +99,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         // on the tab for the user to come back to it.
         didSet {
             if tab != .record, state == .idle { note = "Waiting" }
-            if tab != .record { highlightedAtSec = nil }
         }
     }
-    /// docs/09 "Highlights": the moment the last Highlight marked, while recording — news for the line under
-    /// the record node until the next event or a tab switch.
-    @Published private(set) var highlightedAtSec: Double?
     /// docs/03 "Naming rules": why the last import left nothing behind — a core code, said under
     /// `Could not import this file` in the list.
     @Published private(set) var importFailure: String?
@@ -227,7 +223,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// responses come through [alertNotifier], the one delegate.
     private let notices = RecordingNotices(stopKey: "Stop")
     private var ticker: Timer?
-    /// The recording being made, for the marks the Highlight node puts on it and the notes the screen follows.
+    /// The recording being made, for the notes the screen follows.
     @Published private(set) var recordingId: String?
     /// When the recording on screen began — the Live Activity counts up from it.
     private var startedAt: Date?
@@ -772,17 +768,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// docs/09 "Highlights": a mark at the recorder's own clock — what has been written, not the wall clock.
-    func highlight() {
-        guard isRecording, let id = recordingId, let core = bridge?.core, let recorder else { return }
-        let at = recorder.recordedSec
-        Task {
-            guard (try? await core.recordings.addHighlight(recordingId: id, atSec: at))?.boolValue == true else { return }
-            highlightedAtSec = at
-            logger.info("shell.highlight id=\(id, privacy: .public) atSec=\(at, privacy: .public)")
-        }
-    }
-
     /// docs/10 "Search": titles and the transcripts on this phone, newest first.
     func search(_ query: String) async -> [SearchHit] {
         guard let core = bridge?.core else { return [] }
@@ -917,13 +902,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// docs/09 "Highlights": "Add a highlight with Recly", and the Live Activity's own — a mark on the
-    /// recording that is running, at the recorder's clock. Nothing to mark when nothing is.
-    func highlightFromIntent() async {
-        await loaded()
-        highlight()
-    }
-
     func stopFromIntent() async {
         await loaded()
         await finish(askingForTitle: false)
@@ -948,7 +926,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             startedAt = nil
             recordingId = nil
             liveNotes = nil
-            highlightedAtSec = nil
         }
         // 2026-10-08 §4: the timer keeps the recording's length while it is saved, and goes back to
         // `00:00` only once the recorder is idle again.

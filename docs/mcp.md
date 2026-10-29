@@ -110,8 +110,8 @@ the decisions, and the action items with owners.
 
 | Tool | Arguments | Returns |
 |---|---|---|
-| `list_recordings` | `limit` (1–50, default 10), `cursor` | Recordings, newest first: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`, `highlightCount`; `nextCursor` |
-| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, `highlights`, and `transcript` as `[HH:MM:SS] Speaker: text` lines, about 40,000 characters per answer; `nextCursor` for the rest |
+| `list_recordings` | `limit` (1–50, default 10), `cursor` | Recordings, newest first: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`; `nextCursor` |
+| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, and `transcript` as `[HH:MM:SS] Speaker: text` lines, about 40,000 characters per answer; `nextCursor` for the rest |
 | `search_recordings` | `query`, `limit` (1–50, default 10) | Recordings whose title or transcript contains the query, ignoring case, with up to 3 matching lines each |
 | `get_audio_files` | `recordingId` | The absolute paths of the recording's `.m4a` parts on this computer, with track and offset |
 

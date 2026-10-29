@@ -111,7 +111,6 @@ object TranscriptNormalizer {
      * `[HH:MM:SS] S1: text`, one line per speaker turn — but never longer than [LINE_SEC] of
      * speech, so a monologue is still readable and an LLM sees timestamps throughout (docs/08). A
      * speaker the user named is written by that name instead of the id (`[00:00:01] Minsu: text`).
-     * Highlights stay out of it: agents parse these lines, and the marks are in `meta.json`.
      */
     fun text(transcript: Transcript): String = buildString {
         val labels = labels(transcript)
@@ -139,9 +138,6 @@ object TranscriptNormalizer {
      * title, id and start, so a notes app such as Obsidian opens it as a note. The title is a JSON
      * string, which YAML reads as a double-quoted scalar whatever it holds.
      *
-     * A recording with highlights (docs/03 "Metadata") also lists them: their clock times in the front
-     * matter, and a "Highlights" section before the lines — each time with the words being said then.
-     *
      * The share sheet's copy also carries the recording's [notes] (docs/08 "Exports") — their own section, already in
      * Markdown — before a "Transcript" one; the file in the recording's folder is written without them.
      */
@@ -150,20 +146,7 @@ object TranscriptNormalizer {
         meta.title?.takeIf { it.isNotBlank() }?.let { append("title: ").append(recJson.encodeToString(it)).append('\n') }
         append("recordingId: ").append(meta.recordingId).append('\n')
         append("startedAt: ").append(meta.startedAt).append('\n')
-        if (meta.highlights.isNotEmpty()) {
-            // Quoted: YAML 1.1 reads a bare 00:02:05 as a base-60 number.
-            append("highlights:\n")
-            meta.highlights.forEach { append("  - \"").append(clock(it.atSec)).append("\"\n") }
-        }
         append("---\n")
-        if (meta.highlights.isNotEmpty()) {
-            append("\n## Highlights\n\n")
-            meta.highlights.forEach { highlight ->
-                append("- ").append(clock(highlight.atSec))
-                spokenAt(transcript, highlight.atSec)?.let { append(" — ").append(it) }
-                append('\n')
-            }
-        }
         notes?.trim()?.takeIf { it.isNotEmpty() }?.let {
             append('\n').append(it).append('\n')
             append("\n## Transcript\n")
@@ -204,15 +187,6 @@ object TranscriptNormalizer {
 
     /** The label [text] writes for the person who made the recording when they have not named themselves. */
     const val ME: String = "Me"
-
-    /** The words of the segment playing at [atSec], or of the last one before it. */
-    internal fun spokenAt(transcript: Transcript, atSec: Double): String? {
-        val spoken = transcript.segments.filter { it.text.isNotBlank() }
-        val segment = spoken.firstOrNull { atSec >= it.start && atSec < it.end }
-            ?: spoken.lastOrNull { it.start <= atSec }
-            ?: return null
-        return segment.text.trim()
-    }
 
     private class Cue(val start: Double, val end: Double, val text: String)
 

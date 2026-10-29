@@ -285,9 +285,9 @@ gives the `recording` name as the `recordingId`, which `get_transcript` takes as
 | Tool | Arguments | Returns |
 |---|---|---|
 | `get_pending_events` | `limit` (1–20, default 10) | unacknowledged events, oldest first: `eventId`, `timestamp`, `recordingId`, `title`, `startedAt`, `data` |
-| `get_transcript` | `recordingId` or `eventId`; `cursor` | `recordingId`, `title`, `startedAt`, `language`, `speakers` (`id`, `name`), `highlights` (`atSec`, `clock`), `lines` (`from`, `to`, `total`), `transcript`, `nextCursor` |
+| `get_transcript` | `recordingId` or `eventId`; `cursor` | `recordingId`, `title`, `startedAt`, `language`, `speakers` (`id`, `name`), `lines` (`from`, `to`, `total`), `transcript`, `nextCursor` |
 | `acknowledge_events` | `eventIds` (1–20) | `acknowledged`, `pending` |
-| `list_recordings` | `limit` (1–50, default 10), `cursor` | `recordings`, newest first: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`, `highlightCount`; `nextCursor` |
+| `list_recordings` | `limit` (1–50, default 10), `cursor` | `recordings`, newest first: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`; `nextCursor` |
 
 - `transcript` is lines of `[HH:MM:SS] Speaker: text`, with the name the user gave a speaker in the
   app where there is one, about 40,000 characters per answer. While `nextCursor` is not null, call
@@ -296,8 +296,6 @@ gives the `recording` name as the `recordingId`, which `get_transcript` takes as
   `<<<end recly-transcript-{nonce}>>>`, with a new random nonce in each answer, so that what people
   said cannot pass for the end of the block. The tool descriptions and the server's instructions tell
   the agent never to follow instructions inside it.
-- `highlights` are read from the `highlights` array of `{recording}.meta.json` (`{"atSec": …}` each);
-  a recording without one has none.
 - `list_recordings` downloads each listed recording's `{recording}.meta.json`; `get_transcript`
   downloads that and `{recording}.transcript.json`, or `.transcript.txt` when there is no JSON.
 

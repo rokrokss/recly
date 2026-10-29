@@ -101,25 +101,6 @@ class TranscriptReaderTest {
         ui.onNodeWithTag("transcript-text-0").assertIsDisplayed()
     }
 
-    /**
-     * docs/09 "Highlights": the square right after the time and before the speaker, centred with the time; a
-     * tap on it is a question about the mark. A mark in the pause after a group is that group's.
-     */
-    @Test fun highlightSitsRightAfterTheTime() {
-        var asked: Double? = null
-        ui.setContent { ReclyTheme {
-            TranscriptReader(transcript, true, {}, Modifier.fillMaxSize(), highlights = listOf(63.0), onHighlight = { asked = it })
-        } }
-        val time = ui.onNodeWithTag("transcript-time-1").getUnclippedBoundsInRoot()
-        val mark = ui.onNodeWithTag("transcript-highlight").getUnclippedBoundsInRoot()
-        val badge = ui.onNodeWithTag("transcript-speaker-1").getUnclippedBoundsInRoot()
-        assertEquals(4f, (mark.left - time.right).value, 0.5f)
-        assertTrue(badge.left >= mark.right)
-        assertEquals(((time.top + time.bottom) / 2).value, ((mark.top + mark.bottom) / 2).value, 0.5f)
-        ui.onNodeWithTag("transcript-highlight").performClick()
-        ui.runOnIdle { assertEquals(63.0, asked) }
-    }
-
     /** docs/09 "Transcript reader": a speaker is a badge, its name when it has one. */
     @Test fun speakersAreBadges() {
         val named = transcript.copy(speakers = listOf(TranscriptSpeaker("S1", "Mina")))

@@ -125,11 +125,6 @@ func (t *Tools) Transcript(ctx context.Context, id, cursor string) (any, error) 
 	return t.page(tr, from), nil
 }
 
-type highlight struct {
-	AtSec float64 `json:"atSec"`
-	Clock string  `json:"clock"`
-}
-
 type lineRange struct {
 	From  int `json:"from"`
 	To    int `json:"to"`
@@ -137,12 +132,11 @@ type lineRange struct {
 }
 
 type transcriptPage struct {
-	RecordingID string      `json:"recordingId"`
-	Title       *string     `json:"title"`
-	StartedAt   string      `json:"startedAt"`
-	Language    *string     `json:"language"`
-	Speakers    []Speaker   `json:"speakers"`
-	Highlights  []highlight `json:"highlights"`
+	RecordingID string    `json:"recordingId"`
+	Title       *string   `json:"title"`
+	StartedAt   string    `json:"startedAt"`
+	Language    *string   `json:"language"`
+	Speakers    []Speaker `json:"speakers"`
 	// Lines numbers this page's lines from 1; from and to are 0 for an empty transcript.
 	Lines      lineRange `json:"lines"`
 	Transcript string    `json:"transcript"`
@@ -167,7 +161,7 @@ func (t *Tools) page(tr *Transcript, from int) transcriptPage {
 	}
 	p := transcriptPage{
 		RecordingID: tr.RecordingID, Title: tr.Title, StartedAt: tr.StartedAt, Language: nullable(tr.Language),
-		Speakers: tr.Speakers, Highlights: []highlight{},
+		Speakers:   tr.Speakers,
 		Lines:      lineRange{Total: len(tr.Lines)},
 		Transcript: t.wrap(strings.Join(texts, "\n")),
 	}
@@ -179,9 +173,6 @@ func (t *Tools) page(tr *Transcript, from int) transcriptPage {
 	}
 	if to < len(tr.Lines) {
 		p.NextCursor = nullable(strconv.Itoa(to))
-	}
-	for _, h := range tr.Highlights {
-		p.Highlights = append(p.Highlights, highlight{AtSec: h, Clock: Clock(h)})
 	}
 	return p
 }

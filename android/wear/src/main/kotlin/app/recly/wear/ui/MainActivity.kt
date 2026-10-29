@@ -60,7 +60,6 @@ class MainActivity : ComponentActivity() {
                 state = state,
                 onStart = ::startRecording,
                 onStop = viewModel::stop,
-                onHighlight = { viewModel.highlight() },
             )
         }
         consumeAutoStart(intent)

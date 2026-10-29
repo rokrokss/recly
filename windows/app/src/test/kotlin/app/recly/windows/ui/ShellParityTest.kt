@@ -76,7 +76,7 @@ class ShellParityTest {
             Str.RECORDING_FAILED, Str.ENQUEUE_FAILED, Str.RECORDING_TITLE_TOO_LATE, Str.ENQUEUE_NO_WORKFLOW,
             Str.ENQUEUE_PARTS_PURGED, Str.ENQUEUE_SKIPPED_SHORT, Str.ENQUEUE_ALREADY_DONE,
         ).forEach { assertTrue(isStopReport(it.message()), "$it") }
-        listOf(Str.STATUS_WAITING, Str.STATUS_SAVING, Str.HIGHLIGHT_MARKED).forEach { assertFalse(isStopReport(it.message()), "$it") }
+        listOf(Str.STATUS_WAITING, Str.STATUS_SAVING).forEach { assertFalse(isStopReport(it.message()), "$it") }
     }
 
     @Test
@@ -110,7 +110,7 @@ class ShellParityTest {
         assertEquals("https://recly.dev/policy/privacy-policy", privacyPolicyUrl("ja"))
     }
 
-    /** D6: a highlight's time is the written audio's — a level per tenth of a second that reached the file. */
+    /** The written audio's clock: a level per tenth of a second that reached the file. */
     @Test
     fun `the written clock counts every level the helper sent`() {
         val live = LiveWaveform(capacity = 3)

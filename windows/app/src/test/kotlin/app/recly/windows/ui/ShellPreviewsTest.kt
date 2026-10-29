@@ -68,8 +68,8 @@ class ShellPreviewsTest {
             )
             File(folder, "$base.transcript.json").writeText(Json.encodeToString(Transcript.serializer(), transcript))
 
-            // Any change to the rows reads them again: a highlight written to the meta is one.
-            model.setHighlights(id, listOf(1.0))
+            // Any change to the rows reads them again: a rename written to the meta is one, even to the name it has.
+            model.rename(RenameRequest(id, ""), "")
             until { model.previews[id] != null }
             assertEquals("Thanks for joining. Let's start.", model.previews[id])
         } finally {

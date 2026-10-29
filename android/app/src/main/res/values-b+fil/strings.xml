@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Awtomatiko</string>
     <string name="processing_language_mixed">Korean at Ingles</string>
     <string name="processing_language_unsupported">Hindi sinusuportahan ng napiling paraan ng pag-transcribe ang wikang ito.</string>
-    <string name="highlight">I-highlight</string>
-    <string name="highlight_status">Highlight · %1$s</string>
-    <string name="highlight_tick">Highlight sa %1$s</string>
-    <string name="highlight_remove">Alisin ang highlight</string>
-    <string name="highlight_add_at">Magdagdag ng highlight sa %1$s</string>
     <string name="detail_share">Ibahagi</string>
     <string name="detail_more">Higit pa</string>
     <string name="detail_edit">I-edit ang transcript</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Tapusin ang pag-sign in sa iyong browser</string>
     <string name="chatgpt_sign_in_failed">Hindi makapag-sign in sa ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Naka-sign out na sa device na ito, pero hindi ito kinumpirma ng OpenAI. Maaari mong alisin ang Recly sa mga setting ng ChatGPT.</string>
-    <string name="chatgpt_footnote">Ipinapadala ng mga tala at tanong sa OpenAI ang teksto ng transcript, ang mga sandaling na-highlight mo at ang iyong mga setting ng tala — hindi kailanman ang audio — at bilang ang mga ito sa paggamit ng iyong ChatGPT plan.</string>
+    <string name="chatgpt_footnote">Ipinapadala ng mga tala at tanong sa OpenAI ang teksto ng transcript at ang iyong mga setting ng tala — hindi kailanman ang audio — at bilang ang mga ito sa paggamit ng iyong ChatGPT plan.</string>
     <string name="chatgpt_welcome_title">Ginagamit mo ang iyong ChatGPT plan</string>
     <string name="chatgpt_welcome_body">Ginagamit ng mga tala sa Recly ang iyong ChatGPT plan. Maaari mong pamahalaan ang paggamit sa mga setting ng ChatGPT.</string>
     <string name="chatgpt_got_it">Nakuha ko</string>

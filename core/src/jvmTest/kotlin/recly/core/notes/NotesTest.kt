@@ -725,7 +725,6 @@ class NotesTest {
         assertTrue("key points, decisions, to-dos and open questions, and the items of the user's own sections" in asked, asked)
         assertTrue("\"point\" for a key point" in asked, asked)
         assertTrue("\"section1\" for the user's own section \"Risks\" (anything that could go wrong)" in asked, asked)
-        assertFalse(NotesPrompts.MARKED in input(0), "no marks, no heading")
         val final = notes.get(meta.recordingId)
         assertEquals(listOf(NoteKind.POINT to "Alpha costs twice as much"), final.points.map { it.kind to it.text })
         assertEquals(listOf("Ship alpha"), final.decisions.map { it.text })
@@ -741,14 +740,13 @@ class NotesTest {
     }
 
     @Test
-    fun `the user's instructions, About you and the moments they marked go with the request`() = runBlocking {
+    fun `the user's instructions and About you go with the request`() = runBlocking {
         ready()
         notes.setPreferences(NotesPreferences(instructions = "  Use short sentences.  "))
         f.core.summaries.setPreferences(SummaryPreferences(aboutMe = "Product manager"))
         engine.answer = { meeting }
         answer(conversation("Alpha.", item("decision", "Ship alpha", "00:00:00", "alpha1 alpha2 alpha3")))
         val meta = f.record()
-        assertTrue(f.core.recordings.setHighlights(meta.recordingId, listOf(35.0)))
         f.core.enqueue(meta.recordingId)
         f.drain()
 
@@ -759,8 +757,6 @@ class NotesTest {
             asked,
         )
         assertTrue("About the person who made the recording, to judge what matters to them: Product manager\n" in asked, asked)
-        assertTrue("After the transcript, ${NotesPrompts.MARKED} lists moments the user marked as important" in asked, asked)
-        assertTrue(input(0).endsWith("\n${NotesPrompts.MARKED}\n- [00:00:35] ${speech("able")}\n"), input(0))
         assertEquals(listOf("Ship alpha"), notes.get(meta.recordingId).decisions.map { it.text })
     }
 

@@ -135,11 +135,6 @@ struct MenuPopover: View {
                 if model.canStop {
                     BlueprintButton(loc("Stop recording"), tone: .danger) { model.stop() }
                         .keyboardShortcut(".")
-                    // docs/12 "Menu bar app": a moment of the running recording, marked for the minutes.
-                    if model.isRecording {
-                        BlueprintButton(RecKitStrings.localized("Highlight")) { Task { await model.addHighlight() } }
-                            .accessibilityIdentifier("highlight")
-                    }
                 } else {
                     // ⌘R, the popover's own as ⌘. is Stop's — not a global hot key (2026-10-10 took those out).
                     // Off while the recorder is Starting or Saving: there is nothing to start until it is idle.
@@ -151,16 +146,7 @@ struct MenuPopover: View {
             }
             .padding(.horizontal, Space.m)
             .padding(.top, Space.sm)
-            .padding(.bottom, model.highlighted == nil ? Space.sm : Space.s)
-            // The news of that moment, for two seconds — then the row is as it was.
-            if let at = model.highlighted {
-                Text(RecKitStrings.localized("Highlight · %@", at))
-                    .font(blueprint.fonts.mono(TypeSize.small, words: RecKitStrings.localized("Highlight · %@", at)))
-                    .foregroundStyle(blueprint.palette.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.m)
-                    .padding(.bottom, Space.sm)
-            }
+            .padding(.bottom, Space.sm)
         }
         .background(.ultraThinMaterial)
     }

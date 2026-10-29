@@ -2,8 +2,6 @@ package recly.core.transcribe
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import recly.core.model.Highlight
 import recly.core.model.Track
 import recly.core.testing.testMeta
 
@@ -97,24 +95,13 @@ class TranscriptRenderTest {
     }
 
     @Test
-    fun `markdown lists the highlights with what was being said, and the text keeps none`() {
-        val meta = testMeta(title = "Weekly").copy(highlights = Highlight.normalize(listOf(2.0, 7.5, 95.0)))
-
-        val markdown = TranscriptNormalizer.markdown(talk, meta)
+    fun `markdown puts the title, id and start in front matter and each line in its own paragraph`() {
+        val markdown = TranscriptNormalizer.markdown(talk, testMeta(title = "Weekly"))
 
         assertEquals(
-            "---\ntitle: \"Weekly\"\nrecordingId: 01J9ABCDEF0123456789ABCDEF\nstartedAt: 2026-08-26T01:00:00.000Z\n" +
-                "highlights:\n  - \"00:00:02\"\n  - \"00:00:07\"\n  - \"00:01:35\"\n---\n\n" +
-                "## Highlights\n\n- 00:00:02 — 시작하겠습니다.\n- 00:00:07 — 네, 보시죠.\n- 00:01:35 — 네, 보시죠.\n\n" +
+            "---\ntitle: \"Weekly\"\nrecordingId: 01J9ABCDEF0123456789ABCDEF\nstartedAt: 2026-08-26T01:00:00.000Z\n---\n\n" +
                 "[00:00:01] Minsu: 시작하겠습니다.\n\n[00:00:03] S2: 네, 보시죠.\n",
             markdown,
         )
-        assertFalse("Highlights" in TranscriptNormalizer.text(talk))
-    }
-
-    @Test
-    fun `highlights are sorted, merged within a second and capped`() {
-        assertEquals(listOf(0.0, 2.0, 5.5), Highlight.normalize(listOf(5.5, 2.0, 0.0, 2.4, -1.0, Double.NaN, 6.2)).map { it.atSec })
-        assertEquals(Highlight.MAX, Highlight.normalize((0 until 600).map { it * 2.0 }).size)
     }
 }

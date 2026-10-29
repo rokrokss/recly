@@ -101,11 +101,10 @@ internal fun speakerIsWord(transcript: Transcript, id: String): Boolean =
     transcript.speakers.firstOrNull { it.id == id }?.let { it.name != null || it.me == true } == true
 
 /**
- * docs/09 "Transcript reader": the transcript in utterance groups, each with its time (a seek), its speaker
- * badge and — where a highlight falls in it — a small accent square. While the recording plays, the group under the
- * playhead carries an accent bar and an accent time, and the list keeps it in the upper third; a scroll
- * by the user stops that until [onFollow] is pressed again. With [find] the matches are tinted and the
- * current one is brought into view.
+ * docs/09 "Transcript reader": the transcript in utterance groups, each with its time (a seek) and its speaker
+ * badge. While the recording plays, the group under the playhead carries an accent bar and an accent time, and the
+ * list keeps it in the upper third; a scroll by the user stops that until [onFollow] is pressed again. With [find] the
+ * matches are tinted and the current one is brought into view.
  */
 @Composable
 internal fun TranscriptReader(
@@ -118,8 +117,6 @@ internal fun TranscriptReader(
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
     positionSec: Double = 0.0,
     playing: Boolean = false,
-    highlights: List<Double> = emptyList(),
-    onHighlight: (Double) -> Unit = {},
     onSpeaker: (ReaderGroup) -> Unit = {},
     /** False while a speaker change saves: the badges wait for it rather than start a second one. */
     speakersEnabled: Boolean = true,
@@ -128,9 +125,6 @@ internal fun TranscriptReader(
     /** The group whose speaker menu is open, and the menu — drawn beside its badge so it opens there. */
     speakerMenuFor: Int? = null,
     speakerMenu: @Composable () -> Unit = {},
-    /** The highlight whose Go to / Remove menu is open, and that menu. */
-    highlightMenuFor: Double? = null,
-    highlightMenu: @Composable () -> Unit = {},
     /** The speaker change being saved from the menu, and what to say beside its badge meanwhile. */
     savingGroup: Int? = null,
     savingLabel: String? = null,
@@ -185,17 +179,6 @@ internal fun TranscriptReader(
                         BlueprintButton(stamp, { onSeek(group.start) }, enabled = canSeek && group.start < seekableDurationSec,
                             modifier = Modifier.testTag("transcript-time-${group.index}").semantics { contentDescription = seekLabel },
                             tone = if (now) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true, compact = true)
-                        // docs/09 "Highlights": right after the time, before the speaker. A group holds the marks from its
-                        // start to the next group's — the first one from 0 — so a mark in a pause, or before the first
-                        // words, is not lost.
-                        val from = if (group.index == 0) 0.0 else group.start
-                        val end = groups.getOrNull(group.index + 1)?.start ?: Double.POSITIVE_INFINITY
-                        highlights.filter { it >= from && it < end }.forEach { at ->
-                            Box {
-                                HighlightMarker(at, onClick = { onHighlight(at) })
-                                if (highlightMenuFor == at) highlightMenu()
-                            }
-                        }
                         if (group.speaker.isNotEmpty()) Box {
                             SpeakerBadge(speakerLabel(transcript, group.speaker, me), named = speakerIsWord(transcript, group.speaker),
                                 onClick = { onSpeaker(group) }, enabled = speakersEnabled, modifier = Modifier.testTag("transcript-speaker-${group.index}"),
@@ -269,27 +252,6 @@ internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, mo
             color = if (enabled) palette.textMuted else palette.disabled,
             maxLines = 1,
         )
-    }
-}
-
-/**
- * A highlight inside a group: a 6dp filled accent square after its time; a tap opens Go to / Remove. The
- * square stands in the middle of its own 48dp target ([MinTouch], docs/09 "Accessibility"), laid out
- * as such: a target that only reached past a 6dp slot would take the taps meant for the time beside it.
- */
-@Composable
-internal fun HighlightMarker(atSec: Double, onClick: () -> Unit) {
-    val label = stringResource(R.string.highlight_tick, hms(atSec.toLong()))
-    Box(
-        Modifier
-            .size(MinTouch)
-            .focusRing(blueprint)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label }
-            .testTag("transcript-highlight"),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.size(6.dp).background(blueprint.accent))
     }
 }
 

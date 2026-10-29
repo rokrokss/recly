@@ -101,9 +101,6 @@ const metaBase = load("examples/recording.meta.json");
 for (const [label, expected, change] of [
   ["import source", true, c => { c.source = "import"; c.tracks = ["mono"]; c.parts = [{ ...c.parts[0], track: "mono", file: "20260826T010000Z_import_01J9ABCD_p001_mono.m4a" }]; delete c.context; return c; }],
   ["unknown source", false, c => { c.source = "upload"; return c; }],
-  ["highlight before zero", false, c => { c.highlights = [{ atSec: -1 }]; return c; }],
-  ["highlight with an extra field", false, c => { c.highlights = [{ atSec: 1, note: "x" }]; return c; }],
-  ["more than 500 highlights", false, c => { c.highlights = Array.from({ length: 501 }, (_, i) => ({ atSec: i * 2 })); return c; }],
 ]) {
   const valid = metaSchema(change(structuredClone(metaBase)));
   if (valid !== expected) { console.error(`FAIL meta: ${label}`); failed++; }

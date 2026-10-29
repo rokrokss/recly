@@ -57,17 +57,17 @@ public enum LedgerFormat {
         return elapsed(Int(seconds.rounded(.down)))
     }
 
-    /// `00:12:34` whatever the length — what a screen reader is told (the waveform's position, a
-    /// highlight's name). The UX decisions of 2026-10-08 §3 leave spoken text as it was; what is
-    /// drawn goes through [elapsed] or [stamp].
+    /// `00:12:34` whatever the length — what a screen reader is told (the waveform's position). The
+    /// UX decisions of 2026-10-08 §3 leave spoken text as it was; what is drawn goes through [elapsed]
+    /// or [stamp].
     public static func clock(_ seconds: Int) -> String {
         let total = max(0, seconds)
         return String(format: "%02d:%02d:%02d", total / 3600, (total / 60) % 60, total % 60)
     }
 
     /// docs/09 "Typography" (2026-10-08 §3): `MM:SS` under an hour and `HH:MM:SS` from one — the live
-    /// timers (record screen, menu bar, watches, the `Highlight · …` line while recording) and the
-    /// ledger's length column. The hours are not wrapped at 24, because a recording is not a clock.
+    /// timers (record screen, menu bar, watches) and the ledger's length column. The hours are not
+    /// wrapped at 24, because a recording is not a clock.
     public static func elapsed(_ seconds: Int) -> String {
         let total = max(0, seconds)
         return total >= 3600
@@ -75,9 +75,9 @@ public enum LedgerFormat {
             : String(format: "%02d:%02d", total / 60, total % 60)
     }
 
-    /// 2026-10-08 §3: a moment inside one recording's screen — the playback clock, a transcript time, a
-    /// highlight and its menu — in the shape the recording's whole length takes, so every time on
-    /// that screen is one width. A recording whose length is not known uses the time itself.
+    /// 2026-10-08 §3: a moment inside one recording's screen — the playback clock, a transcript time —
+    /// in the shape the recording's whole length takes, so every time on that screen is one width. A
+    /// recording whose length is not known uses the time itself.
     public static func stamp(_ seconds: Int, total: Double?) -> String {
         guard let total, total > 0 else { return elapsed(seconds) }
         return Int(total.rounded(.down)) >= 3600 || seconds >= 3600 ? clock(seconds) : elapsed(seconds)

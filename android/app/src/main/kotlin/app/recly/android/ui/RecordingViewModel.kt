@@ -90,11 +90,6 @@ data class RecordingUiState(
     val modelPrompt: LocalEngineInfo? = null,
     /** The speech model download the card shows and starts. */
     val download: ModelDownloadState = ModelDownloadState(),
-    /**
-     * docs/03 "Metadata": the moment the Highlight node last marked, while that is still the news under
-     * the record node — the next event replaces it, and leaving the tab clears it.
-     */
-    val highlighted: Highlighted? = null,
     /** docs/08 "Titles and speaker names": the title sheet says a missing title is filled in only while this is signed in. */
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
     /**
@@ -105,9 +100,6 @@ data class RecordingUiState(
     /** docs/08 "Organizing": the notes of the recording running now, as they arrive; null while nothing records. */
     val notes: RecordingNotes? = null,
 )
-
-/** A mark the core kept: [sec] into [recordingId], which is only news while that recording runs. */
-data class Highlighted(val recordingId: String, val sec: Long)
 
 /**
  * The recording screen's half of `MainActivity`. It owns the title prompt;
@@ -122,8 +114,6 @@ data class Highlighted(val recordingId: String, val sec: Long)
 class RecordingViewModel @JvmOverloads constructor(
     application: Application,
     private val completionEvents: Flow<RecorderEvent> = RecorderService.events,
-    /** docs/03 "Metadata": the recorder's written-audio clock, which a highlight is marked on (D6). */
-    private val recordedSec: suspend () -> Double? = RecorderService::recordedSec,
 ) : AndroidViewModel(application) {
 
     private val settings = AppSettings(application)
@@ -209,7 +199,7 @@ class RecordingViewModel @JvmOverloads constructor(
      * organize through ChatGPT, while the core says that is still to ask. A tile, the widget or a shortcut never does.
      */
     fun start(quick: Boolean = false) {
-        _state.update { it.copy(messages = emptyList(), highlighted = null) }
+        _state.update { it.copy(messages = emptyList()) }
         // Asked before the reminder as well as after it: a disconnect that is running would only
         // have to refuse the answer, and a question whose answer cannot count is not worth asking.
         if (refusedByDisconnect()) return
@@ -292,23 +282,6 @@ class RecordingViewModel @JvmOverloads constructor(
     fun stop() = RecorderService.stop(getApplication(), title = null, enqueue = false)
 
     /**
-     * docs/03 "Metadata": marks this moment of the recording that is running. The core takes a second mark
-     * within a second of the last as the same one, and only a mark it kept is news.
-     */
-    fun highlight() {
-        val recording = recorder.value as? RecorderState.Recording ?: return
-        viewModelScope.launch {
-            // D6: the audio written so far, not the wall clock since the start — the recorder opens
-            // after `startedAt` is taken, and a clock that is changed meanwhile moves the wall time.
-            val atSec = recordedSec() ?: return@launch
-            val core = core()
-            if (withContext(core.deps.io) { core.recordings.addHighlight(recording.recordingId, atSec) }) {
-                _state.update { it.copy(highlighted = Highlighted(recording.recordingId, atSec.toLong())) }
-            }
-        }
-    }
-
-    /**
      * docs/11 A9. A while-in-use foreground service may only be started from something the user can
      * see, so the tile, the widget and the launcher shortcut all open this activity and land here
      * rather than touching `RecorderService` themselves. The flag lives on the ViewModel, not on the
@@ -338,7 +311,7 @@ class RecordingViewModel @JvmOverloads constructor(
     fun dropAutoStart() = _state.update { it.copy(autoStart = null) }
 
     /** What the last start or stop said is about that moment; coming back to the tab later is not it. */
-    fun clearMessages() = _state.update { it.copy(messages = emptyList(), highlighted = null) }
+    fun clearMessages() = _state.update { it.copy(messages = emptyList()) }
 
     // The refusal is said once, by the red line and its Open Settings button under the node; the
     // status line above them stays empty rather than say it again.

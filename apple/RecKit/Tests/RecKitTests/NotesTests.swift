@@ -520,8 +520,7 @@ final class RecordingNotesTests: XCTestCase {
             silenced: [],
             context: nil,
             drive: nil,
-            status: RecordingStatus.finalized,
-            highlights: []
+            status: RecordingStatus.finalized
         )
         let directory = dataDirectory
             .appendingPathComponent("recordings", isDirectory: true)

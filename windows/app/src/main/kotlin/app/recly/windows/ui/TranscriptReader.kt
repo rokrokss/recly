@@ -22,8 +22,6 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextDirection
 import app.recly.windows.ui.component.pressCursor
 import kotlin.math.roundToInt
@@ -55,15 +53,15 @@ import recly.core.transcribe.TranscriptDocument
 /** Where an inline speaker save on a group is: running, then done for a moment. */
 internal enum class InlineSave { SAVING, SAVED }
 
-/** A group's menu that is open: its speaker's, or its highlight's, hung from where it was clicked. */
-private data class GroupMenu(val block: Int, val at: Offset, val speaker: String? = null, val highlight: Double? = null)
+/** A group's speaker menu that is open, hung from where it was clicked. */
+private data class GroupMenu(val block: Int, val at: Offset, val speaker: String)
 
 /**
  * docs/09 "Screen principles": the transcript beside the recording, a group of one speaker's lines at a time.
  * While playing, the group under the playhead wears an accent bar on its start edge and an accent time,
  * and the list keeps it in its upper third — until the user scrolls, when following pauses and
- * `Back to playback` brings it back. A group's speaker is a badge that opens the speaker menu; a group
- * with a highlight in it has a small accent square after its time. Find matches are tinted, the current one more.
+ * `Back to playback` brings it back. A group's speaker is a badge that opens the speaker menu. Find matches are
+ * tinted, the current one more.
  */
 @Composable
 internal fun TranscriptReader(
@@ -73,8 +71,6 @@ internal fun TranscriptReader(
     onSeek: (Double) -> Unit,
     positionSec: Double,
     playing: Boolean,
-    highlights: List<Double>,
-    onRemoveHighlight: (Double) -> Unit,
     matches: List<FindMatch>,
     currentMatch: Int?,
     /** A group (its index and its segments), and who should say it — null is a new speaker. */
@@ -138,20 +134,16 @@ internal fun TranscriptReader(
                 verticalArrangement = Arrangement.spacedBy(Space.s),
             ) {
                 itemsIndexed(blocks, key = { _, block -> block.index }) { index, block ->
-                    val end = blocks.getOrNull(index + 1)?.start ?: Double.POSITIVE_INFINITY
                     Group(
                         transcript = transcript,
                         index = index,
                         start = block.start,
                         speaker = block.speaker,
                         text = tinted(block.text, matches, index, currentMatch),
-                        highlight = highlights.firstOrNull { it >= block.start && it < end },
-                        markSlot = highlights.isNotEmpty(),
                         isActive = index == active,
                         canSeek = canSeek && block.start < seekableDurationSec,
                         onSeek = onSeek,
                         onSpeakerMenu = { at -> menu = GroupMenu(index, at - origin, speaker = block.speaker) },
-                        onHighlightMenu = { at, highlight -> menu = GroupMenu(index, at - origin, highlight = highlight) },
                         saving = saving[index],
                         speakerEnabled = !busy && speakersBlocked == null,
                         speakerReason = speakersBlocked,
@@ -169,10 +161,7 @@ internal fun TranscriptReader(
             // Where it was clicked is a point of the window, not of the reading order: placed from the left whatever
             // the language, or in Arabic, Persian and Urdu it hung from the mirror image of the badge.
             Box(Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset { IntOffset(open.at.x.roundToInt(), open.at.y.roundToInt()) }) {
-                open.speaker?.let { speaker ->
-                    SpeakerMenu(transcript.speakers, speaker, close, { onRenameSpeaker(open.block, speaker) }, { onChangeSpeaker(open.block, ranges[open.block], it) }, strings)
-                }
-                open.highlight?.let { at -> HighlightMenu(at, spanSec, close, { onSeek(at) }, { onRemoveHighlight(at) }, strings) }
+                SpeakerMenu(transcript.speakers, open.speaker, close, { onRenameSpeaker(open.block, open.speaker) }, { onChangeSpeaker(open.block, ranges[open.block], it) }, strings)
             }
         }
     }
@@ -185,15 +174,11 @@ private fun Group(
     start: Double,
     speaker: String,
     text: AnnotatedString,
-    highlight: Double?,
-    /** The recording has highlights: every group keeps the mark's place, so the speakers line up (2026-10-10). */
-    markSlot: Boolean,
     isActive: Boolean,
     canSeek: Boolean,
     onSeek: (Double) -> Unit,
-    /** Where the badge or the highlight's square is on screen — its start edge, at its foot — for the menu hung there. */
+    /** Where the badge is on screen — its start edge, at its foot — for the menu hung there. */
     onSpeakerMenu: (Offset) -> Unit,
-    onHighlightMenu: (Offset, Double) -> Unit,
     saving: InlineSave?,
     speakerEnabled: Boolean,
     speakerReason: String?,
@@ -215,11 +200,6 @@ private fun Group(
                     modifier = Modifier.testTag("transcript-time-$index").semantics { contentDescription = seekLabel },
                     tone = if (isActive) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true, compact = true,
                 )
-                if (markSlot) {
-                    Box(Modifier.size(HIGHLIGHT_MARK), contentAlignment = Alignment.Center) {
-                        highlight?.let { at -> HighlightMarkButton(at, rtl, strings) { place -> onHighlightMenu(place, at) } }
-                    }
-                }
                 if (speaker.isNotEmpty()) {
                     var place by remember { mutableStateOf(Offset.Zero) }
                     // Its menu opens under it (2026-10-10).
@@ -242,31 +222,6 @@ private fun Group(
             )
         }
     }
-}
-
-/**
- * The square right after a group's time, centred with it: it opens the highlight's menu, and a reader hears it as
- * "Highlight 00:12:34". Its 44 target (2026-10-08) is laid over the square and takes no room (2026-10-10), so the
- * speaker after it stays where every other group's is; where it reaches over the time beside it, it is the target.
- */
-@Composable
-private fun HighlightMarkButton(atSec: Double, rtl: Boolean, strings: Strings, onMenu: (Offset) -> Unit) {
-    var place by remember { mutableStateOf(Offset.Zero) }
-    val label = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed((atSec * 1000).toLong())]
-    HighlightMark()
-    Box(
-        Modifier
-            .layout { measurable, _ ->
-                val reach = MinTouch.roundToPx()
-                val target = measurable.measure(Constraints.fixed(reach, reach))
-                layout(0, 0) { target.place(-reach / 2, -reach / 2) }
-            }
-            .onGloballyPositioned { place = it.positionInRoot() + startFoot(it.size.width, it.size.height, rtl) }
-            .focusRing(RoundedCornerShape(Radius.node))
-            .pressCursor()
-            .clickable(role = Role.Button) { onMenu(place) }
-            .semantics { contentDescription = label },
-    )
 }
 
 /** The start edge's foot of a box of [width] × [height], from its top left: the right edge in a right-to-left language. */

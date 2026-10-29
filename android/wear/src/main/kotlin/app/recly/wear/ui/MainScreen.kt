@@ -2,13 +2,6 @@
 
 package app.recly.wear.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -79,7 +72,6 @@ fun MainScreen(
     state: WearUiState,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    onHighlight: () -> Unit,
 ) {
     ReclyWearTheme {
         AppScaffold {
@@ -91,7 +83,6 @@ fun MainScreen(
                     state = state,
                     onStart = onStart,
                     onStop = onStop,
-                    onHighlight = onHighlight,
                     onInfo = { informing = true },
                 )
             }
@@ -104,7 +95,6 @@ private fun RecordScreen(
     state: WearUiState,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    onHighlight: () -> Unit,
     onInfo: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -142,21 +132,7 @@ private fun RecordScreen(
                     // watch's own script — a Hangul line stands taller than a Latin or empty one, and
                     // the node would hop when something came back to say.
                     val line = statusLine(state)
-                    if (line != null && state.message == null && state.canStop && state.highlightedSec != null) {
-                        // The mark's line is said on one line, smaller where it must be: its two seconds
-                        // should not move the stop node, and a Korean sentence must not break inside a word.
-                        BasicText(
-                            text = monoWords(line.first),
-                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                            style = WearBlueprint.small.copy(color = line.second, textAlign = TextAlign.Center),
-                            maxLines = 1,
-                            autoSize = TextAutoSize.StepBased(
-                                minFontSize = WearBlueprint.small.fontSize * HIGHLIGHT_MIN_SCALE,
-                                maxFontSize = WearBlueprint.small.fontSize,
-                                stepSize = 0.5.sp,
-                            ),
-                        )
-                    } else Text(
+                    Text(
                         text = monoWords(line?.first ?: stringResource(R.string.recording_active)),
                         // docs/09 "Disabled, focus and structure": said politely when it changes. Blank, the node keeps the
                         // live region, so news arriving is a change of its text rather than a node appearing.
@@ -185,22 +161,6 @@ private fun RecordScreen(
 
                     Spacer(Modifier.height(10.dp))
                     RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
-                    // docs/03 "Metadata": below the stop node, only while it records — the node slides up
-                    // to make room, the way the phone's record node slides aside.
-                    AnimatedVisibility(
-                        visible = state.canStop,
-                        enter = expandVertically(tween(MOTION_MS)),
-                        exit = shrinkVertically(tween(MOTION_MS)),
-                    ) {
-                        // The node's touch target reaches past its drawing on a small face (see [FitToWatch]), and the
-                        // slide clips to its own box: the box takes that reach as invisible padding — out of the gap
-                        // above, so the node itself does not move — or a tap at the edge of the target would miss.
-                        val reach = ((LocalViewConfiguration.current.minimumTouchTargetSize.height - HIGHLIGHT_NODE) / 2).coerceIn(0.dp, 8.dp)
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Spacer(Modifier.height(8.dp - reach))
-                            HighlightButton(onHighlight, Modifier.padding(reach))
-                        }
-                    }
                 }
             }
             FitToWatch {
@@ -232,10 +192,8 @@ private fun RecordScreen(
 @Composable
 private fun statusLine(state: WearUiState): Pair<String, Color>? {
     val message = state.message
-    val highlighted = state.highlightedSec
     return when {
         message != null -> message.text() to WearBlueprint.textMuted
-        highlighted != null && state.canStop -> stringResource(R.string.highlight_status, stamp(highlighted)) to WearBlueprint.accent
         state.recorder is RecorderState.Recording -> stringResource(R.string.recording_active) to WearBlueprint.danger
         state.recorder == RecorderState.Starting -> stringResource(R.string.recording_starting) to WearBlueprint.textMuted
         state.recorder == RecorderState.Stopping -> stringResource(R.string.recording_stopping) to WearBlueprint.textMuted
@@ -276,37 +234,6 @@ private class FullSizeTouch(base: ViewConfiguration, scale: Float) : ViewConfigu
 
 /** The large round watch (454 px at xhdpi) the record screen's sizes were chosen on. */
 private const val DRAWN_FOR_WIDTH_DP = 227f
-
-/** docs/09 "Motion": the standard 200 ms; the system's own animation scale switches it off. */
-private const val MOTION_MS = 200
-
-/** The highlight node's drawn size, at the layout basis. */
-private val HIGHLIGHT_NODE = 48.dp
-
-/** How far the mark's line may shrink to stay on one line. */
-private const val HIGHLIGHT_MIN_SCALE = 0.7f
-
-/** The mark's time as every shell writes a live timer — `00:12`, `01:02:03` (docs/09 "Typography"). */
-private fun stamp(seconds: Long): String = formatElapsed(seconds)
-
-/**
- * docs/09 screen principle 7: the phone's highlight node under the stop node — an accent outline and a
- * small filled accent square, no word. The name is for screen readers only.
- */
-@Composable
-private fun HighlightButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val label = stringResource(R.string.highlight)
-    Box(
-        modifier = modifier
-            .size(HIGHLIGHT_NODE)
-            .border(1.5.dp, WearBlueprint.accent, RoundedCornerShape(WearBlueprint.radius))
-            .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.size(12.dp).background(WearBlueprint.accent, RoundedCornerShape(WearBlueprint.badge)))
-    }
-}
 
 /** docs/09 "Shape": the round button is a square node here too — filled while it is recording. */
 @Composable

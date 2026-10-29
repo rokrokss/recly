@@ -292,11 +292,6 @@
     <string name="processing_language_auto">अपने आप</string>
     <string name="processing_language_mixed">कोरियाई और अंग्रेज़ी</string>
     <string name="processing_language_unsupported">चुना गया ट्रांसक्रिप्शन तरीका यह भाषा समर्थित नहीं करता।</string>
-    <string name="highlight">हाइलाइट करें</string>
-    <string name="highlight_status">हाइलाइट · %1$s</string>
-    <string name="highlight_tick">हाइलाइट %1$s</string>
-    <string name="highlight_remove">हाइलाइट हटाएँ</string>
-    <string name="highlight_add_at">%1$s पर हाइलाइट जोड़ें</string>
     <string name="detail_share">शेयर करें</string>
     <string name="detail_more">और</string>
     <string name="detail_edit">ट्रांसक्रिप्ट संपादित करें</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">अपने ब्राउज़र में साइन इन पूरा करें</string>
     <string name="chatgpt_sign_in_failed">ChatGPT में साइन इन नहीं हो सका</string>
     <string name="chatgpt_revoke_unconfirmed">इस डिवाइस पर साइन आउट हो गया, लेकिन OpenAI ने इसकी पुष्टि नहीं की। आप ChatGPT सेटिंग में Recly को हटा सकते हैं।</string>
-    <string name="chatgpt_footnote">नोट्स और सवाल ट्रांसक्रिप्ट का टेक्स्ट, आपके हाइलाइट किए पल और आपकी नोट्स सेटिंग OpenAI को भेजते हैं — ऑडियो कभी नहीं — और ये आपके ChatGPT प्लान के इस्तेमाल में गिने जाते हैं।</string>
+    <string name="chatgpt_footnote">नोट्स और सवाल ट्रांसक्रिप्ट का टेक्स्ट और आपकी नोट्स सेटिंग OpenAI को भेजते हैं — ऑडियो कभी नहीं — और ये आपके ChatGPT प्लान के इस्तेमाल में गिने जाते हैं।</string>
     <string name="chatgpt_welcome_title">आप अपना ChatGPT प्लान इस्तेमाल कर रहे हैं</string>
     <string name="chatgpt_welcome_body">Recly में नोट्स आपके ChatGPT प्लान का इस्तेमाल करते हैं। आप ChatGPT सेटिंग में उपयोग प्रबंधित कर सकते हैं।</string>
     <string name="chatgpt_got_it">समझ गया</string>

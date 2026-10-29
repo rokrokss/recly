@@ -17,7 +17,6 @@ import okio.Path
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import recly.core.ids.Ulid
-import recly.core.model.Highlight
 import recly.core.model.Part
 import recly.core.model.RecordingMeta
 import recly.core.model.RecordingStatus
@@ -95,7 +94,6 @@ class TransferReceiverTest {
         endedAt = null,
         durationSec = null,
         status = RecordingStatus.RECORDING,
-        highlights = listOf(Highlight(125.0)),
     )
 
     private suspend fun progress(vararg numbers: Int): Boolean =
@@ -251,8 +249,8 @@ class TransferReceiverTest {
     // --- docs/03: a watch sends each part while it is still recording, with an in-progress meta ---
 
     /**
-     * The in-progress meta opens the row the parts are filed into: the watch's start, time zone, tracks and
-     * highlights so far — still `recording`, still the receiver's, and nothing on disk as its `meta.json`.
+     * The in-progress meta opens the row the parts are filed into: the watch's start, time zone and tracks —
+     * still `recording`, still the receiver's, and nothing on disk as its `meta.json`.
      */
     @Test
     fun `an in-progress meta opens a receiving row with the watch's own fields`() = runBlocking {
@@ -265,7 +263,6 @@ class TransferReceiverTest {
         assertEquals(watchMeta.startedAt, record.meta.startedAt)
         assertEquals(watchMeta.timezone, record.meta.timezone)
         assertEquals(listOf(Track.MONO), record.meta.tracks)
-        assertEquals(listOf(Highlight(125.0)), record.meta.highlights)
         assertEquals(emptyList(), record.meta.parts, "a part it lists that has not arrived is not one")
         assertFalse(fs.exists(dir / MetaWriter.metaFileName(base)), "only the final meta is written")
         assertEquals(listOf(watchMeta.recordingId), opened, "the phone's settings are pinned now")

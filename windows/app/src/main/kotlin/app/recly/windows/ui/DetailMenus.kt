@@ -26,14 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
@@ -197,22 +193,20 @@ private val EXPORTS = listOf(
 /**
  * docs/09 "Screen principles": the detail's ⋯, in groups with a hairline between them (2026-10-10) — Rename ·
  * Edit transcript · Transcribe again, then Organize (or Organize again) · Edit notes · Ask about this recording… ·
- * Fill in title · Fill in speaker names where ChatGPT is offered (docs/09 "AI view"), then Add highlight, then Open
- * in Drive or Open the folder once the recording has a folder there (D24), and last Delete, in red (2026-10-15). What
- * cannot run now stays in its place, disabled, with the reason under it — `Still recording` for every one of them
- * while the take is being written.
+ * Fill in title · Fill in speaker names where ChatGPT is offered (docs/09 "AI view"), then Open in Drive or Open the
+ * folder once the recording has a folder there (D24), and last Delete, in red (2026-10-15). What cannot run now stays
+ * in its place, disabled, with the reason under it — `Still recording` for every one of them while the take is being
+ * written.
  */
 @Composable
 internal fun MoreButton(
     model: ShellModel,
     detail: RecordingDetail,
-    positionSec: Double,
     onEdit: () -> Unit,
     onEditNotes: () -> Unit,
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
-    val stamp = LedgerFormat.clock(positionSec, detail.spanSec)
     Box {
         BlueprintButton(
             MORE_MARK,
@@ -298,16 +292,6 @@ internal fun MoreButton(
                     )
                 }
             }
-            BlueprintMenuDivider()
-            // The playhead is the player's, and a take still being written has no player yet.
-            val highlightBlocked = recording ?: Str.PLAYER_NO_AUDIO.takeIf { detail.audio.isEmpty }
-            BlueprintMenuRow(
-                // The time is data, in the monospace every other time on this page is in (2026-10-10).
-                monoStamp(strings[Str.HIGHLIGHT_ADD_AT, stamp], stamp, mono.small.fontFamily),
-                { open = false; model.setHighlights(detail.recordingId, detail.highlights + positionSec) },
-                enabled = highlightBlocked == null,
-                secondary = highlightBlocked?.let { strings[it] },
-            )
             // D24: where the recording is kept — since 2026-10-28 the only place it is opened from.
             val place = when {
                 detail.driveUrl != null -> Str.RECENT_OPEN_DRIVE
@@ -344,39 +328,6 @@ internal fun deleteBlocked(item: RecentItem): Str? = when {
     (item.state as? UiMessage.Res)?.key == Str.STATUS_RECORDING -> Str.DETAIL_STILL_RECORDING
     else -> (item.state as? UiMessage.Res)?.key
 }
-
-/** [sentence] with [stamp] in it set in [family] — a time inside a translated sentence, wherever the language puts it. */
-internal fun monoStamp(sentence: String, stamp: String, family: FontFamily?): AnnotatedString = buildAnnotatedString {
-    append(sentence)
-    val at = sentence.indexOf(stamp)
-    if (at >= 0) addStyle(SpanStyle(fontFamily = family), at, at + stamp.length)
-}
-
-/** docs/03 "Metadata": a highlight's own menu — go there, or take it away (not red: no recording is deleted). */
-@Composable
-internal fun HighlightMenu(
-    atSec: Double,
-    /** The recording's length, for the time's format ([LedgerFormat.clock]). */
-    totalSec: Double?,
-    onDismiss: () -> Unit,
-    onGoTo: () -> Unit,
-    onRemove: () -> Unit,
-    strings: Strings,
-) {
-    BlueprintMenu(true, onDismiss) { BlueprintMenuColumn {
-        BlueprintMenuRow(strings[Str.TRANSCRIPT_SEEK, LedgerFormat.clock(atSec, totalSec)], { onDismiss(); onGoTo() })
-        BlueprintMenuRow(strings[Str.HIGHLIGHT_REMOVE], { onDismiss(); onRemove() })
-    } }
-}
-
-/** docs/03 "Metadata": a highlighted moment's mark — a small filled accent square, Blueprint's record-square motif. */
-@Composable
-internal fun HighlightMark(modifier: Modifier = Modifier) {
-    Box(modifier.size(HIGHLIGHT_MARK).background(blueprint.accent).clearAndSetSemantics { })
-}
-
-/** The mark's side, on the waveform's ticks and beside a group's time alike. */
-internal val HIGHLIGHT_MARK = 6.dp
 
 /**
  * docs/08 "Editing" · "Me and others": what a speaker is called — the name the user gave, else `Me` for the person

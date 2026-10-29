@@ -49,7 +49,6 @@ func (r folderRec) recording() Recording {
 	}
 	if r.meta != nil {
 		rec.DurationSec = r.meta.DurationSec
-		rec.HighlightCount = len(r.meta.HighlightTimes())
 	}
 	return rec
 }
@@ -175,7 +174,7 @@ func (f *Folder) Transcript(ctx context.Context, id string) (*Transcript, error)
 		return nil, err
 	}
 	t.RecordingID = RecordingIDOf(r.recordingID, t.RecordingID, r.base.Name)
-	t.Title, t.StartedAt, t.Highlights = r.title, StartedAtOf(r.base), r.meta.HighlightTimes()
+	t.Title, t.StartedAt = r.title, StartedAtOf(r.base)
 	return t, nil
 }
 

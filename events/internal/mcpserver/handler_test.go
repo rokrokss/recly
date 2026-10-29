@@ -36,7 +36,7 @@ func newHandler(t *testing.T) *Handler {
 		t.Fatal(err)
 	}
 	for name, body := range map[string]string{
-		base + ".meta.json":       `{"recordingId":"` + recID + `","title":"Weekly sync","highlights":[{"atSec":30}]}`,
+		base + ".meta.json":       `{"recordingId":"` + recID + `","title":"Weekly sync"}`,
 		base + ".transcript.json": `{"recordingId":"` + recID + `","language":"en","speakers":[{"id":"S1","name":"Kim"}],"segments":[{"start":1,"end":2,"speaker":"S1","text":"Ship it on Friday."}]}`,
 	} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
@@ -150,7 +150,7 @@ func TestDotSequenceWorksFromToolsAlone(t *testing.T) {
 	}
 	list, _ := callTool(t, h, "list_recordings", map[string]any{"limit": 5})
 	recs := list["recordings"].([]any)
-	if len(recs) != 1 || recs[0].(map[string]any)["recordingId"] != recID || recs[0].(map[string]any)["highlightCount"] != float64(1) {
+	if len(recs) != 1 || recs[0].(map[string]any)["recordingId"] != recID {
 		t.Fatalf("list = %v", list)
 	}
 }

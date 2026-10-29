@@ -701,7 +701,7 @@ final class MenuModel: ObservableObject {
         }
     }
 
-    // MARK: - Quick start and highlights (docs/12 "Menu bar app")
+    // MARK: - Quick start (docs/12 "Menu bar app")
 
     /// An App Intent can launch the app; it waits for the core to open — at most ten seconds — rather
     /// than be dropped by a start that refuses before [isReady].
@@ -710,34 +710,6 @@ final class MenuModel: ObservableObject {
         while !isReady, waited < 100 {
             try? await Task.sleep(for: .milliseconds(100))
             waited += 1
-        }
-    }
-
-    /// The moment the user marked, in the running recording's own time — the popover's `Highlight`,
-    /// and the `Add Highlight` App Intent. Nil when nothing is recording or the mark was not added (a
-    /// second one within a second is ignored).
-    @discardableResult
-    func addHighlight() async -> String? {
-        guard case .recording(let recordingId) = state, let recorder, let core = bridge?.core else { return nil }
-        let atSec = recorder.recordedSec
-        guard (try? await core.recordings.addHighlight(recordingId: recordingId, atSec: atSec).boolValue) == true else {
-            return nil
-        }
-        logger.info("shell.highlight id=\(recordingId, privacy: .public)")
-        // 2026-10-08 §3: in the running timer's shape.
-        let at = LedgerFormat.elapsed(Int(atSec))
-        highlighted = at
-        return at
-    }
-
-    /// The time of the last highlight, while the popover says so (two seconds, as on the watches).
-    @Published private(set) var highlighted: String? {
-        didSet {
-            guard let highlighted else { return }
-            Task { [weak self] in
-                try? await Task.sleep(for: .seconds(2))
-                if self?.highlighted == highlighted { self?.highlighted = nil }
-            }
         }
     }
 

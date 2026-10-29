@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Automático</string>
     <string name="processing_language_mixed">Coreano e inglés</string>
     <string name="processing_language_unsupported">El método de transcripción elegido no admite este idioma.</string>
-    <string name="highlight">Marcar</string>
-    <string name="highlight_status">Marcador · %1$s</string>
-    <string name="highlight_tick">Marcador %1$s</string>
-    <string name="highlight_remove">Quitar marcador</string>
-    <string name="highlight_add_at">Añadir marcador en %1$s</string>
     <string name="detail_share">Compartir</string>
     <string name="detail_more">Más</string>
     <string name="detail_edit">Editar transcripción</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Termina de iniciar sesión en tu navegador</string>
     <string name="chatgpt_sign_in_failed">No se pudo iniciar sesión en ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Se cerró la sesión en este dispositivo, pero OpenAI no lo confirmó. Puedes quitar Recly en los ajustes de ChatGPT.</string>
-    <string name="chatgpt_footnote">Las notas y las preguntas envían a OpenAI el texto de la transcripción, los momentos que destacaste y tus ajustes de notas —nunca el audio— y cuentan para el uso de tu plan de ChatGPT.</string>
+    <string name="chatgpt_footnote">Las notas y las preguntas envían a OpenAI el texto de la transcripción y tus ajustes de notas —nunca el audio— y cuentan para el uso de tu plan de ChatGPT.</string>
     <string name="chatgpt_welcome_title">Estás usando tu plan de ChatGPT</string>
     <string name="chatgpt_welcome_body">Las notas de Recly usan tu plan de ChatGPT. Puedes gestionar el uso en los ajustes de ChatGPT.</string>
     <string name="chatgpt_got_it">Entendido</string>

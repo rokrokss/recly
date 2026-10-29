@@ -292,11 +292,6 @@
     <string name="processing_language_auto">স্বয়ংক্রিয়</string>
     <string name="processing_language_mixed">কোরিয়ান ও ইংরেজি</string>
     <string name="processing_language_unsupported">বেছে নেওয়া ট্রান্সক্রিপশন পদ্ধতি এই ভাষা সমর্থন করে না।</string>
-    <string name="highlight">হাইলাইট করুন</string>
-    <string name="highlight_status">হাইলাইট · %1$s</string>
-    <string name="highlight_tick">হাইলাইট %1$s</string>
-    <string name="highlight_remove">হাইলাইট সরান</string>
-    <string name="highlight_add_at">%1$s-এ হাইলাইট যোগ করুন</string>
     <string name="detail_share">শেয়ার করুন</string>
     <string name="detail_more">আরও</string>
     <string name="detail_edit">ট্রান্সক্রিপ্ট সম্পাদনা করুন</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">আপনার ব্রাউজারে সাইন ইন শেষ করুন</string>
     <string name="chatgpt_sign_in_failed">ChatGPT-তে সাইন ইন করা যায়নি</string>
     <string name="chatgpt_revoke_unconfirmed">এই ডিভাইসে সাইন আউট হয়েছে, কিন্তু OpenAI তা নিশ্চিত করেনি। ChatGPT সেটিংসে Recly সরাতে পারেন।</string>
-    <string name="chatgpt_footnote">নোট ও প্রশ্ন ট্রান্সক্রিপ্টের লেখা, আপনার হাইলাইট করা মুহূর্ত আর আপনার নোট সেটিংস OpenAI-তে পাঠায় — অডিও কখনও নয় — এবং এগুলো আপনার ChatGPT প্ল্যানের ব্যবহারে গোনা হয়।</string>
+    <string name="chatgpt_footnote">নোট ও প্রশ্ন ট্রান্সক্রিপ্টের লেখা আর আপনার নোট সেটিংস OpenAI-তে পাঠায় — অডিও কখনও নয় — এবং এগুলো আপনার ChatGPT প্ল্যানের ব্যবহারে গোনা হয়।</string>
     <string name="chatgpt_welcome_title">আপনি আপনার ChatGPT প্ল্যান ব্যবহার করছেন</string>
     <string name="chatgpt_welcome_body">Recly-র নোট আপনার ChatGPT প্ল্যান ব্যবহার করে। ChatGPT সেটিংসে ব্যবহার পরিচালনা করতে পারেন।</string>
     <string name="chatgpt_got_it">বুঝেছি</string>

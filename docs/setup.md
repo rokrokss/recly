@@ -140,20 +140,6 @@ If you said no, Recly shows where to turn it back on.
 - **Windows**: the tray icon → **Start recording**, or **Record the detected meeting**
   when Recly notices a meeting.
 
-### Mark a moment
-
-| App | While recording |
-|---|---|
-| Android phone, iPhone | the square **Highlight** button beside the record button |
-| Galaxy Watch | the square **Highlight** button under the stop button |
-| Apple Watch | the square **Highlight** button under the stop button, or Double Tap (watchOS 11 and later) |
-| Mac | **Highlight** in the menu-bar popover, or the Shortcuts action **Add Highlight** |
-| Windows | **Highlight** in the tray popup |
-
-Later, in a recording's **Details**: **More** → **Add highlight at …**, or **Highlight** by the
-player on Mac and Windows. Tap a highlight on the waveform or in the transcript to go to it or
-remove it. Highlights are kept in the recording's `….meta.json`, where agents read them.
-
 ### Keyboard shortcuts
 
 | Keys | Where | What |

@@ -166,8 +166,8 @@ class TrayPopupTest {
                 segments = listOf(TranscriptSegment(0.0, 2.0, "S1", "Thanks for joining.")),
             )
             File(folder, "$base.transcript.json").writeText(Json.encodeToString(Transcript.serializer(), transcript))
-            // Any change to the rows reads their first words again: a highlight written to the meta is one.
-            model.setHighlights(id, listOf(1.0))
+            // Any change to the rows reads their first words again: a rename written to the meta is one, even to the name it has.
+            model.rename(RenameRequest(id, ""), "")
             until { model.previews[id] != null }
 
             val strings = model.localization.current
@@ -225,13 +225,12 @@ class TrayPopupTest {
     }
 
     /**
-     * 2026-10-10: the ledger's last line is not the place for what a line above already says — the highlight just
-     * marked is under the Highlight button, and the banner counts the recordings waiting for Drive.
+     * 2026-10-10: the ledger's last line is not the place for what a line above already says — the banner counts the
+     * recordings waiting for Drive.
      */
     @Test
     fun `the status line is left out where a line above says the same`() {
         val drive = listOf(JobAlert(AlertReason.NEEDS_AUTH, 2))
-        assertFalse(statusLineShown(Str.HIGHLIGHT_MARKED.message("00:12"), emptyList()))
         assertFalse(statusLineShown(Str.STATUS_SIGN_IN_NEEDED.message(), drive))
         assertTrue(statusLineShown(Str.STATUS_SIGN_IN_NEEDED.message(), emptyList()))
         assertTrue(statusLineShown(Str.STATUS_RECORDING.message(), drive))

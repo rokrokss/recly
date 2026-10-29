@@ -38,7 +38,7 @@ import recly.core.transcribe.TranscriptNormalizer
 
 /**
  * A whole [ReclyCore] the way a shell holds one, on a fake Drive, a fake disk and one clock — for the
- * tests of the facade's own calls (highlights, re-transcription, editing, import, search, export).
+ * tests of the facade's own calls (re-transcription, editing, import, search, export).
  */
 class CoreFixture(
     val engine: FakeLocalEngine? = FakeLocalEngine(),

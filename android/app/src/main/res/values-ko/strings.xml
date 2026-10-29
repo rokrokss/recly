@@ -324,11 +324,6 @@
     <string name="processing_language_auto">자동</string>
     <string name="processing_language_mixed">한국어·영어 혼용</string>
     <string name="processing_language_unsupported">선택한 전사 방식에서 지원하지 않는 언어입니다.</string>
-    <string name="highlight">하이라이트</string>
-    <string name="highlight_status">하이라이트 · %1$s</string>
-    <string name="highlight_tick">하이라이트 %1$s</string>
-    <string name="highlight_remove">하이라이트 삭제</string>
-    <string name="highlight_add_at">%1$s에 하이라이트 추가</string>
     <string name="detail_share">공유</string>
     <string name="detail_more">더 보기</string>
     <string name="detail_edit">전사본 편집</string>
@@ -421,7 +416,7 @@
     <string name="chatgpt_finish_in_browser">브라우저에서 로그인을 마치세요</string>
     <string name="chatgpt_sign_in_failed">ChatGPT에 로그인하지 못했습니다</string>
     <string name="chatgpt_revoke_unconfirmed">이 기기에서는 로그아웃했지만 OpenAI가 확인하지 않았습니다. ChatGPT 설정에서 Recly를 제거할 수 있습니다.</string>
-    <string name="chatgpt_footnote">정리와 질문에는 전사본 텍스트, 표시한 하이라이트, 정리 설정을 OpenAI로 보냅니다. 오디오는 보내지 않습니다. ChatGPT 요금제 사용량에 포함됩니다.</string>
+    <string name="chatgpt_footnote">정리와 질문에는 전사본 텍스트와 정리 설정을 OpenAI로 보냅니다. 오디오는 보내지 않습니다. ChatGPT 요금제 사용량에 포함됩니다.</string>
     <string name="chatgpt_welcome_title">ChatGPT 요금제를 사용합니다</string>
     <string name="chatgpt_welcome_body">Recly의 정리는 ChatGPT 요금제를 사용합니다. 사용량은 ChatGPT 설정에서 관리할 수 있습니다.</string>
     <string name="chatgpt_got_it">확인</string>

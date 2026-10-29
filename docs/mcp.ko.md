@@ -110,8 +110,8 @@ ChatGPT 데스크톱 앱, Codex CLI, Codex IDE 확장이 이 설정을 함께 �
 
 | 도구 | 인자 | 결과 |
 |---|---|---|
-| `list_recordings` | `limit`(1–50, 기본 10), `cursor` | 최신순 녹음: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`, `highlightCount`, 그리고 `nextCursor` |
-| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, `highlights`, 그리고 `[HH:MM:SS] 화자: 내용` 줄로 된 `transcript`(한 번에 약 4만 자), 나머지는 `nextCursor`로 |
+| `list_recordings` | `limit`(1–50, 기본 10), `cursor` | 최신순 녹음: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`, 그리고 `nextCursor` |
+| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, 그리고 `[HH:MM:SS] 화자: 내용` 줄로 된 `transcript`(한 번에 약 4만 자), 나머지는 `nextCursor`로 |
 | `search_recordings` | `query`, `limit`(1–50, 기본 10) | 제목이나 녹취록에 검색어가 든 녹음(대소문자 무시)과 녹음마다 일치하는 줄 최대 3개 |
 | `get_audio_files` | `recordingId` | 이 컴퓨터에 있는 녹음의 `.m4a` 파트 절대 경로와 트랙·시작 위치 |
 

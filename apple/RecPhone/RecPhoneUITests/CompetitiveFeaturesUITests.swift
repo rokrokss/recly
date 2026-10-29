@@ -1,16 +1,13 @@
 import XCTest
 
-/// docs/09 "Screen principles" on the phone, driven end to end for the lane's screenshots: Highlight while
-/// recording, the detail's More, Share, speed, highlights, edit mode and speaker menu, search, and the
-/// vocabulary row. Expects a recording titled `1-Weekly meeting` with a transcript on the simulator (the
+/// docs/09 "Screen principles" on the phone, driven end to end for the lane's screenshots: the detail's More,
+/// Share, speed, edit mode and speaker menu, search, and the vocabulary row. Expects a recording titled `1-Weekly meeting` with a transcript on the simulator (the
 /// lane's seed: an imported file and its transcript); every step saves a screenshot as an attachment.
 final class CompetitiveFeaturesUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }
 
-    func testRecordingScreenHighlightEnglish() { recordWithHighlight("en") }
-    func testRecordingScreenHighlightKorean() { recordWithHighlight("ko") }
     func testDetailEnglish() { detail("en") }
     func testDetailKorean() { detail("ko") }
     func testSearchAndVocabularyEnglish() { searchAndSettings("en") }
@@ -27,22 +24,6 @@ final class CompetitiveFeaturesUITests: XCTestCase {
             springboard.alerts.firstMatch.buttons.element(boundBy: 0).tap()
         }
         return app
-    }
-
-    private func recordWithHighlight(_ language: String) {
-        let app = launch(language)
-        let start = app.buttons["start"]
-        XCTAssertTrue(start.waitForExistence(timeout: 30))
-        start.tap()
-        if app.buttons["consent-confirm"].waitForExistence(timeout: 3) { app.buttons["consent-confirm"].tap() }
-        let highlight = app.buttons["highlight"]
-        XCTAssertTrue(highlight.waitForExistence(timeout: 15))
-        sleep(3)
-        highlight.tap()
-        sleep(1)
-        shot("record-highlight-\(language)")
-        app.buttons["stop"].tap()
-        if app.buttons["saveTitle"].waitForExistence(timeout: 10) { app.buttons["saveTitle"].tap() }
     }
 
     private func openMeeting(_ app: XCUIApplication, _ language: String) {
@@ -62,7 +43,8 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         app.buttons["detail-more"].tap()
         sleep(1)
         shot("detail-more-menu-\(language)")
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", language == "ko" ? "00:00에" : "Add highlight at")).firstMatch.tap()
+        // A tap outside closes the menu without choosing from it.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)).tap()
         sleep(1)
 
         app.buttons["playback-speed"].tap()
@@ -72,7 +54,7 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         app.buttons["playback-speed"].tap()
         app.switches.firstMatch.exists ? app.switches.firstMatch.tap() : app.buttons[language == "ko" ? "무음 건너뛰기" : "Skip silence"].tap()
         sleep(1)
-        shot("detail-highlight-speed-\(language)")
+        shot("detail-speed-\(language)")
 
         app.buttons["play-pause"].tap()
         sleep(8)
@@ -221,7 +203,7 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 30))
         start.tap()
         if app.buttons["consent-confirm"].waitForExistence(timeout: 3) { app.buttons["consent-confirm"].tap() }
-        XCTAssertTrue(app.buttons["highlight"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["stop"].waitForExistence(timeout: 15))
 
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         XCUIDevice.shared.press(.home)
@@ -252,7 +234,7 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         app.activate()
         sleep(2)
         shot("widget-app-after-stop")
-        XCTAssertFalse(app.buttons["highlight"].exists, "the widget's stop did not stop the recording")
+        XCTAssertFalse(app.buttons["stop"].exists, "the widget's stop did not stop the recording")
     }
 
     private func shot(_ name: String) {

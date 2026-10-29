@@ -424,26 +424,6 @@ class ReclyCore(
     }
 
     /**
-     * docs/03 "Metadata": the highlight editor's save — the whole list, for this device's recordings and
-     * another device's alike. Written locally at once (`recordings.observe()` shows it) and carried to
-     * the folder's `meta.json` in the background right away when it can be, otherwise by the next job pass, the way
-     * [rename] carries a title. While recording, marks go through `recordings.addHighlight` instead.
-     * Returns false when there is nothing to write to. Never throws.
-     */
-    suspend fun setHighlights(recordingId: String, atSecs: List<Double>): Boolean {
-        val written = try {
-            recordings.setHighlights(recordingId, atSecs)
-        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
-            throw e
-        } catch (e: Throwable) {
-            deps.logger.log(Logger.Level.WARN, "rec.highlights.failed", mapOf("recordingId" to recordingId), e)
-            false
-        }
-        if (written) pushes.launch { remote.pushMeta() }
-        return written
-    }
-
-    /**
      * docs/08 "Result files": the transcript of one recording, for the detail screen — the local copy
      * the step left, or Drive's when this device did not run it.
      */
@@ -508,7 +488,7 @@ class ReclyCore(
     /** Where an edit's push to storage runs, so the screen that saved it does not wait for the network. */
     private val pushes = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
 
-    /** Tests: wait for the background pushes [editTranscript] and [setHighlights] started, and the fills [fill] started. */
+    /** Tests: wait for the background pushes [editTranscript] started, and the fills [fill] started. */
     internal suspend fun awaitPushes() {
         autoFill.awaitRuns()
         pushes.coroutineContext[kotlinx.coroutines.Job]?.children?.toList()?.forEach { it.join() }

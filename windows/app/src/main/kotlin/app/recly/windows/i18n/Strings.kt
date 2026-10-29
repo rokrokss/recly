@@ -385,13 +385,8 @@ enum class Str {
     CORE_IMPORT_UNSUPPORTED,
     CORE_IMPORT_UNREADABLE,
 
-    // Competitive features (2026-10-07): highlights, the detail's menus, exports, editing, search,
+    // Competitive features (2026-10-07): the detail's menus, exports, editing, search,
     // import, playback speed, vocabulary and on-device speakers.
-    HIGHLIGHT,
-    HIGHLIGHT_MARKED,
-    HIGHLIGHT_TICK,
-    HIGHLIGHT_REMOVE,
-    HIGHLIGHT_ADD_AT,
     DETAIL_MORE,
     DETAIL_EDIT,
     DETAIL_RETRANSCRIBE,

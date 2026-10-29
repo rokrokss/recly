@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Automatico</string>
     <string name="processing_language_mixed">Coreano e inglese</string>
     <string name="processing_language_unsupported">Il metodo di trascrizione selezionato non supporta questa lingua.</string>
-    <string name="highlight">Segna</string>
-    <string name="highlight_status">Marcatore · %1$s</string>
-    <string name="highlight_tick">Marcatore %1$s</string>
-    <string name="highlight_remove">Rimuovi marcatore</string>
-    <string name="highlight_add_at">Aggiungi marcatore a %1$s</string>
     <string name="detail_share">Condividi</string>
     <string name="detail_more">Altro</string>
     <string name="detail_edit">Modifica trascrizione</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Completa l’accesso nel browser</string>
     <string name="chatgpt_sign_in_failed">Impossibile accedere a ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Disconnesso su questo dispositivo, ma OpenAI non l’ha confermato. Puoi rimuovere Recly nelle impostazioni di ChatGPT.</string>
-    <string name="chatgpt_footnote">Appunti e domande inviano a OpenAI il testo della trascrizione, i momenti evidenziati e le tue impostazioni degli appunti — mai l’audio — e contano nell’utilizzo del tuo piano ChatGPT.</string>
+    <string name="chatgpt_footnote">Appunti e domande inviano a OpenAI il testo della trascrizione e le tue impostazioni degli appunti — mai l’audio — e contano nell’utilizzo del tuo piano ChatGPT.</string>
     <string name="chatgpt_welcome_title">Stai usando il tuo piano ChatGPT</string>
     <string name="chatgpt_welcome_body">Gli appunti in Recly usano il tuo piano ChatGPT. Puoi gestire l’utilizzo nelle impostazioni di ChatGPT.</string>
     <string name="chatgpt_got_it">Ho capito</string>

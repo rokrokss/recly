@@ -104,19 +104,6 @@ class SegmentedRecorder(
     }
 
     /**
-     * docs/03 "Metadata" (D6): the audio written so far, in seconds — the closed parts by their own
-     * length and the open one by the monotonic clock since its boundary, which is what a highlight is
-     * marked on. Not the wall clock since `startedAt`: that is taken before the microphone opens, and
-     * moves when the clock is set. Null while nothing records.
-     *
-     * Under [mutex], so a boundary that has moved the timer but not yet filed its part is not read
-     * half way — that would be a segment short.
-     */
-    suspend fun recordedSec(): Double? = mutex.withLock {
-        session?.let { it.ledger.recordedSec + it.timer.elapsedSec() }
-    }
-
-    /**
      * Creates the recording row and `meta.json`, then starts the first segment. Returns the id the
      * rest of the pipeline uses; the caller keeps it to `stop` and to enqueue.
      *

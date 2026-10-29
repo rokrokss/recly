@@ -349,7 +349,7 @@ final class RecordingDetailTests: XCTestCase {
     }
 
     /// 2026-10-10 (A-A11): while the take is being written, every item of the More menu is off, and each says the
-    /// one reason there is — not whatever else would also stand in its way (no transcript, not uploaded, no audio).
+    /// one reason there is — not whatever else would also stand in its way (no transcript, not uploaded).
     @MainActor
     func testEveryMoreMenuItemSaysStillRecordingWhileTheTakeIsWritten() async throws {
         let bridge = try await makeBridge()
@@ -360,7 +360,7 @@ final class RecordingDetailTests: XCTestCase {
         let still = RecKitStrings.localized("Still recording")
         let reasons = [
             model.renameReason, model.editReason, model.retranscribeReason, model.organizeReason,
-            model.editNotesReason, model.askReason, model.fillTitleReason, model.fillNamesReason, model.highlightReason,
+            model.editNotesReason, model.askReason, model.fillTitleReason, model.fillNamesReason,
             model.deleteReason,
         ]
         XCTAssertEqual(reasons, Array(repeating: still, count: reasons.count))
@@ -422,8 +422,7 @@ final class RecordingDetailTests: XCTestCase {
             silenced: [],
             context: nil,
             drive: nil,
-            status: status,
-            highlights: []
+            status: status
         )
         let directory = dataDirectory
             .appendingPathComponent("recordings", isDirectory: true)

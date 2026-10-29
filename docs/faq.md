@@ -82,15 +82,6 @@ are separated where the provider can. The **People in the room** you enter after
 either way, and in a recording's **Details** you can name the speakers or move a line to another
 one. See [how to transcribe](setup.md#3-choose-how-to-transcribe).
 
-## What is a highlight and where does it go?
-
-A moment you mark while recording: **Highlight** on the phone, on either watch (or Double Tap on an
-Apple Watch with watchOS 11 or later), in the Mac popover or the Windows tray popup. Add or remove
-highlights later in a recording's **Details**. They are saved in the recording's `….meta.json` next
-to the audio, and in the `.md` transcript of a local folder, but not in the `.txt` transcript. The
-ChatGPT agent and the [local MCP server](mcp.md) see them with the transcript, so your agent can weigh
-what you marked. See [mark a moment](setup.md#mark-a-moment).
-
 ## What files can I import?
 
 Audio and video files the device can decode: what Android's, Apple's or, on Windows, the bundled

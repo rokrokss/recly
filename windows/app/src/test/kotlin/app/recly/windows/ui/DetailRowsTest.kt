@@ -40,7 +40,7 @@ import kotlin.test.assertTrue
 
 /**
  * 2026-10-09: controls that sit in one row of the detail share one height, one centre and one baseline — the
- * player bar's Play, speed chip and Highlight, and a transcript group's time and speaker; and a time is the status
+ * player bar's Play and speed chip, and a transcript group's time and speaker; and a time is the status
  * badge's size (2026-10-28).
  */
 class DetailRowsTest {
@@ -61,7 +61,6 @@ class DetailRowsTest {
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
                         BlueprintButton("Play", {}, Modifier.probe("play"), tone = ButtonTone.PRIMARY)
                         Box(Modifier.probe("speed")) { SpeedChip(1.25f, false, {}, {}, strings) }
-                        BlueprintButton("Highlight", {}, Modifier.probe("highlight"), tone = ButtonTone.QUIET)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
                         BlueprintButton("00:11", {}, Modifier.probe("time"), tone = ButtonTone.QUIET, monospace = true, compact = true)
@@ -73,7 +72,7 @@ class DetailRowsTest {
         }
         try {
             scene.render()
-            listOf(listOf("play", "speed", "highlight"), listOf("time", "id", "name")).forEach { row ->
+            listOf(listOf("play", "speed"), listOf("time", "id", "name")).forEach { row ->
                 val first = seen.getValue(row.first())
                 row.drop(1).forEach { name -> assertEquals(first, seen.getValue(name), "$name against ${row.first()}") }
             }

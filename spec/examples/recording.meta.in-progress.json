@@ -15,6 +15,5 @@
     { "part": 2, "track": "mono", "file": "20260826T010000Z_watch_01J9WATC_p002_mono.m4a", "bytes": 3600871,
       "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09", "startOffsetSec": 900, "durationSec": 900 }
   ],
-  "highlights": [ { "atSec": 412.5 } ],
   "status": "recording"
 }

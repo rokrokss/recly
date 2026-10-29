@@ -175,8 +175,7 @@ final class WaveformCacheTests: XCTestCase {
                 bitrateKbps: 96, segmentSec: 900
             ),
             tracks: [Track.mono], parts: [], gaps: [], silenced: [], context: nil, drive: nil,
-            status: RecordingStatus.recording,
-            highlights: []
+            status: RecordingStatus.recording
         )
         let directory = dataDirectory
             .appendingPathComponent("recordings", isDirectory: true)

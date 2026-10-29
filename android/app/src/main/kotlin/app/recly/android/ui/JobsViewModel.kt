@@ -25,8 +25,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -237,8 +235,6 @@ data class DetailState(
     val folder: Boolean = false,
     /** docs/03 "Storage location": where the recording's folder is; null until it has one. */
     val storage: StorageKind? = null,
-    /** docs/03 "Metadata": the marked moments, in seconds of the recording. */
-    val highlights: List<Double> = emptyList(),
     /** A transcription of this recording is queued or running: nothing may edit the transcript under it. */
     val transcribing: Boolean = false,
     /** That transcription is a "Transcribe again" (docs/10 "Re-transcription") — the old text stays meanwhile. */
@@ -482,15 +478,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun closeFind() {
         val id = _state.value.detail?.recordingId ?: return
         updateDetail(id) { it.copy(find = null) }
-    }
-
-    /**
-     * docs/03 "Metadata": the detail's highlight editor — the whole list, saved at once, no Save button.
-     * The page follows on `recordings.observe()`.
-     */
-    fun setHighlights(recordingId: String, atSecs: List<Double>) = launch {
-        val core = core()
-        withContext(core.deps.io) { core.setHighlights(recordingId, atSecs) }
     }
 
     /** docs/08 "Exports": the file a share sheet gets, or null when there is nothing in that format. */
@@ -801,11 +788,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             }
             launch {
                 core.notes.observe(recordingId).collect { notes -> updateDetail(recordingId) { it.copy(notes = notes) } }
-            }
-            launch {
-                core.recordings.observe().map { core.recordings.get(recordingId)?.meta?.highlights.orEmpty() }
-                    .distinctUntilChanged()
-                    .collect { marks -> updateDetail(recordingId) { it.copy(highlights = marks.map { mark -> mark.atSec }) } }
             }
             core.observeResults(recordingId).collect { next ->
                 updateDetail(recordingId) { it.copy(transcript = next.transcript, availability = next.availability) }

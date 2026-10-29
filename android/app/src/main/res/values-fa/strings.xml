@@ -292,11 +292,6 @@
     <string name="processing_language_auto">خودکار</string>
     <string name="processing_language_mixed">کره‌ای و انگلیسی</string>
     <string name="processing_language_unsupported">روش رونویسی انتخاب‌شده از این زبان پشتیبانی نمی‌کند.</string>
-    <string name="highlight">علامت‌گذاری</string>
-    <string name="highlight_status">علامت · %1$s</string>
-    <string name="highlight_tick">علامت %1$s</string>
-    <string name="highlight_remove">حذف علامت</string>
-    <string name="highlight_add_at">افزودن علامت در %1$s</string>
     <string name="detail_share">اشتراک‌گذاری</string>
     <string name="detail_more">بیشتر</string>
     <string name="detail_edit">ویرایش رونوشت</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">ورود را در مرورگر خود کامل کنید</string>
     <string name="chatgpt_sign_in_failed">ورود به ChatGPT ممکن نشد</string>
     <string name="chatgpt_revoke_unconfirmed">در این دستگاه از حساب خارج شدید، اما OpenAI آن را تأیید نکرد. می‌توانید Recly را در تنظیمات ChatGPT حذف کنید.</string>
-    <string name="chatgpt_footnote">یادداشت‌ها و پرسش‌ها متن رونوشت، لحظه‌هایی که برجسته کرده‌اید و تنظیمات یادداشت‌هایتان را به OpenAI می‌فرستند — هرگز صدا را نه — و جزو مصرف طرح ChatGPT شما حساب می‌شوند.</string>
+    <string name="chatgpt_footnote">یادداشت‌ها و پرسش‌ها متن رونوشت و تنظیمات یادداشت‌هایتان را به OpenAI می‌فرستند — هرگز صدا را نه — و جزو مصرف طرح ChatGPT شما حساب می‌شوند.</string>
     <string name="chatgpt_welcome_title">از طرح ChatGPT خود استفاده می‌کنید</string>
     <string name="chatgpt_welcome_body">یادداشت‌ها در Recly از طرح ChatGPT شما استفاده می‌کنند. می‌توانید مصرف را در تنظیمات ChatGPT مدیریت کنید.</string>
     <string name="chatgpt_got_it">متوجه شدم</string>

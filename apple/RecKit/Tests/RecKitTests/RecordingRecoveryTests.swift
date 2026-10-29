@@ -449,8 +449,7 @@ final class RecordingRecoveryTests: XCTestCase {
             silenced: [],
             context: nil,
             drive: nil,
-            status: status,
-            highlights: []
+            status: status
         )
         let base = MetaWriter.shared.baseName(meta: meta)
         let directory = dataDirectory

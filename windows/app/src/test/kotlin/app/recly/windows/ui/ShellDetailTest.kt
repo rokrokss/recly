@@ -60,7 +60,7 @@ class ShellDetailTest {
     }
 
     @Test
-    fun `the detail keeps what the core keeps, finds only transcript hits, and says why Transcribe again did not start`() = runBlocking {
+    fun `the detail finds only transcript hits and says why Transcribe again did not start`() = runBlocking {
         val directory = Files.createTempDirectory("recly-detail-").toFile()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val model = ShellModel(scope = scope, localization = Localization(
@@ -80,10 +80,6 @@ class ShellDetailTest {
             model.openDetail(model.recents.first())
             until { model.detail?.loading == false }
             observer = launch { model.followDetailState(id) }
-
-            // A mark within a second of another is not drawn even for a moment: the core would not keep it.
-            model.setHighlights(id, listOf(5.0, 5.4, 1.0))
-            assertEquals(listOf(1.0, 5.0), model.detail!!.highlights)
 
             // Nothing was uploaded (no storage is connected), so there is no folder to transcribe again into.
             until { model.detail!!.notUploaded }

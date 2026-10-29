@@ -156,7 +156,7 @@ class TransferReceiver(
 
     /**
      * docs/03 "Watch → phone transfer contract": the recording as the watch has it while it is still recording —
-     * start, time zone, segment length, tracks, the highlights so far and every part filed so far — sent
+     * start, time zone, segment length, tracks and every part filed so far — sent
      * with each part. It is never acked and never finalizes anything: it opens the row the parts are filed
      * into (or updates it), keeps it `recording` and the receiver's, and gives the parts that are here
      * their offsets and lengths. A part that is here and newly listed goes to [partReceived].

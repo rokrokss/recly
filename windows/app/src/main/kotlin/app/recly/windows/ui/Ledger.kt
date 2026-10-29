@@ -218,7 +218,7 @@ object LedgerFormat {
 
     /**
      * `00:12:34`, hours always written — what a screen reader is told about a moment of a recording
-     * (a transcript time, a highlight). The UX decisions of 2026-10-08 changed what is *drawn* ([clock])
+     * (a transcript time). The UX decisions of 2026-10-08 changed what is *drawn* ([clock])
      * and left what is spoken as it was. Hours are not wrapped at 24; a recording is not a clock.
      */
     fun elapsed(millis: Long): String {

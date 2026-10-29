@@ -292,11 +292,6 @@
     <string name="processing_language_auto">تلقائي</string>
     <string name="processing_language_mixed">الكورية والإنجليزية</string>
     <string name="processing_language_unsupported">طريقة النسخ المحددة لا تدعم هذه اللغة.</string>
-    <string name="highlight">وضع علامة</string>
-    <string name="highlight_status">علامة · %1$s</string>
-    <string name="highlight_tick">علامة %1$s</string>
-    <string name="highlight_remove">إزالة العلامة</string>
-    <string name="highlight_add_at">إضافة علامة عند %1$s</string>
     <string name="detail_share">مشاركة</string>
     <string name="detail_more">المزيد</string>
     <string name="detail_edit">تعديل النص</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">أكمل تسجيل الدخول في متصفحك</string>
     <string name="chatgpt_sign_in_failed">تعذّر تسجيل الدخول إلى ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">تم تسجيل الخروج على هذا الجهاز، لكن OpenAI لم تؤكد ذلك. يمكنك إزالة Recly من إعدادات ChatGPT.</string>
-    <string name="chatgpt_footnote">ترسل الملاحظات والأسئلة نص النسخة المكتوبة واللحظات التي ميّزتها وإعدادات الملاحظات إلى OpenAI — ولا ترسل الصوت أبداً — وتُحتسب ضمن استخدام خطة ChatGPT.</string>
+    <string name="chatgpt_footnote">ترسل الملاحظات والأسئلة نص النسخة المكتوبة وإعدادات الملاحظات إلى OpenAI — ولا ترسل الصوت أبداً — وتُحتسب ضمن استخدام خطة ChatGPT.</string>
     <string name="chatgpt_welcome_title">أنت تستخدم خطة ChatGPT الخاصة بك</string>
     <string name="chatgpt_welcome_body">تستخدم الملاحظات في Recly خطة ChatGPT الخاصة بك. يمكنك إدارة الاستخدام من إعدادات ChatGPT.</string>
     <string name="chatgpt_got_it">حسنًا</string>

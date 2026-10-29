@@ -42,9 +42,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var driveFetch = DriveFetch.deciding
     /// How much of that trip is done, 0 to 1, by the bytes of the parts it brings back.
     @Published public private(set) var fetchProgress: Double = 0
-    /// docs/09 "Highlights": the moments marked on this recording, ascending — ticks on the waveform, squares
-    /// in the text.
-    @Published public private(set) var highlights: [Double] = []
     /// docs/09 "Transcript reader": the paragraphs of [transcript], with the segments each is made of.
     @Published public private(set) var groups: [TranscriptGroup] = []
     /// A job of this recording has not settled: the transcript may be rewritten under an edit, so
@@ -302,7 +299,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             guard !Task.isCancelled else { return }
             deviceRecording = (try? await somethingIsBeingRecorded()) ?? deviceRecording
             if let record = try? await core.recordings.get(id: recordingId) {
-                highlights = record.meta.highlights.map(\.atSec)
                 adoptTitle(record.meta.title)
             }
         }
@@ -375,7 +371,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    // MARK: - Highlights, Share, editing and Transcribe again (docs/09 "Detail header and More menu")
+    // MARK: - Share, editing and Transcribe again (docs/09 "Detail header and More menu")
 
     /// The shell's executor, poked when this page queues a job (a re-transcription) so it runs now.
     public var jobsDue: (() -> Void)?
@@ -412,24 +408,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public internal(set) var findable = false
     /// Bumped by ⌘F to put the cursor in the find bar's field, every press.
     @Published public var findFocus = 0
-
-    /// docs/09 "Highlights": a mark at [sec] — the More menu's, or the desktop's Highlight button.
-    public func addHighlight(atSec sec: Double) async {
-        await setHighlights(highlights + [sec])
-    }
-
-    public func removeHighlight(_ sec: Double) async {
-        await setHighlights(highlights.filter { $0 != sec })
-    }
-
-    /// Saved at once, here and in the recording's folder; the list as the core kept it comes back.
-    private func setHighlights(_ next: [Double]) async {
-        guard (try? await core.setHighlights(recordingId: recordingId, atSecs: next.map { KotlinDouble(double: $0) }))?.boolValue == true
-        else { return }
-        if let record = try? await core.recordings.get(id: recordingId) {
-            highlights = record.meta.highlights.map(\.atSec)
-        }
-    }
 
     /// docs/08 "Exports": the file for the share sheet, or nil when there is nothing in that format.
     public func export(_ format: ShareFormat) async -> URL? {
@@ -502,12 +480,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// yet (2026-10-08 §12 — a disabled item always says why).
     public var renameReason: String? {
         writing ? Self.stillRecording : nil
-    }
-
-    /// Why `Add highlight at …` cannot run now, or nil when it can.
-    public var highlightReason: String? {
-        if writing { return Self.stillRecording }
-        return hasAudio ? nil : RecKitStrings.localized("No audio on this device")
     }
 
     /// 2026-10-10 (A-A11): while the take is being written, every item of the More menu is off for this one
@@ -1007,7 +979,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         transcribingElsewhere = record.remotePending.contains("transcribe")
         metaLengthSec = record.meta.durationSec?.doubleValue
         givenTitle = record.meta.title ?? ""
-        highlights = record.meta.highlights.map(\.atSec)
         let track = RecordingPlaylist.playedTrack(tracks: record.meta.tracks)
         playedParts = record.meta.parts.filter { $0.track == track }
         directory = record.dir.url
@@ -1197,12 +1168,10 @@ public struct RecordingDetailView: View {
                                 .accessibilityIdentifier("detail-share")
                         }
                         #endif
-                        // docs/09 "Detail header and More menu": Rename, Edit transcript, Transcribe again
-                        // and Add highlight.
+                        // docs/09 "Detail header and More menu": Rename, Edit transcript and Transcribe again.
                         if !model.loading {
                             DetailMoreMenu(
                                 model: model,
-                                positionSec: positionSec,
                                 rename: { renaming = true },
                                 edit: {
                                     if let transcript = model.transcript {
@@ -1218,8 +1187,7 @@ public struct RecordingDetailView: View {
                                         notesDraft = NotesDraft(model.notes)
                                     }
                                 },
-                                askAbout: openAsk,
-                                addHighlight: { Task { await model.addHighlight(atSec: positionSec) } }
+                                askAbout: openAsk
                             )
                         }
                         if let onClose {
@@ -1370,7 +1338,6 @@ public struct RecordingDetailView: View {
                     canSeek: canSeek,
                     positionSec: player.positionSec,
                     playing: player.isPlaying,
-                    highlights: model.highlights,
                     find: model.find,
                     // One edit at a time: while one is saving, the speaker menus wait for it.
                     speakerActions: model.transcriptionBusy || model.saving == .processing ? nil : TranscriptReader.SpeakerActions(
@@ -1381,7 +1348,6 @@ public struct RecordingDetailView: View {
                         change: { segments, id in Task { await model.changeSpeaker(segments: segments, to: id) } }
                     ),
                     onSeek: { seek(toSec: $0) },
-                    onRemoveHighlight: { mark in Task { await model.removeHighlight(mark) } },
                     onCloseFind: { model.find = nil },
                     findQuery: findQuery,
                     findFocus: model.findFocus
@@ -1627,24 +1593,6 @@ public struct RecordingDetailView: View {
             return .handled
         }
         #endif
-        // docs/09 "Highlights": a tap within 12 pt of a tick opens its menu — Go to, Remove — and a screen
-        // reader finds each tick as an element of its own with the same two actions.
-        .overlay {
-            GeometryReader { geometry in
-                ForEach(model.highlights, id: \.self) { mark in
-                    HighlightMenu(atSec: mark, stamp: model.stamp(mark), go: { seek(toSec: mark) }, remove: { Task { await model.removeHighlight(mark) } }) {
-                        Color.clear
-                            .frame(width: 24, height: geometry.size.height)
-                            .contentShape(Rectangle())
-                    }
-                    .position(
-                        x: model.totalSec > 0 ? geometry.size.width * mark / model.totalSec : 0,
-                        y: geometry.size.height / 2
-                    )
-                    .accessibilityIdentifier("highlight-tick")
-                }
-            }
-        }
     }
 
     /// docs/09 "Motion": the waveform row while the recording comes back from Drive, or while its peaks
@@ -1785,13 +1733,6 @@ public struct RecordingDetailView: View {
                 with: .color(x <= playhead ? blueprint.palette.accent : blueprint.palette.textMuted)
             )
         }
-        // docs/09 "Highlights": each highlight a 2 pt accent line over the whole height with a 6×6 filled
-        // square at the top, above the bars and under the playhead.
-        for mark in model.highlights where model.totalSec > 0 {
-            let x = min(max(0, size.width * mark / model.totalSec), size.width - 2)
-            context.fill(Path(CGRect(x: x, y: 0, width: 2, height: size.height)), with: .color(blueprint.palette.accent))
-            context.fill(Path(CGRect(x: x, y: 0, width: 6, height: 6)), with: .color(blueprint.palette.accent))
-        }
         context.fill(
             Path(CGRect(
                 x: min(max(0, playhead), size.width - blueprint.line),
@@ -1817,9 +1758,9 @@ public struct RecordingDetailView: View {
         HStack(spacing: Space.s) { controlItems }
             .frame(maxWidth: .infinity, alignment: .leading)
         #else
-        // 2026-10-14: Play at the narrowest a worded button is (docs/09 "Shape"), the clock, the speed and
-        // Highlight come to more than the detail pane's narrowest line holds — with an hour-long clock, more
-        // than the window's first width — so the bar wraps there rather than running past the pane's edge.
+        // 2026-10-14: Play at the narrowest a worded button is (docs/09 "Shape"), the clock and the speed can come
+        // to more than the detail pane's narrowest line holds, so the bar wraps there rather than running past the
+        // pane's edge.
         FlowLayout { controlItems }
             .frame(maxWidth: .infinity, alignment: .leading)
         #endif
@@ -1863,12 +1804,8 @@ public struct RecordingDetailView: View {
             // docs/07 rule 4: a clock is a stamp, not a sentence.
             #if !os(iOS)
             clock
-            // docs/09 "Playback" · "Highlights" (desktop): the speed, and a mark at the playhead.
+            // docs/09 "Playback" (desktop): the speed.
             PlaybackSpeedChip(player: player)
-            BlueprintButton(loc("Highlight"), tone: .quiet) {
-                Task { await model.addHighlight(atSec: positionSec) }
-            }
-            .accessibilityIdentifier("detail-highlight")
             #endif
         } else if model.driveFetch == .idle {
             // docs/03: nothing of this recording ever reached Drive, and what was here is gone

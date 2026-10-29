@@ -377,12 +377,7 @@
     <string name="processing_language_auto">Automatic</string>
     <string name="processing_language_mixed">Korean and English</string>
     <string name="processing_language_unsupported">This language is not supported by the selected transcription method.</string>
-    <!-- Competitive features (2026-10-07): highlights, share, editing, search, import, playback, vocabulary. -->
-    <string name="highlight">Highlight</string>
-    <string name="highlight_status">Highlight · %1$s</string>
-    <string name="highlight_tick">Highlight %1$s</string>
-    <string name="highlight_remove">Remove highlight</string>
-    <string name="highlight_add_at">Add highlight at %1$s</string>
+    <!-- Competitive features (2026-10-07): share, editing, search, import, playback, vocabulary. -->
     <string name="detail_share">Share</string>
     <string name="detail_more">More</string>
     <string name="detail_edit">Edit transcript</string>
@@ -479,7 +474,7 @@
     <string name="chatgpt_finish_in_browser">Finish signing in in your browser</string>
     <string name="chatgpt_sign_in_failed">Could not sign in to ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Signed out on this device, but OpenAI did not confirm it. You can remove Recly in ChatGPT settings.</string>
-    <string name="chatgpt_footnote">Notes and questions send the transcript text, the moments you highlighted and your notes settings to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.</string>
+    <string name="chatgpt_footnote">Notes and questions send the transcript text and your notes settings to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.</string>
     <string name="chatgpt_welcome_title">You’re using your ChatGPT plan</string>
     <string name="chatgpt_welcome_body">Notes in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings.</string>
     <string name="chatgpt_got_it">Got it</string>

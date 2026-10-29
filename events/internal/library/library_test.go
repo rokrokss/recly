@@ -37,7 +37,6 @@ func fixture(t *testing.T) string {
 	root := t.TempDir()
 	a := filepath.Join(root, "recly", "memo", "2026-10", baseA)
 	write(t, filepath.Join(a, baseA+".meta.json"), `{"schema":1,"recordingId":"`+idA+`","source":"watch","title":"Weekly sync","durationSec":95.5,
-		"highlights":[{"atSec":12.5},{"atSec":3700}],
 		"parts":[{"part":1,"track":"mono","file":"`+baseA+`_p001_mono.m4a","startOffsetSec":0,"durationSec":95.5},
 		         {"part":2,"track":"mono","file":"`+baseA+`_p002_mono.m4a","startOffsetSec":95.5},
 		         {"part":3,"track":"mono","file":"../../escape.m4a"}]}`)
@@ -143,7 +142,7 @@ func TestListNewestFirstWithCursor(t *testing.T) {
 		t.Fatalf("page 2 = %v", got)
 	}
 	a := recs[0].(map[string]any)
-	if a["recordingId"] != idA || a["title"] != "Weekly sync" || a["durationSec"] != 95.5 || a["highlightCount"] != float64(2) || a["source"] != "watch" {
+	if a["recordingId"] != idA || a["title"] != "Weekly sync" || a["durationSec"] != 95.5 || a["source"] != "watch" {
 		t.Fatalf("recording = %v", a)
 	}
 	if _, ok := a["transcript"]; ok {
@@ -169,10 +168,6 @@ func TestTranscriptByIDOrBaseNameWrappedAsUntrusted(t *testing.T) {
 		got := call(t, tools, "get_transcript", map[string]any{"recordingId": id})
 		if got["recordingId"] != idA || got["title"] != "Weekly sync" || got["language"] != "en" || got["nextCursor"] != nil {
 			t.Fatalf("%s: %v", id, got)
-		}
-		hl := got["highlights"].([]any)
-		if len(hl) != 2 || hl[1].(map[string]any)["clock"] != "01:01:40" {
-			t.Fatalf("highlights = %v", hl)
 		}
 		sp := got["speakers"].([]any)
 		if sp[0].(map[string]any)["name"] != "Kim" || sp[1].(map[string]any)["name"] != nil {

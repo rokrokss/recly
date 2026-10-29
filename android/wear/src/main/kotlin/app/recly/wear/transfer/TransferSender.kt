@@ -144,9 +144,9 @@ class TransferSender(
 
         resend@ while (true) {
             if (recording) {
-                // docs/03: the recording as it stands — start, time zone, segment length, highlights so far and
-                // every part filed so far — ahead of the parts it lists, so the phone knows each part's place
-                // when it lands. Not acked: the next part brings a fresher one, and the final meta is the record.
+                // docs/03: the recording as it stands — start, time zone, segment length and every part filed
+                // so far — ahead of the parts it lists, so the phone knows each part's place when it lands. Not
+                // acked: the next part brings a fresher one, and the final meta is the record.
                 if (record.meta.parts.none { PartRef(it.part, it.track) !in acked }) return Step.NEXT
                 if (fs.exists(meta)) channel.send(TransferPath.Progress(id).serialize(), meta)
             }

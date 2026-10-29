@@ -18,7 +18,7 @@ internal fun clock(seconds: Long, scaleSec: Long? = null): String {
 }
 
 /**
- * `00:12:34` always — what a screen reader is told a time is (a seek, a highlight, the playhead).
+ * `00:12:34` always — what a screen reader is told a time is (a seek, the playhead).
  * Spoken text keeps its one format; [clock] is what the screen draws.
  */
 internal fun hms(seconds: Long): String {

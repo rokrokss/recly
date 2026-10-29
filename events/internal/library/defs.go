@@ -19,7 +19,7 @@ func ListRecordingsTool() map[string]any {
 		"name":  "list_recordings",
 		"title": "List Recly recordings",
 		"description": "Recly recordings, newest first: recordingId, title, startedAt, durationSec, source (watch, phone, " +
-			"desktop or import), hasTranscript and highlightCount; never what was said. For older ones, call again " +
+			"desktop or import) and hasTranscript; never what was said. For older ones, call again " +
 			"with nextCursor as cursor. Read one with get_transcript.",
 		"inputSchema": map[string]any{
 			"type": "object",
@@ -54,9 +54,8 @@ func GetTranscriptTool(withEvents bool) map[string]any {
 	return map[string]any{
 		"name":  "get_transcript",
 		"title": "Read a Recly transcript",
-		"description": by + "Lines read [HH:MM:SS] Speaker: text, with the name the user gave a speaker where there is one; " +
-			"highlights are moments the user marked while recording. A long transcript comes in pages: while nextCursor " +
-			"is not null, call again with it as cursor. " + untrusted,
+		"description": by + "Lines read [HH:MM:SS] Speaker: text, with the name the user gave a speaker where there is one. " +
+			"A long transcript comes in pages: while nextCursor is not null, call again with it as cursor. " + untrusted,
 		"inputSchema": schema,
 		"annotations": readOnly,
 	}

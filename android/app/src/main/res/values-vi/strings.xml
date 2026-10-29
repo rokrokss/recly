@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Tự động</string>
     <string name="processing_language_mixed">Tiếng Hàn và tiếng Anh</string>
     <string name="processing_language_unsupported">Phương thức chép lời đã chọn không hỗ trợ ngôn ngữ này.</string>
-    <string name="highlight">Đánh dấu</string>
-    <string name="highlight_status">Điểm đánh dấu · %1$s</string>
-    <string name="highlight_tick">Điểm đánh dấu %1$s</string>
-    <string name="highlight_remove">Xóa điểm đánh dấu</string>
-    <string name="highlight_add_at">Thêm điểm đánh dấu tại %1$s</string>
     <string name="detail_share">Chia sẻ</string>
     <string name="detail_more">Tùy chọn khác</string>
     <string name="detail_edit">Sửa bản chép lời</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Hoàn tất đăng nhập trong trình duyệt</string>
     <string name="chatgpt_sign_in_failed">Không thể đăng nhập ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Đã đăng xuất trên thiết bị này nhưng OpenAI chưa xác nhận. Bạn có thể gỡ Recly trong phần cài đặt ChatGPT.</string>
-    <string name="chatgpt_footnote">Ghi chú và câu hỏi gửi văn bản bản chép lời, những khoảnh khắc bạn đánh dấu và cài đặt ghi chú của bạn tới OpenAI — không bao giờ gửi âm thanh — và được tính vào mức sử dụng gói ChatGPT của bạn.</string>
+    <string name="chatgpt_footnote">Ghi chú và câu hỏi gửi văn bản bản chép lời và cài đặt ghi chú của bạn tới OpenAI — không bao giờ gửi âm thanh — và được tính vào mức sử dụng gói ChatGPT của bạn.</string>
     <string name="chatgpt_welcome_title">Bạn đang dùng gói ChatGPT của mình</string>
     <string name="chatgpt_welcome_body">Ghi chú trong Recly dùng gói ChatGPT của bạn. Bạn có thể quản lý mức sử dụng trong cài đặt ChatGPT.</string>
     <string name="chatgpt_got_it">Đã hiểu</string>

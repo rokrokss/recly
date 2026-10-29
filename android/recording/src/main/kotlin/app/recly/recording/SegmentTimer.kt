@@ -8,9 +8,6 @@ package app.recly.recording
 internal class SegmentTimer(private val nowMs: () -> Long) {
     private var startedMs: Long = nowMs()
 
-    /** How long the running segment has been going at [atMs], in seconds — without closing it. */
-    fun elapsedSec(atMs: Long = nowMs()): Double = (atMs - startedMs).coerceAtLeast(0) / 1000.0
-
     /** Closes the running segment at [atMs] and opens the next one there. */
     fun advance(atMs: Long = nowMs()): Double {
         val seconds = (atMs - startedMs).coerceAtLeast(0) / 1000.0

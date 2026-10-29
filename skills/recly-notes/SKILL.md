@@ -82,8 +82,7 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
 - `{base}.meta.json` gives the title (may be absent), `startedAt`, `timezone`, `durationSec`,
   `source` (`watch`/`phone`/`desktop`/`import` — a file the user brought in), `deviceName`,
   `context.participants` (head count, optional), `context.app` (the meeting app on desktop,
-  optional), `highlights` (moments the user marked, `atSec` from the start — give them weight in
-  the notes, optional) and `drive.folderUrl` (the
+  optional) and `drive.folderUrl` (the
   recording's Drive folder, optional; an iCloud recording has no `drive` field). In iCloud the
   title can also be in `{base}.folder.json` — see `references/drive-layout.md`.
 - The transcript is speech-to-text output: names and technical terms may be misheard. Do not

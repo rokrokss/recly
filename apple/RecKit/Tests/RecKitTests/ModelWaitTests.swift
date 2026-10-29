@@ -179,8 +179,7 @@ final class ModelWaitTests: XCTestCase {
                 silenced: [],
                 context: nil,
                 drive: nil,
-                status: .finalized,
-                highlights: []
+                status: .finalized
             ),
             dir: OkioPath.companion.toPath("/tmp/recly-tests", normalize: false),
             driveFolderId: nil,

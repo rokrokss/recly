@@ -20,7 +20,7 @@ class MonoWordsTest {
     @Test
     fun `counts, times and Latin stay monospace`() {
         assertEquals(listOf("대기", "실패"), sans("8 · 대기 2 · 실패 1"))
-        assertEquals(listOf("하이라이트"), sans("하이라이트 · 00:12"))
+        assertEquals(listOf("녹음"), sans("녹음 · 00:12"))
         assertEquals(listOf("연결 대기"), sans("Drive 연결 대기"))
         assertEquals(emptyList(), sans("Uploading"))
         assertEquals(emptyList(), sans("2 · 1 failed"))

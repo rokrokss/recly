@@ -292,11 +292,6 @@
     <string name="processing_language_auto">Automatique</string>
     <string name="processing_language_mixed">Coréen et anglais</string>
     <string name="processing_language_unsupported">La méthode de transcription choisie ne prend pas en charge cette langue.</string>
-    <string name="highlight">Marquer</string>
-    <string name="highlight_status">Repère · %1$s</string>
-    <string name="highlight_tick">Repère %1$s</string>
-    <string name="highlight_remove">Supprimer le repère</string>
-    <string name="highlight_add_at">Ajouter un repère à %1$s</string>
     <string name="detail_share">Partager</string>
     <string name="detail_more">Plus</string>
     <string name="detail_edit">Modifier la transcription</string>
@@ -388,7 +383,7 @@
     <string name="chatgpt_finish_in_browser">Terminez la connexion dans votre navigateur</string>
     <string name="chatgpt_sign_in_failed">Impossible de se connecter à ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Déconnecté sur cet appareil, mais OpenAI ne l’a pas confirmé. Vous pouvez retirer Recly dans les réglages de ChatGPT.</string>
-    <string name="chatgpt_footnote">Les notes et les questions envoient à OpenAI le texte de la transcription, les moments surlignés et vos réglages des notes — jamais l’audio — et comptent dans l’utilisation de votre forfait ChatGPT.</string>
+    <string name="chatgpt_footnote">Les notes et les questions envoient à OpenAI le texte de la transcription et vos réglages des notes — jamais l’audio — et comptent dans l’utilisation de votre forfait ChatGPT.</string>
     <string name="chatgpt_welcome_title">Vous utilisez votre forfait ChatGPT</string>
     <string name="chatgpt_welcome_body">Les notes dans Recly utilisent votre forfait ChatGPT. Vous pouvez gérer l’utilisation dans les réglages de ChatGPT.</string>
     <string name="chatgpt_got_it">Compris</string>

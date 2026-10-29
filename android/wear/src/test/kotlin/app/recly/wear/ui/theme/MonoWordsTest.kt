@@ -11,7 +11,7 @@ class MonoWordsTest {
     @Test
     fun `a Korean line is one stretch, a time beside it stays monospace`() {
         assertEquals(listOf("전송 대기"), sans("전송 대기"))
-        assertEquals(listOf("하이라이트"), sans("하이라이트 · 00:12"))
+        assertEquals(listOf("녹음"), sans("녹음 · 00:12"))
         assertEquals(listOf("送信待ち"), sans("送信待ち"))
         assertEquals(emptyList(), sans("Waiting to send"))
     }

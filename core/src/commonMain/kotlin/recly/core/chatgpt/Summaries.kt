@@ -32,7 +32,6 @@ import recly.core.chatgpt.ChatGptAccount.Companion.failure
 import recly.core.chatgpt.ChatGptAccount.Companion.string
 import recly.core.db.RecDatabase
 import recly.core.message.CoreMessage
-import recly.core.model.Highlight
 import recly.core.platform.CoreDeps
 import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
@@ -136,28 +135,18 @@ class Summaries internal constructor(
     private val asks = MutableStateFlow<Map<String, AskState>>(emptyMap())
     private val askRuns = mutableMapOf<String, Deferred<AskState>>()
 
-    /** What a request about one recording is made from (docs/15 §10): its transcript lines and the moments the user marked. */
-    private class Source(val transcript: String, val language: String, val hasMe: Boolean, val marked: List<String>) {
-        fun input(): String = if (marked.isEmpty()) transcript else transcript + "\n" + MARKED_HEADING + "\n" + marked.joinToString("\n") { "- $it" } + "\n"
-    }
+    /** What a request about one recording is made from (docs/15 §10): its transcript lines. */
+    private class Source(val transcript: String, val language: String, val hasMe: Boolean)
 
     private suspend fun source(recordingId: String): Source {
         val transcript = transcript(recordingId)
         val text = transcript?.let(TranscriptNormalizer::text)?.takeIf { it.isNotBlank() }
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
-        val highlights = recordings.get(recordingId)?.meta?.highlights.orEmpty()
         return Source(
             text,
             SummaryLanguage.of(transcript.language, locale.value),
             transcript.speakers.any { it.me == true },
-            marked(transcript, highlights),
         )
-    }
-
-    /** Each highlight as its time and the words said then — `[00:12:34] the words` (docs/08 "Ask"). */
-    private fun marked(transcript: Transcript, highlights: List<Highlight>): List<String> = highlights.map { highlight ->
-        val words = TranscriptNormalizer.spokenAt(transcript, highlight.atSec)
-        "[${TranscriptNormalizer.clock(highlight.atSec)}]" + (words?.let { " $it" } ?: "")
     }
 
     /**
@@ -175,7 +164,7 @@ class Summaries internal constructor(
                     putJsonArray("content") {
                         addJsonObject {
                             put("type", "input_text")
-                            // The transcript's lines and the marked moments, nothing else (docs/15 §10): no title, no audio.
+                            // The transcript's lines, nothing else (docs/15 §10): no title, no audio.
                             put("text", input)
                         }
                     }
@@ -312,8 +301,8 @@ class Summaries internal constructor(
             val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
             deps.logger.log(Logger.Level.INFO, "summary.ask.start", mapOf("recordingId" to recordingId, "model" to model, "preset" to (preset?.name ?: "own")))
             val preferences = preferences()
-            val instructions = askInstructions(source.language, SummaryLanguage.app(locale.value), preset, preferences, source.hasMe, source.marked.isNotEmpty())
-            val input = source.input() + "\n" + QUESTION_HEADING + "\n" + (question ?: presetQuestion(preset!!)) + "\n"
+            val instructions = askInstructions(source.language, SummaryLanguage.app(locale.value), preset, preferences, source.hasMe)
+            val input = source.transcript + "\n" + QUESTION_HEADING + "\n" + (question ?: presetQuestion(preset!!)) + "\n"
             AskState.Ready(AskAnswer(recordingId, preset, question, complete(model, instructions, input), model, account.modelLabel(model)))
         } catch (e: CancellationException) {
             throw e
@@ -353,8 +342,6 @@ class Summaries internal constructor(
         /** The longest question the user can ask in their own words. */
         const val ASK_MAX = 500
 
-        /** The heading the marked moments follow the transcript under (docs/15 §10). */
-        const val MARKED_HEADING = "Moments the user marked as important:"
         const val QUESTION_HEADING = "Question:"
 
         /**
@@ -387,12 +374,11 @@ class Summaries internal constructor(
             preset: AskPreset?,
             preferences: SummaryPreferences = SummaryPreferences(),
             hasMe: Boolean = false,
-            marked: Boolean = false,
         ): String = buildString {
             append("You answer a question about a recording's transcript. The question follows the transcript.\n")
             append(common(if (preset == AskPreset.TRANSLATE) appLanguage else if (preset == null) "the language of the question" else language))
             append("Where it helps, add the time something was said as [HH:MM:SS], copied from the transcript line.\n")
-            append(context(language, preferences, hasMe, marked))
+            append(context(language, preferences, hasMe))
             append("Use only what the transcript says, and say so when it does not answer the question.")
         }
 
@@ -400,9 +386,8 @@ class Summaries internal constructor(
 Use plain text. No Markdown: no #, no **, no tables. Start list items with "- ".
 """
 
-        private fun context(language: String, preferences: SummaryPreferences, hasMe: Boolean, marked: Boolean) = buildString {
+        private fun context(language: String, preferences: SummaryPreferences, hasMe: Boolean) = buildString {
             if (hasMe) append("\"${TranscriptNormalizer.ME}\" in the transcript is the person who made the recording; refer to them with the word for \"me\" in $language.\n")
-            if (marked) append("After the transcript, the user lists moments they marked as important, each with its time and the words said then. Give what was said around each of them its due weight in the answer.\n")
             preferences.aboutMe.trim().takeIf { it.isNotEmpty() }?.let {
                 append("About the person who made the recording, to judge what matters to them: ").append(it).append('\n')
             }

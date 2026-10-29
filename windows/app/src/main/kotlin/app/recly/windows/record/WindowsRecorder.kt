@@ -160,7 +160,7 @@ class WindowsRecorder(
 
     val isRecording: Boolean get() = session != null
 
-    /** The recording that is running, for a highlight marked from the tray. */
+    /** The recording that is running. */
     val recordingId: String? get() = session?.recordingId
 
     /**
@@ -172,8 +172,7 @@ class WindowsRecorder(
 
     /**
      * How much audio the recording that is running has written, in seconds — the helper's own clock, read off the
-     * levels it reports for what reached the file ([LiveWaveform.writtenSec]); null when none is running. A highlight
-     * marked from the tray is at this moment of the recording, not at the wall clock's.
+     * levels it reports for what reached the file ([LiveWaveform.writtenSec]); null when none is running.
      */
     fun writtenSec(): Double? = session?.live?.writtenSec
 

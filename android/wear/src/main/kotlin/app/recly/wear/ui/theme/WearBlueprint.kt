@@ -37,7 +37,7 @@ object WearBlueprint {
     val nodeEdge: Dp = 3.dp
     val radius: Dp = 4.dp
 
-    /** docs/09 "Shape": half a node — the small filled squares inside the record and highlight nodes. */
+    /** docs/09 "Shape": half a node — the small filled square inside the record node. */
     val badge: Dp = 2.dp
 
     /**
@@ -58,7 +58,7 @@ object WearBlueprint {
 /**
  * UX decisions of 2026-10-11 (N3), the phone's `monoWords`: the status line's Hangul, Kana and Han words are
  * drawn in the sans, so `전송 대기` does not read as two words a monospace cell apart. Times and Latin stay
- * monospace (`하이라이트 · 00:12`). The face only, so the line keeps its height.
+ * monospace (`녹음 · 00:12`). The face only, so the line keeps its height.
  */
 fun monoWords(text: String): AnnotatedString {
     val runs = cjkRuns(text)
