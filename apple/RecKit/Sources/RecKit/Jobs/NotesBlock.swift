@@ -65,7 +65,8 @@ public enum NoteGroups {
             keyPoints: RecKitStrings.localized("Key points"),
             decisions: RecKitStrings.localized("Decisions"),
             todos: RecKitStrings.localized("To-dos"),
-            questions: RecKitStrings.localized("Questions")
+            questions: RecKitStrings.localized("Questions"),
+            me: RecKitStrings.localized("Me")
         )
     }
 

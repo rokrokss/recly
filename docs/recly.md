@@ -2284,8 +2284,8 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   each newest first (latest time first); `organizing` while a part or a final pass of it is being worked on here; `failure`, the last
   `Organize again` of it that failed here; and `model`, the plan's name for the model they were made with. `get(recordingId)` is the
   same now. A `NoteItem` has `id`, `kind`, `text` (the user's words once edited), `owner`, `due`, `atSec`, `quote`, `provisional` and
-  `section`; `owner` comes resolved — the name the user gave that speaker in the transcript, or null when the speaker has none or
-  the item is provisional, never `S1`. `deleteItem(recordingId, itemId)` removes an item for good (false when there is none).
+  `section`; `owner` comes resolved — the name the user gave that speaker in the transcript, the app's word for `Me` for an unnamed
+  `me` (2026-10-30, §8 "Me and others"), or null when the speaker has none or the item is provisional, never `S1`. `deleteItem(recordingId, itemId)` removes an item for good (false when there is none).
   `linesAround(recordingId, atSec)` gives the transcript's lines from 20 seconds before to 40 seconds after (at most 12), for "show
   the transcript here" under an item — the recording's transcript once there is one, before that the parts' made while recording,
   since there is no playback while recording (`NoteLine`: `atSec`, `endSec`, `speakerId`, `speakerName`, `me`, `text`,
@@ -2295,7 +2295,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   all` and Share → `Notes` (§8 "Exports"); the Markdown transcript the share sheet gets carries the same as its own section. The headings
   are the app's: each shell passes its resources' words with `notes.setHeadings(NotesHeadings(…))` at start and whenever the app's
   language changes, as it passes the locale — except a built-in group the user renamed, which is headed by that name
-  (`RecordingNotes.names`, `NoteNames`).
+  (`RecordingNotes.names`, `NoteNames`). With them goes the app's word for `Me` (`NotesHeadings.me`), an unnamed `me`'s as an owner.
 - **Storage.** `{base}.notes.v1.json` beside the parts (`spec/notes.schema.json`): the stage, the overview (and when the user edited it),
   the items — each with its provisional flag, owner label, evidence, conversation, section and the user's words — the tombstones of
   deleted items, the sections the notes were made with, the conversations' spans and summaries, the parts the provisional pass is done
@@ -2347,7 +2347,8 @@ user's when `mic` sounds and `sys` is quiet, and the call's when `sys` sounds.
   has no `sys` track, or when a `mic` or `sys` part is not on this device — "Transcribe again" after the 7-day cleanup fetches only the
   track it transcribes, so it comes back without `me` (`transcribe.me.skipped`).
 - The files and the model write an unnamed `me` as `Me`, a fixed word like the ids; the shells show it in the app's language (`나`).
-  Renaming it is renaming a speaker, and `me` stays.
+  Renaming it is renaming a speaker, and `me` stays. In the notes (2026-10-30) an unnamed `me` owns their to-dos under the same word,
+  on screen and in `Copy all` (§8 "Organizing" — "What the shells read").
 
 ### Titles and speaker names
 

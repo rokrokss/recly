@@ -68,6 +68,8 @@ import recly.core.transcribe.SttProvider
 import recly.core.transcribe.SttResult
 import recly.core.transcribe.SttSegment
 import recly.core.transcribe.Submitted
+import recly.core.transcribe.TranscribeRunner
+import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptEdit
 import recly.core.transfer.AcceptMetaResult
 
@@ -1178,6 +1180,25 @@ class NotesTest {
         assertNull(notes.organizeAgain(meta.recordingId))
         f.core.awaitPushes()
         assertEquals(1, chatGpt.server.requests.count(chatGpt::isFill), "everyone has a name: nothing more is asked")
+    }
+
+    @Test
+    fun `a to-do of the person who made the recording is theirs under the app's word for them until they name themselves`() = runBlocking {
+        val meta = organized()
+        assertNull(notes.get(meta.recordingId).todos.single().owner, "an unnamed speaker is no owner")
+        // Meeting mode marked S2 as the person who made the recording (docs/08 "Me and others").
+        val path = f.dirOf(meta) / TranscribeRunner.jsonFileName(MetaWriter.baseName(meta))
+        val transcript = recJson.decodeFromString(Transcript.serializer(), f.fs.read(path) { readUtf8() })
+        val marked = transcript.copy(speakers = transcript.speakers.map { if (it.id == "S2") it.copy(me = true) else it })
+        f.fs.write(path) { writeUtf8(recJson.encodeToString(Transcript.serializer(), marked)) }
+        assertEquals("Me", notes.get(meta.recordingId).todos.single().owner)
+
+        notes.setHeadings(NotesHeadings(me = "나"))
+        assertEquals("나", notes.observe(meta.recordingId).first().todos.single().owner, "the app's word, in its language")
+        assertTrue("- Order able parts — 나 [00:00:30]" in notes.text(meta.recordingId)!!)
+
+        assertIs<EditResult.Edited>(f.core.editTranscript(meta.recordingId, TranscriptEdit.RenameSpeaker("S2", "Mina")))
+        assertEquals("Mina", notes.observe(meta.recordingId).first().todos.single().owner, "a name the user gives comes first")
     }
 
     @Test

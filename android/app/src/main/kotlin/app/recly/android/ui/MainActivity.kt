@@ -122,6 +122,7 @@ class MainActivity : ComponentActivity() {
             decisions = getString(R.string.notes_decisions),
             todos = getString(R.string.notes_todos),
             questions = getString(R.string.notes_questions),
+            me = getString(R.string.speaker_me),
         )
         lifecycleScope.launch {
             val core = CoreModule.get(applicationContext).core

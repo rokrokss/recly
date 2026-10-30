@@ -92,9 +92,11 @@ final class NoteGroupsTests: XCTestCase {
         XCTAssertEqual(NoteGroups.headings.notes, "Notes")
         XCTAssertEqual(NoteGroups.headings.keyPoints, "Key points")
         XCTAssertEqual(NoteGroups.headings.todos, "To-dos")
+        XCTAssertEqual(NoteGroups.headings.me, "Me")
         AppLanguage.current = .ko
         XCTAssertEqual(NoteGroups.headings.notes, "정리")
         XCTAssertEqual(NoteGroups.headings.keyPoints, "핵심")
+        XCTAssertEqual(NoteGroups.headings.me, "나", "an unnamed `me` owns their to-dos under this word")
     }
 
     /// No empty state: with no item and no overview the block is absent.

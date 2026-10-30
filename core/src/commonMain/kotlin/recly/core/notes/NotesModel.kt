@@ -39,8 +39,9 @@ enum class NotesStage {
 
 /**
  * One note as a shell shows it (docs/08 "Organizing"). [text] is what the user sees: their own words once they
- * edited it. [owner] is already resolved — the name the user gave the speaker it belongs to, or null when that
- * speaker has none, or while the notes are provisional; never a label like `S1`. [due] is the deadline as it was
+ * edited it. [owner] is already resolved — the name the user gave the speaker it belongs to, [NotesHeadings.me] for
+ * the person who made the recording when they have no name (docs/08 "Me and others"), or null when that speaker has
+ * none, or while the notes are provisional; never a label like `S1`. [due] is the deadline as it was
  * said. [atSec] and [quote] are its evidence: where on the recording, and the words, verbatim. [section] is the id
  * of the user's section a [NoteKind.SECTION] item is in.
  */
@@ -159,7 +160,8 @@ data class NoteEdit(val itemId: String, val text: String)
 
 /**
  * The words the notes' text — Copy all, Share → Notes, the Markdown transcript — puts over each group, in the app's
- * language: the shells set them from their resources, as they set the locale (docs/07 rule 3).
+ * language: the shells set them from their resources, as they set the locale (docs/07 rule 3). [me] is the app's word
+ * for the person who made the recording, the owner of their to-dos while they have no name (docs/08 "Me and others").
  */
 data class NotesHeadings(
     val notes: String = "Notes",
@@ -167,6 +169,7 @@ data class NotesHeadings(
     val decisions: String = "Decisions",
     val todos: String = "To-dos",
     val questions: String = "Questions",
+    val me: String = "Me",
 )
 
 /**

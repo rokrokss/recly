@@ -322,7 +322,10 @@ private fun NoteField(value: String, onValueChange: (String) -> Unit, label: Str
  */
 internal fun notesHeadings(strings: Strings): NotesHeadings {
     fun plain(key: Str) = strings[key].replace(WORD_JOINER.toString(), "")
-    return NotesHeadings(plain(Str.NOTES_TAB), plain(Str.NOTES_KEY_POINTS), plain(Str.NOTES_DECISIONS), plain(Str.NOTES_TODOS), plain(Str.NOTES_QUESTIONS))
+    return NotesHeadings(
+        plain(Str.NOTES_TAB), plain(Str.NOTES_KEY_POINTS), plain(Str.NOTES_DECISIONS), plain(Str.NOTES_TODOS), plain(Str.NOTES_QUESTIONS),
+        plain(Str.SPEAKER_ME),
+    )
 }
 
 private const val COPIED_MS = 3_000L

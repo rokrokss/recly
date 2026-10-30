@@ -226,7 +226,8 @@ class Notes internal constructor(
      * [NotesStage.NONE] with nothing in it when it has no notes.
      */
     fun observe(recordingId: String): Flow<RecordingNotes> =
-        combine(changes, working, failures, transcriptChanges(recordingId).onStart { emit(Unit) }) { _, busy, failed, _ ->
+        // The headings too: an unnamed `me` owns their to-dos under the app's word for them, which changes with its language.
+        combine(changes, working, failures, transcriptChanges(recordingId).onStart { emit(Unit) }, headings) { _, busy, failed, _, _ ->
             (recordingId in busy) to failed[recordingId]
         }
             .map { (organizing, failure) ->
@@ -421,7 +422,10 @@ class Notes internal constructor(
     private suspend fun view(recordingId: String, organizing: Boolean, failure: String?): RecordingNotes {
         val file = readNotes(recordingId) ?: fetched(recordingId) ?: return empty(recordingId, organizing, failure)
         val names = if (file.items.any { !it.provisional && it.owner != null }) {
-            readTranscript(recordingId)?.speakers.orEmpty().mapNotNull { speaker -> speaker.name?.trim()?.takeIf { it.isNotEmpty() }?.let { speaker.id to it } }.toMap()
+            val me = headings.value.me
+            readTranscript(recordingId)?.speakers.orEmpty().mapNotNull { speaker ->
+                (speaker.name?.trim()?.takeIf { it.isNotEmpty() } ?: me.takeIf { speaker.me == true })?.let { speaker.id to it }
+            }.toMap()
         } else {
             emptyMap()
         }

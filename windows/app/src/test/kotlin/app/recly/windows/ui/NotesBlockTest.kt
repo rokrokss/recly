@@ -117,6 +117,7 @@ class NotesBlockTest {
         val korean = notesHeadings(StringTable.of(StringTable.KOREAN))
         assertEquals("정리", korean.notes)
         assertEquals("핵심", korean.keyPoints)
+        assertEquals("나", korean.me, "an unnamed `me` owns their to-dos under this word")
         assertFalse(korean.toString().contains(WORD_JOINER))
         assertEquals("Key points", notesHeadings(base).keyPoints)
     }
