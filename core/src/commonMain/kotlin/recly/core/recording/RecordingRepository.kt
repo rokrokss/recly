@@ -36,6 +36,7 @@ import recly.core.platform.Logger
 import recly.core.storage.CloudFiles
 import recly.core.storage.CloudStorage
 import recly.core.storage.StorageKind
+import recly.core.transfer.TransferReceiver
 
 /**
  * A recording row plus the directory its parts and `meta.json` live in.
@@ -683,6 +684,10 @@ class RecordingRepository(
                 // A rename or an edit that never reached Drive goes with the recording: pushed
                 // later, they would land on whatever another device has since put in the folder.
                 forgetPending(recordingId)
+                // docs/03 "Watch → phone transfer contract": a recording still arriving from the watch goes with its
+                // receiver's marks, so the orphan purge has nothing left to find and a part the watch sends again
+                // opens a new row.
+                TransferReceiver.markers(recordingId).forEach(queries::kvDelete)
                 queries.syncDelete("processing/recording/" + recordingId)
                 queries.deleteStepRunsByRecording(recordingId)
                 queries.deleteJobsByRecording(recordingId)

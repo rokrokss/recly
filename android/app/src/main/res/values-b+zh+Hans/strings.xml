@@ -458,5 +458,6 @@
     <string name="fill_names_running">正在填写说话人名称…</string>
     <string name="fill_title_failed">无法填写标题</string>
     <string name="fill_names_failed">无法填写说话人名称</string>
+    <string name="fill_names_none">转录文本中未找到说话人名称</string>
     <string name="speaker_me">我</string>
 </resources>

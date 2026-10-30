@@ -562,13 +562,15 @@ fun ItemState.waiting(): Boolean =
 fun JobItem.waiting(): Boolean = localPending || state.waiting()
 
 /**
- * docs/09 screen principle 2: a recording whose file is still being written — by the recorder, an
- * import or a transfer from the watch — so its Delete waits ([deleteReason]). An upload is not one:
- * the core stops it before deleting (docs/03 "Deleting in the app"), and neither is another
- * device's, whose folder the dialog takes from Drive (docs/03 "Recordings from other devices").
+ * docs/09 screen principle 2: a recording whose file is still being written — by the recorder or an
+ * import — so its Delete waits ([deleteReason]). An upload is not one: the core stops it before
+ * deleting (docs/03 "Deleting in the app"), and neither is another device's, whose folder the dialog
+ * takes from Drive (docs/03 "Recordings from other devices"). Nor is a transfer from the watch
+ * (2026-10-30): one the watch gave up on never ends, and what goes is only this phone's copy — a watch
+ * that still has the recording sends it again (docs/03 "Watch → phone transfer contract").
  */
 fun ItemState.inFlight(): Boolean =
-    this == ItemState.RECORDING || this == ItemState.IMPORTING || this == ItemState.RECEIVING
+    this == ItemState.RECORDING || this == ItemState.IMPORTING
 
 /**
  * The row's own answer: a transcription on this device is not a file being written, and deleting
@@ -579,13 +581,12 @@ fun JobItem.inFlight(): Boolean = !localPending && state.inFlight()
 
 /**
  * Why the detail's More → Delete waits, or null when it does not ([inFlight]): `Still recording` the way every other
- * item says it, or the row's own state word — `Importing`, `Receiving from the watch` (the desktops' rule).
+ * item says it, or the row's own state word, `Importing` (the desktops' rule).
  */
 internal fun JobItem.deleteReason(): Int? = when {
     !inFlight() -> null
     state == ItemState.RECORDING -> R.string.detail_still_recording
-    state == ItemState.IMPORTING -> R.string.job_state_importing
-    else -> R.string.job_state_receiving
+    else -> R.string.job_state_importing
 }
 
 /**

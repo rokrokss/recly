@@ -559,6 +559,7 @@
   "Summarizing": "要約中",
   "Could not fill in the title": "タイトルを入力できませんでした",
   "Could not fill in speaker names": "話者の名前を入力できませんでした",
+  "No speaker names found in the transcript": "文字起こしに話者の名前が見つかりませんでした",
   "Recly summarizes while you record": "録音しながら要約します",
   "Decisions": "決定事項",
   "To-dos": "やること",

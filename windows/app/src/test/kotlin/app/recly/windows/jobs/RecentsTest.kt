@@ -129,7 +129,7 @@ class RecentsTest {
      * docs/03 "Recordings from other devices" (2026-09-04): a watch transfer still coming in. It cannot happen on
      * this shell — a PC has no watch to receive from — but the mapping is one product's, so the rule
      * is held here too: `RECEIVING` before the plain `REC` the row's `status = recording` would
-     * otherwise get, and none of the actions a row that is being written to would refuse.
+     * otherwise get, with no retry or link, and a delete since 2026-10-30.
      */
     @Test
     fun `a transfer still coming in from the watch is RECEIVING, not this device's REC`() {
@@ -142,8 +142,8 @@ class RecentsTest {
         assertEquals(Str.STATE_RECEIVING.message(), item.state)
         assertEquals("RECEIVING", item.state.ledgerStatus().code)
         assertEquals(BadgeTone.ACCENT, item.state.ledgerStatus().tone)
-        // No delete, no retry, no Drive link — the same exclusions as a row that is recording.
-        assertFalse(item.deletable)
+        // No retry, no Drive link — but a delete (2026-10-30): what goes is only the phone's copy of a transfer that may never end.
+        assertTrue(item.deletable)
         assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null))
         assertNull(item.link)
         // docs/09 screen principle 2: nothing is finalized yet, so the length column says "not in yet".

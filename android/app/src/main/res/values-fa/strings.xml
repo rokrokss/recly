@@ -458,5 +458,6 @@
     <string name="fill_names_running">در حال تکمیل نام گویندگان…</string>
     <string name="fill_title_failed">تکمیل عنوان ممکن نشد</string>
     <string name="fill_names_failed">تکمیل نام گویندگان ممکن نشد</string>
+    <string name="fill_names_none">نام گویندگان در رونوشت پیدا نشد</string>
     <string name="speaker_me">من</string>
 </resources>

@@ -458,5 +458,6 @@
     <string name="fill_names_running">Inajaza majina ya wazungumzaji…</string>
     <string name="fill_title_failed">Imeshindwa kujaza kichwa</string>
     <string name="fill_names_failed">Imeshindwa kujaza majina ya wazungumzaji</string>
+    <string name="fill_names_none">Hakuna majina ya wazungumzaji yaliyopatikana kwenye nakala</string>
     <string name="speaker_me">Mimi</string>
 </resources>

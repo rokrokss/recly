@@ -39,7 +39,7 @@ class DetailReasonsTest {
 
     /**
      * 2026-10-15: More → Delete waits by the list row's rule, and says why as the other items do — `Still recording`, or
-     * the row's own word for the import or the transfer still filling it.
+     * the row's own word for the import still filling it.
      */
     @Test
     fun `More's Delete says why it waits`() {
@@ -49,9 +49,9 @@ class DetailReasonsTest {
         )
         assertEquals(Str.DETAIL_STILL_RECORDING, deleteBlocked(row(Str.STATUS_RECORDING)))
         assertEquals(Str.STATE_IMPORTING, deleteBlocked(row(Str.STATE_IMPORTING)))
-        assertEquals(Str.STATE_RECEIVING, deleteBlocked(row(Str.STATE_RECEIVING)))
-        // Anything else can go — an upload or a transcription in flight too: the core stops it first.
-        listOf(Str.STATE_DONE, Str.STATE_FAILED, Str.STATE_UPLOADING, Str.STATE_REMOTE_UPLOADING).forEach { state ->
+        // Anything else can go — an upload or a transcription in flight too: the core stops it first. A transfer from the
+        // watch too (2026-10-30), though a PC never has one.
+        listOf(Str.STATE_DONE, Str.STATE_FAILED, Str.STATE_UPLOADING, Str.STATE_REMOTE_UPLOADING, Str.STATE_RECEIVING).forEach { state ->
             assertEquals(null, deleteBlocked(row(state)), "$state")
         }
         assertEquals("Importing", StringTable.of(StringTable.BASE)[Str.STATE_IMPORTING])

@@ -458,5 +458,6 @@
     <string name="fill_names_running">بولنے والوں کے نام بھرے جا رہے ہیں…</string>
     <string name="fill_title_failed">عنوان نہیں بھرا جا سکا</string>
     <string name="fill_names_failed">بولنے والوں کے نام نہیں بھرے جا سکے</string>
+    <string name="fill_names_none">ٹرانسکرپٹ میں بولنے والوں کے نام نہیں ملے</string>
     <string name="speaker_me">میں</string>
 </resources>

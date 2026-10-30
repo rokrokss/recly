@@ -458,5 +458,6 @@
     <string name="fill_names_running">話者の名前を入力しています…</string>
     <string name="fill_title_failed">タイトルを入力できませんでした</string>
     <string name="fill_names_failed">話者の名前を入力できませんでした</string>
+    <string name="fill_names_none">文字起こしに話者の名前が見つかりませんでした</string>
     <string name="speaker_me">自分</string>
 </resources>

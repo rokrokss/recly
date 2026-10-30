@@ -458,5 +458,6 @@
     <string name="fill_names_running">正在填寫說話者名稱…</string>
     <string name="fill_title_failed">無法填寫標題</string>
     <string name="fill_names_failed">無法填寫說話者名稱</string>
+    <string name="fill_names_none">逐字稿中找不到說話者名稱</string>
     <string name="speaker_me">我</string>
 </resources>

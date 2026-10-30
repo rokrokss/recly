@@ -458,5 +458,6 @@
     <string name="fill_names_running">Konuşmacı adları dolduruluyor…</string>
     <string name="fill_title_failed">Başlık doldurulamadı</string>
     <string name="fill_names_failed">Konuşmacı adları doldurulamadı</string>
+    <string name="fill_names_none">Transkriptte konuşmacı adı bulunamadı</string>
     <string name="speaker_me">Ben</string>
 </resources>

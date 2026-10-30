@@ -120,7 +120,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// docs/09 "AI view": what a Fill in title or Fill in speaker names that changed nothing says under the
     /// header — kept as keys and a code, so a line still standing follows a language change.
     public enum FillNotice: Equatable, Sendable {
-        /// Refused before anything was sent: the More menu's own reason, as its key.
+        /// Refused before anything was sent — the More menu's own reason — or answered with no speaker named, as its key.
         case refused(String)
         /// `Could not fill in the title` or `Could not fill in speaker names`, with the core's sentence for [reason]
         /// under it when there is one.
@@ -770,13 +770,16 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    /// The rule, apart from the page: an answer that filled the half asked for says nothing; one that did not, or
-    /// failed, says so; a refusal — nothing of that half to fill included — says the More menu's reason.
+    /// The rule, apart from the page: an answer that filled the half asked for says nothing; one that named no
+    /// speaker says the transcript gave no names, in the refusal's muted words; one without the title, or a failure,
+    /// says so; a refusal — nothing of that half to fill included — says the More menu's reason.
     static func fillOutcome(_ result: FillResult, half: FillHalf, busyKey: String) -> FillOutcome {
         switch onEnum(of: result) {
         case .filled(let filled):
-            let given = half == .title ? filled.title : filled.names > 0
-            return given ? .quiet : .notice(.failed(half, reason: nil))
+            if half == .names {
+                return filled.names > 0 ? .quiet : .notice(.refused("No speaker names found in the transcript"))
+            }
+            return filled.title ? .quiet : .notice(.failed(half, reason: nil))
         case .nothingToFill: return .notice(.refused(half.doneKey))
         case .busy: return .notice(.refused(busyKey))
         case .noTranscript: return .notice(.refused("No transcript yet"))

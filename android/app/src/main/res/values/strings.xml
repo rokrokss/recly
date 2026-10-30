@@ -550,5 +550,6 @@
     <string name="fill_names_running">Filling in speaker names…</string>
     <string name="fill_title_failed">Could not fill in the title</string>
     <string name="fill_names_failed">Could not fill in speaker names</string>
+    <string name="fill_names_none">No speaker names found in the transcript</string>
     <string name="speaker_me">Me</string>
 </resources>

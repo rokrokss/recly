@@ -458,5 +458,6 @@
     <string name="fill_names_running">A preencher os nomes dos oradores…</string>
     <string name="fill_title_failed">Não foi possível preencher o título</string>
     <string name="fill_names_failed">Não foi possível preencher os nomes dos oradores</string>
+    <string name="fill_names_none">Nenhum nome de orador encontrado na transcrição</string>
     <string name="speaker_me">Eu</string>
 </resources>

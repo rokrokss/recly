@@ -458,5 +458,6 @@
     <string name="fill_names_running">Completando los nombres de hablantes…</string>
     <string name="fill_title_failed">No se pudo completar el título</string>
     <string name="fill_names_failed">No se pudieron completar los nombres de hablantes</string>
+    <string name="fill_names_none">No se encontraron nombres de hablantes en la transcripción</string>
     <string name="speaker_me">Yo</string>
 </resources>

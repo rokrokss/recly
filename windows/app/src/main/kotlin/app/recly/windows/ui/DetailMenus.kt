@@ -327,7 +327,7 @@ internal fun MoreButton(
 
 /**
  * Why More → Delete waits (2026-10-15): the list row's own rule ([RecentItem.deletable]), said as `Still recording` the
- * way every other item says it, or as the row's own state word — `Importing`, `Receiving from the watch`.
+ * way every other item says it, or as the row's own state word, `Importing`.
  */
 internal fun deleteBlocked(item: RecentItem): Str? = when {
     item.deletable -> null

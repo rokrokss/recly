@@ -458,5 +458,6 @@
     <string name="fill_names_running">Đang điền tên người nói…</string>
     <string name="fill_title_failed">Không thể điền tiêu đề</string>
     <string name="fill_names_failed">Không thể điền tên người nói</string>
+    <string name="fill_names_none">Không tìm thấy tên người nói trong bản chép lời</string>
     <string name="speaker_me">Tôi</string>
 </resources>

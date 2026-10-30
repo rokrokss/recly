@@ -346,11 +346,14 @@ class TransferReceiver(
     private suspend fun <T> locked(body: suspend () -> T): T =
         withContext(deps.io) { mutex.withLock { body() } }
 
-    private companion object {
-        const val RECORDINGS = "recordings"
-        const val PENDING_PREFIX = "transfer.pending."
-        const val PROGRESS_PREFIX = "transfer.progress."
-        const val SHA_MISMATCH = "SHA256_MISMATCH"
-        val ORPHAN_AFTER = 24.hours
+    internal companion object {
+        private const val RECORDINGS = "recordings"
+        private const val PENDING_PREFIX = "transfer.pending."
+        private const val PROGRESS_PREFIX = "transfer.progress."
+        private const val SHA_MISMATCH = "SHA256_MISMATCH"
+        private val ORPHAN_AFTER = 24.hours
+
+        /** The keys a transfer in flight keeps for [recordingId] — `RecordingRepository.delete` takes them with the row. */
+        fun markers(recordingId: String): List<String> = listOf(PENDING_PREFIX + recordingId, PROGRESS_PREFIX + recordingId)
     }
 }

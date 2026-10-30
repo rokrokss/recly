@@ -77,15 +77,15 @@ data class RecentItem(
     val modelLanguage: String? = null,
 ) {
     /**
-     * docs/09 screen principle 2 "Delete (except while recording, importing or receiving)": a recording whose
-     * file is still being written — by the recorder, an import, or a watch transfer filling the row —
-     * is not one to delete. An upload is: the core stops it first (docs/03 "Deleting in the app"),
-     * and another device's upload offers the dialog that takes its folder from Drive (docs/03
-     * "Recordings from other devices"). The Mac's popover and its window draw the same exceptions.
+     * docs/09 screen principle 2 "Delete (except while recording or importing)": a recording whose file is still
+     * being written — by the recorder or an import — is not one to delete. An upload is: the core stops it first
+     * (docs/03 "Deleting in the app"), and another device's upload offers the dialog that takes its folder from
+     * Drive (docs/03 "Recordings from other devices"). So is a watch transfer filling the row (2026-10-30), which
+     * this shell never has. The Mac's popover and its window draw the same exceptions.
      */
     val deletable: Boolean
         get() = when ((state as? UiMessage.Res)?.key) {
-            Str.STATUS_RECORDING, Str.STATE_RECEIVING, Str.STATE_IMPORTING -> false
+            Str.STATUS_RECORDING, Str.STATE_IMPORTING -> false
             else -> true
         }
 }

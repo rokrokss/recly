@@ -458,5 +458,6 @@
     <string name="fill_names_running">বক্তার নাম পূরণ করা হচ্ছে…</string>
     <string name="fill_title_failed">শিরোনাম পূরণ করা যায়নি</string>
     <string name="fill_names_failed">বক্তার নাম পূরণ করা যায়নি</string>
+    <string name="fill_names_none">ট্রান্সক্রিপ্টে বক্তার নাম পাওয়া যায়নি</string>
     <string name="speaker_me">আমি</string>
 </resources>

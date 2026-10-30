@@ -559,6 +559,7 @@
   "Summarizing": "جارٍ التلخيص",
   "Could not fill in the title": "تعذّر ملء العنوان",
   "Could not fill in speaker names": "تعذّر ملء أسماء المتحدثين",
+  "No speaker names found in the transcript": "لم يُعثر على أسماء المتحدثين في النص",
   "Recly summarizes while you record": "يلخّص Recly أثناء التسجيل",
   "Decisions": "القرارات",
   "To-dos": "المهام",
