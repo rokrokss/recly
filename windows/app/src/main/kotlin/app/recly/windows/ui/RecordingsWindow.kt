@@ -9,7 +9,6 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.semantics.Role
 import app.recly.windows.ui.component.LoadingText
-import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.pressCursor
 import kotlinx.coroutines.launch
 import recly.core.recording.SearchHit
@@ -546,18 +545,14 @@ private fun Detail(
     var editSave by remember { mutableStateOf<InlineSave?>(null) }
     var editRefused by remember(draft) { mutableStateOf(false) }
     /**
-     * A reading-mode change, saved at once with `Saving…` and then a check beside the group it was made on.
+     * A reading-mode change, saved at once with `Saving…` beside the group it was made on.
      * One at a time: while one saves, the speaker badges do not open ([TranscriptReader]'s `saving`).
      */
     fun saveInline(block: Int, edit: TranscriptEdit) {
         if (InlineSave.SAVING in saving.values) return
         scope.launch {
             saving = saving + (block to InlineSave.SAVING)
-            val saved = model.editTranscript(detail.recordingId, edit) is EditResult.Edited
-            if (saved) {
-                saving = saving + (block to InlineSave.SAVED)
-                delay(SAVED_MS)
-            }
+            model.editTranscript(detail.recordingId, edit)
             saving = saving - block
         }
     }
@@ -575,8 +570,6 @@ private fun Detail(
                     scope.launch {
                         editSave = InlineSave.SAVING
                         if (model.editTranscript(draft.original.recordingId, edit) is EditResult.Edited) {
-                            editSave = InlineSave.SAVED
-                            delay(SAVED_MS)
                             onDraft(null)
                         } else {
                             editRefused = true
@@ -602,8 +595,6 @@ private fun Detail(
                     scope.launch {
                         editSave = InlineSave.SAVING
                         if (model.editNotes(notesDraft.recordingId, notesDraft.overviewEdit, notesDraft.itemEdits)) {
-                            editSave = InlineSave.SAVED
-                            delay(SAVED_MS)
                             onNotesDraft(null)
                         }
                         // Not saved — the save failed and was logged; the draft stays for another try.
@@ -826,7 +817,7 @@ private fun Detail(
 
 /**
  * docs/08 "Editing" · docs/09 "AI view": an editor's header — what is being edited, and at the end Cancel and Save while
- * there are changes, Done alone while there are none. Save says `Saving…`, then the check, before the editor closes.
+ * there are changes, Done alone while there are none. Save says `Saving…` until the editor closes.
  */
 @Composable
 private fun EditorHeader(title: String, changed: Boolean, save: InlineSave?, onCancel: () -> Unit, onSave: () -> Unit, strings: Strings) {
@@ -838,12 +829,11 @@ private fun EditorHeader(title: String, changed: Boolean, save: InlineSave?, onC
                 BlueprintButton(
                     label = when (save) {
                         InlineSave.SAVING -> strings[Str.EDIT_SAVING]
-                        InlineSave.SAVED -> SELECTION_MARK
                         null -> strings[if (changed) Str.SAVE else Str.EDIT_DONE]
                     },
                     onClick = onSave,
                     tone = if (changed) ButtonTone.PRIMARY else ButtonTone.QUIET,
-                    // Saving… and its check are the save's own work, read in the button's ink (docs/09).
+                    // Saving… is the save's own work, read in the button's ink (docs/09).
                     busy = save != null,
                 )
             }
@@ -1104,8 +1094,6 @@ private const val SCRIM_ALPHA = 0.86f
 /** docs/10 "Search": how long the list waits after the last key before it searches. */
 private const val SEARCH_DEBOUNCE_MS = 200L
 
-/** How long a check stays where a save finished. */
-private const val SAVED_MS = 1_200L
 private const val LOADER_FRAME_MS = 33L
 /** The ghost ticks' height, as a share of the row. */
 private const val LOADER_TICK = 0.3f

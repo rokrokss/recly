@@ -2843,11 +2843,11 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      transcript replaces it (the reading position goes back to the top only if the user had not scrolled).
    - **Editing and speakers**: the speaker menu (from a badge) has `Rename speaker` and `Change speaker for this line` → every speaker by name or id,
      and `New speaker`. `Rename speaker` is a dialog — `Speaker name`, the field `Name` prefilled, `Cancel` · `Save`; an empty name clears it and the id
-     shows again. Changes from the menu save at once (`editTranscript`, inline `Saving…` → `✓`). **Edit mode** (More → `Edit transcript`) turns the
+     shows again. Changes from the menu save at once (`editTranscript`, inline `Saving…`; no `✓` after — the change shows itself, 2026-10-30). **Edit mode** (More → `Edit transcript`) turns the
      transcript into one plain text field per segment, finer than the reading groups, each with its time button (it seeks; the player stays usable) and
      its speaker badge (the menu acts on the draft; a transcript without speakers offers `Add speaker` on each line). The header reads `Edit transcript`
      with end-aligned `Cancel` · `Save` (`Save` accent; `Done` alone while nothing changed); on phones they sit below the content, above the keyboard, as
-     in principle 3. `Save` → `Saving…` → `✓` → reading mode. Leaving with changes asks `Discard your changes?` / `Your edits to this transcript will be
+     in principle 3. `Save` → `Saving…` → reading mode. Leaving with changes asks `Discard your changes?` / `Your edits to this transcript will be
      lost.` with `Keep editing` · `Discard` — by any route: Back, another tab, re-tapping the list tab, another row, a search hit, the
      popover or tray row, closing the window (2026-10-15, every shell); a draft belongs to its recording and is never saved into another. Editing is unavailable while a transcription job of the recording runs (reason `Transcribing…`). The
      editor's footer (secondary, 12) says `Saving updates the transcript files in your storage. It does not start your agent again.` — with iCloud or a
@@ -3063,7 +3063,7 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   `Summary` body into fields the way transcript editing does: the header `Edit summary`; the overview as one multi-line plain-text field when
   there is one; then each group's header over its items, each item one multi-line field holding its words, with its owner and due date
   muted under it, not editable, and no time button. `Cancel` · `Save` at the end (`Save` primary, `Done` alone while nothing changed; on
-  phones under the fields, above the keyboard — and while the keyboard is up the `Transcript` / `Summary` chips step aside), `Saving…` → ✓
+  phones under the fields, above the keyboard — and while the keyboard is up the `Transcript` / `Summary` chips step aside), `Saving…`
   → back to the notes (`notes.edit`). Two secondary lines under the fields: `An item you empty is deleted when you save.`, then where it
   goes — `Saving updates the summary in your storage, and your other devices show it.`, or `Saving keeps the summary on this device.` for a
   local folder or a recording not uploaded yet. Leaving with changes — Back, closing, the `Transcript` chip — asks `Discard your

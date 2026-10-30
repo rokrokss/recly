@@ -53,8 +53,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var silences: [SilentRange] = []
     /// docs/10 "Search": the find the page was opened with, or that ⌘F started; nil when there is none.
     @Published public var find: TranscriptFind?
-    /// An edit — of the transcript or of the notes — on its way to the core: `Saving…`, then ✓ for a
-    /// moment.
+    /// An edit — of the transcript or of the notes — on its way to the core: `Saving…`, then nothing — the change
+    /// shows itself (2026-10-30).
     @Published public private(set) var saving: ProcessingState = .idle
     /// The current processing settings' transcription mode, for the More menu's reasons.
     @Published public private(set) var transcriptionOff = false
@@ -856,14 +856,14 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     /// docs/09 "AI view" — "Editing": the user's own words over the overview ([overview] nil leaves it) and the items
     /// [edits] changes — an emptied one is deleted — kept here at once and carried to the recording's folder by the
-    /// core. `Saving…` while it goes, ✓ for a moment after; false when it did not take.
+    /// core. `Saving…` while it goes; false when it did not take.
     @discardableResult
     public func editNotes(overview: String?, edits: [NoteEdit]) async -> Bool {
         guard saving != .processing else { return false }
         saving = .processing
         do {
             _ = try await core.notes.edit(recordingId: recordingId, overview: overview, items: edits)
-            showSaved()
+            saving = .idle
             return true
         } catch {
             logger.error("shell.notes.edit.failed error=\(String(describing: error), privacy: .private)")
@@ -949,7 +949,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     /// docs/08 "Editing": [edits] saved as one, here at once and in the recording's folder after.
-    /// `Saving…` while it goes, ✓ for a moment after; false when the core refused it.
+    /// `Saving…` while it goes; false when the core refused it.
     @discardableResult
     public func edit(_ edits: [any TranscriptEdit]) async -> Bool {
         guard !edits.isEmpty else { return true }
@@ -960,7 +960,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         do {
             if case .edited(let edited) = onEnum(of: try await core.editTranscript(recordingId: recordingId, edit: edit)) {
                 adopt(edited.transcript)
-                showSaved()
+                saving = .idle
                 return true
             }
         } catch {
@@ -968,15 +968,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
         saving = .failed
         return false
-    }
-
-    /// ✓ for a moment after a save.
-    private func showSaved() {
-        saving = .done
-        Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1.5))
-            if self?.saving == .done { self?.saving = .idle }
-        }
     }
 
     /// docs/09 "Editing and speakers": a speaker's name from the speaker menu; empty takes it away and the id
@@ -1266,13 +1257,6 @@ public struct RecordingDetailView: View {
                 .accessibilityIdentifier("retranscribing")
             } else if model.saving == .processing, !editing {
                 LoadingText(text: loc("Saving…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
-                    .padding(.horizontal, Space.m)
-                    .padding(.top, Space.s)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else if model.saving == .done, !editing {
-                Text(verbatim: BlueprintChip.selectionMark)
-                    .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
-                    .foregroundStyle(blueprint.palette.success)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -2082,7 +2066,7 @@ public struct RecordingDetailView: View {
         Task { if await model.edit(draft.edits) { self.draft = nil } }
     }
 
-    /// Save → `Saving…` → ✓ under the header, back on the notes.
+    /// Save → `Saving…` → back on the notes.
     private func saveNotes() {
         guard let notesDraft else { return }
         let edits = notesDraft.edits
