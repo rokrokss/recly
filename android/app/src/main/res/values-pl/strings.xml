@@ -458,5 +458,6 @@
     <string name="fill_names_running">Uzupełnianie imion mówców…</string>
     <string name="fill_title_failed">Nie udało się uzupełnić tytułu</string>
     <string name="fill_names_failed">Nie udało się uzupełnić imion mówców</string>
+    <string name="fill_names_none">Nie znaleziono imion mówców w transkrypcji</string>
     <string name="speaker_me">Ja</string>
 </resources>

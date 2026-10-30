@@ -458,5 +458,6 @@
     <string name="fill_names_running">Заполняем имена говорящих…</string>
     <string name="fill_title_failed">Не удалось заполнить название</string>
     <string name="fill_names_failed">Не удалось заполнить имена говорящих</string>
+    <string name="fill_names_none">В расшифровке не найдены имена говорящих</string>
     <string name="speaker_me">Я</string>
 </resources>

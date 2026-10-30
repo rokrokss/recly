@@ -458,5 +458,6 @@
     <string name="fill_names_running">Completamento dei nomi degli interlocutori…</string>
     <string name="fill_title_failed">Impossibile completare il titolo</string>
     <string name="fill_names_failed">Impossibile completare i nomi degli interlocutori</string>
+    <string name="fill_names_none">Nessun nome di interlocutore trovato nella trascrizione</string>
     <string name="speaker_me">Io</string>
 </resources>

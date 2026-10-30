@@ -559,6 +559,7 @@
   "Summarizing": "正在生成摘要",
   "Could not fill in the title": "无法填写标题",
   "Could not fill in speaker names": "无法填写说话人名称",
+  "No speaker names found in the transcript": "转录文本中未找到说话人名称",
   "Recly summarizes while you record": "Recly边录音边生成摘要",
   "Decisions": "决定",
   "To-dos": "待办事项",

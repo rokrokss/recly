@@ -458,5 +458,6 @@
     <string name="fill_names_running">Pinupunan ang mga pangalan ng nagsasalita…</string>
     <string name="fill_title_failed">Hindi mapunan ang pamagat</string>
     <string name="fill_names_failed">Hindi mapunan ang mga pangalan ng nagsasalita</string>
+    <string name="fill_names_none">Walang nakitang pangalan ng nagsasalita sa transcript</string>
     <string name="speaker_me">Ako</string>
 </resources>

@@ -531,6 +531,7 @@ enum class Str {
     FILL_NAMES_RUNNING,
     FILL_TITLE_FAILED,
     FILL_NAMES_FAILED,
+    FILL_NAMES_NONE,
     SPEAKER_ME,
 
     // docs/08 "Organizing".

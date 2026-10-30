@@ -458,5 +458,6 @@
     <string name="fill_names_running">جارٍ ملء أسماء المتحدثين…</string>
     <string name="fill_title_failed">تعذّر ملء العنوان</string>
     <string name="fill_names_failed">تعذّر ملء أسماء المتحدثين</string>
+    <string name="fill_names_none">لم يُعثر على أسماء المتحدثين في النص</string>
     <string name="speaker_me">أنا</string>
 </resources>

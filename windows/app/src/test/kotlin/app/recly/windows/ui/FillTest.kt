@@ -70,12 +70,13 @@ class FillTest {
     }
 
     @Test
-    fun `what arrived is seen where it goes, and the half asked missing is that half's failure`() {
+    fun `what arrived is seen where it goes, no speaker named is a muted line, and no title is the title's failure`() {
         assertNull(fillNotice(FillResult.Filled(title = true, names = 0), FillHalf.TITLE, Str.DETAIL_TRANSCRIBING))
         assertNull(fillNotice(FillResult.Filled(title = false, names = 2), FillHalf.NAMES, Str.DETAIL_TRANSCRIBING))
-        // ChatGPT answered without what was asked: that half's failure line alone.
+        // ChatGPT answered without a title: the title's failure line alone.
         assertEquals(FillNotice.Failed(FillHalf.TITLE, null), fillNotice(FillResult.Filled(title = false, names = 2), FillHalf.TITLE, Str.DETAIL_TRANSCRIBING))
-        assertEquals(FillNotice.Failed(FillHalf.NAMES, null), fillNotice(FillResult.Filled(title = true, names = 0), FillHalf.NAMES, Str.DETAIL_TRANSCRIBING))
+        // ChatGPT named no speaker — the transcript does not say who is who: not a failure.
+        assertEquals(FillNotice.Refused(Str.FILL_NAMES_NONE), fillNotice(FillResult.Filled(title = true, names = 0), FillHalf.NAMES, Str.DETAIL_TRANSCRIBING))
         assertEquals(Str.FILL_TITLE_FAILED, FillHalf.TITLE.failed)
         assertEquals(Str.FILL_NAMES_FAILED, FillHalf.NAMES.failed)
     }

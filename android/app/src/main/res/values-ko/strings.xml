@@ -491,5 +491,6 @@
     <string name="fill_names_running">화자 이름을 채우는 중…</string>
     <string name="fill_title_failed">제목을 채우지 못했습니다</string>
     <string name="fill_names_failed">화자 이름을 채우지 못했습니다</string>
+    <string name="fill_names_none">전사본에서 화자 이름을 찾지 못했습니다</string>
     <string name="speaker_me">나</string>
 </resources>

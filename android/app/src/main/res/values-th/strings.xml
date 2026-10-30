@@ -458,5 +458,6 @@
     <string name="fill_names_running">กำลังเติมชื่อผู้พูด…</string>
     <string name="fill_title_failed">เติมชื่อไม่ได้</string>
     <string name="fill_names_failed">เติมชื่อผู้พูดไม่ได้</string>
+    <string name="fill_names_none">ไม่พบชื่อผู้พูดในข้อความถอดเสียง</string>
     <string name="speaker_me">ฉัน</string>
 </resources>

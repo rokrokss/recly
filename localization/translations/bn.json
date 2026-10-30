@@ -559,6 +559,7 @@
   "Summarizing": "সারাংশ তৈরি হচ্ছে",
   "Could not fill in the title": "শিরোনাম পূরণ করা যায়নি",
   "Could not fill in speaker names": "বক্তার নাম পূরণ করা যায়নি",
+  "No speaker names found in the transcript": "ট্রান্সক্রিপ্টে বক্তার নাম পাওয়া যায়নি",
   "Recly summarizes while you record": "রেকর্ড করার সময়ই Recly সারাংশ তৈরি করে",
   "Decisions": "সিদ্ধান্ত",
   "To-dos": "করণীয়",

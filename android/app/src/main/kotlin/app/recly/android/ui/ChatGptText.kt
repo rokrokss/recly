@@ -154,7 +154,10 @@ internal fun fillReason(
 
 /** What the detail says under its header once Fill in title or Fill in speaker names has answered (docs/08 "Titles and speaker names"). */
 internal sealed interface FillNotice {
-    /** Nothing was sent: the More menu's own reason, as a refused Transcribe again says it. */
+    /**
+     * Nothing was sent — the More menu's own reason, as a refused Transcribe again says it — or ChatGPT named no
+     * speaker: a muted line.
+     */
     data class Refused(@param:StringRes val reason: Int) : FillNotice
 
     /** [half]'s failure — `Could not fill in the title` — with the core's sentence for [reason] when it gave one. */
@@ -163,11 +166,15 @@ internal sealed interface FillNotice {
 
 /**
  * [result] of asking for [half] as a line under the header, or null for nothing to say — what arrived is seen where it
- * goes. Nothing of it missing says the item's own reason; ChatGPT answering without the half asked is that half's
- * failure alone. A null [result] is a call that threw. [busyReason] is what the More menu says about the job in the way.
+ * goes. Nothing of it missing says the item's own reason; ChatGPT naming no speaker says the transcript gave no names,
+ * and answering without the title is that half's failure alone. A null [result] is a call that threw. [busyReason] is what
+ * the More menu says about the job in the way.
  */
 internal fun fillNotice(result: FillResult?, half: FillHalf, @StringRes busyReason: Int): FillNotice? = when (result) {
-    is FillResult.Filled -> if (if (half == FillHalf.TITLE) result.title else result.names > 0) null else FillNotice.Failed(half, null)
+    is FillResult.Filled -> when (half) {
+        FillHalf.TITLE -> if (result.title) null else FillNotice.Failed(half, null)
+        FillHalf.NAMES -> if (result.names > 0) null else FillNotice.Refused(R.string.fill_names_none)
+    }
     FillResult.NothingToFill -> FillNotice.Refused(half.nothing)
     FillResult.Busy -> FillNotice.Refused(busyReason)
     FillResult.NoTranscript -> FillNotice.Refused(R.string.detail_no_transcript)

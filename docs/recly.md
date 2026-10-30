@@ -3055,7 +3055,9 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   the header says so with the square loader: `Filling in the title…`, `Filling in speaker names…`, or both lines, the title's first, when
   one request asks for both; it goes when the run ends, and steps aside while the transcript or the notes are edited, as the
   other lines there do. An item asked when there turned out to be nothing to fill says its own reason (`Already has a title` or `No
-  unnamed speakers`) there for a few seconds; one ChatGPT answered without the half asked says the failure sentence alone. A failure says `Could not fill in the title` or `Could not fill in speaker names`
+  unnamed speakers`) there for a few seconds. `Fill in speaker names` that ChatGPT answered without naming anyone — the transcript does
+  not say who is who — says `No speaker names found in the transcript` the same muted way (2026-10-31: an answer, not a failure);
+  `Fill in title` answered without a title says the failure sentence alone. A failure says `Could not fill in the title` or `Could not fill in speaker names`
   with the core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on
   iPhone the ChatGPT permission is asked first, as for `Summarize`.
 - **The chips.** Once a recording has notes, or `Summarize` was asked, two chips under the header switch the body between `Transcript`

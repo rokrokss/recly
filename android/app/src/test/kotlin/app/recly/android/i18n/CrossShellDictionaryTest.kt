@@ -823,6 +823,14 @@ class CrossShellDictionaryTest {
                 windows = "fill.names.failed",
                 reckit = "Could not fill in speaker names",
             ),
+            Line(
+                what = "a names fill ChatGPT answered without naming anyone",
+                en = "No speaker names found in the transcript",
+                ko = "전사본에서 화자 이름을 찾지 못했습니다",
+                android = "fill_names_none",
+                windows = "fill.names.none",
+                reckit = "No speaker names found in the transcript",
+            ),
         )
     }
 }

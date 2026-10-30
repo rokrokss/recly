@@ -458,5 +458,6 @@
     <string name="fill_names_running">वक्ताओं के नाम भरे जा रहे हैं…</string>
     <string name="fill_title_failed">शीर्षक नहीं भरा जा सका</string>
     <string name="fill_names_failed">वक्ताओं के नाम नहीं भरे जा सके</string>
+    <string name="fill_names_none">ट्रांसक्रिप्ट में वक्ताओं के नाम नहीं मिले</string>
     <string name="speaker_me">मैं</string>
 </resources>

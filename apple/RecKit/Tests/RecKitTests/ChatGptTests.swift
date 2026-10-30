@@ -563,16 +563,18 @@ final class NotesMenuTests: XCTestCase {
     /// docs/08 "Titles and speaker names": what each answer of `fillTitle` and `fillNames` comes to on the page — by
     /// the half asked for.
     func testAFillAnswerIsSaidOnlyWhenTheHalfAskedForWasNotGiven() {
+        let noNames = RecordingDetailModel.FillOutcome.notice(.refused("No speaker names found in the transcript"))
         func outcome(_ result: FillResult, _ half: RecordingDetailModel.FillHalf) -> RecordingDetailModel.FillOutcome {
             RecordingDetailModel.fillOutcome(result, half: half, busyKey: "Transcribing…")
         }
         XCTAssertEqual(outcome(FillResultFilled(title: true, names: 0), .title), .quiet)
         XCTAssertEqual(outcome(FillResultFilled(title: false, names: 2), .names), .quiet)
         XCTAssertEqual(outcome(FillResultFilled(title: false, names: 0), .title), .notice(.failed(.title, reason: nil)))
-        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 0), .names), .notice(.failed(.names, reason: nil)))
+        // No speaker named — the transcript does not say who is who — is not a failure: the muted line.
+        XCTAssertEqual(outcome(FillResultFilled(title: false, names: 0), .names), noNames)
         // A run that asked for both answers both items: each says only of its own half.
         XCTAssertEqual(outcome(FillResultFilled(title: false, names: 2), .title), .notice(.failed(.title, reason: nil)))
-        XCTAssertEqual(outcome(FillResultFilled(title: true, names: 0), .names), .notice(.failed(.names, reason: nil)))
+        XCTAssertEqual(outcome(FillResultFilled(title: true, names: 0), .names), noNames)
         XCTAssertEqual(outcome(FillResultNothingToFill.shared, .title), .notice(.refused("Already has a title")))
         XCTAssertEqual(outcome(FillResultNothingToFill.shared, .names), .notice(.refused("No unnamed speakers")))
         for half in [RecordingDetailModel.FillHalf.title, .names] {

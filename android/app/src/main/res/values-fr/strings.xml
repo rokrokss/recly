@@ -458,5 +458,6 @@
     <string name="fill_names_running">Complétion des noms des locuteurs…</string>
     <string name="fill_title_failed">Impossible de compléter le titre</string>
     <string name="fill_names_failed">Impossible de compléter les noms des locuteurs</string>
+    <string name="fill_names_none">Aucun nom de locuteur trouvé dans la transcription</string>
     <string name="speaker_me">Moi</string>
 </resources>
