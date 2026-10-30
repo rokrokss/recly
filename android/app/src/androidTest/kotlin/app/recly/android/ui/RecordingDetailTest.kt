@@ -46,6 +46,34 @@ class RecordingDetailTest {
         ui.runOnIdle { assertEquals(1, retried) }
     }
 
+    /** docs/08 "Memo": More → Memo while it is empty opens the memo view, whose field saves as the user types. */
+    @Test fun anEmptyMemoIsWrittenFromMore() {
+        val saved = mutableListOf<String>()
+        ui.setContent { ReclyTheme {
+            RecordingDetailScreen(detail().copy(memo = ""), {}, {}, actions = DetailActions(onSaveMemo = { saved += it }, notesAgreed = true))
+        } }
+        ui.onNodeWithTag("view-memo").assertDoesNotExist()
+        ui.onNodeWithTag("detail-more").performClick()
+        ui.onNodeWithTag("more-memo").performClick()
+        ui.onNodeWithTag("view-memo").assertIsSelected()
+        ui.onNodeWithTag("memo-footnote").assertIsDisplayed()
+        ui.onNodeWithTag("memo-field").performTextInput("Agenda")
+        ui.mainClock.advanceTimeBy(MEMO_SAVE_DELAY_MS + 100)
+        ui.runOnIdle { assertEquals(listOf("Agenda"), saved) }
+    }
+
+    /** docs/08 "Memo": a memo that says something has its chip beside the transcript's — and More no longer offers it. */
+    @Test fun aMemoHasItsChip() {
+        ui.setContent { ReclyTheme { RecordingDetailScreen(detail().copy(memo = "Agenda"), {}, {}) } }
+        ui.onNodeWithTag("view-transcript").assertIsSelected()
+        ui.onNodeWithTag("view-notes").assertDoesNotExist()
+        ui.onNodeWithTag("view-memo").performClick()
+        ui.onNodeWithTag("memo-field").assertTextEquals("Agenda")
+        ui.onNodeWithTag("memo-footnote").assertDoesNotExist()
+        ui.onNodeWithTag("detail-more").performClick()
+        ui.onNodeWithTag("more-memo").assertDoesNotExist()
+    }
+
     /** More → Delete is last, and waits with its reason while the take is being written. */
     @Test fun deleteWaitsWhileTheTakeIsWritten() {
         ui.setContent { ReclyTheme { RecordingDetailScreen(detail().copy(writing = true, row = row(ItemState.RECORDING)), {}, {}) } }

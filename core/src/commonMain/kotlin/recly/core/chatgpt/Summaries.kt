@@ -117,6 +117,8 @@ class Summaries internal constructor(
     private val recordings: RecordingRepository,
     private val transcript: suspend (String) -> Transcript?,
     private val consents: TransferConsents,
+    /** The user's memo of the recording as a request carries it, empty when there is none (docs/08 "Memo"). */
+    private val memo: suspend (String) -> String = { "" },
 ) {
     private val startLock = Mutex()
 
@@ -199,18 +201,22 @@ class Summaries internal constructor(
 
     /**
      * One request for what a fill asks: a title when [title], and a name for each of [speakers] — the transcript's
-     * lines, as a question sends them, and nothing else. [trigger] is what asked, for the log. Throws [ChatGptFailure];
-     * what ChatGPT could not tell is absent from the answer.
+     * lines, as a question sends them, and the recording's memo. [trigger] is what asked, for the log. Throws
+     * [ChatGptFailure]; what ChatGPT could not tell is absent from the answer.
      */
-    internal suspend fun fill(transcript: Transcript, title: Boolean, speakers: List<String>, trigger: String): FillAnswer {
-        val text = TranscriptNormalizer.text(transcript).takeIf { it.isNotBlank() }
+    internal suspend fun fill(recordingId: String, transcript: Transcript, title: Boolean, speakers: List<String>, trigger: String): FillAnswer {
+        val lines = TranscriptNormalizer.text(transcript).takeIf { it.isNotBlank() }
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
+        val memo = recly.core.notes.NotesPrompts.memoBlock(memo(recordingId))
+        val text = if (memo.isEmpty()) lines else lines + "\n" + memo
         // The first of the models measured for this that the plan offers, at the effort measured (docs/08 "Titles and speaker
         // names"); otherwise the one the notes use, at its own default effort.
         val offered = account.offered()
         val chosen = FILL_MODELS.firstOrNull { (id, _) -> id in offered }
         val model = chosen?.first ?: account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
-        val instructions = fillInstructions(SummaryLanguage.of(transcript.language, locale.value), title, speakers, transcript.speakers.any { it.me == true })
+        val instructions = fillInstructions(
+            SummaryLanguage.of(transcript.language, locale.value), title, speakers, transcript.speakers.any { it.me == true }, memo = memo.isNotEmpty(),
+        )
         deps.logger.log(Logger.Level.INFO, "summary.fill.model", mapOf("model" to model, "effort" to (chosen?.second ?: "default"), "trigger" to trigger))
         // A transcript waits for this before it goes up: a model that has not answered in two minutes is not waited for.
         val answer = try {
@@ -302,7 +308,8 @@ class Summaries internal constructor(
             deps.logger.log(Logger.Level.INFO, "summary.ask.start", mapOf("recordingId" to recordingId, "model" to model, "preset" to (preset?.name ?: "own")))
             val preferences = preferences()
             val instructions = askInstructions(source.language, SummaryLanguage.app(locale.value), preset, preferences, source.hasMe)
-            val input = source.transcript + "\n" + QUESTION_HEADING + "\n" + (question ?: presetQuestion(preset!!)) + "\n"
+            val input = source.transcript + "\n" + recly.core.notes.NotesPrompts.memoBlock(memo(recordingId)) +
+                QUESTION_HEADING + "\n" + (question ?: presetQuestion(preset!!)) + "\n"
             AskState.Ready(AskAnswer(recordingId, preset, question, complete(model, instructions, input), model, account.modelLabel(model)))
         } catch (e: CancellationException) {
             throw e
@@ -348,7 +355,7 @@ class Summaries internal constructor(
          * docs/08 "Titles and speaker names": a JSON object with a `title` when [title] and a `speakers` object for
          * [speakers] — names only as the transcript itself gives them, never guessed.
          */
-        fun fillInstructions(language: String, title: Boolean, speakers: List<String>, hasMe: Boolean = false): String = buildString {
+        fun fillInstructions(language: String, title: Boolean, speakers: List<String>, hasMe: Boolean = false, memo: Boolean = false): String = buildString {
             append("You fill in details of a recording from its transcript. Each line starts with [HH:MM:SS] and who is speaking.\n")
             append("Answer with one JSON object and nothing else: no Markdown, no code fence, no other text.\n")
             if (title) {
@@ -363,6 +370,8 @@ class Summaries internal constructor(
                 append("A name said to someone belongs to the person spoken to, not to the one speaking, and someone who is only talked about is not one of the speakers. ")
                 append("Leave out honorifics that only go with a name, such as 님, 씨, さん or Mr.; a form of address used on its own, such as 팀장님, stays as it is. ")
                 append("Never guess from how someone speaks or what they talk about, and never give two speakers the same name.\n")
+                // docs/08 "Memo": the people a memo lists are who may be there, not who is who.
+                if (memo) append("A name in the user's memo may be one of the speakers', but give it only where the transcript itself shows which speaker it is.\n")
             }
             if (hasMe) append("\"${TranscriptNormalizer.ME}\" in the transcript is the person who made the recording; it is not one of the ids.\n")
         }

@@ -37,6 +37,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
@@ -182,6 +183,32 @@ class ShotsTest {
         }
         model.selectLanguage(AppLanguage.ENGLISH)
 
+        // docs/08 "Memo": a memo of the recording — the Memo chip after Transcript and Notes and its view, and a word only
+        // the memo has, its line under the title and the hit opening on it. Emptied after, so the shots below are as before.
+        val memoOf = model.detail!!.recordingId
+        model.saveMemo(memoOf, "Agenda: the release date, the speed controls\nMina, Joon")
+        model.observeMemo(memoOf).first { it.isNotEmpty() }
+        for (ko in listOf(false, true)) {
+            model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
+            val lang = if (ko) "ko" else "en"
+            val strings = model.localization.current
+            val window: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
+            model.showMemo()
+            shot("recordings-memo-$lang", 1000, 680, ko) { window() }
+            model.showNotes(false)
+            shot("recordings-search-memo-$lang", 1000, 680, ko, clicks = listOf(SEARCH), typed = "Joon") { window() }
+            val memoHit = model.search("Joon").first()
+            check(opensOnMemo(memoHit)) { "the hit is not the memo's alone: $memoHit" }
+            model.openSearchHit(memoHit, "Joon")
+            until { model.detail?.loading == false && model.detail?.showingMemo == true }
+            shot("recordings-search-memo-open-$lang", 1000, 680, ko) { window() }
+            model.openDetail(model.recents.first())
+            until { model.detail?.transcript != null && model.detail?.find == null }
+        }
+        model.saveMemo(memoOf, "")
+        model.observeMemo(memoOf).first { it.isEmpty() }
+        model.selectLanguage(AppLanguage.ENGLISH)
+
         // Signed in, drawn without signing in (nothing here talks to OpenAI): the menu's Organize again enabled, and
         // Settings with the model, and Notes with instructions and a section of the user's own.
         val chatGpt = model.chatGpt!!
@@ -290,6 +317,13 @@ class ShotsTest {
         until { model.recording }
         delay(1_500)
         shot("popup-recording-en", 520, 560, false) { TrayPopup(model, strings) {} }
+        // docs/08 "Memo": the take's row with the first line of a memo typed into it.
+        val live = model.liveRecordingId!!
+        model.saveMemo(live, "Agenda: the release date\nMina, Joon")
+        model.observeMemo(live).first { it.isNotEmpty() }
+        shot("popup-recording-memo-en", 520, 560, false) { TrayPopup(model, strings) {} }
+        // Its row clicked: the field open in place, with Done.
+        shot("popup-recording-memo-open-en", 520, 560, false, clicks = listOf(TRAY_MEMO)) { TrayPopup(model, strings) {} }
         // 2026-10-15: More over the take still being written — every item waits, Delete too, each saying why.
         until { model.recents.any { it.id !in before } }
         model.openDetail(model.recents.first { it.id !in before })
@@ -467,6 +501,8 @@ class ShotsTest {
         val SEARCH = Offset(150f, 103f)
         val FIND_NEXT = Offset(900f, 210f)
         val MORE_EDIT_NOTES = Offset(835f, 265f)
+        // The tray popup's Memo row while recording, in the 520×560 popup.
+        val TRAY_MEMO = Offset(60f, 300f)
         // The decision's field in Edit notes, past the end of its words.
         val NOTES_FIELD = Offset(900f, 513f)
         const val SETTINGS_HEIGHT = 3100

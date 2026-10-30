@@ -12,6 +12,8 @@ import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.jsonObject
+import recly.core.notes.MemoFile
+import recly.core.notes.MemoFolder
 import recly.core.notes.NotesFile
 import recly.core.notes.NotesFolder
 import recly.core.drive.DriveFolderMarker
@@ -105,6 +107,8 @@ class RemoteRecordings(
     private val transcriptsChanged: () -> Unit = {},
     /** The same for a recording's notes ([refreshNotes]). */
     private val notesChanged: () -> Unit = {},
+    /** The same for a recording's memo ([refreshMemos]). */
+    private val memosChanged: () -> Unit = {},
 ) {
     private val mutex = Mutex()
     private var lastPulledAt: Instant? = null
@@ -238,6 +242,24 @@ class RemoteRecordings(
     }
 
     /**
+     * docs/08 "Memo": a memo changed here, carried to the recording's folder as `{base}.memo.json`, and the folder's
+     * `memoAt` moved on, so the other devices take it in at their next pull. One whose folder is not known yet — still
+     * recording, not uploaded — waits for it. A local folder is this device's alone: there is no one to carry it to.
+     */
+    suspend fun pushMemos(): Unit = pushing.withLock {
+        push(recordings.pendingMemos(), "remote.memo.pushed", "remote.memo.push.failed", recordings::memoPushed) { record, folderId, _ ->
+            if (StorageKind.ofId(folderId) == StorageKind.FOLDER) return@push true
+            val base = MetaWriter.baseName(record.meta)
+            val json = recordings.readFile(record.id, MemoFile.name(base)) ?: return@push true
+            val memo = MemoFolder.decode(json) ?: return@push true
+            results.write(record.dir, folderId, MemoFolder.name(base), json.encodeToByteArray(), MemoFolder.MIME, local = false)
+            api.updateAppProperties(folderId, mapOf(MemoFolder.STAMP to memo.updatedAt))
+            recordings.setMemoSeen(record.id, memo.updatedAt)
+            true
+        }
+    }
+
+    /**
      * One kind of pending write, for every recording that has one: [write] it into the recording's
      * folder, then [done] with the value it was pending with. A folder that is not known, or has no
      * `meta.json` yet, is not ready for it; a folder that is gone takes the write with it.
@@ -354,6 +376,7 @@ class RemoteRecordings(
                     pendingAt = properties.string(DriveFolderMarker.PENDING_AT),
                     transcriptAt = properties.string(TranscriptMarks.FOLDER_STAMP),
                     notesAt = properties.string(NotesFolder.STAMP),
+                    memoAt = properties.string(MemoFolder.STAMP),
                 )
             }
             .sortedByDescending { it.createdTime }
@@ -496,8 +519,10 @@ class RemoteRecordings(
         pushTitles()
         pushTranscripts()
         pushNotes()
+        pushMemos()
         refreshTranscripts(folders, ::covered)
         refreshNotes(folders, ::covered)
+        refreshMemos(folders, ::covered)
         return PullSummary(adopted, dropped, retitled)
     }
 
@@ -627,6 +652,64 @@ class RemoteRecordings(
     }
 
     private suspend fun localNotes(recordingId: String, name: String): NotesFile? = recordings.readFile(recordingId, name)?.let(NotesFolder::decode)
+
+    /**
+     * docs/08 "Memo": the memos on this device kept up with their folders — a folder whose `memoAt` is newer than the
+     * copy here (typed on another device) has its `{base}.memo.json` read again; the newer copy wins whole. None while a
+     * memo of this device's is on its way out; at most [REFRESH_PER_PASS] a pass. Never throws: what is not read now is
+     * read by a later pass.
+     */
+    private suspend fun refreshMemos(folders: Map<String, List<Folder>>, covered: (String) -> Boolean) {
+        try {
+            val seen = recordings.memosSeen()
+            val typing = recordings.pendingMemos().keys
+            var fetched = 0
+            var changed = false
+            for (row in recordings.list(Int.MAX_VALUE)) {
+                if (fetched >= REFRESH_PER_PASS) break
+                val folderId = row.driveFolderId ?: continue
+                if (!covered(folderId) || row.id in typing) continue
+                val stamp = folders[row.id]?.firstOrNull { it.id == folderId }?.memoAt ?: continue
+                if (stamp == seen[row.id]) continue
+                val name = MemoFile.name(MetaWriter.baseName(row.meta))
+                val local = localMemo(row.id, name)?.updatedAt
+                if (local != null && local >= stamp) {
+                    recordings.setMemoSeen(row.id, stamp)
+                    continue
+                }
+                fetched++
+                val file = api.findChild(folderId, MemoFolder.name(MetaWriter.baseName(row.meta))) ?: continue
+                val json = try {
+                    api.download(file.id).decodeToString()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    deps.logger.log(Logger.Level.WARN, "remote.memo.read.failed", mapOf("recordingId" to row.id), e)
+                    continue
+                }
+                val memo = MemoFolder.decode(json)?.takeIf { it.recordingId == row.id } ?: continue
+                val written = recordings.memoWrite {
+                    // Typed here since the pass began: newer than what the folder had, it stays and goes up.
+                    val newer = localMemo(row.id, name)?.let { it.updatedAt >= memo.updatedAt } == true
+                    if (row.id in recordings.pendingMemos() || newer) return@memoWrite false
+                    recordings.writeFile(row.id, name, json)
+                    recordings.setMemoSeen(row.id, stamp)
+                    true
+                }
+                if (written) {
+                    changed = true
+                    deps.logger.log(Logger.Level.INFO, "remote.memo.read", mapOf("recordingId" to row.id))
+                }
+            }
+            if (changed) memosChanged()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            deps.logger.log(Logger.Level.WARN, "remote.memo.read.failed", emptyMap(), e)
+        }
+    }
+
+    private suspend fun localMemo(recordingId: String, name: String): MemoFile? = recordings.readFile(recordingId, name)?.let(MemoFolder::decode)
 
     /** The version of the transcript copy at [path] — when it was last edited or made — or null when there is none. */
     private suspend fun localVersion(path: okio.Path): String? {
@@ -760,6 +843,8 @@ class RemoteRecordings(
         val transcriptAt: String?,
         /** The version of the notes in it (`appProperties.notesAt`, docs/08 "Organizing"). */
         val notesAt: String? = null,
+        /** When its memo was last changed (`appProperties.memoAt`, docs/08 "Memo"). */
+        val memoAt: String? = null,
     )
 
     private class Adoptable(val folder: Folder, val meta: RecordingMeta, val fileIds: Map<Pair<Int, Track>, String>)

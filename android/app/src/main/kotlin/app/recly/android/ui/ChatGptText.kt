@@ -71,8 +71,8 @@ import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import recly.core.recording.SearchHit
 
-/** The detail's two views once the recording has notes, or Organize was asked (docs/09 "AI view"). */
-internal enum class DetailView { TRANSCRIPT, NOTES }
+/** The detail's views once the recording has notes or a memo, or Organize or More → Memo was asked (docs/09 "AI view"). */
+internal enum class DetailView { TRANSCRIPT, NOTES, MEMO }
 
 /**
  * Why the More menu's Organize cannot run now, or null when it can — in the order the reasons are checked
@@ -186,6 +186,9 @@ internal fun titlePlaceholder(transcribes: Boolean, connection: ChatGptConnectio
 
 /** docs/09 "AI view": a hit found in the notes alone opens on the notes — there is nothing in the transcript to find. */
 internal fun opensOnNotes(hit: SearchHit): Boolean = hit.notes != null && hit.snippets.isEmpty() && !hit.matchesInTitle
+
+/** docs/09 "AI view": and one found in the memo alone opens on the memo. */
+internal fun opensOnMemo(hit: SearchHit): Boolean = hit.memo != null && hit.notes == null && hit.snippets.isEmpty() && !hit.matchesInTitle
 
 /** One stretch of an answer: plain text, or a [citation] — `[HH:MM:SS]` or `[MM:SS]` — that plays from its time. */
 internal data class TextRun(val start: Int, val end: Int, val citation: SummaryCitation? = null)

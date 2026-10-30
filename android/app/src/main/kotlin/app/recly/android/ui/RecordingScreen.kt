@@ -121,6 +121,8 @@ fun RecordingSection(
     /** docs/08 "Organizing": a note of the running recording swiped away, and the lines around one. */
     onDeleteNote: (String) -> Unit = {},
     noteLines: suspend (Double) -> List<recly.core.notes.NoteLine> = { emptyList() },
+    /** docs/08 "Memo": the memo editor's save, for the recording it was opened on. */
+    onSaveMemo: (recordingId: String, text: String) -> Unit = { _, _ -> },
 ) {
     val gate = rememberPermissionGate(
         refused = state.micRefused,
@@ -151,6 +153,8 @@ fun RecordingSection(
     // its own — `REC` and the rest are about the recorder, so they win.
     val borrowed = if (recorder is RecorderState.Idle) ledger else null
     val busy = rememberBusyHold(recorder is RecorderState.Starting || recorder is RecorderState.Stopping)
+    // docs/08 "Memo": the recording whose memo is being written; the editor goes with the recording it was opened on.
+    var memoOpen by rememberSaveable { mutableStateOf<String?>(null) }
 
     BoxWithConstraints(modifier.fillMaxSize()) {
     val scrollDashboard = maxHeight < 520.dp || LocalDensity.current.fontScale > 1.3f
@@ -226,6 +230,10 @@ fun RecordingSection(
                         modifier = if (scrollDashboard) Modifier else Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                     )
                 }
+                // docs/08 "Memo": where the memo is written while it records — under what the notes have so far.
+                state.memo?.let { memo ->
+                    MemoRow(memo.text, onClick = { memoOpen = memo.recordingId }, Modifier.padding(horizontal = Space.m))
+                }
             }
         }
 
@@ -286,6 +294,12 @@ fun RecordingSection(
         val transcribes = state.processing.mode != recly.core.processing.TranscriptionMode.OFF
         TitleDialog(onSave = onSaveTitle, onCancel = onCancelTitle, askParticipants = transcribes,
             placeholder = titlePlaceholder(transcribes, state.chatGpt, state.notesConsentNeeded))
+    }
+
+    // Stopped meanwhile, the editor closes — what it held is saved as it goes — and the title question has the screen.
+    LaunchedEffect(state.memo?.recordingId) { if (memoOpen != state.memo?.recordingId) memoOpen = null }
+    state.memo?.takeIf { it.recordingId == memoOpen }?.let { writing ->
+        MemoDialog(writing.recordingId, writing.text, state.notesAgreed, { onSaveMemo(writing.recordingId, it) }, onClose = { memoOpen = null })
     }
 
     if (state.consentPrompt) {

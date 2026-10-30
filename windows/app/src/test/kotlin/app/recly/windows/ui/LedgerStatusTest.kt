@@ -135,10 +135,10 @@ class LedgerStatusTest {
             id = "r", jobId = "j", title = Str.UNTITLED.message(), startedAt = "2026-10-29T00:00:00Z", state = Str.STATE_DONE.message(), link = null,
         )
         assertEquals(
-            LedgerStatus("ORGANIZING", BadgeTone.ACCENT, label = "Organizing", busy = true, word = Str.BADGE_ORGANIZING),
+            LedgerStatus("ORGANIZING", BadgeTone.ACCENT, label = "Summarizing", busy = true, word = Str.BADGE_ORGANIZING),
             row.ledgerStatus(en, filling = false, organizing = true),
         )
-        assertEquals("정리하는 중", row.ledgerStatus(ko, filling = false, organizing = true).label.plain())
+        assertEquals("요약하는 중", row.ledgerStatus(ko, filling = false, organizing = true).label.plain())
         assertEquals(Str.STATE_DONE.message().ledgerStatus(en), row.ledgerStatus(en, filling = false, organizing = false))
         LedgerStates.filterValues { it.code != "DONE" }.keys.forEach { key ->
             val other = row.copy(state = key.message())

@@ -27,6 +27,8 @@ struct RecordingView: View {
     @State private var busyStartedAt: Date?
     /// How tall the live notes' rows are, which their scroll view grows to and no further. Nil until measured.
     @State private var notesHeight: CGFloat?
+    /// docs/08 "Memo": the memo's editor is up over the screen.
+    @State private var editingMemo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,8 +78,17 @@ struct RecordingView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dotGridBackground()
+        // docs/08 "Memo": the memo's editor, from the bottom edge. In the screen rather than presented, for the reason
+        // the questions above are: the naming sheet below is this screen's one presentation. Done only closes it — it
+        // saved as it went — and Stop closes it too.
+        .blueprintBottomSheetOverlay(isPresented: editingMemo, onDismiss: { editingMemo = false }) {
+            MemoSheet(memo: model.liveMemo, agreed: model.notesAgreed, save: model.saveLiveMemo) { editingMemo = false }
+        }
+        .onChange(of: model.recordingId) { editingMemo = false }
         // docs/08 "Organizing": the notes of the recording being made, followed while it is.
         .task(id: model.recordingId) { await model.followLiveNotes() }
+        .task(id: model.recordingId) { await model.followLiveMemo() }
+        .task(id: model.recordingId) { await model.followNotesAgreed() }
         // docs/03: the title is asked for after the recording has ended, and the job is queued once
         // the answer — or the refusal — is in. A sheet rather than an alert, because the same
         // prompt also asks how many people were in the room and an alert holds no picker. Driven by
@@ -114,6 +125,11 @@ struct RecordingView: View {
                     LiveWaveformView(peaks: model.livePeaks)
                         .padding(.horizontal, Space.m)
                         .accessibilityIdentifier("live-waveform")
+                }
+                // docs/08 "Memo": under the waveform while recording, empty or not — it is where the memo is written.
+                if model.isRecording, model.recordingId != nil {
+                    MemoRow(memo: model.liveMemo) { editingMemo = true }
+                        .padding(.horizontal, Space.m)
                 }
                 // docs/08 "Organizing": beneath the waveform, the decisions, to-dos and questions of the recording
                 // being made, as each part brings them — nothing while there are none.
@@ -374,6 +390,36 @@ private struct ConsentDialog: View {
 /// workflow's own `speakers` (docs/08). "Unknown" is where it starts and it writes nothing.
 ///
 /// A sheet rather than the alert the title alone used to be: an alert holds no picker.
+/// docs/08 "Memo": the recording's memo while it records — its field, and `Done`, which only closes it.
+private struct MemoSheet: View {
+    let memo: String
+    let agreed: Bool
+    let save: (String) -> Void
+    let done: () -> Void
+
+    @FocusState private var focused: Bool
+    @Environment(\.locale) private var locale
+
+    /// As tall as what it holds: the bottom sheet it is on grows to it ([blueprintBottomSheetOverlay]).
+    var body: some View {
+        VStack(spacing: 0) {
+            ScreenHeader(title: RecKitStrings.localized("Notes"))
+            HairLine()
+            VStack(alignment: .leading, spacing: Space.m) {
+                MemoField(memo: memo, agreed: agreed, lines: 5...10, focused: $focused, save: save)
+                HStack {
+                    Spacer(minLength: 0)
+                    BlueprintButton(RecKitStrings.localized("Done"), tone: .primary, action: done)
+                        .accessibilityIdentifier("memo-done")
+                }
+            }
+            .padding(Space.m)
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .onAppear { focused = true }
+    }
+}
+
 private struct NamingSheet: View {
     @Binding var title: String
     @Binding var participants: Int?

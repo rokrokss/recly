@@ -397,6 +397,51 @@ final class MenuModel: ObservableObject {
         return false
     }
 
+    /// The recording being made, while one is.
+    var recordingId: String? {
+        if case .recording(let id) = state { return id }
+        return nil
+    }
+
+    // MARK: - Memo (docs/08 "Memo")
+
+    /// The memo of the recording being made, for the popover's row and field.
+    @Published private(set) var liveMemo = ""
+    /// Signed in to ChatGPT and agreed to organizing — the memo's field says the notes read it.
+    @Published private(set) var notesAgreed = false
+    /// The recording the memo's field writes to: the one being made — and still the one just made, for the last
+    /// keystrokes the field saves as Stop closes it.
+    private var memoRecordingId: String?
+
+    /// The memo of the recording being made, for as long as the popover shows it.
+    func followLiveMemo() async {
+        guard let id = recordingId, let core = bridge?.core else { return }
+        for await memo in core.memos.observe(recordingId: id) {
+            guard !Task.isCancelled, recordingId == id else { return }
+            liveMemo = memo
+        }
+    }
+
+    func followNotesAgreed() async {
+        guard let core = bridge?.core else { return }
+        for await agreed in core.notes.observeAgreed() {
+            guard !Task.isCancelled else { return }
+            notesAgreed = agreed.boolValue
+        }
+    }
+
+    /// The memo field's save: kept as typed, and back through [followLiveMemo].
+    func saveLiveMemo(_ text: String) {
+        guard let id = memoRecordingId, let core = bridge?.core else { return }
+        Task {
+            do {
+                _ = try await core.memos.set(recordingId: id, text: text)
+            } catch {
+                logger.error("shell.memo.save.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
+
     /// Nothing in flight — no recording to lose if the app goes away now.
     var isIdle: Bool { state == .idle }
 
@@ -639,6 +684,8 @@ final class MenuModel: ObservableObject {
         if isRecording, !wasRecording {
             capturedProcessingKey = processing?.summaryKey
             capturedProcessingProvider = processing?.providerSummary
+            memoRecordingId = recordingId
+            liveMemo = ""
             startTicking()
         }
         // 2026-10-08 §4: the clock keeps the recording's length while it is saved, and is back to
@@ -1144,6 +1191,7 @@ final class MenuModel: ObservableObject {
         else { return }
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: searchQuery, atSec: first.atSec) }
         detail?.opensOnNotes = hit.onlyInNotes
+        detail?.opensOnMemo = hit.onlyInMemo
     }
 
     /// Every way a recording is put in the Details window — a row, a search hit, the popover's Details — comes

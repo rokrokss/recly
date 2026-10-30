@@ -89,12 +89,12 @@ final class NoteGroupsTests: XCTestCase {
     /// docs/08 "Organizing" — "Copy and share": the headings the core writes the notes' text under, in the app's
     /// language.
     func testTheHeadingsAreTheAppsWords() {
-        XCTAssertEqual(NoteGroups.headings.notes, "Notes")
+        XCTAssertEqual(NoteGroups.headings.notes, "Summary")
         XCTAssertEqual(NoteGroups.headings.keyPoints, "Key points")
         XCTAssertEqual(NoteGroups.headings.todos, "To-dos")
         XCTAssertEqual(NoteGroups.headings.me, "Me")
         AppLanguage.current = .ko
-        XCTAssertEqual(NoteGroups.headings.notes, "정리")
+        XCTAssertEqual(NoteGroups.headings.notes, "요약")
         XCTAssertEqual(NoteGroups.headings.keyPoints, "핵심")
         XCTAssertEqual(NoteGroups.headings.me, "나", "an unnamed `me` owns their to-dos under this word")
     }
@@ -403,7 +403,7 @@ final class RecordingNotesTests: XCTestCase {
         let follow = Task { await model.followNotes() }
         addTeardownBlock { follow.cancel(); await follow.value }
         try await waitFor { model.notes?.stage == .final }
-        XCTAssertEqual(model.organizeTitle, "Organize again")
+        XCTAssertEqual(model.organizeTitle, "Summarize again")
         XCTAssertTrue(model.notesEditable)
         XCTAssertNil(model.notesExportReason)
 

@@ -21,13 +21,13 @@ public struct NotesSection: View {
 
     public var body: some View {
         if model.available {
-            SectionHeader(loc("Notes")).padding(.horizontal, Space.m)
+            SectionHeader(loc("Summary")).padding(.horizontal, Space.m)
             SectionBlock {
                 PreferenceField(
-                    title: loc("Notes instructions"),
+                    title: loc("Summary instructions"),
                     text: $model.instructions,
                     placeholder: loc("e.g. Group to-dos by owner. Keep technical terms in English."),
-                    note: loc("Every recording’s notes follow this."),
+                    note: loc("Every recording’s summary follows this."),
                     limit: Int(NotesPreferences.companion.INSTRUCTIONS_MAX),
                     lines: 2...8,
                     multiline: true,
@@ -58,7 +58,7 @@ public struct NotesSection: View {
                     BlueprintButton(loc("Restore defaults"), tone: .quiet) { model.restoreDefaults() }
                         .accessibilityIdentifier("notes-restore-defaults")
                 }
-                Text(verbatim: loc("Notes start with an overview, then these sections. Each item shows when it was said."))
+                Text(verbatim: loc("The summary starts with an overview, then these sections. Each item shows when it was said."))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -71,7 +71,7 @@ public struct NotesSection: View {
                     title: loc("About you"),
                     text: $model.aboutMe,
                     placeholder: loc("e.g. Product manager; I care about deadlines and decisions."),
-                    note: loc("Notes and answers use this to judge what matters to you."),
+                    note: loc("Summaries and answers use this to judge what matters to you."),
                     limit: Int(SummaryPreferences.companion.ABOUT_MAX),
                     lines: 1...3,
                     multiline: false,

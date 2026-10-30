@@ -61,7 +61,7 @@ public enum NoteGroups {
     /// shells hand them to the core at start and whenever the language changes, as they hand it the locale.
     public static var headings: NotesHeadings {
         NotesHeadings(
-            notes: RecKitStrings.localized("Notes"),
+            notes: RecKitStrings.localized("Summary"),
             keyPoints: RecKitStrings.localized("Key points"),
             decisions: RecKitStrings.localized("Decisions"),
             todos: RecKitStrings.localized("To-dos"),

@@ -10,7 +10,7 @@ the demo recordings both sets use, are in [`scripts/play-store/`](../play-store/
 |---|---|
 | `01-record-for-your-ai` | Record tab, idle, with the Apple Watch's record screen in front |
 | `02-transcribe` | the first recording's Details, after its second timestamp was tapped |
-| `03-notes` | the same recording's Details, its Notes chip selected |
+| `03-notes` | the same recording's Details, its Summary chip selected |
 | `04-list` | List tab |
 
 ## Making them

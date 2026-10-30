@@ -20,6 +20,9 @@ struct MenuPopover: View {
     @Environment(\.locale) private var locale
 
     @State private var showingSettings = false
+    /// docs/08 "Memo": the memo's field is open under the waveform, in the row's place.
+    @State private var editingMemo = false
+    @FocusState private var memoFocused: Bool
 
     var body: some View {
         // One height for the ledger and the settings: a popover that changed size on "Hide settings"
@@ -63,6 +66,10 @@ struct MenuPopover: View {
         .onAppear {
             model.openEditor = { openWindow(id: "processing-settings") }
         }
+        // docs/08 "Memo": the memo of the recording being made; Stop folds the field back.
+        .task(id: model.recordingId) { await model.followLiveMemo() }
+        .task(id: model.recordingId) { await model.followNotesAgreed() }
+        .onChange(of: model.recordingId) { editingMemo = false }
     }
 
     // MARK: - Chrome
@@ -126,6 +133,24 @@ struct MenuPopover: View {
                         LiveWaveformView(peaks: model.livePeaks)
                             .frame(maxWidth: .infinity)
                             .accessibilityIdentifier("live-waveform")
+                    }
+                }
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
+            }
+            // docs/08 "Memo": under the waveform while recording, empty or not; a click opens the field in its place,
+            // and Done folds it back. The field saves as it goes, so a popover closed by Escape loses nothing.
+            if model.isRecording {
+                Group {
+                    if editingMemo {
+                        VStack(alignment: .trailing, spacing: Space.s) {
+                            MemoField(memo: model.liveMemo, agreed: model.notesAgreed, lines: 4...8, focused: $memoFocused, save: model.saveLiveMemo)
+                                .onAppear { memoFocused = true }
+                            BlueprintButton(RecKitStrings.localized("Done"), tone: .primary) { editingMemo = false }
+                                .accessibilityIdentifier("memo-done")
+                        }
+                    } else {
+                        MemoRow(memo: model.liveMemo) { editingMemo = true }
                     }
                 }
                 .padding(.horizontal, Space.m)

@@ -571,6 +571,11 @@ enum class Str {
     NOTES_DECISIONS_ABOUT,
     NOTES_TODOS_ABOUT,
     NOTES_QUESTIONS_ABOUT,
+
+    // docs/08 "Memo": the user's own memo of a recording — the tray's row while recording, the detail's chip and More item.
+    MEMO_TITLE,
+    MEMO_PLACEHOLDER,
+    MEMO_NOTE,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

@@ -106,6 +106,8 @@ class Notes internal constructor(
     private val fetch: suspend (String) -> String? = { null },
     /** Organize again is going ahead: the speakers without a name are asked for beside it (docs/08 "Titles and speaker names"). */
     private val nameSpeakers: (String) -> Unit = {},
+    /** The user's memo of the recording as a request carries it, empty when there is none (docs/08 "Memo"). */
+    private val memo: suspend (String) -> String = { "" },
 ) {
     /** The providers a part goes to (tests replace it). */
     internal var providers: (String) -> SttProvider? = SttProviders::create
@@ -164,6 +166,25 @@ class Notes internal constructor(
         emitAll(
             combine(account.observe(), consented.filterNotNull()) { connection, agreed ->
                 (connection is ChatGptConnection.SignedIn || connection is ChatGptConnection.Expired) && !agreed
+            },
+        )
+    }.distinctUntilChanged()
+
+    /**
+     * Signed in to ChatGPT and agreed to organizing, as both change — the memo editors' line `Read along when the notes are
+     * organized.` (docs/08 "Memo"). Never fails, for the same reason as [observeNeedsConsent].
+     */
+    fun observeAgreed(): Flow<Boolean> = flow {
+        try {
+            consented()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            consented.compareAndSet(null, false)
+        }
+        emitAll(
+            combine(account.observe(), consented.filterNotNull()) { connection, agreed ->
+                (connection is ChatGptConnection.SignedIn || connection is ChatGptConnection.Expired) && agreed
             },
         )
     }.distinctUntilChanged()
@@ -395,15 +416,18 @@ class Notes internal constructor(
     private fun builtIns(sections: List<NoteSection>): List<NoteSection> =
         NoteSection.BUILT_IN.mapNotNull { kind -> sections.firstOrNull { it.kind == kind }?.copy(id = NoteSection.id(kind)) }
 
-    /** What a request adds from Settings: the sections and instructions here, About you from the ChatGPT settings. */
-    private suspend fun ask(): NotesAsk {
+    /**
+     * What a request about [recordingId] adds: the sections and instructions here, About you from the ChatGPT settings,
+     * and the recording's memo as it is now.
+     */
+    private suspend fun ask(recordingId: String): NotesAsk {
         val preferences = preferences()
-        return NotesAsk(preferences.sections, preferences.instructions, summaries.preferences().aboutMe)
+        return NotesAsk(preferences.sections, preferences.instructions, summaries.preferences().aboutMe, memo(recordingId))
     }
 
     /** [ask] for a part of a recording in progress: the sections it started with stay its sections while it records. */
-    private suspend fun ask(current: NotesFile?): NotesAsk =
-        ask().let { asked -> if (current?.sections?.isNotEmpty() == true) asked.copy(sections = current.sections.map { it.section() }) else asked }
+    private suspend fun ask(recordingId: String, current: NotesFile?): NotesAsk =
+        ask(recordingId).let { asked -> if (current?.sections?.isNotEmpty() == true) asked.copy(sections = current.sections.map { it.section() }) else asked }
 
     /**
      * The transcript's lines around [atSec] — from [BEFORE_SEC] before it to [AFTER_SEC] after, at most [MAX_LINES] —
@@ -551,7 +575,7 @@ class Notes internal constructor(
         val notes = readNotes(record)
         if (notes?.isFinal == true || notes?.parts?.contains(part.part) == true) return
         // Every group that comes while recording removed in Settings: nothing to ask, nothing to transcribe a part for.
-        if (!ask(notes).whileRecording) return
+        if (!ask(recordingId, notes).whileRecording) return
         // The settings the recording froze when it started, as its own job will run them.
         val step = settings.recordingSnapshot(recordingId)?.let(ProcessingPlan::compile)?.steps
             ?.firstOrNull { it is Step.Transcribe || it is Step.LocalTranscribe } ?: return
@@ -667,7 +691,7 @@ class Notes internal constructor(
         val previous = readProvisional(record.id, part.part - 1)
         val current = readNotes(record)
         val shown = current?.items.orEmpty()
-        val ask = ask(current)
+        val ask = ask(record.id, current)
         val placeholders = Placeholders()
         val input = placeholders.hide(
             NotesPrompts.provisionalInput(
@@ -839,9 +863,9 @@ class Notes internal constructor(
         save: suspend (JsonObject) -> Unit,
     ): StepOutcome {
         val segments = transcript.segments.filter { it.text.isNotBlank() }.sortedBy { it.start }
-        val ask = ask()
+        val ask = ask(recordingId)
         // A try after a wait goes on where the last one stopped — unless what is sent changed since: a speaker named
-        // meanwhile changes nothing sent, an edit of the words or of Settings does.
+        // meanwhile changes nothing sent, an edit of the words, of Settings or of the memo does.
         val version = (NoteLines.render(NoteLines.of(segments)) + "\u0003" + ask.version).encodeUtf8().sha256().hex()
         var state = OrganizeState.from(saved)?.takeIf { it.transcript == version } ?: OrganizeState(version)
         val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
@@ -881,7 +905,7 @@ class Notes internal constructor(
             1 -> summarized.single().summary
             else -> {
                 val placeholders = Placeholders()
-                val answer = summaries.complete(model, NotesPrompts.overview(language), placeholders.hide(NotesPrompts.overviewInput(summarized)))
+                val answer = summaries.complete(model, NotesPrompts.overview(language), placeholders.hide(NotesPrompts.overviewInput(summarized, ask.memo)))
                 NotesAnswer.overview(NotesAnswer.parse(answer), placeholders::restore)
             }
         }
@@ -961,7 +985,7 @@ class Notes internal constructor(
         val placeholders = Placeholders()
         val answer = summaries.complete(
             model, NotesPrompts.conversation(language, ask),
-            placeholders.hide(NotesPrompts.transcriptInput(NoteLines.render(NoteLines.of(segments)))),
+            placeholders.hide(NotesPrompts.transcriptInput(NoteLines.render(NoteLines.of(segments)), ask.memo)),
         )
         val json = NotesAnswer.parse(answer)
         val items = NotesAnswer.items(json, placeholders::restore, ask, points = true)

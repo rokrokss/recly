@@ -65,7 +65,7 @@ public struct LedgerStatus: Equatable, Sendable {
         "RECEIVING": "Receiving",
         "TRANSCRIBING": "Transcribing",
         "FILLING": "Filling in",
-        "ORGANIZING": "Organizing",
+        "ORGANIZING": "Summarizing",
         "IMPORTING": "Importing",
         "REC": "Recording",
         "NEEDS_AUTH": "Waiting for Drive",

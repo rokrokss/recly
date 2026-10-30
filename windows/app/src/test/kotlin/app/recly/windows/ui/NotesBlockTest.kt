@@ -115,7 +115,7 @@ class NotesBlockTest {
     @Test
     fun `the headings handed to the core are the language's words without the joiners drawing puts in`() {
         val korean = notesHeadings(StringTable.of(StringTable.KOREAN))
-        assertEquals("정리", korean.notes)
+        assertEquals("요약", korean.notes)
         assertEquals("핵심", korean.keyPoints)
         assertEquals("나", korean.me, "an unnamed `me` owns their to-dos under this word")
         assertFalse(korean.toString().contains(WORD_JOINER))

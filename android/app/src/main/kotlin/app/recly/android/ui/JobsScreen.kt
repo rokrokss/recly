@@ -747,7 +747,7 @@ private fun SearchResults(
                             Text(tinted(it.text, it.ranges, tint, palette.text), style = MaterialTheme.typography.bodySmall, color = palette.textMuted,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
-                        // The notes' first matching line, after what it is: "Notes · …".
+                        // The notes' first matching line, after what it is: "Summary · …".
                         hit.notes?.let {
                             val label = stringResource(R.string.notes_title) + " · "
                             Text(buildAnnotatedString {
@@ -755,6 +755,15 @@ private fun SearchResults(
                                 append(tinted(it.text, it.ranges, tint, palette.text))
                             }, style = MaterialTheme.typography.bodySmall, color = palette.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.testTag("hit-notes-${hit.recordingId}"))
+                        }
+                        // And the memo's: "Notes · …".
+                        hit.memo?.let {
+                            val label = stringResource(R.string.memo_title) + " · "
+                            Text(buildAnnotatedString {
+                                withStyle(SpanStyle(color = palette.textMuted)) { append(label) }
+                                append(tinted(it.text, it.ranges, tint, palette.text))
+                            }, style = MaterialTheme.typography.bodySmall, color = palette.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.testTag("hit-memo-${hit.recordingId}"))
                         }
                     }
                     snippet?.let {

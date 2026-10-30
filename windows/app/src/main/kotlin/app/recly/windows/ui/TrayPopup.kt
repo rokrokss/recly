@@ -159,6 +159,8 @@ private fun Header(model: ShellModel, strings: Strings) {
                 }
             }
         }
+        // docs/08 "Memo": the take being recorded has its row under Stop, empty or not — it is where the memo is written.
+        if (model.recording) model.liveRecordingId?.let { TrayMemo(model, it, strings) }
     }
 }
 

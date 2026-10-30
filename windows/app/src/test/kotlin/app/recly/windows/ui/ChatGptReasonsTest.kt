@@ -82,7 +82,7 @@ class ChatGptReasonsTest {
         assertEquals(Str.NOTES_ORGANIZE, organizeLabel(notes(organizing = true)))
         assertEquals(Str.NOTES_ORGANIZE_AGAIN, organizeLabel(notes(listOf(item))))
         assertEquals(Str.NOTES_ORGANIZE_AGAIN, organizeLabel(notes(overview = "We met.")))
-        assertEquals("Organize again", base[Str.NOTES_ORGANIZE_AGAIN])
+        assertEquals("Summarize again", base[Str.NOTES_ORGANIZE_AGAIN])
     }
 
     @Test
@@ -220,7 +220,7 @@ class ChatGptReasonsTest {
     }
 
     @Test
-    fun `a hit found in the notes alone opens on the notes, with Notes in front of its line`() {
+    fun `a hit found in the notes alone opens on the notes, with Summary in front of its line`() {
         val match = NotesMatch("Ship the release on Friday", listOf(SearchRange(9, 7)))
         fun hit(title: Boolean = false, snippets: Boolean = false, notes: NotesMatch? = match) = SearchHit(
             "r1", "Weekly", "2026-10-09T10:00:00Z", title, if (title) listOf(SearchRange(0, 6)) else emptyList(),
@@ -232,7 +232,7 @@ class ChatGptReasonsTest {
         assertFalse(opensOnNotes(hit(title = true, notes = null)))
 
         val line = notesSnippet(base[Str.NOTES_TAB], match)
-        assertEquals("Notes · Ship the release on Friday", line.text)
+        assertEquals("Summary · Ship the release on Friday", line.text)
         assertEquals("release", line.text.substring(line.ranges.single().offset, line.ranges.single().offset + line.ranges.single().length))
     }
 

@@ -363,7 +363,7 @@ private fun Sidebar(
             items(found, key = { "hit-${it.recordingId}" }) { hit ->
                 // The hit's time is drawn in the format the recording's own length picks, when the list knows it.
                 val length = model.recents.firstOrNull { it.id == hit.recordingId }?.durationSec
-                SearchResultRow(hit, strings[Str.UNTITLED], strings[Str.NOTES_TAB], length) { onOpenHit(hit) }
+                SearchResultRow(hit, strings[Str.UNTITLED], strings[Str.NOTES_TAB], strings[Str.MEMO_TITLE], length) { onOpenHit(hit) }
             }
             if (hits != null && found.isEmpty()) {
                 item { EmptyList(strings[Str.SEARCH_EMPTY], Modifier.fillParentMaxSize(), hint = strings[Str.SEARCH_EMPTY_HINT]) }
@@ -667,15 +667,29 @@ private fun Detail(
             }
         }
     }
-    // docs/09 "AI view": Transcript | Notes, once there are notes or Organize was chosen — never over the transcript's
-    // editor. Over the notes' they stay, and going to the transcript leaves it the way leaving any editor does.
-    val notesChips = !detail.loading && showsNotesChips(detail.notes, detail.showingNotes, editing = draft != null)
-    val notesShown = notesChips && detail.showingNotes
-    if (notesChips) {
+    // docs/09 "AI view": Transcript · Notes · Memo, once there are notes or Organize was chosen, or there is a memo or it
+    // was chosen — never over the transcript's editor. Over the notes' they stay, and going to the transcript or the memo
+    // leaves it the way leaving any editor does.
+    val chips = !detail.loading &&
+        showsDetailChips(detail.notes, detail.showingNotes, detail.memo, detail.showingMemo, editing = draft != null)
+    val notesShown = chips && detail.view == DetailView.NOTES
+    val memoShown = chips && detail.view == DetailView.MEMO
+    if (chips) {
         NotesChips(
-            detail.showingNotes,
-            { show -> if (!show && notesDraft != null) onLeaveEditor { model.showNotes(false) } else model.showNotes(show) },
-            strings,
+            detail.view,
+            notes = showsNotesChips(detail.notes, detail.showingNotes, editing = false),
+            memo = showsMemoChip(detail.memo, detail.showingMemo),
+            onView = { view ->
+                val go = {
+                    when (view) {
+                        DetailView.TRANSCRIPT -> model.showNotes(false)
+                        DetailView.NOTES -> model.showNotes(true)
+                        DetailView.MEMO -> model.showMemo()
+                    }
+                }
+                if (view != DetailView.NOTES && notesDraft != null) onLeaveEditor(go) else go()
+            },
+            strings = strings,
         )
     }
     // A take still being written to has nothing whole to play, and nothing to say about it either.
@@ -692,7 +706,7 @@ private fun Detail(
             onFindOpen(true)
         }
     }
-    val finding = findOpen && draft == null && notesDraft == null && document != null && !notesShown
+    val finding = findOpen && draft == null && notesDraft == null && document != null && !notesShown && !memoShown
     val matches = remember(document, findQuery, finding) { if (finding) findMatches(document!!.blocks, findQuery) else emptyList() }
     var currentMatch by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
     LaunchedEffect(matches) {
@@ -720,7 +734,7 @@ private fun Detail(
         HairLine()
     }
     // docs/10 "Re-transcription": the old text stays readable under a line that says the new one is coming.
-    if (detail.retranscribing && draft == null && detail.hasTranscript && !notesShown) {
+    if (detail.retranscribing && draft == null && detail.hasTranscript && !notesShown && !memoShown) {
         LoadingText(
             strings[if (detail.retranscribingLocal) Str.PROCESSING_LOCAL_RUNNING else Str.TRANSCRIPT_TRANSCRIBING_AGAIN],
             MaterialTheme.typography.bodySmall,
@@ -734,6 +748,7 @@ private fun Detail(
             notesDraft, notesEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
         )
         notesShown -> NotesPane(model, detail, canSeek, onSeek, strings, Modifier.fillMaxSize())
+        memoShown -> MemoPane(model, detail, strings, Modifier.fillMaxSize())
         draft != null -> TranscriptEditor(
             draft = draft,
             canSeek = canSeek,

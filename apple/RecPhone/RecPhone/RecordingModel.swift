@@ -225,6 +225,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private var ticker: Timer?
     /// The recording being made, for the notes the screen follows.
     @Published private(set) var recordingId: String?
+    /// docs/08 "Memo": the memo of the recording being made, for its row and its editor.
+    @Published private(set) var liveMemo = ""
+    /// docs/08 "Memo": signed in to ChatGPT and agreed to organizing — the memo's editor says the notes read it.
+    @Published private(set) var notesAgreed = false
+    /// The recording the memo's editor writes to: the one being made — and still the one just made, for the last
+    /// keystrokes the editor saves as Stop closes it.
+    private var memoRecordingId: String?
     /// When the recording on screen began — the Live Activity counts up from it.
     private var startedAt: Date?
     /// docs/13 "iPhone" Display: when the paired Apple Watch's recording began, while it records. Read
@@ -594,6 +601,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 // The state it published already says so; there is nothing to tell the user.
                 guard let recordingId = try await session.start() else { return }
                 self.recordingId = recordingId
+                memoRecordingId = recordingId
+                liveMemo = ""
                 startedAt = Date()
                 microphoneDenied = false
                 await updateActivity()
@@ -725,6 +734,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         let detail = detail(id: hit.recordingId, title: title)
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: query, atSec: first.atSec) }
         detail?.opensOnNotes = hit.onlyInNotes
+        detail?.opensOnMemo = hit.onlyInMemo
         return detail
     }
 
@@ -765,6 +775,35 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         for await notes in core.notes.observe(recordingId: id) {
             guard !Task.isCancelled, recordingId == id else { return }
             liveNotes = notes
+        }
+    }
+
+    /// docs/08 "Memo": the memo of the recording being made, for as long as the screen shows it.
+    func followLiveMemo() async {
+        guard let id = recordingId, let core = bridge?.core else { return }
+        for await memo in core.memos.observe(recordingId: id) {
+            guard !Task.isCancelled, recordingId == id else { return }
+            liveMemo = memo
+        }
+    }
+
+    func followNotesAgreed() async {
+        guard let core = bridge?.core else { return }
+        for await agreed in core.notes.observeAgreed() {
+            guard !Task.isCancelled else { return }
+            notesAgreed = agreed.boolValue
+        }
+    }
+
+    /// The memo editor's save: kept as typed, and back through [followLiveMemo].
+    func saveLiveMemo(_ text: String) {
+        guard let id = memoRecordingId, let core = bridge?.core else { return }
+        Task {
+            do {
+                _ = try await core.memos.set(recordingId: id, text: text)
+            } catch {
+                logger.error("shell.memo.save.failed error=\(String(describing: error), privacy: .private)")
+            }
         }
     }
 

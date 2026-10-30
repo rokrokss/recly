@@ -15,8 +15,8 @@ public enum ShareFormat: CaseIterable, Identifiable, Sendable {
     public var title: String {
         switch self {
         case .transcript: return RecKitStrings.localized("Transcript")
-        case .markdown: return RecKitStrings.localized("Transcript for notes")
-        case .notes: return RecKitStrings.localized("Notes")
+        case .markdown: return RecKitStrings.localized("Transcript for note apps")
+        case .notes: return RecKitStrings.localized("Summary")
         case .subtitles: return RecKitStrings.localized("Subtitles")
         case .webSubtitles: return RecKitStrings.localized("Subtitles for the web")
         case .audio: return RecKitStrings.localized("Audio")
@@ -77,7 +77,7 @@ struct ReasonedMenuItem: View {
 }
 
 /// docs/09 "Detail header and More menu" · "AI view": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again ─ Organize · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names — with the ones
+/// again · Notes (the memo) ─ Summarize again · Edit summary · Ask about this recording… · Fill in title · Fill in speaker names — with the ones
 /// that cannot run now shown off, and why. The two groups are parted by a hairline, and a group with nothing in it
 /// (no ChatGPT) takes its divider with it (2026-10-10, 2.2). On the Mac a third group is the recording's folder —
 /// Open in Drive, or Show in Finder — where the shell hands the page one, and the last is the red Delete
@@ -87,6 +87,7 @@ struct DetailMoreMenu: View {
     let rename: () -> Void
     let edit: () -> Void
     let transcribeAgain: () -> Void
+    let memo: () -> Void
     let organize: () -> Void
     let editNotes: () -> Void
     let askAbout: () -> Void
@@ -112,6 +113,10 @@ struct DetailMoreMenu: View {
         ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
         ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
         ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
+        // docs/08 "Memo": a memo can be written at any time, so the item is never off; once there is one, its chip opens it.
+        if !model.hasMemo {
+            Button(RecKitStrings.localized("Notes"), action: memo)
+        }
         // docs/08 "Organizing" · docs/09 "AI view": asked for here, one recording at a time; not offered where ChatGPT
         // is not.
         if model.chatGptOffered {
@@ -119,7 +124,7 @@ struct DetailMoreMenu: View {
             ReasonedMenuItem(title: model.organizeTitle, reason: model.organizeReason, action: organize)
             // The notes in the user's own words, while there are some. No ChatGPT is asked.
             if model.notesEditable {
-                ReasonedMenuItem(title: RecKitStrings.localized("Edit notes"), reason: model.editNotesReason, action: editNotes)
+                ReasonedMenuItem(title: RecKitStrings.localized("Edit summary"), reason: model.editNotesReason, action: editNotes)
             }
             // docs/08 "Ask": one question about the recording, in a panel of its own.
             ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
@@ -293,8 +298,8 @@ public struct FindBar: View {
 }
 
 /// docs/10 "Search" · docs/09 "Search": one recording a search found — when, the title with its matches in the
-/// accent, up to two lines of transcript with the matches marked, the notes' line under `Notes · `, and
-/// the moment of the first transcript match. The phone's list and the Mac's window list draw the same row.
+/// accent, up to two lines of transcript with the matches marked, the notes' line under `Summary · `, the memo's under
+/// `Notes · `, and the moment of the first transcript match. The phone's list and the Mac's window list draw the same row.
 public struct SearchResultRow: View {
     private let hit: SearchHit
     private let action: () -> Void
@@ -335,6 +340,14 @@ public struct SearchResultRow: View {
                             .foregroundStyle(blueprint.palette.textMuted)
                             .lineLimit(1)
                             .accessibilityIdentifier("search-result-notes")
+                    }
+                    if let memo = hit.memo {
+                        let (text, ranges) = Self.memoLine(memo)
+                        Text(Self.marked(text, ranges: ranges, tint: blueprint.palette.text, background: blueprint.palette.accent.opacity(0.16)))
+                            .font(blueprint.fonts.sans(TypeSize.small))
+                            .foregroundStyle(blueprint.palette.textMuted)
+                            .lineLimit(1)
+                            .accessibilityIdentifier("search-result-memo")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -380,11 +393,16 @@ public struct SearchResultRow: View {
 
     private static let lead = 24
 
-    /// The notes' line as the row shows it: `Notes · ` and the line cut like a snippet, its ranges moved past the
+    /// The notes' line as the row shows it: `Summary · ` and the line cut like a snippet, its ranges moved past the
     /// label.
-    static func notesLine(_ match: NotesMatch) -> (String, [SearchRange]) {
+    static func notesLine(_ match: NotesMatch) -> (String, [SearchRange]) { labelled(match, "Summary") }
+
+    /// The memo's line, the same way under `Notes · `.
+    static func memoLine(_ match: NotesMatch) -> (String, [SearchRange]) { labelled(match, "Notes") }
+
+    private static func labelled(_ match: NotesMatch, _ key: String) -> (String, [SearchRange]) {
         let (text, ranges) = around(SearchSnippet(atSec: 0, text: match.text, ranges: match.ranges))
-        let label = RecKitStrings.localized("Notes") + " · "
+        let label = RecKitStrings.localized(key) + " · "
         let shift = Int32(label.utf16.count)
         return (label + text, ranges.map { SearchRange(offset: $0.offset + shift, length: $0.length) })
     }
@@ -409,6 +427,9 @@ public struct SearchResultRow: View {
 extension SearchHit {
     /// docs/10 "Search": the hit is in the notes and nowhere else, so its recording opens on the notes.
     public var onlyInNotes: Bool { notes != nil && snippets.isEmpty && !matchesInTitle }
+
+    /// docs/10 "Search": the hit is in the memo and nowhere else, so its recording opens on the memo.
+    public var onlyInMemo: Bool { memo != nil && notes == nil && snippets.isEmpty && !matchesInTitle }
 }
 
 /// docs/08 "Exports" · docs/09 "Share / export" (phones): the Share sheet — one row per format, and Copy all.

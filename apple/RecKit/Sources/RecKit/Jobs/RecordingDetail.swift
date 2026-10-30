@@ -95,6 +95,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var notes: RecordingNotes?
     /// docs/10 "Search": the page opens on the notes — a search hit whose only match is in them.
     public var opensOnNotes = false
+    /// docs/08 "Memo": the recording's memo as the core has it; empty when it has none.
+    @Published public private(set) var memo = ""
+    /// docs/08 "Memo": signed in to ChatGPT and agreed to organizing — the memo field says the notes read it.
+    @Published public private(set) var notesAgreed = false
+    /// docs/10 "Search": the page opens on the memo — a search hit whose only match is in it.
+    public var opensOnMemo = false
 
     public enum Retranscribing: Sendable { case external, local }
 
@@ -497,7 +503,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     /// `Organize`, or `Organize again` once the recording has notes.
     public var organizeTitle: String {
-        RecKitStrings.localized(hasNotes ? "Organize again" : "Organize")
+        RecKitStrings.localized(hasNotes ? "Summarize again" : "Summarize")
     }
 
     /// Why `Organize` cannot run now, or nil when it can (docs/09 "AI view").
@@ -515,7 +521,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// written has no transcript either, so it says the more useful of the two first.
     static func organizeReason(writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, organizing: Bool) -> String? {
         if let reason = askReason(writing: writing, hasTranscript: hasTranscript, busy: busy, connection: connection) { return reason }
-        return organizing ? RecKitStrings.localized("Organizing…") : nil
+        return organizing ? RecKitStrings.localized("Summarizing…") : nil
     }
 
     /// `Edit notes` is in the More menu while the recording has notes.
@@ -527,7 +533,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     static func editNotesReason(writing: Bool, organizing: Bool) -> String? {
         if writing { return stillRecording }
-        return organizing ? RecKitStrings.localized("Organizing…") : nil
+        return organizing ? RecKitStrings.localized("Summarizing…") : nil
     }
 
     /// The Transcript | Notes chips stand once the recording has notes, or while it is organized here, or after an
@@ -607,7 +613,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var notesExportReason: String? { Self.notesExportReason(notes) }
 
     static func notesExportReason(_ notes: RecordingNotes?) -> String? {
-        NoteGroups.isEmpty(notes, showsOverview: true) ? RecKitStrings.localized("No notes yet") : nil
+        NoteGroups.isEmpty(notes, showsOverview: true) ? RecKitStrings.localized("No summary yet") : nil
     }
 
     // MARK: - Notes (docs/08 "Organizing")
@@ -637,6 +643,39 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
                 _ = try await core.notes.deleteItem(recordingId: recordingId, itemId: item.id)
             } catch {
                 logger.error("shell.notes.delete.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
+
+    // MARK: - Memo (docs/08 "Memo")
+
+    /// The memo says something: the memo's chip stands, and More's `Notes` is not offered.
+    public var hasMemo: Bool { !MemoText.isBlank(memo) }
+
+    public func followMemo() async {
+        for await next in core.memos.observe(recordingId: recordingId) {
+            guard !Task.isCancelled else { return }
+            memo = next
+        }
+    }
+
+    public func followNotesAgreed() async {
+        for await agreed in core.notes.observeAgreed() {
+            guard !Task.isCancelled else { return }
+            notesAgreed = agreed.boolValue
+        }
+    }
+
+    /// The memo field's save: kept as typed, and back through [followMemo]. It goes on when the page closes.
+    public func saveMemo(_ text: String) {
+        let core = core
+        let recordingId = recordingId
+        let logger = logger
+        Task {
+            do {
+                _ = try await core.memos.set(recordingId: recordingId, text: text)
+            } catch {
+                logger.error("shell.memo.save.failed error=\(String(describing: error), privacy: .private)")
             }
         }
     }
@@ -1118,8 +1157,8 @@ public struct RecordingDetailView: View {
     /// The speaker whose name the dialog is asking for, in reading mode.
     @State private var renamingSpeaker: String?
     @State private var speakerName = ""
-    /// docs/09 "AI view": which of the two the page shows. It opens on the transcript.
-    @State private var showingNotes = false
+    /// docs/09 "AI view": which of the three the page shows. It opens on the transcript.
+    @State private var pane: Pane = .transcript
     /// The permission dialog's "I turned off …" answer (iPhone).
     @State private var trainingOff = false
     /// docs/09 "Ask": the panel is up, and the question typed in it.
@@ -1127,6 +1166,8 @@ public struct RecordingDetailView: View {
     @State private var question = ""
     /// The notes editor's field that has the cursor (the iPhone puts the chips away while the keyboard is up).
     @FocusState private var notesFieldFocused: String?
+    /// The memo's field has the cursor — the same, for the memo.
+    @FocusState private var memoFieldFocused: Bool
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -1175,15 +1216,16 @@ public struct RecordingDetailView: View {
                                 rename: { renaming = true },
                                 edit: {
                                     if let transcript = model.transcript {
-                                        showingNotes = false
+                                        pane = .transcript
                                         draft = TranscriptDraft(transcript)
                                     }
                                 },
                                 transcribeAgain: { Task { retranscribeLine = await model.retranscribeLine() } },
+                                memo: showMemo,
                                 organize: organize,
                                 editNotes: {
                                     if model.hasNotes {
-                                        showingNotes = true
+                                        pane = .notes
                                         notesDraft = NotesDraft(model.notes)
                                     }
                                 },
@@ -1266,14 +1308,21 @@ public struct RecordingDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("filling")
             }
-            // docs/09 "AI view": Transcript | Notes, once there are notes or Organize was asked — never over the
-            // transcript's editor; over the notes', Transcript asks before it drops changes.
-            if !model.loading, draft == nil, model.hasNotesView || showingNotes, !chipsYieldToKeyboard {
+            // docs/09 "AI view": Transcript | Notes | Memo — Notes once there are notes or Organize was asked, Memo once
+            // the memo says something or while it is open — never over the transcript's editor; over the notes',
+            // Transcript and Memo ask before they drop changes.
+            if !model.loading, draft == nil, notesChip || memoChip, !chipsYieldToKeyboard {
                 HStack(spacing: Space.s) {
-                    BlueprintChip(loc("Transcript"), selected: !showingNotes, action: showTranscript)
+                    BlueprintChip(loc("Transcript"), selected: pane == .transcript, action: showTranscript)
                         .accessibilityIdentifier("detail-transcript-tab")
-                    BlueprintChip(loc("Notes"), selected: showingNotes) { showingNotes = true }
-                        .accessibilityIdentifier("detail-notes-tab")
+                    if notesChip {
+                        BlueprintChip(loc("Summary"), selected: pane == .notes) { pane = .notes }
+                            .accessibilityIdentifier("detail-notes-tab")
+                    }
+                    if memoChip {
+                        BlueprintChip(loc("Notes"), selected: pane == .memo, action: showMemo)
+                            .accessibilityIdentifier("detail-memo-tab")
+                    }
                 }
                 .padding(.horizontal, Space.m)
                 .padding(.top, Space.s)
@@ -1281,7 +1330,7 @@ public struct RecordingDetailView: View {
             }
             if model.loading {
                 notice(loc("Loading…"))
-            } else if draft == nil, showingNotes, let shown = notesDraft {
+            } else if draft == nil, pane == .notes, let shown = notesDraft {
                 NotesEditor(
                     // Not `Binding($notesDraft)`: a field with the cursor still reads its draft once Discard or Save has
                     // dropped it, and that binding's force-unwrap traps then. It reads the last draft instead, and writes
@@ -1293,8 +1342,10 @@ public struct RecordingDetailView: View {
                     save: saveNotes,
                     focused: $notesFieldFocused
                 )
-            } else if draft == nil, showingNotes {
+            } else if draft == nil, pane == .notes {
                 NotesPane(model: model, retry: organize, seekableSec: model.totalSec, onSeek: canSeek ? { seek(toSec: $0) } : nil)
+            } else if draft == nil, pane == .memo {
+                memoPane
             } else if let draft {
                 TranscriptEditor(
                     draft: draft,
@@ -1443,8 +1494,8 @@ public struct RecordingDetailView: View {
             renaming = false
             draft = nil
             notesDraft = nil
-            // docs/10 "Search": a hit found only in the notes opens on them.
-            showingNotes = model.opensOnNotes
+            // docs/10 "Search": a hit found only in the notes opens on them, one found only in the memo on it.
+            pane = model.opensOnNotes ? .notes : model.opensOnMemo ? .memo : .transcript
             asking = false
             question = ""
             await model.load()
@@ -1458,6 +1509,8 @@ public struct RecordingDetailView: View {
         .task(id: ObjectIdentifier(model)) { await model.followAsk() }
         .task(id: ObjectIdentifier(model)) { await model.followFills() }
         .task(id: ObjectIdentifier(model)) { await model.followNotes() }
+        .task(id: ObjectIdentifier(model)) { await model.followMemo() }
+        .task(id: ObjectIdentifier(model)) { await model.followNotesAgreed() }
         .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
         // docs/09 "Editing and speakers": what a shell about to put another recording here has to ask about first.
         .onChange(of: unsavedEdits, initial: true) { _, edits in model.unsavedEdits = edits }
@@ -1852,7 +1905,7 @@ public struct RecordingDetailView: View {
     /// docs/09 "AI view": the More menu's Organize and the failure notice's Retry — no question first; the page turns to
     /// the notes while the core writes them.
     private func organize() {
-        showingNotes = true
+        pane = .notes
         Task { await model.organize() }
     }
 
@@ -1902,13 +1955,13 @@ public struct RecordingDetailView: View {
         Task {
             await model.answerSummaryConsent(allow: allow)
             // Declined with nothing to show: the page goes back to what it was showing.
-            if !allow, !model.hasNotesView { showingNotes = false }
+            if !allow, !model.hasNotesView, pane == .notes { pane = .transcript }
         }
     }
 
     private var headerTitle: String {
         if draft != nil { return loc("Edit transcript") }
-        if notesDraft != nil { return loc("Edit notes") }
+        if notesDraft != nil { return loc("Edit summary") }
         return model.title
     }
 
@@ -1934,20 +1987,51 @@ public struct RecordingDetailView: View {
 
     /// The transcript is on screen to be read: what ⌘F finds in.
     private var findable: Bool {
-        !model.loading && !editing && !showingNotes && model.transcript != nil && model.availability != .empty
+        !model.loading && !editing && pane == .transcript && model.transcript != nil && model.availability != .empty
     }
 
-    /// The iPhone's keyboard is up over the notes editor: the chips give it the room, as Android's do.
+    /// The iPhone's keyboard is up over the notes editor or the memo: the chips give it the room, as Android's do.
     private var chipsYieldToKeyboard: Bool {
         #if os(iOS)
-        notesDraft != nil && notesFieldFocused != nil
+        (notesDraft != nil && notesFieldFocused != nil) || (pane == .memo && memoFieldFocused)
         #else
         false
         #endif
     }
 
-    /// Which editor `Discard your changes?` is about — and, from the Transcript chip, where the page goes.
-    private enum Discarding { case transcript, notes, notesForTranscript }
+    /// Which editor `Discard your changes?` is about — and, from the Transcript or Memo chip, where the page goes.
+    private enum Discarding { case transcript, notes, notesForTranscript, notesForMemo }
+
+    /// docs/09 "AI view": the page's three views.
+    private enum Pane { case transcript, notes, memo }
+
+    /// The Notes chip: once there are notes, or Organize was asked, or while they are open.
+    private var notesChip: Bool { model.hasNotesView || pane == .notes }
+
+    /// The memo's chip: once the memo says something, or while it is open — More's `Notes` opens an empty one.
+    private var memoChip: Bool { model.hasMemo || pane == .memo }
+
+    /// docs/09 "AI view": the memo, always open to type in — it saves as it goes, so it has no Save or Cancel.
+    private var memoPane: some View {
+        GeometryReader { viewport in
+            ScrollView {
+                VStack(spacing: 0) {
+                    MemoField(memo: model.memo, agreed: model.notesAgreed, lines: 8...30, focused: $memoFieldFocused, save: model.saveMemo)
+                        .padding([.horizontal, .top], Space.m)
+                    // The page under the field: a tap there puts the keyboard away, and the chips come back — inside
+                    // the phone's sheet a drag down closes the page instead.
+                    Color.clear
+                        .frame(maxWidth: .infinity, minHeight: Space.m, maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                        .onTapGesture { memoFieldFocused = false }
+                }
+                .frame(minHeight: viewport.size.height)
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .id(model.recordingId)
+        .accessibilityIdentifier("detail-memo")
+    }
 
     /// Cancel or Done: straight back to reading when nothing changed, else the question first.
     private func leaveEditor() {
@@ -1964,7 +2048,17 @@ public struct RecordingDetailView: View {
             discarding = .notesForTranscript
         } else {
             notesDraft = nil
-            showingNotes = false
+            pane = .transcript
+        }
+    }
+
+    /// The memo's chip and More's `Notes`: from the notes' editor, the same question.
+    private func showMemo() {
+        if notesDraft?.changed == true {
+            discarding = .notesForMemo
+        } else {
+            notesDraft = nil
+            pane = .memo
         }
     }
 
@@ -1974,7 +2068,10 @@ public struct RecordingDetailView: View {
         case .notes: notesDraft = nil
         case .notesForTranscript:
             notesDraft = nil
-            showingNotes = false
+            pane = .transcript
+        case .notesForMemo:
+            notesDraft = nil
+            pane = .memo
         case nil: break
         }
         discarding = nil
@@ -2085,7 +2182,7 @@ public struct DiscardEditsDialog: View {
         } content: {
             BlueprintDialogText(loc(edits == .transcript
                 ? "Your edits to this transcript will be lost."
-                : "Your edits to these notes will be lost."))
+                : "Your edits to this summary will be lost."))
         }
     }
 

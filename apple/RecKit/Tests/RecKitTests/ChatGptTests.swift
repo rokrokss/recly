@@ -431,14 +431,14 @@ final class NotesMenuTests: XCTestCase {
         XCTAssertEqual(signIn, RecKitStrings.localized("Sign in to ChatGPT in Settings"))
         XCTAssertEqual(reason(connection: ChatGptConnection.SignedOut.shared, organizing: true), signIn)
         XCTAssertEqual(reason(connection: ChatGptConnection.Expired(account: "a@example.com")), signIn)
-        XCTAssertEqual(reason(organizing: true), RecKitStrings.localized("Organizing…"))
+        XCTAssertEqual(reason(organizing: true), RecKitStrings.localized("Summarizing…"))
     }
 
     /// docs/09 "AI view" — "Editing": Edit notes is off while the recording records, and while a pass writes the notes
     /// over the ones it would edit.
     func testEditNotesWaitsForTheRecordingAndForAPass() {
         XCTAssertNil(RecordingDetailModel.editNotesReason(writing: false, organizing: false))
-        XCTAssertEqual(RecordingDetailModel.editNotesReason(writing: false, organizing: true), RecKitStrings.localized("Organizing…"))
+        XCTAssertEqual(RecordingDetailModel.editNotesReason(writing: false, organizing: true), RecKitStrings.localized("Summarizing…"))
         XCTAssertEqual(RecordingDetailModel.editNotesReason(writing: true, organizing: true), RecKitStrings.localized("Still recording"))
     }
 
@@ -616,13 +616,13 @@ final class NotesMenuTests: XCTestCase {
         XCTAssertEqual(ShareFormat.allCases, [.transcript, .markdown, .notes, .subtitles, .webSubtitles, .audio])
         XCTAssertEqual(ShareFormat.notes.export, .notes)
         XCTAssertEqual(ShareFormat.markdown.export, .md)
-        XCTAssertEqual(ShareFormat.notes.title, RecKitStrings.localized("Notes"))
-        XCTAssertEqual(ShareFormat.markdown.title, RecKitStrings.localized("Transcript for notes"))
+        XCTAssertEqual(ShareFormat.notes.title, RecKitStrings.localized("Summary"))
+        XCTAssertEqual(ShareFormat.markdown.title, RecKitStrings.localized("Transcript for note apps"))
         XCTAssertEqual(ShareFormat.notes.detail, RecKitStrings.localized("Text · .txt"))
         XCTAssertFalse(ShareFormat.notes.needsTranscript)
         XCTAssertTrue(ShareFormat.markdown.needsTranscript)
-        XCTAssertEqual(RecordingDetailModel.notesExportReason(nil), RecKitStrings.localized("No notes yet"))
-        XCTAssertEqual(RecordingDetailModel.notesExportReason(NoteGroupsTests.notes(overview: " ")), RecKitStrings.localized("No notes yet"))
+        XCTAssertEqual(RecordingDetailModel.notesExportReason(nil), RecKitStrings.localized("No summary yet"))
+        XCTAssertEqual(RecordingDetailModel.notesExportReason(NoteGroupsTests.notes(overview: " ")), RecKitStrings.localized("No summary yet"))
         XCTAssertNil(RecordingDetailModel.notesExportReason(NoteGroupsTests.notes(overview: "The launch moved.")))
         XCTAssertNil(RecordingDetailModel.notesExportReason(NoteGroupsTests.notes(points: [NoteGroupsTests.item("p1", .point)])))
     }
@@ -632,7 +632,7 @@ final class NotesMenuTests: XCTestCase {
     func testANotesHitIsLabelledAndOpensOnTheNotes() {
         let match = NotesMatch(text: "- Budget review moved", ranges: [SearchRange(offset: 2, length: 6)])
         let (line, ranges) = SearchResultRow.notesLine(match)
-        let label = RecKitStrings.localized("Notes") + " · "
+        let label = RecKitStrings.localized("Summary") + " · "
         XCTAssertEqual(line, label + "- Budget review moved")
         let range = try! XCTUnwrap(ranges.first)
         let utf16 = Array(line.utf16)
@@ -640,12 +640,34 @@ final class NotesMenuTests: XCTestCase {
 
         func hit(title: Bool, snippets: [SearchSnippet], notes: NotesMatch?) -> SearchHit {
             SearchHit(recordingId: "r1", title: "Weekly", startedAt: "2026-10-10T00:00:00Z", matchesInTitle: title,
-                      titleRanges: [], snippets: snippets, notes: notes)
+                      titleRanges: [], snippets: snippets, notes: notes, memo: nil)
         }
         XCTAssertTrue(hit(title: false, snippets: [], notes: match).onlyInNotes)
         XCTAssertFalse(hit(title: true, snippets: [], notes: match).onlyInNotes)
         XCTAssertFalse(hit(title: false, snippets: [SearchSnippet(atSec: 1, text: "budget", ranges: [])], notes: match).onlyInNotes)
         XCTAssertFalse(hit(title: true, snippets: [], notes: nil).onlyInNotes)
+    }
+
+    /// docs/10 "Search" · docs/08 "Memo": the memo's line carries its own label, built as the notes' is; a hit found only
+    /// in the memo opens the recording on it.
+    func testAMemoHitIsLabelledAndOpensOnTheMemo() {
+        let match = NotesMatch(text: "Agenda: budget", ranges: [SearchRange(offset: 8, length: 6)])
+        let (line, ranges) = SearchResultRow.memoLine(match)
+        XCTAssertEqual(line, RecKitStrings.localized("Notes") + " · " + "Agenda: budget")
+        let range = try! XCTUnwrap(ranges.first)
+        let utf16 = Array(line.utf16)
+        XCTAssertEqual(String(utf16CodeUnits: Array(utf16[Int(range.offset)..<Int(range.offset + range.length)]), count: Int(range.length)), "budget")
+
+        func hit(title: Bool = false, snippets: [SearchSnippet] = [], notes: NotesMatch? = nil, memo: NotesMatch?) -> SearchHit {
+            SearchHit(recordingId: "r1", title: "Weekly", startedAt: "2026-10-10T00:00:00Z", matchesInTitle: title,
+                      titleRanges: [], snippets: snippets, notes: notes, memo: memo)
+        }
+        XCTAssertTrue(hit(memo: match).onlyInMemo)
+        XCTAssertFalse(hit(memo: match).onlyInNotes)
+        XCTAssertFalse(hit(title: true, memo: match).onlyInMemo)
+        XCTAssertFalse(hit(notes: match, memo: match).onlyInMemo, "found in the notes too: the notes' rule decides")
+        XCTAssertFalse(hit(snippets: [SearchSnippet(atSec: 1, text: "budget", ranges: [])], memo: match).onlyInMemo)
+        XCTAssertFalse(hit(memo: nil).onlyInMemo)
     }
 
     /// docs/09 "Ask": Translate names the app's language as the App language list does.

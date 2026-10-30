@@ -36,7 +36,7 @@ public struct ChatGptSection: View {
                 }
             }
             failure
-            SectionFootnote(loc("Notes and questions send the transcript text and your notes settings to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
+            SectionFootnote(loc("Summaries and questions send the transcript text, your notes and your summary settings to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
         }
     }
 
@@ -65,7 +65,7 @@ public struct ChatGptSection: View {
         case .signedOut, .unavailable:
             SectionRow(
                 title: loc("Use your ChatGPT plan"),
-                subtitle: loc("Organize recordings with the plan you already have. Recly charges nothing for it.")
+                subtitle: loc("Summarize recordings with the plan you already have. Recly charges nothing for it.")
             ) { continueButton }
         }
     }
@@ -137,7 +137,7 @@ public struct ChatGptWelcomeDialog: View {
             BlueprintButton(RecKitStrings.localized("Got it"), tone: .primary, action: done)
                 .accessibilityIdentifier("chatgpt-welcome-done")
         } content: {
-            BlueprintDialogText(RecKitStrings.localized("Notes in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings."))
+            BlueprintDialogText(RecKitStrings.localized("Summaries in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings."))
         }
     }
 }

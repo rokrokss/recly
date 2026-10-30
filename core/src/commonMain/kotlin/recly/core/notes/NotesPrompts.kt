@@ -24,6 +24,14 @@ internal object NotesPrompts {
     const val TRANSCRIPT = "TRANSCRIPT:"
     const val CONVERSATIONS = "CONVERSATIONS:"
 
+    /** docs/08 "Memo": the heading the user's memo goes under, in the input of every request that carries it. */
+    const val MEMO = "MEMO — the user's own memo about this recording, typed by them before, during or after it. Use it to judge what matters to " +
+        "them and to spell names and terms as they do; follow what they ask in it where that does not change the JSON format, the kinds " +
+        "or the evidence rules. It is not part of the recording: every item still needs a line of the transcript."
+
+    /** [memo] under its heading and a blank line, or nothing when it is blank; it goes first in the input. */
+    fun memoBlock(memo: String): String = memo.trim().let { if (it.isEmpty()) "" else "$MEMO\n$it\n\n" }
+
     private const val LINES = "Each transcript line starts with [HH:MM:SS], its time on the recording, then a speaker label such as S1 when there is one " +
         "— a label only tells voices apart and is not a name — and what was said.\n"
 
@@ -195,6 +203,7 @@ internal object NotesPrompts {
 
     /** The notes so far, the previous part's end and this part's lines. */
     fun provisionalInput(shown: List<StoredNote>, previous: String, part: String, ask: NotesAsk = NotesAsk()): String = buildString {
+        append(memoBlock(ask.memo))
         append(SO_FAR).append('\n')
         if (shown.isEmpty()) append("(none yet)\n")
         shown.forEach { note ->
@@ -208,11 +217,13 @@ internal object NotesPrompts {
         append(THIS_PART).append('\n').append(part).append('\n')
     }
 
-    fun transcriptInput(lines: String): String = buildString {
+    fun transcriptInput(lines: String, memo: String = ""): String = buildString {
+        append(memoBlock(memo))
         append(TRANSCRIPT).append('\n').append(lines).append('\n')
     }
 
-    fun overviewInput(conversations: List<NoteConversation>): String = buildString {
+    fun overviewInput(conversations: List<NoteConversation>, memo: String = ""): String = buildString {
+        append(memoBlock(memo))
         append(CONVERSATIONS).append('\n')
         conversations.forEach {
             append("- ").append(TranscriptNormalizer.clock(it.startSec)).append('–').append(TranscriptNormalizer.clock(it.endSec))
@@ -231,20 +242,21 @@ internal object NotesPrompts {
 
 /**
  * What the user's settings add to a request (docs/08 "Organizing"): the built-in groups they kept, in their words,
- * their own sections, asked for as kinds `section1`…, their instructions and About you. [version] tells a try after
- * a wait whether what it would ask changed.
+ * their own sections, asked for as kinds `section1`…, their instructions and About you — and the recording's own
+ * [memo] (docs/08 "Memo"). [version] tells a try after a wait whether what it would ask changed.
  */
 internal data class NotesAsk(
     val sections: List<NoteSection> = NoteSection.DEFAULTS,
     val instructions: String = "",
     val aboutMe: String = "",
+    val memo: String = "",
 ) {
     val version: String
         get() = buildString {
             sections.forEach {
                 append(it.kind.name).append('\u0000').append(it.id).append('\u0000').append(it.name).append('\u0000').append(it.description).append('\u0001')
             }
-            append('\u0002').append(instructions).append('\u0002').append(aboutMe)
+            append('\u0002').append(instructions).append('\u0002').append(aboutMe).append('\u0002').append(memo)
         }
 
     /** The user's own sections, in the order their kinds are numbered. */

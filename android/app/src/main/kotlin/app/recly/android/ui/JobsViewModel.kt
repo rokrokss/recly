@@ -194,6 +194,8 @@ data class JobsUiState(
     val fills: List<FillRun> = emptyList(),
     /** docs/08 "Organizing": the recordings being organized now — their rows say `Organizing` where they would say `Done`. */
     val organizing: List<String> = emptyList(),
+    /** docs/08 "Memo": `notes.observeAgreed()` — the memo view's line about the notes reading it. */
+    val notesAgreed: Boolean = false,
 )
 
 /** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
@@ -267,6 +269,10 @@ data class DetailState(
     val openNotes: Boolean = false,
     /** docs/08 "Organizing": the recording's notes as they change; null until first read. */
     val notes: RecordingNotes? = null,
+    /** docs/09 "Search": opened from a hit found only in the memo, so the page starts on it. */
+    val openMemo: Boolean = false,
+    /** docs/08 "Memo": the recording's memo as it changes, empty when there is none; null until first read. */
+    val memo: String? = null,
     /**
      * The recording's list row, as the list draws it and following its job — what the notice of a page with no
      * transcript says about it and offers, and More → Open in Drive and Delete go by. Null once it is gone.
@@ -356,6 +362,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
         viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
         viewModelScope.launch { core().notes.observeOrganizing().collect { ids -> _state.update { it.copy(organizing = ids) } } }
+        viewModelScope.launch { core().notes.observeAgreed().collect { agreed -> _state.update { it.copy(notesAgreed = agreed) } } }
         viewModelScope.launch {
             val core = core()
             var before = emptyList<FillRun>()
@@ -473,7 +480,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         detailJob?.cancel()
         resultJob?.cancel()
         detailJob = viewModelScope.launch {
-            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find, opensOnNotes(hit))
+            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find, opensOnNotes(hit), opensOnMemo(hit))
         }
     }
 
@@ -591,6 +598,15 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun noteLines(recordingId: String, atSec: Double): List<NoteLine> {
         val core = core()
         return runCatching { withContext(core.deps.io) { core.notes.linesAround(recordingId, atSec) } }.getOrDefault(emptyList())
+    }
+
+    /** docs/08 "Memo": the memo view's save, in this ViewModel's scope so leaving the page does not cancel it. */
+    fun saveMemo(recordingId: String, text: String) {
+        viewModelScope.launch {
+            val core = core()
+            runCatching { core.memos.set(recordingId, text) }
+                .onFailure { core.deps.logger.log(Logger.Level.ERROR, "shell.memo.save.failed", mapOf("recordingId" to recordingId), it) }
+        }
     }
 
     /**
@@ -760,7 +776,13 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         detailJob = viewModelScope.launch { openDetail(item.recordingId, item.title) }
     }
 
-    private suspend fun openDetail(recordingId: String, title: String?, find: FindRequest? = null, openNotes: Boolean = false) {
+    private suspend fun openDetail(
+        recordingId: String,
+        title: String?,
+        find: FindRequest? = null,
+        openNotes: Boolean = false,
+        openMemo: Boolean = false,
+    ) {
         val core = core()
         val jobs = core.jobs.list()
         val busy = transcribing(core, jobs, recordingId)
@@ -773,6 +795,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     deviceRecording = capturing(RecorderService.state.value),
                     find = find,
                     openNotes = openNotes,
+                    openMemo = openMemo,
                     row = row,
                 )),
             )
@@ -791,6 +814,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             }
             launch {
                 core.notes.observe(recordingId).collect { notes -> updateDetail(recordingId) { it.copy(notes = notes) } }
+            }
+            launch {
+                core.memos.observe(recordingId).collect { memo -> updateDetail(recordingId) { it.copy(memo = memo) } }
             }
             core.observeResults(recordingId).collect { next ->
                 updateDetail(recordingId) { it.copy(transcript = next.transcript, availability = next.availability) }

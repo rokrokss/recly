@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rec.app/spec/memo.schema.json",
+  "title": "rec memo",
+  "description": "{base}.memo.v1.json beside the recording's parts: the user's own memo about one recording, typed while it records or any time after. Every change also goes to the recording's Drive or iCloud folder as {base}.memo.json, the same JSON, with the folder's memoAt; a local folder keeps it on the device. An emptied memo stays as an empty text, so the change reaches the other devices. See docs/recly.md §8 \"Memo\" and §3 \"Drive layout\".",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "recordingId",
+    "text",
+    "updatedAt"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "recordingId": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "text": {
+      "description": "As the user typed it, line breaks kept, at most 2000 characters. Empty when the user emptied it.",
+      "type": "string",
+      "maxLength": 2000
+    },
+    "updatedAt": {
+      "description": "When the user last changed it; the newer copy wins, and the folder's memoAt is this value.",
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

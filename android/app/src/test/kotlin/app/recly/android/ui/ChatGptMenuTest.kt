@@ -171,6 +171,29 @@ class ChatGptMenuTest {
     }
 
     @Test
+    fun `a hit opens on the memo only when the memo is all it found`() {
+        val match = NotesMatch("Pricing with Minsu", listOf(SearchRange(13, 5)))
+        val snippet = SearchSnippet(12.0, "minsu said", listOf(SearchRange(0, 5)))
+        fun hit(inTitle: Boolean, snippets: List<SearchSnippet>, notes: NotesMatch?, memo: NotesMatch?) =
+            SearchHit("r1", "Weekly", "2026-10-09T10:00:00Z", inTitle, emptyList(), snippets, notes, memo)
+        assertTrue(opensOnMemo(hit(false, emptyList(), null, match)))
+        assertFalse(opensOnMemo(hit(false, emptyList(), match, match)), "the notes first")
+        assertFalse(opensOnMemo(hit(false, listOf(snippet), null, match)))
+        assertFalse(opensOnMemo(hit(true, emptyList(), null, match)))
+        assertFalse(opensOnNotes(hit(false, emptyList(), null, match)))
+    }
+
+    @Test
+    fun `the memo row shows the first line that says anything, and the field takes 2000 characters`() {
+        assertEquals("Agenda", memoPreview("\n   \n  Agenda  \nWith Minsu"))
+        assertNull(memoPreview(" \n "))
+        assertNull(memoPreview(""))
+        assertEquals(2000, memoInput("x".repeat(2100)).length)
+        assertEquals("x".repeat(1999), memoInput("x".repeat(1999) + "😀"), "an emoji is not cut in half")
+        assertEquals("as typed  \n", memoInput("as typed  \n"))
+    }
+
+    @Test
     fun `the person who made the recording is Me until they are named`() {
         val transcript = Transcript(
             recordingId = "r1", track = Track.MIC, language = "en", provider = TranscriptProvider("assemblyai"),

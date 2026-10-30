@@ -98,7 +98,7 @@ public struct TransferDisclosureList: View {
                     // What: the notes and Ask send the transcript's text, never the audio (docs/15 §10); a fill of the title and
                     // names sends the text alone, without what Settings → Notes holds (docs/08).
                     Text(verbatim: summary
-                        ? loc("The transcript text of each recording you organize, ask about or fill in a title and names for is sent here. Notes and questions also send what you wrote in Settings → Notes. The audio is not sent.")
+                        ? loc("The transcript text of each recording you summarize, ask about or fill in a title and names for is sent here, with your notes for it. Summaries and questions also send what you wrote in Settings → Summary. The audio is not sent.")
                         : loc("The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
                         .fixedSize(horizontal: false, vertical: true)

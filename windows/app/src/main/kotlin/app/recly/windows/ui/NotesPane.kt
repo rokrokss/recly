@@ -66,15 +66,19 @@ import recly.core.notes.NoteItem
 import recly.core.notes.NotesHeadings
 import recly.core.notes.RecordingNotes
 
-/** docs/09 "AI view": Transcript | Notes, under the detail's header. One is always chosen. */
+/**
+ * docs/09 "AI view": Transcript · Notes · Memo, under the detail's header — Notes by [showsNotesChips]' rule and Memo by
+ * [showsMemoChip]'s. One is always chosen.
+ */
 @Composable
-internal fun NotesChips(showingNotes: Boolean, onShowNotes: (Boolean) -> Unit, strings: Strings) {
+internal fun NotesChips(view: DetailView, notes: Boolean, memo: Boolean, onView: (DetailView) -> Unit, strings: Strings) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        BlueprintChip(strings[Str.EXPORT_TRANSCRIPT], selected = !showingNotes, onClick = { onShowNotes(false) })
-        BlueprintChip(strings[Str.NOTES_TAB], selected = showingNotes, onClick = { onShowNotes(true) })
+        BlueprintChip(strings[Str.EXPORT_TRANSCRIPT], selected = view == DetailView.TRANSCRIPT, onClick = { onView(DetailView.TRANSCRIPT) })
+        if (notes) BlueprintChip(strings[Str.NOTES_TAB], selected = view == DetailView.NOTES, onClick = { onView(DetailView.NOTES) })
+        if (memo) BlueprintChip(strings[Str.MEMO_TITLE], selected = view == DetailView.MEMO, onClick = { onView(DetailView.MEMO) })
     }
     HairLine()
 }

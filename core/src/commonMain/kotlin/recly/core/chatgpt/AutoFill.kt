@@ -257,7 +257,7 @@ internal class AutoFill(
             ),
         )
         return try {
-            summaries.fill(transcript, needs.title, needs.speakers, trigger)
+            summaries.fill(recordingId, transcript, needs.title, needs.speakers, trigger)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

@@ -17,13 +17,16 @@ data class SearchRange(val offset: Int, val length: Int)
 /** One segment of a transcript that matches: where it starts in the recording, its words, and the matches in them. */
 data class SearchSnippet(val atSec: Double, val text: String, val ranges: List<SearchRange>)
 
-/** The line of a recording's notes that matches — the overview's, or an item's — cut like a [SearchSnippet], with the matches in it. */
+/**
+ * The line of a recording's notes that matches — the overview's, or an item's — or of its memo, cut like a
+ * [SearchSnippet], with the matches in it.
+ */
 data class NotesMatch(val text: String, val ranges: List<SearchRange>)
 
 /**
  * One recording a search found: by its title ([titleRanges] mark the matches there), its transcript
- * ([snippets], at most [RecordingSearch.SNIPPETS]), its notes ([notes], the first line that matches), or
- * any of them.
+ * ([snippets], at most [RecordingSearch.SNIPPETS]), its notes ([notes], the first line that matches), its memo
+ * ([memo], the same), or any of them.
  */
 data class SearchHit(
     val recordingId: String,
@@ -33,11 +36,13 @@ data class SearchHit(
     val titleRanges: List<SearchRange>,
     val snippets: List<SearchSnippet>,
     val notes: NotesMatch? = null,
+    val memo: NotesMatch? = null,
 )
 
 /**
  * docs/10 "Search": the titles of every row in the list, the transcripts held on this device —
- * this device's own, and other devices' once read (opened, or cached by a pull) — and their notes. Case is ignored, and
+ * this device's own, and other devices' once read (opened, or cached by a pull) — their notes and their memos (docs/08
+ * "Memo"). Case is ignored, and
  * so are the accents of Latin letters and the width of full-width Latin, so `resume` finds `Résumé` and
  * `ＡＢＣ` finds `abc`; the query is one phrase.
  *
@@ -55,6 +60,7 @@ class RecordingSearch internal constructor(
     private val mutex = Mutex()
     private val cache = mutableMapOf<String, Cached>()
     private val notes = mutableMapOf<String, Cached>()
+    private val memos = mutableMapOf<String, Cached>()
 
     suspend fun search(query: String, limit: Int): List<SearchHit> {
         val needle = fold(query.trim())
@@ -73,8 +79,10 @@ class RecordingSearch internal constructor(
                     .toList()
                 val noted = noteLines(row).firstOrNull { needle in it.folded }?.let { snippet(it, needle) }
                     ?.let { NotesMatch(it.text, it.ranges) }
-                if (titleRanges.isEmpty() && snippets.isEmpty() && noted == null) continue
-                hits += SearchHit(row.id, title, row.meta.startedAt, titleRanges.isNotEmpty(), titleRanges, snippets, noted)
+                val memo = memoLines(row).firstOrNull { needle in it.folded }?.let { snippet(it, needle) }
+                    ?.let { NotesMatch(it.text, it.ranges) }
+                if (titleRanges.isEmpty() && snippets.isEmpty() && noted == null && memo == null) continue
+                hits += SearchHit(row.id, title, row.meta.startedAt, titleRanges.isNotEmpty(), titleRanges, snippets, noted, memo)
             }
             hits
         }
@@ -125,20 +133,31 @@ class RecordingSearch internal constructor(
     }
 
     /** The notes' lines — the overview's, then each item's words as shown — as they are on disk now: from memory while the file is unchanged. */
-    private suspend fun noteLines(row: RecordingRecord): List<Segment> {
-        val name = recly.core.notes.NotesFile.name(MetaWriter.baseName(row.meta))
+    private suspend fun noteLines(row: RecordingRecord): List<Segment> =
+        fileLines(row, recly.core.notes.NotesFile.name(MetaWriter.baseName(row.meta)), notes) { json ->
+            val file = recly.core.notes.NotesFolder.decode(json)
+            file?.overview?.lines().orEmpty() + file?.items.orEmpty().map { it.shown }
+        }
+
+    /** The memo's lines, the same way. */
+    private suspend fun memoLines(row: RecordingRecord): List<Segment> =
+        fileLines(row, recly.core.notes.MemoFile.name(MetaWriter.baseName(row.meta)), memos) { json ->
+            recly.core.notes.MemoFolder.decode(json)?.text?.lines().orEmpty()
+        }
+
+    /** The non-blank [lines] of the file [name] beside the parts, kept in [cache] while the file is unchanged. */
+    private suspend fun fileLines(row: RecordingRecord, name: String, cache: MutableMap<String, Cached>, lines: (String) -> List<String>): List<Segment> {
         val stamp = withContext(deps.io) { deps.fileSystem.metadataOrNull(row.dir / name) }
             ?.let { it.size to it.lastModifiedAtMillis }
         if (stamp == null) {
-            mutex.withLock { notes.remove(row.id) }
+            mutex.withLock { cache.remove(row.id) }
             return emptyList()
         }
-        mutex.withLock { notes[row.id]?.takeIf { it.stamp == stamp }?.let { return it.segments } }
-        val file = recordings.readFile(row.id, name)?.let(recly.core.notes.NotesFolder::decode)
-        val lines = (file?.overview?.lines().orEmpty() + file?.items.orEmpty().map { it.shown })
+        mutex.withLock { cache[row.id]?.takeIf { it.stamp == stamp }?.let { return it.segments } }
+        val read = recordings.readFile(row.id, name)?.let(lines).orEmpty()
             .map(String::trim).filter(String::isNotEmpty).map { Segment(0.0, it, fold(it)) }
-        mutex.withLock { notes[row.id] = Cached(stamp, lines) }
-        return lines
+        mutex.withLock { cache[row.id] = Cached(stamp, read) }
+        return read
     }
 
     /** The segment's words, cut to [SNIPPET_CHARS] around the first match when longer, with every match in it marked. */

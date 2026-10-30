@@ -43,7 +43,7 @@ iPhone, Apple Watch or iCloud, and on-device transcription only on phones with 8
    Time zone, the demo recordings' (not the host's, which the emulator takes): `adb shell cmd alarm set-timezone Asia/Dubai`.
    Language: `adb shell cmd locale set-app-locales app.recly --locales ko-KR` (or `en-US`). Capture with
    `adb exec-out screencap -p` into `build/play-store-assets/captures/<lang>/`: `list` (List tab), `detail` (the first
-   row's Details, then the second timestamp tapped), `notes` (the same Details, its Notes chip), `record` (Record tab, idle).
+   row's Details, then the second timestamp tapped), `notes` (the same Details, its Summary chip), `record` (Record tab, idle).
 4. **Watch captures.** A fresh large round Wear OS AVD (`hw.lcd.circular=true`) with the APK from `make wear-apk` and the
    microphone permission granted. `wear-idle` and `wear-rec` (12 s into a recording) from the app; `wear-tile`
    after adding the tile with

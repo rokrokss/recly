@@ -52,7 +52,7 @@ import recly.core.notes.NoteSection
 import recly.core.notes.NotesPreferences
 
 /**
- * docs/09 "AI view" — "Settings → Notes": what every recording's notes are asked for, whichever AI provider makes them —
+ * docs/09 "AI view" — "Settings → Summary": what every recording's notes are asked for, whichever AI provider makes them —
  * Notes instructions, Sections — the built-in groups and up to three of the user's own — and About you. Right after
  * ChatGPT, signed in or not; not drawn where ChatGPT is not offered. The fields save when editing ends — focus leaves,
  * Done, the screen or the app goes — with no Save; Remove and Restore defaults save at once. The rows wait for what is

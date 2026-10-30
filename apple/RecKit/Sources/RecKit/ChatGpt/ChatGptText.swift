@@ -17,13 +17,13 @@ public enum ChatGptText {
     public static func cancelled(_ reason: String) -> Bool { message(reason) == .signInCancelled }
 
     /// The notice of a failed Organize or answer: the sentence of a code the user can act on, else nil (the screen
-    /// says "Could not organize").
+    /// says "Could not summarize").
     public static func sentence(_ reason: String) -> String? {
         guard let message = message(reason), ownSentence.contains(message) else { return nil }
         return CoreMessages.text(reason).sentence
     }
 
-    /// The second line under "Could not sign in to ChatGPT" / "Could not organize": what the core
+    /// The second line under "Could not sign in to ChatGPT" / "Could not summarize": what the core
     /// attached — the provider's code, the reason — or, for a code with a sentence of its own, that.
     public static func detail(_ reason: String) -> String? {
         guard let ref = CoreMessageRef.companion.parse(code: reason) else { return reason }

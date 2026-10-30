@@ -28,6 +28,57 @@ extension View {
     ) -> some View {
         modifier(BottomSheetCover(value: item, onDismiss: nil, sheet: content))
     }
+
+    /// The same panel drawn in the screen rather than presented over it, for a screen whose one presentation is another
+    /// question's — the recording screen's is the naming sheet, and a second would never open (docs/08 "Memo": the
+    /// memo's editor while recording).
+    public func blueprintBottomSheetOverlay<Sheet: View>(
+        isPresented: Bool,
+        onDismiss: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping () -> Sheet
+    ) -> some View {
+        modifier(BottomSheetOverlay(presented: isPresented, onDismiss: onDismiss, sheet: content))
+    }
+}
+
+private struct BottomSheetOverlay<Sheet: View>: ViewModifier {
+    let presented: Bool
+    let onDismiss: (() -> Void)?
+    let sheet: () -> Sheet
+    @Environment(\.blueprint) private var blueprint
+    @State private var last = LastValue<Void>()
+    /// Whether the panel is in the screen: from the ask until it has gone back down.
+    @State private var shown = false
+    @State private var risen = false
+
+    func body(content: Content) -> some View {
+        last.presented = presented
+        return content
+            .overlay {
+                if shown {
+                    BottomSheetPanel(risen: $risen, onDismiss: onDismiss) { sheet() }
+                        // The panel is the screen while it is up, as the presented one is.
+                        .accessibilityAddTraits(.isModal)
+                }
+            }
+            .onChange(of: presented, initial: true) { _, presented in
+                if presented {
+                    // A new panel rises once it has measured what it holds.
+                    shown = true
+                } else if shown {
+                    withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) {
+                        risen = false
+                    } completion: {
+                        // Asked again while it was on its way down: it goes back up instead.
+                        if last.presented {
+                            withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) { risen = true }
+                        } else {
+                            shown = false
+                        }
+                    }
+                }
+            }
+    }
 }
 
 /// What the cover holds on to between two drawings: the value it was last drawn for, so the panel still says it on its

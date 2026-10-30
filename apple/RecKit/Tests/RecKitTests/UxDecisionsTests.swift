@@ -26,7 +26,7 @@ final class UxDecisionsTests: XCTestCase {
         (LedgerStatus(code: "TRANSCRIBING", tone: .accent), "Transcribing", "전사 중"),
         (LedgerStatus(code: "IMPORTING", tone: .accent), "Importing", "가져오는 중"),
         (LedgerStatus.filling, "Filling in", "채우는 중"),
-        (LedgerStatus.organizing, "Organizing", "정리하는 중"),
+        (LedgerStatus.organizing, "Summarizing", "요약하는 중"),
         (LedgerStatus(code: "REC", tone: .danger), "Recording", "녹음 중"),
         (LedgerStatus(code: "NEEDS_AUTH", tone: .neutral), "Waiting for Drive", "Drive 연결 대기"),
         (LedgerStatus(code: "NEEDS_CONSENT", tone: .warning), "Needs permission", "허용 필요"),
@@ -110,7 +110,7 @@ final class UxDecisionsTests: XCTestCase {
             )
         }
         XCTAssertEqual(item("Done").badge, LedgerStatus.organizing)
-        XCTAssertEqual(item("Done").spokenState, "Organizing")
+        XCTAssertEqual(item("Done").spokenState, "Summarizing")
         XCTAssertEqual(item("Done", organizing: false).badge.code, "DONE")
         for state in ["Recording", "Receiving from the watch", "Uploading", "Waiting", "Retry pending", "Failed", "Transcribing on this device"] {
             XCTAssertEqual(item(state).badge, LedgerStatus.forRecent(state: state), state)

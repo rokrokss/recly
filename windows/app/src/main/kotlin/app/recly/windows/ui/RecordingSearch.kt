@@ -114,7 +114,7 @@ internal fun SearchField(
  * transcript hit at the end.
  */
 @Composable
-internal fun SearchResultRow(hit: SearchHit, untitled: String, notesLabel: String, totalSec: Double?, onOpen: () -> Unit) {
+internal fun SearchResultRow(hit: SearchHit, untitled: String, notesLabel: String, memoLabel: String, totalSec: Double?, onOpen: () -> Unit) {
     val palette = blueprint
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
         Row(
@@ -135,12 +135,12 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, notesLabel: Strin
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // The transcript's and the notes' words, in the direction they take (2026-10-10).
+                // The transcript's, the notes' and the memo's words, in the direction they take (2026-10-10).
                 val words = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content)
                 hit.snippets.take(SNIPPET_LINES).forEach { snippet ->
                     Text(tinted(snippet.text, snippet.ranges), style = words, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                hit.notes?.let { notesSnippet(notesLabel, it) }?.let { line ->
+                listOfNotNull(hit.notes?.let { notesSnippet(notesLabel, it) }, hit.memo?.let { notesSnippet(memoLabel, it) }).forEach { line ->
                     Text(tinted(line.text, line.ranges), style = words, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
@@ -204,7 +204,10 @@ private fun FindArrow(mark: String, label: String, enabled: Boolean, onClick: ()
 /** A hit found in the notes alone — not in the title, not in the transcript — opens on the notes (docs/10 "Search"). */
 internal fun opensOnNotes(hit: SearchHit): Boolean = hit.notes != null && hit.snippets.isEmpty() && !hit.matchesInTitle
 
-/** The notes' line as a snippet: `Notes · ` in front, and the matches moved along by it. */
+/** And one found in the memo alone — not in the title, the transcript or the notes — on the memo (docs/08 "Memo"). */
+internal fun opensOnMemo(hit: SearchHit): Boolean = hit.memo != null && hit.notes == null && hit.snippets.isEmpty() && !hit.matchesInTitle
+
+/** The notes' line as a snippet: `Summary · ` in front, and the matches moved along by it — and the memo's, `Notes · `. */
 internal fun notesSnippet(label: String, match: NotesMatch): NotesMatch {
     val prefix = label + NOTES_SEPARATOR
     return NotesMatch(prefix + match.text, match.ranges.map { it.copy(offset = it.offset + prefix.length) })

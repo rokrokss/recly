@@ -23,6 +23,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
 import recly.core.model.Language
+import recly.core.notes.Memos
+import recly.core.recording.NotesMatch
 import recly.core.recording.SearchHit
 import recly.core.recording.SearchRange
 import recly.core.recording.SearchSnippet
@@ -139,6 +141,70 @@ class ShellDetailTest {
             model.delete(model.deleteRequest!!, deleteDrive = false)
             assertNull(model.deleteRequest)
             until { model.detail == null }
+        } finally {
+            observer?.cancelAndJoin()
+            model.shutdown()
+            scope.coroutineContext[Job]?.cancelAndJoin()
+            directory.deleteRecursively()
+        }
+    }
+
+    /**
+     * docs/08 "Memo": the tray's row writes to the take being recorded, the detail follows the memo the core keeps, its
+     * Memo view takes the place of the notes' and gives it back, and a hit in the memo alone opens on it.
+     */
+    @Test
+    fun `a memo typed while recording is the detail's, and a hit in it alone opens on the Memo view`() = runBlocking {
+        val directory = Files.createTempDirectory("recly-detail-").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val model = ShellModel(scope = scope, localization = Localization(
+            FakeSettings(consentReminder = false, language = AppLanguage.ENGLISH),
+        ) { StringTable.BASE })
+        var observer: Job? = null
+        suspend fun until(ready: () -> Boolean) = withTimeout(60_000) {
+            while (!ready()) delay(20)
+        }
+        try {
+            model.load(directory.absolutePath.toPath(), FakeHelperCommand.command("parts=1", "sec=2.0", "write"))
+            assertNull(model.liveRecordingId)
+            model.start()
+            until { model.recording && model.recents.isNotEmpty() }
+            val id = model.recents.first().id
+            assertEquals(id, model.liveRecordingId)
+            model.saveMemo(id, "Agenda: launch\nMina")
+            model.stop()
+            until { !model.recording }
+            assertNull(model.liveRecordingId)
+
+            model.openDetail(model.recents.first())
+            until { model.detail?.loading == false }
+            observer = launch { model.followDetailResults(id) }
+            until { model.detail?.memo == "Agenda: launch\nMina" }
+            assertFalse(model.detail!!.showingMemo)
+
+            model.showMemo()
+            assertEquals(DetailView.MEMO, model.detail!!.view)
+            model.showNotes(true)
+            assertEquals(DetailView.NOTES, model.detail!!.view)
+            model.showMemo()
+            model.showNotes(false)
+            assertEquals(DetailView.TRANSCRIPT, model.detail!!.view)
+            // Emptied: the detail has none, and the core keeps the empty text.
+            model.saveMemo(id, "")
+            until { model.detail?.memo == "" }
+            observer?.cancelAndJoin()
+
+            val memo = NotesMatch("Agenda: launch", listOf(SearchRange(0, 6)))
+            model.openSearchHit(SearchHit(id, null, "2026-10-07T00:00:00Z", false, emptyList(), emptyList(), memo = memo), "agenda")
+            until { model.detail?.loading == false }
+            assertEquals(DetailView.MEMO, model.detail!!.view)
+            assertNull(model.detail!!.find)
+            model.openSearchHit(SearchHit(id, null, "2026-10-07T00:00:00Z", false, emptyList(), emptyList(), notes = memo, memo = memo), "agenda")
+            until { model.detail?.loading == false }
+            assertEquals(DetailView.NOTES, model.detail!!.view, "found in the notes as well: the notes")
+            // The core's wait before the memo goes up to its folder reads the database: it runs out before this shell
+            // shuts down and its folder is deleted.
+            delay(Memos.PUBLISH_DELAY_SEC * 1000L + 1_000)
         } finally {
             observer?.cancelAndJoin()
             model.shutdown()

@@ -18,6 +18,7 @@ const pairs = [
   ["recording-settings.schema.json", "examples/recording-settings.json"],
   ["recording-settings.schema.json", "examples/recording-settings-external.json"],
   ["notes.schema.json", "examples/notes.json"],
+  ["memo.schema.json", "examples/memo.json"],
 ];
 let failed = 0;
 for (const [s, d] of pairs) {

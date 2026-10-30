@@ -79,6 +79,21 @@ class RecordingSearchTest {
     }
 
     @Test
+    fun `a line of the memo is found too, and the memo as it changes`() = runBlocking {
+        val meta = f.recordAndRun(title = "Weekly")
+        f.core.memos.set(meta.recordingId, "Agenda\n  Pricing with Minsu  \n")
+
+        val hit = f.core.search("minsu", 10).single()
+        assertEquals(NotesMatch("Pricing with Minsu", listOf(SearchRange(13, 5))), hit.memo)
+        assertEquals(null, hit.notes)
+        assertEquals(emptyList(), hit.snippets)
+        assertEquals(null, f.core.search("hello 1", 10).single().memo, "a transcript hit says nothing of the memo")
+
+        f.core.memos.set(meta.recordingId, "Agenda")
+        assertEquals(emptyList(), f.core.search("minsu", 10), "the memo as it is now")
+    }
+
+    @Test
     fun `a find bar finds in a text what the search found, at the text's own places`() {
         fun found(text: String, query: String) = RecordingSearch.findRanges(text, query).map { text.substring(it.offset, it.offset + it.length) }
 

@@ -99,7 +99,14 @@ data class RecordingUiState(
     val notesConsentNeeded: Boolean = true,
     /** docs/08 "Organizing": the notes of the recording running now, as they arrive; null while nothing records. */
     val notes: RecordingNotes? = null,
+    /** docs/08 "Memo": the memo of the recording running now; null while nothing records. */
+    val memo: RunningMemo? = null,
+    /** docs/08 "Memo": `notes.observeAgreed()` — the memo editor's line about the notes reading it. */
+    val notesAgreed: Boolean = false,
 )
+
+/** docs/08 "Memo": the running recording's memo, and which recording it is — a save goes to that one, whatever runs next. */
+data class RunningMemo(val recordingId: String, val text: String)
 
 /**
  * The recording screen's half of `MainActivity`. It owns the title prompt;
@@ -148,6 +155,17 @@ class RecordingViewModel @JvmOverloads constructor(
         }
         viewModelScope.launch {
             core().notes.observeNeedsConsent().collect { needed -> _state.update { it.copy(notesConsentNeeded = needed) } }
+        }
+        viewModelScope.launch {
+            val core = core()
+            // docs/08 "Memo": the running recording's memo, as it is typed here or arrives from another device.
+            recorder.map { (it as? RecorderState.Recording)?.recordingId }
+                .distinctUntilChanged()
+                .flatMapLatest { id -> if (id == null) flowOf(null) else core.memos.observe(id).map { RunningMemo(id, it) } }
+                .collect { memo -> _state.update { it.copy(memo = memo) } }
+        }
+        viewModelScope.launch {
+            core().notes.observeAgreed().collect { agreed -> _state.update { it.copy(notesAgreed = agreed) } }
         }
         viewModelScope.launch {
             val core = core()
@@ -230,6 +248,15 @@ class RecordingViewModel @JvmOverloads constructor(
     fun deleteNote(itemId: String) {
         val recordingId = _state.value.notes?.recordingId ?: return
         viewModelScope.launch { runCatching { core().notes.deleteItem(recordingId, itemId) } }
+    }
+
+    /** docs/08 "Memo": the memo editor's save, in this ViewModel's scope so the editor closing does not cancel it. */
+    fun saveMemo(recordingId: String, text: String) {
+        viewModelScope.launch {
+            val core = core()
+            runCatching { core.memos.set(recordingId, text) }
+                .onFailure { core.deps.logger.log(Logger.Level.ERROR, "shell.memo.save.failed", mapOf("recordingId" to recordingId), it) }
+        }
     }
 
     /** docs/08 "Organizing": the parts' lines around a note, for its row's expansion. */

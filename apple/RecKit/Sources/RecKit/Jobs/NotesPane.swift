@@ -21,10 +21,10 @@ struct NotesPane: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.m) {
                 if model.organizing {
-                    LoadingText(text: loc("Organizing…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+                    LoadingText(text: loc("Summarizing…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
                         .accessibilityIdentifier("notes-organizing")
                 } else if let failure = model.notes?.failure {
-                    ChatGptFailureNotice(reason: failure, failed: loc("Could not organize"), retrying: model.organizing, retry: retry)
+                    ChatGptFailureNotice(reason: failure, failed: loc("Could not summarize"), retrying: model.organizing, retry: retry)
                         .accessibilityIdentifier("notes-failed")
                 }
                 if model.hasNotes {
@@ -432,7 +432,7 @@ struct NotesEditor: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.s) {
                     if draft.originalOverview != nil {
-                        field($draft.overview, label: loc("Notes"), key: Self.overviewField)
+                        field($draft.overview, label: loc("Summary"), key: Self.overviewField)
                             .accessibilityIdentifier("notes-edit-overview")
                     }
                     ForEach(draft.groups) { group in
@@ -457,8 +457,8 @@ struct NotesEditor: View {
                     VStack(alignment: .leading, spacing: Space.xs) {
                         Text(verbatim: loc("An item you empty is deleted when you save."))
                         Text(verbatim: loc(staysHere
-                            ? "Saving keeps the notes on this device."
-                            : "Saving updates the notes in your storage, and your other devices show them."))
+                            ? "Saving keeps the summary on this device."
+                            : "Saving updates the summary in your storage, and your other devices show it."))
                     }
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)

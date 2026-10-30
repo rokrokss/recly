@@ -451,6 +451,7 @@ private fun RecordTab(
         onNotesConsentAnswered = model::notesConsentAnswered,
         onDeleteNote = model::deleteNote,
         noteLines = model::noteLines,
+        onSaveMemo = model::saveMemo,
         modifier = modifier,
         prompt = {
             state.modelPrompt?.let { info ->
@@ -519,6 +520,8 @@ private fun JobsTab(
                 download = state.download,
                 onDownloadModel = model::downloadModel,
                 onDelete = model::confirmDelete,
+                onSaveMemo = { model.saveMemo(detail.recordingId, it) },
+                notesAgreed = state.notesAgreed,
             ),
         )
     } else {

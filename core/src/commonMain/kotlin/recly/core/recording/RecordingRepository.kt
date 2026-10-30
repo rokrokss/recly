@@ -520,8 +520,36 @@ class RecordingRepository(
 
     internal suspend fun <T> notesWrite(block: suspend () -> T): T = notesWrites.withLock { block() }
 
+    /** docs/08 "Memo": the memos written here that the recording's folder has not received. */
+    suspend fun pendingMemos(): Map<String, String> = locked {
+        queries.kvSelectPrefix(MEMO_PREFIX).executeAsList()
+            .associate { it.key.removePrefix(MEMO_PREFIX) to it.value_ }
+    }
+
+    internal suspend fun memoPending(recordingId: String): String = locked {
+        pendingStamp().also { queries.kvSet(MEMO_PREFIX + recordingId, it) }
+    }
+
+    suspend fun memoPushed(recordingId: String, stamp: String): Unit = locked {
+        queries.kvDeleteIfValue(MEMO_PREFIX + recordingId, stamp)
+    }
+
+    /** The folder's `memoAt` this device took in, per recording. */
+    internal suspend fun memosSeen(): Map<String, String> = locked {
+        queries.kvSelectPrefix(MEMO_SEEN_PREFIX).executeAsList().associate { it.key.removePrefix(MEMO_SEEN_PREFIX) to it.value_ }
+    }
+
+    internal suspend fun setMemoSeen(recordingId: String, version: String): Unit = locked {
+        queries.kvSet(MEMO_SEEN_PREFIX + recordingId, version)
+    }
+
+    /** One writer of a recording's memo at a time — the user's change or a copy read from its folder (docs/08 "Memo"). */
+    private val memoWrites = Mutex()
+
+    internal suspend fun <T> memoWrite(block: suspend () -> T): T = memoWrites.withLock { block() }
+
     private fun forgetPending(recordingId: String) {
-        for (prefix in listOf(TITLE_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, NOTES_PREFIX, NOTES_SEEN_PREFIX)) {
+        for (prefix in listOf(TITLE_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, NOTES_PREFIX, NOTES_SEEN_PREFIX, MEMO_PREFIX, MEMO_SEEN_PREFIX)) {
             queries.kvDelete(prefix + recordingId)
         }
     }
@@ -941,7 +969,7 @@ class RecordingRepository(
 
     /**
      * A file of the core's own beside the parts — the notes and the transcripts made while recording (docs/08
-     * "Organizing") — as text, or null when it, or the recording, is not there. Read under the lock [delete] takes.
+     * "Organizing"), the memo (docs/08 "Memo") — as text, or null when it, or the recording, is not there. Read under the lock [delete] takes.
      */
     internal suspend fun readFile(recordingId: String, name: String): String? = locked {
         val record = record(recordingId) ?: return@locked null
@@ -1032,5 +1060,11 @@ class RecordingRepository(
 
         /** `kv` rows: `notes/seen/{recordingId}` → the folder's `notesAt` this device took in. */
         private const val NOTES_SEEN_PREFIX: String = "notes/seen/"
+
+        /** `kv` rows: `memo/pending/{recordingId}` → a stamp; a memo the folder has not received. */
+        private const val MEMO_PREFIX: String = "memo/pending/"
+
+        /** `kv` rows: `memo/seen/{recordingId}` → the folder's `memoAt` this device took in. */
+        private const val MEMO_SEEN_PREFIX: String = "memo/seen/"
     }
 }

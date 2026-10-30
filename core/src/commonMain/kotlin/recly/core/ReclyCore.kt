@@ -260,6 +260,29 @@ class ReclyCore(
      */
     val summaries: recly.core.chatgpt.Summaries = recly.core.chatgpt.Summaries(
         db, deps, chatGpt, recordings, { results(it).transcript }, transferConsents,
+        memo = { recordingId -> memos.forAi(recordingId) },
+    )
+
+    /**
+     * docs/08 "Memo": the user's own memo about a recording — typed while it records or any time after, carried to its
+     * Drive or iCloud folder, and read wherever its transcript goes to ChatGPT.
+     */
+    val memos: recly.core.notes.Memos = recly.core.notes.Memos(
+        deps, recordings,
+        published = {
+            pushes.launch {
+                // Seconds after the typing, the core may be gone (a shell quitting, a test's database closed): the memo
+                // stays pending, and the next pass takes it up.
+                try {
+                    remote.pushMemos()
+                } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    deps.logger.log(Logger.Level.WARN, "remote.memo.push.failed", error = e)
+                }
+            }
+        },
+        fetch = { recordingId -> inFolder(recordingId, recly.core.notes.MemoFolder::name) },
     )
 
     /**
@@ -275,8 +298,9 @@ class ReclyCore(
             recordings.notesPending(recordingId)
             pushes.launch { remote.pushNotes() }
         },
-        fetch = { recordingId -> notesInFolder(recordingId) },
+        fetch = { recordingId -> inFolder(recordingId, recly.core.notes.NotesFolder::name) },
         nameSpeakers = { recordingId -> autoFill.withOrganize(recordingId) },
+        memo = { recordingId -> memos.forAi(recordingId) },
     )
 
     init {
@@ -305,11 +329,14 @@ class ReclyCore(
         if (resumed > 0) deps.logger.log(Logger.Level.INFO, "organize.resumed", mapOf("jobs" to resumed))
     }
 
-    /** docs/08 "Organizing": the copy in the recording's Drive or iCloud folder, for a recording opened before a pull. */
-    private suspend fun notesInFolder(recordingId: String): String? {
+    /**
+     * docs/08 "Organizing", docs/08 "Memo": the copy of the notes or the memo — the file [name] gives for the recording's
+     * base — in the recording's Drive or iCloud folder, for a recording opened before a pull.
+     */
+    private suspend fun inFolder(recordingId: String, name: (String) -> String): String? {
         val record = recordings.get(recordingId) ?: return null
         val folderId = record.driveFolderId?.takeIf { StorageKind.ofId(it) != StorageKind.FOLDER } ?: return null
-        val file = storage.findChild(folderId, recly.core.notes.NotesFolder.name(recly.core.recording.MetaWriter.baseName(record.meta))) ?: return null
+        val file = storage.findChild(folderId, name(recly.core.recording.MetaWriter.baseName(record.meta))) ?: return null
         return storage.download(file.id).decodeToString()
     }
 
@@ -324,6 +351,7 @@ class ReclyCore(
         icloudChosen = { processingSettings.storage() == StorageKind.ICLOUD },
         transcriptsChanged = { resultChanges.value++ },
         notesChanged = { notes.changed() },
+        memosChanged = { memos.changed() },
     )
 
     /**
@@ -492,6 +520,7 @@ class ReclyCore(
     /** Tests: wait for the background pushes [editTranscript] started, and the fills [fill] started. */
     internal suspend fun awaitPushes() {
         autoFill.awaitRuns()
+        memos.awaitPublishes()
         pushes.coroutineContext[kotlinx.coroutines.Job]?.children?.toList()?.forEach { it.join() }
     }
 

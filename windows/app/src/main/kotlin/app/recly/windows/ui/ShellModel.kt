@@ -99,6 +99,8 @@ import recly.core.transcribe.TranscriptEdit
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import recly.core.recording.RecordingRecord
 import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptAvailability
@@ -224,6 +226,10 @@ data class RecordingDetail(
      * found it in.
      */
     val showingNotes: Boolean = false,
+    /** The Memo chip is the chosen one (docs/08 "Memo"): More → Memo, or a search that found it in the memo alone. */
+    val showingMemo: Boolean = false,
+    /** docs/08 "Memo": the user's memo of it as the core has it, empty when there is none; null until read. */
+    val memo: String? = null,
     /** docs/08 "Ask": the question asked about it in this run of the app, and where it has got to. */
     val ask: AskState = AskState.None,
     /** docs/08 "Organizing": its notes as the core has them — whether they are being made, and the last failure; null until read. */
@@ -309,6 +315,9 @@ class ShellModel(
     val statusDetail: String? get() = statusLine.detail
     var recording: Boolean by mutableStateOf(false)
         private set
+    /** The take being recorded now, while [recording]: the tray's `Memo` row writes to it (docs/08 "Memo"). */
+    var liveRecordingId: String? by mutableStateOf(null)
+        private set
 
     /**
      * docs/09 screen principle 1: the two codes between `IDLE` and `REC` — a capture whose helper is coming
@@ -367,6 +376,10 @@ class ShellModel(
 
     /** docs/08 "Organizing": the recordings being organized now — their rows say `Organizing` where they would say `Done`. */
     var organizing: List<String> by mutableStateOf(emptyList())
+        private set
+
+    /** docs/08 "Memo": signed in to ChatGPT and agreed to organizing — the line under a memo says the notes read it. */
+    var notesAgreed: Boolean by mutableStateOf(false)
         private set
 
     /** Whether a [loadMoreRecents] is already reading, so scrolling does not ask twice for a page. */
@@ -854,6 +867,7 @@ class ShellModel(
             },
             onState = { isRecording ->
                 recording = isRecording
+                liveRecordingId = if (isRecording) recorder?.recordingId else null
                 // The popup's timer counts from here rather than from when the popup was opened — and,
                 // while a stop saves, holds where it ended until the recorder is idle again.
                 when {
@@ -951,6 +965,7 @@ class ShellModel(
         scope.launch { graph.core.recordings.observe().conflate().collect { refreshRecents() } }
         scope.launch { followFills(graph) }
         scope.launch { graph.core.notes.observeOrganizing().collect { organizing = it } }
+        scope.launch { graph.core.notes.observeAgreed().collect { notesAgreed = it } }
 
         // Started last: the offer's whole point is the recording behind it, and an offer made
         // before the shell is ready is one that cannot be taken.
@@ -1437,6 +1452,9 @@ class ShellModel(
                 }
             }
         }
+        launch {
+            graph.core.memos.observe(recordingId).collect { memo -> updateDetail(recordingId) { it.copy(memo = memo) } }
+        }
         graph.core.recordings.observeAudio(recordingId).collectLatest { record ->
             val local = record?.let { rec ->
                 RecordingPlaylist.select(rec.meta.parts, rec.dir) { graph.core.deps.fileSystem.exists(it) }
@@ -1537,12 +1555,13 @@ class ShellModel(
     /**
      * A search result: the detail opens on its transcript hit with every match of [query] tinted — or, for a
      * hit in the title alone, as it opens from the list, with nothing to find; or, found in its notes alone, on
-     * the notes ([opensOnNotes]).
+     * the notes ([opensOnNotes]); or, found in its memo alone, on the memo ([opensOnMemo]).
      */
     fun openSearchHit(hit: SearchHit, query: String) {
         val title = hit.title?.takeIf { it.isNotBlank() }?.let(UiMessage::Text) ?: Str.UNTITLED.message()
         val first = hit.snippets.firstOrNull()
-        openDetail(hit.recordingId, title, find = query.takeIf { first != null }, findAtSec = first?.atSec, showingNotes = opensOnNotes(hit))
+        openDetail(hit.recordingId, title, find = query.takeIf { first != null }, findAtSec = first?.atSec,
+            showingNotes = opensOnNotes(hit), showingMemo = opensOnMemo(hit))
     }
 
     /** More → Transcribe again: the confirmation, worded from the settings as they are now. */
@@ -1725,10 +1744,31 @@ class ShellModel(
             .getOrNull()
     }
 
-    /** The Transcript | Notes chips. */
+    /** The Transcript | Notes chips — either one takes the view from the memo. */
     fun showNotes(show: Boolean) {
         val recordingId = detail?.recordingId ?: return
-        updateDetail(recordingId) { it.copy(showingNotes = show) }
+        updateDetail(recordingId) { it.copy(showingNotes = show, showingMemo = false) }
+    }
+
+    /** The Memo chip, and More → Memo (docs/08 "Memo"). */
+    fun showMemo() {
+        val recordingId = detail?.recordingId ?: return
+        updateDetail(recordingId) { it.copy(showingMemo = true, showingNotes = false) }
+    }
+
+    /** docs/08 "Memo": a recording's memo as it changes, empty when it has none — the tray's row while recording. */
+    fun observeMemo(recordingId: String): Flow<String> = graph?.core?.memos?.observe(recordingId) ?: emptyFlow()
+
+    /**
+     * docs/08 "Memo": keeps [text] as the recording's memo. On the shell's scope, so the field that typed it — a tray
+     * popup closing on focus loss, a detail going to another recording — leaving the screen does not cancel the save.
+     */
+    fun saveMemo(recordingId: String, text: String) {
+        val graph = graph ?: return
+        scope.launch {
+            runCatching { graph.core.memos.set(recordingId, text) }
+                .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.memo.save.failed", error = it) }
+        }
     }
 
     /** docs/08 "Organizing": the transcript's lines around a note, for its row to open on; none when they cannot be read. */
@@ -1780,9 +1820,10 @@ class ShellModel(
         find: String? = null,
         findAtSec: Double? = null,
         showingNotes: Boolean = false,
+        showingMemo: Boolean = false,
     ) {
         val graph = graph ?: return
-        detail = RecordingDetail(recordingId, title, find = find, findAtSec = findAtSec, showingNotes = showingNotes)
+        detail = RecordingDetail(recordingId, title, find = find, findAtSec = findAtSec, showingNotes = showingNotes, showingMemo = showingMemo)
         scope.launch {
             val result = runCatching { graph.core.results(recordingId) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.detail.failed", error = it) }
@@ -1801,6 +1842,7 @@ class ShellModel(
                 find = find,
                 findAtSec = findAtSec,
                 showingNotes = showingNotes,
+                showingMemo = showingMemo,
             )
         }
     }

@@ -181,6 +181,9 @@ class DetailActions(
     val onDownloadModel: (language: String?, onWifi: Boolean) -> Unit = { _, _ -> },
     /** docs/03 "Deleting in the app": More → Delete, the question about the recording's row. */
     val onDelete: (JobItem) -> Unit = {},
+    /** docs/08 "Memo": the memo view's save, and whether its line about the notes reading it is said. */
+    val onSaveMemo: (String) -> Unit = {},
+    val notesAgreed: Boolean = false,
 )
 
 /**
@@ -345,7 +348,9 @@ fun RecordingDetailScreen(
     }
     // docs/09 "AI view": which of the two the page shows — the transcript whenever it opens, unless a search found the
     // notes alone.
-    var view by remember(detail.recordingId) { mutableStateOf(if (detail.openNotes) DetailView.NOTES else DetailView.TRANSCRIPT) }
+    var view by remember(detail.recordingId) {
+        mutableStateOf(if (detail.openNotes) DetailView.NOTES else if (detail.openMemo) DetailView.MEMO else DetailView.TRANSCRIPT)
+    }
     var askedNotes by remember(detail.recordingId) { mutableStateOf(false) }
     // Organize asked from this page and not back yet: its `Organizing…` from the tap, before the core says so.
     var organizingHere by remember(detail.recordingId) { mutableStateOf(false) }
@@ -405,7 +410,11 @@ fun RecordingDetailScreen(
     }
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val organizing = organizingHere || detail.notes?.organizing == true
-    val chips = showsNotesChips(hasNotes(detail.notes), askedNotes, editing = draft != null, typing = keyboardVisible && notesDraft != null)
+    // docs/08 "Memo": a memo is a view of its own, as the notes are — once it says something, or while it is open.
+    val memoChip = !detail.memo.isNullOrBlank() || view == DetailView.MEMO
+    val notesChip = hasNotes(detail.notes) || askedNotes
+    val chips = showsNotesChips(notesChip || memoChip, asked = false, editing = draft != null,
+        typing = keyboardVisible && (notesDraft != null || view == DetailView.MEMO))
     val notesText by produceState<String?>(null, detail.notes) { value = actions.notesText() }
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
@@ -459,6 +468,7 @@ fun RecordingDetailScreen(
                                     detail.notes?.takeIf(::hasNotes)?.let { notesDraft = NotesDraft.of(it); view = DetailView.NOTES }
                                 },
                                 onAsk = { asking = true },
+                                onMemo = { view = DetailView.MEMO },
                                 onFill = { half ->
                                     scope.launch {
                                         when (val notice = fillNotice(actions.onFill(half), half, detail.busyReason)) {
@@ -507,8 +517,15 @@ fun RecordingDetailScreen(
                 BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT,
                     { if (notesDraft != null) leaveNotesEditor(DetailView.TRANSCRIPT) else view = DetailView.TRANSCRIPT },
                     modifier = Modifier.testTag("view-transcript"))
-                BlueprintChip(stringResource(R.string.notes_title), view == DetailView.NOTES, { view = DetailView.NOTES },
-                    modifier = Modifier.testTag("view-notes"))
+                if (notesChip) {
+                    BlueprintChip(stringResource(R.string.notes_title), view == DetailView.NOTES, { view = DetailView.NOTES },
+                        modifier = Modifier.testTag("view-notes"))
+                }
+                if (memoChip) {
+                    BlueprintChip(stringResource(R.string.memo_title), view == DetailView.MEMO,
+                        { if (notesDraft != null) leaveNotesEditor(DetailView.MEMO) else view = DetailView.MEMO },
+                        modifier = Modifier.testTag("view-memo"))
+                }
             }
             HairLine()
         }
@@ -522,6 +539,8 @@ fun RecordingDetailScreen(
                     scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
                 notesEditing != null -> NotesEditor(notesEditing, { notesDraft = it }, Modifier.fillMaxSize())
+                view == DetailView.MEMO -> MemoPane(detail.recordingId, detail.memo.orEmpty(), actions.notesAgreed, actions.onSaveMemo,
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()))
                 chips && view == DetailView.NOTES -> NotesPane(detail.notes, organizing, notesText, onRetry = organize, scaleSec = scale,
                     onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canSeek = canSeekTo, onSeek = seek,
                     modifier = Modifier.fillMaxSize())
