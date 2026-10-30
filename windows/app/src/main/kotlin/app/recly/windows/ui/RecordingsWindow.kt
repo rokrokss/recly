@@ -544,6 +544,8 @@ private fun Detail(
     var saving by remember(detail.recordingId) { mutableStateOf(mapOf<Int, InlineSave>()) }
     var editSave by remember { mutableStateOf<InlineSave?>(null) }
     var editRefused by remember(draft) { mutableStateOf(false) }
+    // More's `Memo` opens the memo to be written in, its field focused; its chip only shows it.
+    var memoFocus by remember(detail.recordingId) { mutableStateOf(false) }
     /**
      * A reading-mode change, saved at once with `Saving…` beside the group it was made on.
      * One at a time: while one saves, the speaker badges do not open ([TranscriptReader]'s `saving`).
@@ -633,6 +635,10 @@ private fun Detail(
                                     onNotesDraft(NotesDraft(detail.recordingId, it))
                                 }
                             },
+                            {
+                                memoFocus = true
+                                model.showMemo()
+                            },
                             strings,
                         )
                     }
@@ -675,7 +681,10 @@ private fun Detail(
                     when (view) {
                         DetailView.TRANSCRIPT -> model.showNotes(false)
                         DetailView.NOTES -> model.showNotes(true)
-                        DetailView.MEMO -> model.showMemo()
+                        DetailView.MEMO -> {
+                            memoFocus = false
+                            model.showMemo()
+                        }
                     }
                 }
                 if (view != DetailView.NOTES && notesDraft != null) onLeaveEditor(go) else go()
@@ -739,7 +748,7 @@ private fun Detail(
             notesDraft, notesEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
         )
         notesShown -> NotesPane(model, detail, canSeek, onSeek, strings, Modifier.fillMaxSize())
-        memoShown -> MemoPane(model, detail, strings, Modifier.fillMaxSize())
+        memoShown -> MemoPane(model, detail, memoFocus, strings, Modifier.fillMaxSize())
         draft != null -> TranscriptEditor(
             draft = draft,
             canSeek = canSeek,

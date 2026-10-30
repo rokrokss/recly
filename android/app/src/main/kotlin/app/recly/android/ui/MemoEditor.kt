@@ -22,6 +22,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -52,7 +54,8 @@ internal fun memoPreview(memo: String): String? = memo.lineSequence().map(String
 /**
  * docs/08 "Memo": the memo's one field, saved as the user types — [MEMO_SAVE_DELAY_MS] after the last keystroke, and
  * when it leaves the screen — so nothing that closes it loses a word. [memo] is the core's value: it replaces the
- * field's only while the field holds nothing unsaved, since the field's own saves come back through it too.
+ * field's only while the field holds nothing unsaved, since the field's own saves come back through it too. [focus]: the
+ * field was opened to be written in, so it takes the cursor and the keyboard comes up.
  */
 @Composable
 internal fun MemoField(
@@ -63,6 +66,7 @@ internal fun MemoField(
     modifier: Modifier = Modifier,
     fieldModifier: Modifier = Modifier,
     minLines: Int = 6,
+    focus: Boolean = false,
 ) {
     var text by remember(recordingId) { mutableStateOf(memo) }
     var saved by remember(recordingId) { mutableStateOf(memo) }
@@ -82,12 +86,14 @@ internal fun MemoField(
     val latest by rememberUpdatedState(text)
     val latestSaved by rememberUpdatedState(saved)
     DisposableEffect(recordingId) { onDispose { if (latest != latestSaved) save(latest) } }
+    val requester = remember { FocusRequester() }
+    LaunchedEffect(recordingId, focus) { if (focus) requester.requestFocus() }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.s)) {
         BlueprintField(
             value = text,
             onValueChange = { text = memoInput(it) },
             placeholder = stringResource(R.string.memo_placeholder),
-            fieldModifier = fieldModifier.testTag("memo-field"),
+            fieldModifier = fieldModifier.focusRequester(requester).testTag("memo-field"),
             minLines = minLines,
             maxLines = Int.MAX_VALUE,
         )
@@ -139,17 +145,18 @@ internal fun MemoDialog(recordingId: String, memo: String, agreed: Boolean, onSa
             BlueprintButton(stringResource(R.string.job_state_done), onClose, tone = ButtonTone.PRIMARY, modifier = Modifier.testTag("memo-done"))
         },
     ) {
-        MemoField(recordingId, memo, agreed, onSave, Modifier.fillMaxWidth(), minLines = 5)
+        MemoField(recordingId, memo, agreed, onSave, Modifier.fillMaxWidth(), minLines = 5, focus = true)
     }
 }
 
-/** docs/09 "AI view": the detail's `Memo` view — the field always open, filling the page. */
+/** docs/09 "AI view": the detail's `Memo` view — the field always open, filling the page; [focus] from More's `Memo`. */
 @Composable
-internal fun MemoPane(recordingId: String, memo: String, agreed: Boolean, onSave: (String) -> Unit, modifier: Modifier = Modifier) {
+internal fun MemoPane(recordingId: String, memo: String, agreed: Boolean, onSave: (String) -> Unit, focus: Boolean, modifier: Modifier = Modifier) {
     MemoField(
         recordingId, memo, agreed, onSave,
         modifier.padding(horizontal = Space.m, vertical = Space.sm).testTag("memo-pane"),
         fieldModifier = Modifier.defaultMinSize(minHeight = 160.dp),
         minLines = 8,
+        focus = focus,
     )
 }

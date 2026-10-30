@@ -1159,6 +1159,8 @@ public struct RecordingDetailView: View {
     @FocusState private var notesFieldFocused: String?
     /// The memo's field has the cursor — the same, for the memo.
     @FocusState private var memoFieldFocused: Bool
+    /// docs/09 "AI view": More's `Notes` asked for the memo — its field takes the cursor once it is on screen.
+    @State private var memoOpensFocused = false
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -1212,7 +1214,7 @@ public struct RecordingDetailView: View {
                                     }
                                 },
                                 transcribeAgain: { Task { retranscribeLine = await model.retranscribeLine() } },
-                                memo: showMemo,
+                                memo: { showMemo(focus: true) },
                                 organize: organize,
                                 editNotes: {
                                     if model.hasNotes {
@@ -1304,7 +1306,7 @@ public struct RecordingDetailView: View {
                             .accessibilityIdentifier("detail-notes-tab")
                     }
                     if memoChip {
-                        BlueprintChip(loc("Notes"), selected: pane == .memo, action: showMemo)
+                        BlueprintChip(loc("Notes"), selected: pane == .memo) { showMemo() }
                             .accessibilityIdentifier("detail-memo-tab")
                     }
                 }
@@ -1478,6 +1480,7 @@ public struct RecordingDetailView: View {
             renaming = false
             draft = nil
             notesDraft = nil
+            memoOpensFocused = false
             // docs/10 "Search": a hit found only in the notes opens on them, one found only in the memo on it.
             pane = model.opensOnNotes ? .notes : model.opensOnMemo ? .memo : .transcript
             asking = false
@@ -2002,6 +2005,8 @@ public struct RecordingDetailView: View {
                 VStack(spacing: 0) {
                     MemoField(memo: model.memo, agreed: model.notesAgreed, lines: 8...30, focused: $memoFieldFocused, save: model.saveMemo)
                         .padding([.horizontal, .top], Space.m)
+                        .onAppear(perform: focusMemoIfAsked)
+                        .onChange(of: memoOpensFocused) { focusMemoIfAsked() }
                     // The page under the field: a tap there puts the keyboard away, and the chips come back — inside
                     // the phone's sheet a drag down closes the page instead.
                     Color.clear
@@ -2036,14 +2041,21 @@ public struct RecordingDetailView: View {
         }
     }
 
-    /// The memo's chip and More's `Notes`: from the notes' editor, the same question.
-    private func showMemo() {
+    /// The memo's chip, and More's `Notes` with its field focused: from the notes' editor, the same question.
+    private func showMemo(focus: Bool = false) {
+        memoOpensFocused = focus
         if notesDraft?.changed == true {
             discarding = .notesForMemo
         } else {
             notesDraft = nil
             pane = .memo
         }
+    }
+
+    private func focusMemoIfAsked() {
+        guard memoOpensFocused else { return }
+        memoOpensFocused = false
+        memoFieldFocused = true
     }
 
     private func discard() {

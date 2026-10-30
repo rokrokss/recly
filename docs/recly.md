@@ -3069,7 +3069,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   local folder or a recording not uploaded yet. Leaving with changes — Back, closing, the `Transcript` chip — asks `Discard your
   changes?` / `Your edits to this summary will be lost.` (`Keep editing` · `Discard`). Nothing marks an edited item afterwards.
 - **Memo** (2026-10-30, §8 "Memo"). More → `Notes`, the last item of its first group, always enabled, there only while the recording
-  has no memo: it opens the `Notes` chip with its field focused. The `Notes` body is that field alone — one multi-line plain-text field
+  has no memo: it opens the `Notes` chip with its field focused. The chip itself shows the memo without the cursor in it, so a phone's
+  keyboard does not come up over what is there to read. The `Notes` body is that field alone — one multi-line plain-text field
   filling the body, the placeholder `Agenda, who's there, what to keep track of` — saved as it is typed, 0.8 s after the last keystroke
   and when it is left (closing, another chip, another recording), so there is no `Save`, no `Cancel` and nothing that says it was saved;
   the field takes no more than the 2000 characters kept. Under it, secondary, `Read along when the summary is made.` — only while
@@ -3077,9 +3078,9 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   More → `Notes` is there again. Nothing in the notes marks what came from the memo.
 - **While it records** (2026-10-30). The recording screen of both phones, the Mac popover and the Windows tray show a `Notes` row under
   the recording's own lines while it records, there even when the memo is empty, its first line that says anything muted at its end. On
-  the phones it opens the same field and footnote under the title `Notes` — a bottom sheet on iPhone, as its other sheets there, a
+  the phones it opens the same field, focused, and its footnote under the title `Notes` — a bottom sheet on iPhone, as its other sheets there, a
   dialog on Android — with a primary `Done` that only closes it, the field having saved as it went; the popover and the tray,
-  too small for a dialog over them, open the field in the row's place, and `Done` folds it again. The watches have none: a memo is typed, and a watch's recording gets one on the phone or computer once it is there (More →
+  too small for a dialog over them, open the field in the row's place, focused, and `Done` folds it again. The watches have none: a memo is typed, and a watch's recording gets one on the phone or computer once it is there (More →
   `Notes`, §8 "Memo").
 - **Ask** (2026-10-10, §8 "Ask"). A modal dialog on the desktops (a scrim over the detail; Windows as the Mac, 2026-10-15), a full-height sheet on the phones: the title `Ask about this recording` with a ✕
   in its row (the one close control on every shell; the title row stays while the body scrolls), the preset chips (`Follow-up email`,

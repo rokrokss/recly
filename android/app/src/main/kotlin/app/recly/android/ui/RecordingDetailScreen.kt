@@ -341,6 +341,8 @@ fun RecordingDetailScreen(
     var view by remember(detail.recordingId) {
         mutableStateOf(if (detail.openNotes) DetailView.NOTES else if (detail.openMemo) DetailView.MEMO else DetailView.TRANSCRIPT)
     }
+    // More's `Memo` opens the memo to be written in, its field focused; its chip only shows it.
+    var memoFocus by remember(detail.recordingId) { mutableStateOf(false) }
     var askedNotes by remember(detail.recordingId) { mutableStateOf(false) }
     // Organize asked from this page and not back yet: its `Organizing…` from the tap, before the core says so.
     var organizingHere by remember(detail.recordingId) { mutableStateOf(false) }
@@ -451,7 +453,10 @@ fun RecordingDetailScreen(
                                     detail.notes?.takeIf(::hasNotes)?.let { notesDraft = NotesDraft.of(it); view = DetailView.NOTES }
                                 },
                                 onAsk = { asking = true },
-                                onMemo = { view = DetailView.MEMO },
+                                onMemo = {
+                                    memoFocus = true
+                                    view = DetailView.MEMO
+                                },
                                 onFill = { half ->
                                     scope.launch {
                                         when (val notice = fillNotice(actions.onFill(half), half, detail.busyReason)) {
@@ -506,7 +511,10 @@ fun RecordingDetailScreen(
                 }
                 if (memoChip) {
                     BlueprintChip(stringResource(R.string.memo_title), view == DetailView.MEMO,
-                        { if (notesDraft != null) leaveNotesEditor(DetailView.MEMO) else view = DetailView.MEMO },
+                        {
+                            memoFocus = false
+                            if (notesDraft != null) leaveNotesEditor(DetailView.MEMO) else view = DetailView.MEMO
+                        },
                         modifier = Modifier.testTag("view-memo"))
                 }
             }
@@ -522,7 +530,7 @@ fun RecordingDetailScreen(
                     scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
                 notesEditing != null -> NotesEditor(notesEditing, { notesDraft = it }, Modifier.fillMaxSize())
-                view == DetailView.MEMO -> MemoPane(detail.recordingId, detail.memo.orEmpty(), actions.notesAgreed, actions.onSaveMemo,
+                view == DetailView.MEMO -> MemoPane(detail.recordingId, detail.memo.orEmpty(), actions.notesAgreed, actions.onSaveMemo, memoFocus,
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()))
                 chips && view == DetailView.NOTES -> NotesPane(detail.notes, organizing, notesText, onRetry = organize, scaleSec = scale,
                     onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canSeek = canSeekTo, onSeek = seek,

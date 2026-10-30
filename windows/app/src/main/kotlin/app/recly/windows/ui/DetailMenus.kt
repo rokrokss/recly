@@ -204,6 +204,7 @@ internal fun MoreButton(
     detail: RecordingDetail,
     onEdit: () -> Unit,
     onEditNotes: () -> Unit,
+    onMemo: () -> Unit,
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
@@ -247,7 +248,7 @@ internal fun MoreButton(
             // docs/08 "Memo": where a recording without one gets its memo — the Memo chip once there is one. A memo can be
             // written while it records, so nothing waits here.
             if (detail.memo != null && !hasMemo(detail.memo)) {
-                BlueprintMenuRow(strings[Str.MEMO_TITLE], { open = false; model.showMemo() })
+                BlueprintMenuRow(strings[Str.MEMO_TITLE], { open = false; onMemo() })
             }
             // docs/09 "AI view": asked for here, one recording at a time; not offered where ChatGPT is not — and then
             // the group and its hairline are not there at all.

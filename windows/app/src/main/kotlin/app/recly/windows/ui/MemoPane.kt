@@ -118,9 +118,11 @@ internal fun MemoField(
     )
 }
 
-/** docs/09 "AI view": the Memo chip's body — the field, always editable, and the line under it. */
+/** docs/09 "AI view": the Memo chip's body — the field, always editable, and the line under it; [focus] from More's `Memo`. */
 @Composable
-internal fun MemoPane(model: ShellModel, detail: RecordingDetail, strings: Strings, modifier: Modifier = Modifier) {
+internal fun MemoPane(model: ShellModel, detail: RecordingDetail, focus: Boolean, strings: Strings, modifier: Modifier = Modifier) {
+    val requester = remember { FocusRequester() }
+    LaunchedEffect(detail.recordingId, focus) { if (focus) runCatching { requester.requestFocus() } }
     Column(modifier.verticalScroll(rememberScrollState()).padding(Space.m)) {
         MemoField(
             recordingId = detail.recordingId,
@@ -129,6 +131,7 @@ internal fun MemoPane(model: ShellModel, detail: RecordingDetail, strings: Strin
             agreed = model.notesAgreed,
             strings = strings,
             modifier = Modifier.fillMaxWidth(),
+            focusRequester = requester,
         )
     }
 }
