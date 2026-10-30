@@ -24,6 +24,7 @@ import recly.core.model.Source
 import recly.core.model.Track
 import recly.core.model.isoUtc
 import recly.core.model.recJson
+import recly.core.recording.DeleteResult
 import recly.core.recording.MetaWriter
 import recly.core.recording.PartHasher
 import recly.core.recording.RecordingRepository
@@ -234,6 +235,31 @@ class TransferReceiverTest {
         assertNull(recordings.get(watchMeta.recordingId))
         assertFalse(fs.exists(dir))
         assertTrue(db.recQueries.selectPartsByRecording(watchMeta.recordingId).executeAsList().isEmpty())
+    }
+
+    /**
+     * docs/03 (2026-10-30): the user may delete a row still receiving from the watch — the row, its parts and the
+     * receiver's marks go together, so the purge has nothing left to find. A watch that still has the recording keeps
+     * it until `ack-meta ok:true`, and its resend brings the recording back whole.
+     */
+    @Test
+    fun `a receiving row the user deletes goes with its marks, and the watch's resend brings it back`() = runBlocking {
+        assertTrue(progress(1))
+        assertTrue(accept(1).ok)
+
+        assertIs<DeleteResult.Deleted>(recordings.delete(watchMeta.recordingId, deleteDrive = false))
+        assertNull(recordings.get(watchMeta.recordingId))
+        assertFalse(fs.exists(dir))
+        assertFalse(receiver.receiving(watchMeta.recordingId))
+        assertNull(db.recQueries.kvGet("transfer.progress.${watchMeta.recordingId}").executeAsOneOrNull())
+        assertTrue(receiver.purgeOrphans(START + 48.hours).isEmpty())
+
+        val missing = assertIs<AcceptMetaResult.Incomplete>(receiver.acceptMeta(recJson.encodeToString(metaFor(1, 2))))
+        assertEquals(listOf(1, 2), missing.missingParts.map { it.part })
+        assertTrue(accept(1).ok)
+        assertTrue(accept(2).ok)
+        assertIs<AcceptMetaResult.Complete>(receiver.acceptMeta(recJson.encodeToString(metaFor(1, 2))))
+        assertEquals(RecordingStatus.FINALIZED, assertNotNull(recordings.get(watchMeta.recordingId)).meta.status)
     }
 
     /** The purge only ever looks at rows the receiver opened — never at a recording in progress. */

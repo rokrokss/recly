@@ -330,6 +330,14 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             // docs/13 deliverable 2: `RecordingRecovery` before anything else at launch — before
             // anything can touch the directories a killed run left parts in.
             let recovered = await session.recoverIfIdle()
+            // docs/03 "Watch → phone transfer contract": parts that never got their meta are rubbish 24 hours after the
+            // last of them, so a watch that gave up mid transfer cannot leave a row receiving here for good. Every launch
+            // looks, a watch's wake included (the Android phone's `RecApp` · `RecListenerService` do the same).
+            do {
+                _ = try await bridge.core.transfer.purgeOrphans(now: bridge.core.deps.clock.now())
+            } catch {
+                logger.error("transfer.purge.failed error=\(String(describing: error), privacy: .public)")
+            }
             // docs/09 "Quick start": a run killed while recording left the widget's file saying so, and
             // the state recovery settles in is already idle, so no transition would ever rewrite it.
             publishStatus()

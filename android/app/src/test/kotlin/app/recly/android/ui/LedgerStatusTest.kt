@@ -130,14 +130,15 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/09 screen principle 2: only a recording whose file is still being written — by the recorder, an
-     * import or a transfer — withholds Delete. An upload, this device's or another's, offers it:
-     * the core stops the upload first, and another device's folder goes from Drive. A recording
-     * another device is transcribing has arrived and is a finished row like any other.
+     * docs/09 screen principle 2: only a recording whose file is still being written — by the recorder or an
+     * import — withholds Delete. An upload, this device's or another's, offers it: the core stops the
+     * upload first, and another device's folder goes from Drive. So does a transfer from the watch, which
+     * may never finish (2026-10-30). A recording another device is transcribing has arrived and is a
+     * finished row like any other.
      */
     @Test
     fun `only a recording still being written withholds Delete`() {
-        assertTrue(ItemState.RECEIVING.inFlight())
+        assertFalse(ItemState.RECEIVING.inFlight())
         assertFalse(ItemState.REMOTE_UPLOADING.inFlight())
         assertFalse(ItemState.RUNNING.inFlight())
         assertFalse(ItemState.REMOTE_TRANSCRIBING.inFlight())
@@ -145,7 +146,6 @@ class LedgerStatusTest {
             listOf(
                 ItemState.RECORDING,
                 ItemState.IMPORTING,
-                ItemState.RECEIVING,
             ),
             ItemState.entries.filter { it.inFlight() },
         )
@@ -298,7 +298,6 @@ class LedgerStatusTest {
     fun `delete waits only while the file is being written`() {
         assertEquals(app.recly.android.R.string.detail_still_recording, item(ItemState.RECORDING).deleteReason())
         assertEquals(app.recly.android.R.string.job_state_importing, item(ItemState.IMPORTING).deleteReason())
-        assertEquals(app.recly.android.R.string.job_state_receiving, item(ItemState.RECEIVING).deleteReason())
         ItemState.entries.filterNot { it.inFlight() }.forEach { state ->
             assertEquals(null, item(state).deleteReason(), "$state")
         }

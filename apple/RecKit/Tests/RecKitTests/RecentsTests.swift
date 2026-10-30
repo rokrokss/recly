@@ -439,13 +439,15 @@ final class RecentItemActionsTests: XCTestCase {
     }
 
     /// docs/09 screen principle 2: Delete is held back only while something still has the file open — the
-    /// recorder, an import, a transfer from the watch. An upload, here or on another device, is
-    /// stopped by the core and offers it like any other row.
+    /// recorder, an import. An upload, here or on another device, is stopped by the core and offers it like
+    /// any other row, and so does a transfer from the watch that may never finish (2026-10-30).
     func testDeleteIsWithheldOnlyWhileTheFileIsStillBeingWritten() {
-        for state in ["Recording", "Importing", "Receiving from the watch"] {
+        for state in ["Recording", "Importing"] {
             XCTAssertFalse(item(state: state).canDelete, "\(state) offers a delete")
         }
-        for state in ["Uploading", "Uploading on another device", "Uploading to iCloud", "Waiting", "Done", "Failed"] {
+        for state in [
+            "Receiving from the watch", "Uploading", "Uploading on another device", "Uploading to iCloud", "Waiting", "Done", "Failed",
+        ] {
             XCTAssertTrue(item(state: state).canDelete, "\(state) withholds a delete")
         }
     }
@@ -558,13 +560,13 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         XCTAssertEqual(badge(finished), LedgerStatus(code: "DONE", tone: .success))
     }
 
-    /// docs/09 screen principle 2: there is no job of this device's to retry or link to Drive. A row still
-    /// arriving from the watch offers no delete either — the transfer is still writing it — while
-    /// another device's upload does: the dialog takes its folder from Drive.
+    /// docs/09 screen principle 2: there is no job of this device's to retry or link to Drive. Both offer a
+    /// delete: a row still arriving from the watch is only this phone's copy (2026-10-30), and the dialog takes
+    /// another device's folder from Drive.
     func testAReceivingOrRemotelyUploadingRowOffersNoRetryOrLink() {
         for state in ["Receiving from the watch", "Uploading on another device"] {
             let item = self.item(state: state)
-            XCTAssertEqual(item.canDelete, state == "Uploading on another device", "\(state)")
+            XCTAssertTrue(item.canDelete, "\(state)")
             XCTAssertFalse(item.canRetry, "\(state) offers a retry")
             XCTAssertNil(item.link, "\(state) has no job and so no upload step to link")
             // docs/09 screen principle 2: no length yet, and the ledger says so with its own placeholder
@@ -574,13 +576,13 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
     }
 
     /// 2026-10-15: the Mac detail's More menu says why its Delete is off, read off the record as the row's state is —
-    /// the menu's own `Still recording` for a take, the list's word for an import or a transfer — and says nothing
-    /// for another device's upload, which carries `RECORDING` too but is one to delete.
+    /// the menu's own `Still recording` for a take, the list's word for an import — and says nothing for another
+    /// device's upload or a transfer from the watch (2026-10-30), which carry `RECORDING` too but are ones to delete.
     func testDeleteSaysWhyItIsOffWhereTheRowWithholdsIt() {
         let cases: [(RecordingRecord, String?)] = [
             (record(source: .phone, status: .recording), "Still recording"),
             (record(source: .import, status: .recording), "Importing"),
-            (record(source: .watch, status: .recording), "Receiving from the watch"),
+            (record(source: .watch, status: .recording), nil),
             (record(source: .desktop, status: .recording, remote: true), nil),
             (record(source: .phone), nil),
         ]

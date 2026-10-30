@@ -142,16 +142,16 @@ public struct RecentItem: Identifiable, Sendable {
     ]
 
     /// docs/09 screen principle 2: whether "delete" is a thing to offer. A recording being written to right
-    /// now is not one to delete — the recorder or the import still has the file open — and neither
-    /// is one still arriving from the watch. An upload is: the core stops it first (docs/03
-    /// "Deleting in the app"), and a row stuck in "Uploading" has to be one the user can remove. So
-    /// is another device's upload: the dialog says the folder goes from Drive, and that device
-    /// starts its upload again in a new folder (docs/03 "Recordings from other devices").
+    /// now is not one to delete — the recorder or the import still has the file open. An upload is: the
+    /// core stops it first (docs/03 "Deleting in the app"), and a row stuck in "Uploading" has to be one the
+    /// user can remove. So is another device's upload: the dialog says the folder goes from Drive, and that
+    /// device starts its upload again in a new folder (docs/03 "Recordings from other devices"). And so is one
+    /// still arriving from the watch (2026-10-30): a transfer the watch gave up on never ends, and what goes is
+    /// only this phone's copy — a watch that still has the recording sends it again (docs/03 "Watch → phone
+    /// transfer contract").
     public var canDelete: Bool { !Self.undeletable.contains(state) }
 
-    private static let undeletable: Set<String> = [
-        "Recording", "Importing", "Receiving from the watch",
-    ]
+    private static let undeletable: Set<String> = ["Recording", "Importing"]
 
     /// Why a recording in [state] is not one to delete ([canDelete]), as the Mac detail's More menu says it under
     /// its Delete — a take still being written in the menu's own words, the others in the list's — or nil when it is.

@@ -652,8 +652,9 @@ time it asks what to do about Drive.
 - A running (`RUNNING`) Job — an upload in progress, or one stuck in it — does not hold the deletion back (2026-10-08): the core
   stops that run first (core rule below), and the Job is deleted along with the recording, like `WAITING`/`NEEDS_AUTH`/`NEEDS_SPACE`/`FAILED`.
   The dialog is the same one; while the upload has not finished, the audio exists only here, and the line above leads it.
-  Only a recording still being written — recording, importing, receiving from the watch — cannot be deleted: its page's `Delete` is disabled
-  with the reason (§9 principle 2, "Detail header and More menu").
+  Only a recording still being written — recording, importing — cannot be deleted: its page's `Delete` is disabled
+  with the reason (§9 principle 2, "Detail header and More menu"). A recording still receiving from the watch can be (2026-10-30, both phones): a
+  transfer the watch gave up on never ends, and only this phone's copy goes (§3 "Watch → phone transfer contract").
 - **"Also delete from Drive"** is `files.delete`. **The folder id is read only from what the recording's `drive.upload` step left
   behind** — `output_json.folderId` (when the step finished or is parked), otherwise the resume state `state_json.folderId`.
   **`drive_folder_cache` is not used**: that cache is keyed by the rendered *path* (`recly/memo/2026-08`), so the folder is a parent shared by
@@ -1121,10 +1122,16 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   (mismatch → `RECORDING_ID_MISMATCH` nack, no core call), and **`ack-meta ok:true` is sent only after enqueue and waking the runner
   have finished** — if something fails before that, it does not ack and leaves it to the watch's resend (`acceptMeta` · `enqueue` are idempotent).
   If 24 hours pass after the **last** part arrived with no final meta, the orphan parts are deleted (2026-10-27: counted from the last part,
-  not the first — a three-hour recording sends its first part three hours before its meta).
+  not the first — a three-hour recording sends its first part three hours before its meta). The phones look at every launch — the iPhone's
+  since 2026-10-30, a watch's wake included; before that it never looked, and a transfer the watch gave up on stayed receiving for weeks —
+  and the Android phone also when the watch appears.
+- The user may delete the temporary row before the meta (2026-10-30, both phones, §3 "Deleting in the app"): the row, its parts and the receiver's
+  `transfer.pending.*` · `transfer.progress.*` marks go together. Nothing is said to the watch. A watch that still has the recording keeps it until
+  `ack-meta ok:true`, so its next part or meta opens a new row, the meta answers `Incomplete(missing)`, and the resend brings the recording back whole;
+  a watch that gave up or was reset sends nothing more.
 - The temporary row before the meta **belongs to the receiver**: the phone's `RecordingRecovery` skips `recording` rows for which `TransferReceiver.receiving(recordingId)`
-  is true (rows with the `transfer.pending.*` mark the receiver left on the first part or in-progress meta, refreshed by every part), and such a row is closed only by the meta arriving or by the
-  24-hour orphan cleanup. A temporary row has empty `tracks` and zero-length parts, so finalizing it the way crash recovery does would freeze those empty values into the
+  is true (rows with the `transfer.pending.*` mark the receiver left on the first part or in-progress meta, refreshed by every part), and such a row is closed only by the meta arriving, by the
+  24-hour orphan cleanup or by the user's delete (above). A temporary row has empty `tracks` and zero-length parts, so finalizing it the way crash recovery does would freeze those empty values into the
   meta, and the Job would fail with `NO_INPUT_TRACK` (2026-10-01, found on a real iPhone that restarted between the parts and the meta).
   `RecordingRecord.receiving` (judging by the row's shape) is not used instead because the watch also revives its **own** `source = watch`
   recordings through the same recovery.
@@ -2721,9 +2728,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    **A row opens its recording's page** (2026-10-28, user decision, every list: phones, popover, tray and Details lists — a tap that only
    expanded the row, then a second tap on `Details`, was one step too many). A row carries no buttons; the popover's and tray's bring the
    Details window to the front at the recording. What can be done about a recording is on its page: `Open in Drive` (when there is a link; the desktops'
-   `Show in Finder` / `Open the folder` for an iCloud or local-folder recording) and `Delete` (disabled with the reason while recording, importing
-   or receiving from the watch; an upload, this device's or another's, offers it since 2026-10-08 — the core stops a running upload first, §3
-   "Retention · deletion") are the More menu's last two groups ("Detail header and More menu" below). A recording with no transcript has its
+   `Show in Finder` / `Open the folder` for an iCloud or local-folder recording) and `Delete` (disabled with the reason while recording or
+   importing; an upload, this device's or another's, offers it since 2026-10-08 — the core stops a running upload first, §3
+   "Retention · deletion" — and so does a recording receiving from the watch since 2026-10-30) are the More menu's last two groups ("Detail header and More menu" below). A recording with no transcript has its
    **fixes** — the waiting line, the reason with its diagnostic, and the buttons in one flow that wraps onto further lines (no vertical listing):
    `Download model` · `Open Drive storage` (a full Drive) · `Review transfers` (the iPhone, a job waiting for the transfer consent) · `Retry` (**in the
    failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04;
