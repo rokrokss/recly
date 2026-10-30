@@ -78,7 +78,6 @@ import androidx.compose.ui.text.font.FontFamily
 import app.recly.android.ui.component.Glyph
 import app.recly.android.ui.component.GlyphButton
 import app.recly.android.ui.component.LoadingText
-import app.recly.android.ui.theme.doneBadgeMs
 import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.AskPreset
@@ -288,11 +287,7 @@ fun RecordingDetailScreen(
             val result = actions.onEdit(editing.edit())
             val work = SystemClock.elapsedRealtime() - started
             delay(processingHoldMs(work))
-            if (result is EditResult.Edited) {
-                saving = SavePhase.DONE
-                delay(doneBadgeMs(work))
-                draft = null
-            }
+            if (result is EditResult.Edited) draft = null
             saving = SavePhase.IDLE
         }
     }
@@ -320,20 +315,15 @@ fun RecordingDetailScreen(
     var speakerMenu by remember(detail.recordingId) { mutableStateOf<ReaderGroup?>(null) }
     // The speaker being named, and the group whose badge asked — where `Saving…` is said.
     var speakerNaming by remember(detail.recordingId) { mutableStateOf<Pair<String, Int>?>(null) }
-    var savingGroup by remember(detail.recordingId) { mutableStateOf<Pair<Int, SavePhase>?>(null) }
+    var savingGroup by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
     // One change at a time: an edit is read-modify-write, so the speaker actions wait until this one has saved.
     val saveNow: (Int, TranscriptEdit) -> Unit = saveNow@{ group, edit ->
         if (savingGroup != null) return@saveNow
-        savingGroup = group to SavePhase.SAVING
+        savingGroup = group
         scope.launch {
             val started = SystemClock.elapsedRealtime()
-            val result = actions.onEdit(edit)
-            val work = SystemClock.elapsedRealtime() - started
-            delay(processingHoldMs(work))
-            if (result is EditResult.Edited) {
-                savingGroup = group to SavePhase.DONE
-                delay(doneBadgeMs(work))
-            }
+            actions.onEdit(edit)
+            delay(processingHoldMs(SystemClock.elapsedRealtime() - started))
             savingGroup = null
         }
     }
@@ -391,15 +381,8 @@ fun RecordingDetailScreen(
             val result = actions.onEditNotes(editing.overviewEdit(), editing.edits())
             val work = SystemClock.elapsedRealtime() - started
             delay(processingHoldMs(work))
-            // A save that could not be made keeps the draft for the user to try again or leave; one that changed nothing
-            // (the notes went meanwhile) has nothing to show a ✓ for.
-            if (result != null) {
-                if (result) {
-                    saving = SavePhase.DONE
-                    delay(doneBadgeMs(work))
-                }
-                notesDraft = null
-            }
+            // A save that could not be made keeps the draft for the user to try again or leave.
+            if (result != null) notesDraft = null
             saving = SavePhase.IDLE
         }
     }
@@ -588,8 +571,8 @@ fun RecordingDetailScreen(
                                     onDismiss = { speakerMenu = null })
                             }
                         },
-                        savingGroup = savingGroup?.first,
-                        savingLabel = savingGroup?.second?.let { stringResource(if (it == SavePhase.DONE) R.string.action_done else R.string.edit_saving) },
+                        savingGroup = savingGroup,
+                        savingLabel = savingGroup?.let { stringResource(R.string.edit_saving) },
                         find = matches,
                         findCurrent = current,
                         following = following,
@@ -624,7 +607,7 @@ fun RecordingDetailScreen(
     }
 }
 
-/** A save's window, shown on its button or beside a badge: `Saving…`, then `✓` (docs/09 trend 2). */
+/** A save's window: `Saving…`, then — on a settings Save — `✓` (docs/09 trend 2); an edit's save ends with the change itself. */
 internal enum class SavePhase { IDLE, SAVING, DONE }
 
 /** An editor's footer: what a save does, a line each, then end-aligned `Cancel` · `Save` — `Done` alone while nothing changed. */
@@ -649,7 +632,6 @@ private fun EditFooter(notes: List<String>, changed: Boolean, saving: SavePhase,
                 onClick = onSave,
                 tone = ButtonTone.PRIMARY,
                 enabled = saving == SavePhase.IDLE,
-                leading = if (saving == SavePhase.DONE) stringResource(R.string.action_done) else null,
                 modifier = Modifier.testTag("edit-save"),
             )
         }

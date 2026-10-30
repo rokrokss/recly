@@ -38,7 +38,6 @@ import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
-import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.MinTouch
@@ -50,8 +49,8 @@ import kotlinx.coroutines.flow.first
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptDocument
 
-/** Where an inline speaker save on a group is: running, then done for a moment. */
-internal enum class InlineSave { SAVING, SAVED }
+/** Where an inline speaker save on a group is: running. */
+internal enum class InlineSave { SAVING }
 
 /** A group's speaker menu that is open, hung from where it was clicked. */
 private data class GroupMenu(val block: Int, val at: Offset, val speaker: String)
@@ -209,7 +208,6 @@ private fun Group(
                 }
                 when (saving) {
                     InlineSave.SAVING -> LoadingText(strings[Str.EDIT_SAVING], MaterialTheme.typography.bodySmall, palette.textMuted)
-                    InlineSave.SAVED -> Text(SELECTION_MARK, style = MaterialTheme.typography.bodySmall, color = palette.success)
                     null -> Unit
                 }
             }
