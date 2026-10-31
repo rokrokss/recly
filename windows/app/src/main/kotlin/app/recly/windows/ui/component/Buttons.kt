@@ -92,6 +92,12 @@ fun BlueprintButton(
      * and no minimum, inside a target that is still [MinTouch] each way ([CompactControl]). [minWidth] does not apply.
      */
     compact: Boolean = false,
+    /**
+     * With [compact]: the target is [MinTouch] wide but only the box's height in the layout, so rows of them sit as close
+     * as their words — a summary row's time (2026-10-31). A touch still finds it at [MinTouch] each way (Compose's minimum
+     * touch target: the nearest target wins where two meet).
+     */
+    tight: Boolean = false,
 ) {
     val palette = blueprint
     val ink = when {
@@ -156,7 +162,7 @@ fun BlueprintButton(
     }
 
     if (compact) {
-        CompactControl(onClick, modifier, face, shape, enabled = enabled && !busy, ring = ring, content = content)
+        CompactControl(onClick, modifier, face, shape, enabled = enabled && !busy, ring = ring, tight = tight, content = content)
         return
     }
     Row(
@@ -179,8 +185,9 @@ fun BlueprintButton(
  * docs/09 "Component measurements" — Time and speaker button (2026-10-28): a control drawn at the status badge's size —
  * its [face] (fill and edge) around [content], with the badge's 8 × 4 inset and no minimum — inside a target of at least
  * [MinTouch] each way, centred on it. The target takes the click and the room in the row, so a row is no shorter than
- * it was; the box drawn in it wears the hover, the press and the focus ring, so they stay on what is seen. [modifier] is
- * the target's: what a reader hears is said there.
+ * it was — unless [tight], when it takes only the box's height and a touch is left to find it at the minimum; the box
+ * drawn in it wears the hover, the press and the focus ring, so they stay on what is seen. [modifier] is the target's:
+ * what a reader hears is said there.
  */
 @Composable
 internal fun CompactControl(
@@ -190,12 +197,13 @@ internal fun CompactControl(
     shape: Shape,
     enabled: Boolean = true,
     ring: Color? = null,
+    tight: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .defaultMinSize(minWidth = MinTouch, minHeight = if (tight) Dp.Unspecified else MinTouch)
             .pressCursor(enabled)
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,

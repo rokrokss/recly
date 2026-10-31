@@ -84,7 +84,13 @@ fun BlueprintButton(
      * does not apply.
      */
     compact: Boolean = false,
-) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false, fade = false, compact = compact)
+    /**
+     * With [compact]: the target is [MinTouch] wide but only the box's height in the layout, so rows of them sit as close
+     * as their words — a summary row's time (2026-10-31). The touch layer still takes it to [MinTouch] each way (Compose's
+     * minimum touch target: the nearest target wins where two meet).
+     */
+    tight: Boolean = false,
+) = ButtonBox(label, onClick, modifier, tone, enabled, leading, monospace, minWidth, working = false, fade = false, compact = compact, tight = tight)
 
 /**
  * [BlueprintButton]'s box. [working] is [ProcessingButton]'s "…" and "✓" (docs/09 "Disabled, focus and structure"):
@@ -107,6 +113,7 @@ private fun ButtonBox(
     working: Boolean,
     fade: Boolean,
     compact: Boolean = false,
+    tight: Boolean = false,
 ) {
     val palette = blueprint
     val drawnEnabled = enabled || working
@@ -183,7 +190,7 @@ private fun ButtonBox(
         }
     }
     if (compact) {
-        CompactTarget(onClick, enabled, modifier, radius, box, onFill = fill != Color.Transparent, content = content)
+        CompactTarget(onClick, enabled, modifier, radius, box, onFill = fill != Color.Transparent, tight = tight, content = content)
         return
     }
     Row(
@@ -204,8 +211,9 @@ private fun ButtonBox(
 /**
  * docs/09 "Component measurements" — Time and speaker button (2026-10-28): a compact control. Its box — [box]'s fill and
  * edge around padding 8 × 4, with no minimum — is drawn at the status badge's measure, centred in a target of at least
- * [MinTouch] each way that is laid out as such. The target takes the tap, the focus and the caller's [modifier] (a tag,
- * what a screen reader hears); the box draws the press and the focus ring, so both are the size the eye sees.
+ * [MinTouch] each way that is laid out as such — or, [tight], laid out only as wide, its height left to the touch layer.
+ * The target takes the tap, the focus and the caller's [modifier] (a tag, what a screen reader hears); the box draws the
+ * press and the focus ring, so both are the size the eye sees.
  */
 @Composable
 internal fun CompactTarget(
@@ -215,6 +223,7 @@ internal fun CompactTarget(
     radius: Dp,
     box: Modifier,
     onFill: Boolean = false,
+    tight: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     val palette = blueprint
@@ -222,7 +231,7 @@ internal fun CompactTarget(
     val focused by interaction.collectIsFocusedAsState()
     Box(
         modifier
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .defaultMinSize(minWidth = MinTouch, minHeight = if (tight) Dp.Unspecified else MinTouch)
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

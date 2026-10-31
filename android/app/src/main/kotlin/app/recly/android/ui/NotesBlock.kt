@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -274,10 +273,10 @@ private fun NoteRow(
                         if (expanded) collapse(label = toggle) { onToggle(); true } else expand(label = toggle) { onToggle(); true }
                         customActions = listOf(CustomAccessibilityAction(delete) { onDelete(item); true })
                     }
-                    .heightIn(min = MinTouch)
-                    // The iPhone's row: 16 at the sides, 4 above and below, so two rows' time buttons stand apart; the time
-                    // on the first line of the words.
-                    .padding(horizontal = Space.m, vertical = Space.xs),
+                    // As tall as its words, 16 at the sides and 8 above and below (2026-10-31): the touch minimum made a
+                    // list of one-line items read double-spaced. The time on the first line of the words; the touch
+                    // layer takes the row and its time to the minimum without the room.
+                    .padding(horizontal = Space.m, vertical = Space.s),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -306,7 +305,7 @@ private fun NoteTime(atSec: Double, scaleSec: Long?, canSeek: (Double) -> Boolea
     } else {
         val label = stringResource(R.string.transcript_seek, hms(atSec.toLong()))
         BlueprintButton(stamp, { onSeek(atSec) }, enabled = canSeek(atSec), tone = ButtonTone.QUIET, monospace = true, compact = true,
-            modifier = Modifier.semantics { contentDescription = label })
+            tight = true, modifier = Modifier.semantics { contentDescription = label })
     }
 }
 

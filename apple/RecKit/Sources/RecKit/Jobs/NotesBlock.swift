@@ -197,9 +197,9 @@ public struct NotesBlock: View {
                     .contentDirection(item.text)
                 time(item)
             }
-            .frame(minHeight: minTouch)
-            // Windows' 4 above and below: two rows' time buttons stand apart instead of stacking into one column.
-            .padding(.vertical, Space.xs)
+            // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line items read
+            // double-spaced. The time's target reaches past its box instead of taking the room.
+            .padding(.vertical, Space.s)
             .contentShape(Rectangle())
             .onTapGesture { toggle(item) }
             .pointerCursor()
@@ -231,7 +231,7 @@ public struct NotesBlock: View {
         if playable {
             // The transcript time button's path: it moves the playhead and leaves playing or paused as it was
             // (docs/09 "AI view", 2026-10-28).
-            BlueprintButton(stamp(item.atSec), tone: .quiet, mono: true, compact: true) { onSeek?(item.atSec) }
+            BlueprintButton(stamp(item.atSec), tone: .quiet, mono: true, compact: true, tight: true) { onSeek?(item.atSec) }
                 .disabled(onSeek == nil || item.atSec >= seekableSec)
                 .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(item.atSec)))))
         } else {

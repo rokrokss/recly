@@ -2587,7 +2587,7 @@ The principle in one line: **intent, not decoration**.
   | Screen header | 16 above, 12 below, 16 at the sides |
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
-  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge |
+  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge; in a notes row the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31) |
   | State node | padding 12 × 8, label up to two lines from the start edge; the three one height; stacked, joined by the same connectors turned downwards |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
@@ -3122,7 +3122,8 @@ says provisional or edited: the notes simply change when a pass lands.
   they did — then the user's sections under their names, each a section header over its rows, on the page: no table fill and no
   lines between rows, the section headers part the groups (2026-10-31, the iPhone's on both phones). A group with no items is absent, header included; with no overview and no items there is no
   block and no empty state. The `Summarizing…` line or the failure notice stays on top.
-- **A row** is at least the touch minimum high, 16 at the sides and 4 above and below, its time on the item's first line: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
+- **A row** is as tall as its words, 16 at the sides and 8 above and below (2026-10-31: at the touch minimum a list of one-line items
+  read double-spaced), its time on the item's first line: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
   present, the due date muted. At its end the item's time in the recording's time format, as the transcript's quiet monospace time button:
   a tap moves the playhead and leaves playing or paused as it was, as the transcript's does (2026-10-28; until then it also played, the
   citation path), accessibility `Go to 00:12:34`; disabled while the recording records, when its audio is not

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,7 +57,6 @@ import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.SectionHeader
 import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.component.pressCursor
-import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlin.math.abs
@@ -150,7 +148,6 @@ internal fun NoteRow(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = MinTouch)
                     .onSizeChanged { size = it }
                     // Ahead of the click: a right click opens the menu and is not also the row's click.
                     .pointerInput(item.id) {
@@ -171,7 +168,9 @@ internal fun NoteRow(
                     .focusRing()
                     .pressCursor()
                     .clickable(role = Role.Button, onClick = onToggle)
-                    .padding(vertical = Space.xs),
+                    // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line
+                    // items read double-spaced.
+                    .padding(vertical = Space.s),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -192,6 +191,7 @@ internal fun NoteRow(
                     enabled = seekable,
                     monospace = true,
                     compact = true,
+                    tight = true,
                 )
             }
             menuAt?.let { at ->

@@ -20,6 +20,7 @@ public struct BlueprintButton: View {
     private let mono: Bool
     private let minWidth: CGFloat?
     private let compact: Bool
+    private let tight: Bool
     private let action: () -> Void
     /// docs/09 "Disabled, focus and structure" (2026-10-15): showing its own work — [ProcessingButton]'s `…` and `✓` —
     /// the button cannot be pressed, but it is not disabled: it keeps its ink and edge, because that state is what the
@@ -43,6 +44,9 @@ public struct BlueprintButton: View {
     ///   above that, and none for a compact one, whose target is the minimum.
     /// - Parameter compact: docs/09 "Component measurements" — Time and speaker button (2026-10-28): drawn at the
     ///   status badge's size, label 12, inside a target that is still the touch minimum.
+    /// - Parameter tight: with `compact`, the target is the minimum wide but only the box's height in the layout, so
+    ///   rows of them sit as close as their words — a summary row's time (2026-10-31); its hit area still reaches the
+    ///   minimum, past the box above and below.
     public init(
         _ label: String,
         tone: ButtonTone = .accent,
@@ -50,6 +54,7 @@ public struct BlueprintButton: View {
         mono: Bool = false,
         minWidth: CGFloat? = nil,
         compact: Bool = false,
+        tight: Bool = false,
         action: @escaping () -> Void
     ) {
         self.label = label
@@ -58,6 +63,7 @@ public struct BlueprintButton: View {
         self.mono = mono
         self.minWidth = minWidth ?? (compact ? nil : mono ? minTouch : Self.wordedMinWidth)
         self.compact = compact
+        self.tight = tight
         self.action = action
     }
 
@@ -100,7 +106,7 @@ public struct BlueprintButton: View {
             }
             .contentShape(Rectangle())
             .blueprintFocusRing(radius: radius, onFill: isEnabled && tone == .primary)
-            .modifier(TouchTarget(active: compact))
+            .modifier(TouchTarget(active: compact, tight: tight))
         }
         .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
@@ -171,9 +177,18 @@ public struct BlueprintButton: View {
 /// target around it is still the touch minimum each way.
 struct TouchTarget: ViewModifier {
     var active = true
+    /// The target the minimum wide but only the box's height in the layout: its hit area reaches past the box above
+    /// and below instead of taking the room ([BlueprintButton]'s `tight`).
+    var tight = false
 
     func body(content: Content) -> some View {
-        if active {
+        if active && tight {
+            content
+                .frame(minWidth: minTouch)
+                .padding(.vertical, Self.overhang)
+                .contentShape(Rectangle())
+                .padding(.vertical, -Self.overhang)
+        } else if active {
             content
                 .frame(minWidth: minTouch, minHeight: minTouch)
                 .contentShape(Rectangle())
@@ -181,6 +196,10 @@ struct TouchTarget: ViewModifier {
             content
         }
     }
+
+    /// How far a tight target reaches past its box each way: a box of 20 or more — the badge's 12 in 4 above and
+    /// below — makes the minimum.
+    static let overhang = (minTouch - 20) / 2
 }
 
 private struct ButtonFillsWidthKey: EnvironmentKey {
