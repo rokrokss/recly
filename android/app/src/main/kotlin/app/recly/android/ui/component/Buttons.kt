@@ -127,15 +127,17 @@ private fun ButtonBox(
         else -> palette.inputBorder
     }
     val fill = if (drawnEnabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
+    // docs/09 "Shape": a compact box is drawn at the status badge's size, so it takes the badge's corner, as the iPhone's.
+    val radius = if (compact) Radius.badge else Radius.node
     val box = Modifier
-        .background(fill, RoundedCornerShape(Radius.node))
+        .background(fill, RoundedCornerShape(radius))
         // A disabled button is dashed, as on Windows: a shape is the cue that survives high contrast,
         // which promotes the muted ink to the body colour.
         .then(
             if (drawnEnabled) {
-                Modifier.border(palette.line, edge, RoundedCornerShape(Radius.node))
+                Modifier.border(palette.line, edge, RoundedCornerShape(radius))
             } else {
-                Modifier.dashedBorder(palette.line, edge, Radius.node)
+                Modifier.dashedBorder(palette.line, edge, radius)
             },
         )
 
@@ -181,7 +183,7 @@ private fun ButtonBox(
         }
     }
     if (compact) {
-        CompactTarget(onClick, enabled, modifier, Radius.node, box, onFill = fill != Color.Transparent, content = content)
+        CompactTarget(onClick, enabled, modifier, radius, box, onFill = fill != Color.Transparent, content = content)
         return
     }
     Row(
@@ -307,7 +309,8 @@ fun BlueprintChip(
                         shape = RoundedCornerShape(Radius.node),
                     )
                 } else {
-                    Modifier.dashedBorder(palette.line, palette.disabled, Radius.node)
+                    // Chosen and disabled, the dashed edge keeps the chosen weight, as the iPhone's does.
+                    Modifier.dashedBorder(if (selected) palette.selectedLine else palette.line, palette.disabled, Radius.node)
                 },
             )
             // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a

@@ -111,7 +111,6 @@ import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintField
-import app.recly.android.ui.component.FillRow
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.ScreenHeader
@@ -499,7 +498,9 @@ fun RecordingDetailScreen(
             HairLine()
         }
         if (chips && !detail.loading) {
-            FillRow(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s)) {
+            // The iPhone's row: the chips at their own width on the page, under the header's line — part of the header,
+            // not a band of its own.
+            Row(Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, top = Space.s), horizontalArrangement = Arrangement.spacedBy(Space.s)) {
                 // While the notes are being edited the chips stay (until the keyboard is up); going to the
                 // transcript leaves the editor.
                 BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT,
@@ -518,7 +519,6 @@ fun RecordingDetailScreen(
                         modifier = Modifier.testTag("view-memo"))
                 }
             }
-            HairLine()
         }
 
         // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.

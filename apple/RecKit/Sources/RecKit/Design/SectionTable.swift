@@ -395,6 +395,8 @@ public struct Banner: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.sm)
             .padding(.vertical, Space.s)
+            // docs/09 "Component measurements": the touch minimum tall, as a banner a tap puts away must be.
+            .frame(minHeight: minTouch)
             // Filled on the same shape as the edge: a square fill under a 4pt border showed the
             // page through the corners.
             .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))

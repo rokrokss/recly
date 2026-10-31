@@ -50,9 +50,12 @@ public struct NodeSpec: Identifiable, Equatable, Sendable {
 public struct StateNode: View {
     @Environment(\.blueprint) private var blueprint
     private let spec: NodeSpec
+    /// Take the height the row gives it, so the nodes across keep one height ([StateNodeRow]).
+    private let fillsHeight: Bool
 
-    public init(_ spec: NodeSpec) {
+    public init(_ spec: NodeSpec, fillsHeight: Bool = false) {
         self.spec = spec
+        self.fillsHeight = fillsHeight
     }
 
     public var body: some View {
@@ -88,7 +91,7 @@ public struct StateNode: View {
         // than truncating to "Dev…".
         .lineLimit(2)
         .minimumScaleFactor(0.7)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil, alignment: .topLeading)
         // docs/09 "Component measurements" — State node: padding 12 × 8.
         .padding(.horizontal, Space.sm)
         .padding(.vertical, Space.s)
@@ -151,12 +154,13 @@ public struct StateNodeRow: View {
     }
 
     public var body: some View {
-        let layout = typeSize.isAccessibilitySize
+        let stacked = typeSize.isAccessibilitySize
+        let layout = stacked
             ? AnyLayout(VStackLayout(spacing: 0))
             : AnyLayout(HStackLayout(spacing: 0))
         layout {
             ForEach(Array(nodes.enumerated()), id: \.element.id) { index, spec in
-                StateNode(spec)
+                StateNode(spec, fillsHeight: !stacked)
                 if index != nodes.count - 1 {
                     Rectangle()
                         .fill(blueprint.palette.text)
@@ -168,6 +172,9 @@ public struct StateNodeRow: View {
                 }
             }
         }
+        // docs/09 screen principle 1: across, a node whose words took a second line makes the row taller, and all
+        // three with it — the row is its tallest node's height, and every node fills it.
+        .fixedSize(horizontal: false, vertical: !stacked)
     }
 }
 

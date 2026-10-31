@@ -85,8 +85,9 @@ struct RecordingsView: View {
     /// A banner that goes when it is tapped: a button, so VoiceOver and a keyboard reach it too, with the dismissal
     /// named as its action (docs/09 "Accessibility").
     private func dismissible(_ banner: Banner, dismiss: @escaping () -> Void) -> some View {
-        Button(action: dismiss) { banner }
+        Button(action: dismiss) { banner.blueprintFocusRing() }
             .buttonStyle(.plain)
+            .focusEffectDisabled()
             .padding(.horizontal, Space.m)
             .padding(.bottom, Space.s)
             .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Close")), dismiss)

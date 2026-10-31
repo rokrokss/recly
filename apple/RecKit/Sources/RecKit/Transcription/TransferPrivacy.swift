@@ -86,6 +86,7 @@ public struct TransferDisclosureList: View {
                     // Who: the company by name, and what kind of service it is (App Review 5.1.2(i)).
                     Text(verbatim: TransferTargetText.name(target))
                         .font(blueprint.fonts.label)
+                        .tracking(0.6)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(verbatim: summary
                         ? loc("A third-party AI service. Recly does not operate it.")

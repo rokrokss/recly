@@ -82,6 +82,13 @@ val BlueprintDark: BlueprintColors = BlueprintColors(
     dark = true,
 )
 
+/**
+ * The dim under a bottom sheet or a dialog: the iPhone's — black at 20 %, in light and dark alike — rather than Material's
+ * heavier scrim, so the screen under the question stays readable as the place it was asked from.
+ */
+const val SCRIM_ALPHA: Float = 0.2f
+val SheetScrim: Color = Color.Black.copy(alpha = SCRIM_ALPHA)
+
 /** The palette for the system's dark-mode answer — the one place the two variants are chosen. */
 fun blueprintColors(dark: Boolean, highContrast: Boolean = false): BlueprintColors {
     val base = if (dark) BlueprintDark else BlueprintLight

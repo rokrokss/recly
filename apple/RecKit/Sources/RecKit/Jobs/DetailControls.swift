@@ -172,7 +172,7 @@ struct SpeakerBadge: View {
             .padding(.vertical, Space.xs)
             .overlay {
                 // 2026-10-08 §12: the secondary colour, so the badge reads as one against the page.
-                RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.textMuted, lineWidth: blueprint.line)
+                RoundedRectangle(cornerRadius: Radius.badge).strokeBorder(blueprint.palette.textMuted, lineWidth: blueprint.line)
             }
             .modifier(TouchTarget())
     }

@@ -28,7 +28,7 @@ private struct FocusRing: ViewModifier {
 extension View {
     /// The focus ring on a control's label, square at [radius] — the control's own corner. [onFill] for a label drawn
     /// on an accent fill (a primary button).
-    func blueprintFocusRing(radius: CGFloat = Radius.node, onFill: Bool = false) -> some View {
+    public func blueprintFocusRing(radius: CGFloat = Radius.node, onFill: Bool = false) -> some View {
         modifier(FocusRing(radius: radius, onFill: onFill))
     }
 }

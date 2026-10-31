@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -40,9 +43,11 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindowProvider
 import app.recly.android.ui.theme.BlueprintColors
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
+import app.recly.android.ui.theme.SCRIM_ALPHA
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 
@@ -80,6 +85,10 @@ fun BlueprintDialog(
     // scrolls. Empty for every title that fits, which is all of them at the default font size.
     var spill by remember(title) { mutableStateOf("") }
     Dialog(onDismissRequest = onDismissRequest) {
+        // The iPhone's dim under a question (SheetScrim), not the window's default — the only way to set it is on the
+        // dialog's own window.
+        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+        SideEffect { window?.setDimAmount(SCRIM_ALPHA) }
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -250,13 +259,18 @@ fun BlueprintCheckRow(
 
 @Composable
 private fun OptionRow(label: String, modifier: Modifier, mark: @Composable () -> Unit, enabled: Boolean = true) {
-    Row(
-        modifier = Modifier.focusRing(blueprint).then(modifier).fillMaxWidth().defaultMinSize(minHeight = MinTouch),
-        horizontalArrangement = Arrangement.spacedBy(Space.s),
-        verticalAlignment = Alignment.CenterVertically,
+    // The iPhone's row: 8 above and below inside the touch minimum, and the mark on the first line of a label that
+    // wrapped rather than in the middle of it.
+    val firstLine = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
+    Box(
+        modifier = Modifier.focusRing(blueprint).then(modifier).fillMaxWidth().defaultMinSize(minHeight = MinTouch)
+            .padding(vertical = Space.s),
+        contentAlignment = Alignment.CenterStart,
     ) {
-        mark()
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) blueprint.text else blueprint.disabled)
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Top) {
+            Box(Modifier.height(firstLine), contentAlignment = Alignment.Center) { mark() }
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) blueprint.text else blueprint.disabled)
+        }
     }
 }
 

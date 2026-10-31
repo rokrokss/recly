@@ -3,7 +3,6 @@
 package app.recly.android.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +50,7 @@ import app.recly.android.ui.component.GlyphButton
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.theme.Radius
+import app.recly.android.ui.theme.SheetScrim
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.dotGrid
@@ -114,7 +114,8 @@ internal fun AskPanel(
         sheetGesturesEnabled = false,
         containerColor = palette.background,
         tonalElevation = 0.dp,
-        shape = RoundedCornerShape(topStart = Radius.card, topEnd = Radius.card),
+        scrimColor = SheetScrim,
+        shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet),
         dragHandle = null,
     ) {
         Column(Modifier.fillMaxSize().dotGrid(palette).navigationBarsPadding().imePadding().testTag("ask-panel")) {
@@ -128,7 +129,8 @@ internal fun AskPanel(
                 // The app's own language, under its own name — the App language list's word for it.
                 val language = stringResource(AppLanguage.effective(LocalConfiguration.current.locales[0]).labelRes())
                 val asked = askedPreset(state)
-                FillRow(Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.m, vertical = Space.s)) {
+                // The iPhone's panel: the presets, the question and the answer on its page, 16 apart, with no bands or lines.
+                FillRow(Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, top = Space.m)) {
                     presets.forEach { preset ->
                         // An action, not a choice: a tap asks. The one the answer below came from has `✓`.
                         BlueprintChip(
@@ -141,11 +143,10 @@ internal fun AskPanel(
                         )
                     }
                 }
-                HairLine()
             }
             val own = stringResource(R.string.ask_own_question)
             Row(
-                Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.m, vertical = Space.s),
+                Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, top = Space.m),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.Bottom,
             ) {
@@ -165,18 +166,17 @@ internal fun AskPanel(
                 BlueprintButton(stringResource(R.string.ask_ask), { onAsk(null, question) }, tone = ButtonTone.PRIMARY,
                     enabled = canAsk(state, question), modifier = Modifier.testTag("ask-send"))
             }
-            HairLine()
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (state) {
                     AskState.None -> Unit
                     is AskState.Running -> LoadingText(stringResource(R.string.ask_running), MaterialTheme.typography.bodySmall, palette.textMuted,
-                        Modifier.padding(horizontal = Space.m, vertical = Space.s).testTag("ask-running"))
-                    is AskState.Ready -> Column(Modifier.fillMaxSize()) {
+                        Modifier.padding(start = Space.m, end = Space.m, top = Space.m).testTag("ask-running"))
+                    // The iPhone's: the answer on the panel's page, and its model and Copy all under it in the same scroll.
+                    is AskState.Ready -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = Space.m)) {
                         val answer = state.answer
-                        SelectionContainer(Modifier.weight(1f).fillMaxWidth().background(palette.surface).verticalScroll(rememberScrollState())) {
+                        SelectionContainer(Modifier.fillMaxWidth()) {
                             CitedText(answer.text, canSeek, onSeek, Modifier.testTag("ask-answer"))
                         }
-                        HairLine()
                         CopyFooter(stringResource(R.string.chatgpt_footer, modelLabel(answer.modelName, answer.model, models)), answer.text,
                             Modifier.testTag("ask-copy"))
                     }

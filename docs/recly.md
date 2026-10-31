@@ -2568,7 +2568,7 @@ The principle in one line: **intent, not decoration**.
   Ask answer's citations show as ChatGPT wrote them (`[00:12:34]`), since they are part of its text (2026-10-10), and Apple's widgets,
   Live Activity and watch complication use the system's self-updating timer (`0:12`), the only text a widget can update every second (2026-10-11).
   Examples elsewhere in this document written `00:12:34` stand for a time in this format.
-- **Shape**: corner radius 4 (nodes) / 8 (cards) / 0 (table rows) / **2 (badges)** — squares smaller than a node, such as status badges, checkboxes, radios and switch thumbs,
+- **Shape**: corner radius 4 (nodes) / 8 (cards) / 0 (table rows) / **2 (badges)** / 24 (a bottom sheet's top corners, the iPhone's system sheet, on both phones 2026-10-31) — squares smaller than a node, such as status badges, checkboxes, radios and switch thumbs,
   use half the node radius (`Radius.badge`). The round record button is a **square node + thick border**
   (72×72; while recording, filled + mono timer). On phones (Android · iPhone, 2026-09-29) and the desktop (Mac · Windows, 2026-10-14), **text buttons are at least 88 wide** (dp/pt):
   a two-character button such as `Open` (`열기` in Korean) does not become the narrowest thing on the screen, and short buttons side by side line up at one width. `Close` · `Delete` ·
@@ -2584,17 +2584,20 @@ The principle in one line: **intent, not decoration**.
 
   | Component | Measure |
   |---|---|
-  | Button | padding 8 × 4, height at least the touch minimum, label 14 |
+  | Screen header | 16 above, 12 below, 16 at the sides |
+  | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
-  | Time and speaker button | drawn at the status badge's size — padding 8 × 4, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge |
-  | State node | padding 12 × 8, label up to two lines from the start edge |
-  | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum |
+  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge |
+  | State node | padding 12 × 8, label up to two lines from the start edge; the three one height; stacked, joined by the same connectors turned downwards |
+  | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
   | Ledger row | 12 top and bottom; the time column as wide as the longest time in that shell's mono font (62 Android and Apple, 68 Windows) |
-  | Text field | inset 12 × 8; focus: accent at `selectedLine` |
-  | Chip | label 14; room for its `✓` kept while unselected, so selecting moves nothing; edge `inputBorder` |
+  | Text field | inset 12 × 8, height at least the touch minimum; its label in the label face (12 medium, tracked); focus: accent at `selectedLine` |
+  | Chip | label 14; room for its `✓` kept while unselected, so selecting moves nothing; edge `inputBorder`; chosen and disabled, a dashed `disabled` edge at `selectedLine` |
   | Switch | thumb radius 2; disabled: a dashed track in `disabled` |
-  | Dialog | title 20; body 14 in every tone — the tone is the colour only; card edge `inputBorder` over a scrim — on a sheet of its own (iPhone, Mac) the sheet is the card and no second edge is drawn inside it, the text 16 from its edges |
+  | Dialog | title 20; body 14 in every tone — the tone is the colour only; card edge `inputBorder` over a scrim — on a sheet of its own (iPhone, Mac) the sheet is the card and no second edge is drawn inside it, the text 16 from its edges; an option row 8 above and below inside the touch minimum, its mark on the label's first line |
+  | Bottom sheet, scrim | phones (2026-10-31): the page and its dot grid, top corners 24; under a sheet or a dialog a dim of black at 20 %, the iPhone's |
+  | Banner | body 14 on the surface inside an edge of its tone — warning, or danger when it says something failed (a delete the storage refused, an import that failed); height at least the touch minimum, with the focus ring |
   | Empty list | title 16, hint 14 |
   | Focus ring | accent at `selectedLine`, inside the control, square like it — every focusable control, not only fields |
 - **Lines**: connectors and dividers 1dp (2dp in high contrast), straight lines and right angles only.
@@ -2602,7 +2605,8 @@ The principle in one line: **intent, not decoration**.
   shells too — status-transition badges `fade 150ms`, processing state shown for at least 400ms (kept even when the real work is faster,
   at most 800ms). **With `reduce motion`, "instant transition + text status only"** — what is turned off is the *transition*; the text
   status itself, such as "…" and "✓", stays.
-- **Icons**: geometric thin lines (1.5dp), platform system icons first (Material Symbols Outlined / SF Symbols light).
+- **Icons**: geometric thin lines (1.5dp), platform system icons first (Material Symbols Outlined / SF Symbols light). The phones' tab bar
+  glyphs are the iPhone's SF Symbols `dot.square` · `list.bullet.rectangle` · `slider.horizontal.3`, which Android draws in the same line (2026-10-31).
 
 ### App icon
 
@@ -3060,7 +3064,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   `Fill in title` answered without a title says the failure sentence alone. A failure says `Could not fill in the title` or `Could not fill in speaker names`
   with the core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on
   iPhone the ChatGPT permission is asked first, as for `Summarize`.
-- **The chips.** Once a recording has notes, or `Summarize` was asked, two chips under the header switch the body between `Transcript`
+- **The chips.** Once a recording has notes, or `Summarize` was asked, two chips under the header — at their own width, on the page under the
+  header's line (2026-10-31: Android's filled band gave way to the iPhone's row) — switch the body between `Transcript`
   and `Summary`, and a third, `Notes`, follows once it has a memo (2026-10-30, "Memo" below); a memo alone gives `Transcript` · `Notes` (the detail opens on `Transcript`; no chips while the transcript is edited, and while notes or the memo are edited they step aside only for the keyboard). The `Summary` body is §9 "Notes view": while the recording is
   organized here, the square loader and `Summarizing…` over the notes there are; a failure of `Summarize` (`RecordingNotes.failure`): a
   centred notice — the `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage`
@@ -3114,9 +3119,10 @@ says provisional or edited: the notes simply change when a pass lands.
 
 - **The detail** (Android phone, iPhone, Mac, Windows). The `Summary` chip's body (§9 "AI view"). The overview comes first (plain
   text), then the groups in the order `Key points` · `Decisions` · `To-dos` · `Questions` — under the name the user gave a group, if
-  they did — then the user's sections under their names, each a section header over table rows. A group with no items is absent, header included; with no overview and no items there is no
+  they did — then the user's sections under their names, each a section header over its rows, on the page: no table fill and no
+  lines between rows, the section headers part the groups (2026-10-31, the iPhone's on both phones). A group with no items is absent, header included; with no overview and no items there is no
   block and no empty state. The `Summarizing…` line or the failure notice stays on top.
-- **A row** is at least 44 high: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
+- **A row** is at least the touch minimum high, 16 at the sides and 4 above and below, its time on the item's first line: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
   present, the due date muted. At its end the item's time in the recording's time format, as the transcript's quiet monospace time button:
   a tap moves the playhead and leaves playing or paused as it was, as the transcript's does (2026-10-28; until then it also played, the
   citation path), accessibility `Go to 00:12:34`; disabled while the recording records, when its audio is not
@@ -3125,7 +3131,8 @@ says provisional or edited: the notes simply change when a pass lands.
   labels never), then the text — with the reader's accent start-edge bar on the note's own line: the line containing the quote, else the
   one covering its time, else the nearest. One row open at a time; Expand and Collapse are accessibility actions.
 - **Delete**, no confirmation, and a deleted item never comes back (the core keeps a tombstone). Phones: swipe the row end-to-start
-  (Android `SwipeToDismissBox`; iPhone a leading drag of 88 or more), uncovering a strip with `Delete` in the danger colour; the row carries
+  (Android `SwipeToDismissBox` past 96; iPhone a leading drag of 88 or more — two touch targets each), uncovering, only while pulled, a danger strip
+  as wide as the pull, with `Delete` in `onDanger` once it is past that; the row carries
   a `Delete` accessibility action. Desktops: the row's context menu `Delete` (Windows also the menu key and Shift+F10), red — it cannot be
   undone.
 - **The record screen** (phones only). While recording, the groups (no overview, and no key points, which come after Stop) — the user's

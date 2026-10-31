@@ -73,7 +73,8 @@ fun BlueprintField(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.xs)) {
         label?.let {
             // Said by the field itself, so a reader does not hear it twice.
-            Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted, modifier = Modifier.clearAndSetSemantics {})
+            // The label face, tracked, as every other label and the iPhone's field label.
+            Text(it, style = MaterialTheme.typography.labelSmall, color = palette.textMuted, modifier = Modifier.clearAndSetSemantics {})
         }
         BasicTextField(
             value = value,
@@ -82,7 +83,7 @@ fun BlueprintField(
             minLines = minLines,
             maxLines = maxLines,
             enabled = enabled,
-            textStyle = textStyle.copy(color = if (enabled) palette.text else palette.textMuted),
+            textStyle = textStyle.copy(color = if (enabled) palette.text else palette.disabled),
             cursorBrush = SolidColor(palette.accent),
             visualTransformation = visualTransformation,
             keyboardOptions = keyboardOptions,

@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -46,7 +49,6 @@ import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
-import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.component.SectionHeader
 import app.recly.android.ui.component.focusRing
@@ -195,18 +197,17 @@ internal fun NotesBlock(
     val palette = blueprint
     var open by remember(notes.recordingId) { mutableStateOf<String?>(null) }
     Column(modifier.fillMaxWidth().testTag("notes")) {
+        // On the page, as the iPhone has them: no table rows and no lines between them — the section headers part the groups.
         if (overview) noteOverview(notes)?.let { text ->
             Text(
                 text,
-                Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.sm).testTag("notes-overview"),
+                Modifier.fillMaxWidth().padding(horizontal = Space.m).testTag("notes-overview"),
                 style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                 color = palette.text,
             )
-            HairLine()
         }
         noteGroups(notes, keyPoints = overview).forEach { group ->
             SectionHeader(group.title(), Modifier.padding(horizontal = Space.m))
-            HairLine()
             group.items.forEach { item ->
                 key(item.id) {
                     NoteRow(
@@ -239,24 +240,31 @@ private fun NoteRow(
     val palette = blueprint
     val delete = stringResource(R.string.action_delete)
     val toggle = stringResource(if (expanded) R.string.jobs_row_collapse else R.string.jobs_row_expand)
-    val swipe = rememberSwipeToDismissBoxState()
+    // The iPhone's: the row goes once it has been pulled two touch targets, and `Delete` shows from there.
+    val threshold = with(LocalDensity.current) { (MinTouch * 2).toPx() }
+    val swipe = rememberSwipeToDismissBoxState(positionalThreshold = { threshold })
     SwipeToDismissBox(
         state = swipe,
         enableDismissFromStartToEnd = false,
         onDismiss = { if (it == SwipeToDismissBoxValue.EndToStart) onDelete(item) },
         modifier = Modifier.testTag("note-${item.id}"),
-        // What the swipe does, at the end it uncovers — red, because it deletes for good (docs/09 "Accessibility"). A screen
-        // reader has the row's own Delete action instead.
+        // What the swipe does, in the strip it uncovers and only while it is pulled — the row has no fill of its own to hide
+        // it under: red, because it deletes for good (docs/09 "Accessibility"). A screen reader has the row's own Delete
+        // action instead.
         backgroundContent = {
-            Box(
-                Modifier.fillMaxSize().background(palette.surface).padding(horizontal = Space.m).clearAndSetSemantics {},
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Text(delete, style = MaterialTheme.typography.labelLarge, color = palette.danger)
+            Box(Modifier.fillMaxSize().clearAndSetSemantics {}, contentAlignment = Alignment.CenterEnd) {
+                if (swipe.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                    val pull = with(LocalDensity.current) { (-swipe.requireOffset()).toDp() }
+                    Box(Modifier.fillMaxHeight().width(pull).background(palette.danger), contentAlignment = Alignment.Center) {
+                        if (pull >= MinTouch * 2) {
+                            Text(delete, style = MaterialTheme.typography.labelSmall, color = palette.onDanger, maxLines = 1)
+                        }
+                    }
+                }
             }
         },
     ) {
-        Column(Modifier.fillMaxWidth().background(palette.surface)) {
+        Column(Modifier.fillMaxWidth()) {
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -267,21 +275,21 @@ private fun NoteRow(
                         customActions = listOf(CustomAccessibilityAction(delete) { onDelete(item); true })
                     }
                     .heightIn(min = MinTouch)
-                    // docs/09 "Component measurements": a table row's 16 at the sides; its 12 top and bottom are the text's.
-                    .padding(horizontal = Space.m),
-                horizontalArrangement = Arrangement.spacedBy(Space.sm),
+                    // The iPhone's row: 16 at the sides, 4 above and below, so two rows' time buttons stand apart; the time
+                    // on the first line of the words.
+                    .padding(horizontal = Space.m, vertical = Space.xs),
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     noteText(item, palette.textMuted),
-                    Modifier.weight(1f).padding(vertical = Space.sm),
+                    Modifier.weight(1f).alignByBaseline(),
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
                 )
-                NoteTime(item.atSec, scaleSec, canSeek, onSeek)
+                Box(Modifier.alignByBaseline()) { NoteTime(item.atSec, scaleSec, canSeek, onSeek) }
             }
             if (expanded) NoteLines(item, lines)
-            HairLine()
         }
     }
 }
@@ -316,7 +324,7 @@ private fun NoteLines(item: NoteItem, lines: suspend (Double) -> List<NoteLine>)
     ) {
         around.forEachIndexed { index, line ->
             Column(Modifier.fillMaxWidth().activeBar(palette.accent, index == at), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-                (line.speakerName ?: me.takeIf { line.me })?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
+                (line.speakerName ?: me.takeIf { line.me })?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = palette.textMuted) }
                 Text(line.text, style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content), color = palette.text)
             }
         }
@@ -345,25 +353,27 @@ internal fun NotesPane(
     val shown = notes?.takeIf { showsNotes(it, overview = true) }
     val failure = notes?.failure?.takeIf { !organizing }
     Column(modifier) {
-        if (organizing) {
-            LoadingText(stringResource(R.string.notes_organizing), MaterialTheme.typography.bodySmall, blueprint.textMuted,
-                Modifier.padding(horizontal = Space.m, vertical = Space.s).testTag("notes-organizing"))
-            HairLine()
+        if (failure != null && shown == null) {
+            ChatGptFailure(failure, R.string.notes_failed, onRetry, Modifier.fillMaxSize(), retryTag = "notes-retry")
+            return@Column
         }
-        if (failure != null) {
-            if (shown == null) {
-                ChatGptFailure(failure, R.string.notes_failed, onRetry, Modifier.fillMaxSize(), retryTag = "notes-retry")
-                return@Column
+        // The iPhone's pane: one scroll on the page, 16 around and between — the line or the notice, the notes, and the
+        // model under them with Copy all, which scrolls with the notes rather than standing in a band of its own.
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = Space.m),
+            verticalArrangement = Arrangement.spacedBy(Space.m),
+        ) {
+            if (organizing) {
+                LoadingText(stringResource(R.string.notes_organizing), MaterialTheme.typography.bodySmall, blueprint.textMuted,
+                    Modifier.padding(horizontal = Space.m).testTag("notes-organizing"))
             }
-            ChatGptFailure(failure, R.string.notes_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "notes-retry")
-            HairLine()
-        }
-        if (shown != null) {
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+            if (failure != null) {
+                ChatGptFailure(failure, R.string.notes_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "notes-retry")
+            }
+            if (shown != null) {
                 NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, lines = lines, canSeek = canSeek, onSeek = onSeek)
+                CopyFooter(notesFooter(shown.model), text.orEmpty(), Modifier.testTag("notes-copy"))
             }
-            HairLine()
-            CopyFooter(notesFooter(shown.model), text.orEmpty(), Modifier.testTag("notes-copy"))
         }
     }
 }

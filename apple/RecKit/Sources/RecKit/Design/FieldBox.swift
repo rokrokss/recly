@@ -37,6 +37,9 @@ private struct FieldBox: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(inset)
+            // docs/09 "Component measurements": the touch minimum decides the box's height — a line of text stands
+            // centred in it, and a multi-line field grows from it.
+            .frame(minHeight: minTouch)
             .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.node)

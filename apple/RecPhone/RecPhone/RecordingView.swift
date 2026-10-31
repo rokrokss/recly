@@ -286,8 +286,10 @@ struct RecordingView: View {
             }
             .frame(width: 72, height: 72)
             .contentShape(Rectangle())
+            .blueprintFocusRing()
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         // Off while the recorder is between two states — Starting and Saving, as on every shell — and
         // through the tail of the hold too: the node reads "…" there, and a tap the user cannot see the
         // effect of would start a second recording.

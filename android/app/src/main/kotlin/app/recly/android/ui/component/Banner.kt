@@ -115,11 +115,11 @@ internal fun AlertLine(
 private val PHONE_WIDTH = 600.dp
 
 /**
- * What the last delete or retry had to say, as the iPhone's warning banner: the sentence in the
- * warning's ink on the surface, inside the warning's edge. A tap puts it away.
+ * What the last delete or retry had to say, as the iPhone's banner: the sentence on the surface inside an edge of its tone's
+ * colour — the warning's, or the failure's when it says something failed ([failed]). A tap puts it away.
  */
 @Composable
-internal fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+internal fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifier = Modifier, failed: Boolean = false) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
     Box(
@@ -128,13 +128,13 @@ internal fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifi
             .defaultMinSize(minHeight = MinTouch)
             .focusRing(palette, Radius.node)
             .background(palette.surface, shape)
-            .border(palette.line, palette.warning, shape)
+            .border(palette.line, if (failed) palette.danger else palette.warning, shape)
             .clickable(onClickLabel = stringResource(R.string.action_close), onClick = onDismiss)
             .padding(horizontal = Space.sm, vertical = Space.s)
             .testTag("message"),
         contentAlignment = Alignment.CenterStart,
     ) {
         // 14, as the iPhone's, the Mac's and Windows' banner: a sentence to read, not a row's secondary line (2026-10-28).
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = palette.warningInk)
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = if (failed) palette.danger else palette.warningInk)
     }
 }

@@ -143,7 +143,7 @@ private const val MIN_SCALE = 0.7f
 /**
  * The three dashboard nodes, joined edge to edge by straight 20dp connectors. A node whose words took a
  * second line makes the row taller, and all three with it: they stay one height. Where a value would not
- * fit a third of the row even in two lines, the nodes stack, each the full width.
+ * fit a third of the row even in two lines, the nodes stack, each the full width, joined by the same connectors.
  */
 @Composable
 fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
@@ -163,8 +163,13 @@ fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
             if (row != null && row.none { it == null }) false to row else true to fit(maxWidth)
         }
         if (stacked) {
-            Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                nodes.forEachIndexed { index, spec -> StateNode(spec, Modifier.fillMaxWidth(), styles[index] ?: value) }
+            // The same graph running downwards, as the iPhone's: the same straight connectors, turned ninety degrees.
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                nodes.forEachIndexed { index, spec ->
+                    StateNode(spec, Modifier.fillMaxWidth(), styles[index] ?: value)
+                    if (index != nodes.lastIndex) Box(Modifier.width(palette.line).height(CONNECTOR)
+                        .background(palette.text).clearAndSetSemantics {})
+                }
             }
         } else {
             Row(Modifier.height(IntrinsicSize.Max), verticalAlignment = Alignment.CenterVertically) {

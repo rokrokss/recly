@@ -64,6 +64,7 @@ import app.recly.android.ui.component.MenuOption
 import app.recly.android.ui.component.SwitchTrack
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
+import app.recly.android.ui.theme.SheetScrim
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.dotGrid
@@ -225,10 +226,10 @@ internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) ->
     var unavailable by remember { mutableStateOf(emptySet<ExportFormat>()) }
     var copied by remember { mutableStateOf(false) }
     LaunchedEffect(copied) { if (copied) { delay(3000); copied = false } }
-    // docs/09: the iPhone's sheet — the paper and its dot grid, the card's 8dp top corners, and no pill
+    // docs/09: the iPhone's sheet — the paper and its dot grid, its 24 top corners over its dim, and no pill
     // grabber (UX decisions of 2026-10-08). A drag and a tap outside still put it away.
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = palette.background, tonalElevation = 0.dp,
-        shape = RoundedCornerShape(topStart = Radius.card, topEnd = Radius.card), dragHandle = null) {
+        scrimColor = SheetScrim, shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet), dragHandle = null) {
         Column(Modifier.fillMaxWidth().dotGrid(palette).navigationBarsPadding().padding(top = Space.s, bottom = Space.m).testTag("share-sheet")) {
             Text(stringResource(R.string.detail_share), Modifier.padding(horizontal = Space.m, vertical = Space.s),
                 style = MaterialTheme.typography.titleMedium, color = palette.text)

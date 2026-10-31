@@ -71,23 +71,32 @@ private fun DrawScope.drawGlyph(glyph: NavGlyph, color: Color) {
     val inset = stroke.width / 2
     val box = Size(size.width - stroke.width, size.height - stroke.width)
     val corner = CornerRadius(2.dp.toPx())
+    // The iPhone's tab symbols, drawn in the same line: `dot.square`, `list.bullet.rectangle`, `slider.horizontal.3`.
     when (glyph) {
         NavGlyph.RECORD -> {
             drawRoundRect(color, Offset(inset, inset), box, corner, stroke)
-            val side = size.width * 0.4f
-            val at = (size.width - side) / 2
-            drawRoundRect(color, Offset(at, at), Size(side, side), CornerRadius(1.dp.toPx()))
+            drawCircle(color, radius = size.width * 0.18f)
         }
 
         NavGlyph.LIST -> {
             drawRoundRect(color, Offset(inset, inset), box, corner, stroke)
-            val left = size.width * 0.25f
-            val right = size.width * 0.75f
-            listOf(0.32f, 0.5f, 0.68f).forEach { at ->
-                drawLine(color, Offset(left, size.height * at), Offset(right, size.height * at), stroke.width)
+            listOf(0.27f to 0.78f, 0.42f to 0.62f, 0.58f to 0.78f, 0.73f to 0.62f).forEach { (at, end) ->
+                val y = size.height * at
+                drawCircle(color, radius = stroke.width * 0.75f, center = Offset(size.width * 0.27f, y))
+                drawLine(color, Offset(size.width * 0.38f, y), Offset(size.width * end, y), stroke.width)
             }
         }
 
-        NavGlyph.SETTINGS -> drawCircle(color, radius = box.width / 2, style = stroke)
+        // Three sliders, each a line broken by its ring of a knob.
+        NavGlyph.SETTINGS -> {
+            val knob = size.width * 0.11f
+            listOf(0.28f to 0.69f, 0.5f to 0.31f, 0.72f to 0.69f).forEach { (at, x) ->
+                val y = size.height * at
+                val cx = size.width * x
+                drawLine(color, Offset(0f, y), Offset(cx - knob, y), stroke.width)
+                drawLine(color, Offset(cx + knob, y), Offset(size.width, y), stroke.width)
+                drawCircle(color, radius = knob - stroke.width / 2, center = Offset(cx, y), style = stroke)
+            }
+        }
     }
 }

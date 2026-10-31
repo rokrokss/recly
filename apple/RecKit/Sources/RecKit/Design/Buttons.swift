@@ -39,7 +39,8 @@ public struct BlueprintButton: View {
 
     /// - Parameter mono: for a label that is data — a provider id — rather than a word, as
     ///   [BlueprintField]'s own `mono` is, and as the other two shells' `BlueprintButton` already had.
-    /// - Parameter minWidth: [wordedMinWidth] when not given, except for a data label.
+    /// - Parameter minWidth: [wordedMinWidth] when not given; [minTouch] for a data label, which keeps its own width
+    ///   above that, and none for a compact one, whose target is the minimum.
     /// - Parameter compact: docs/09 "Component measurements" — Time and speaker button (2026-10-28): drawn at the
     ///   status badge's size, label 12, inside a target that is still the touch minimum.
     public init(
@@ -55,7 +56,7 @@ public struct BlueprintButton: View {
         self.tone = tone
         self.leading = leading
         self.mono = mono
-        self.minWidth = minWidth ?? (mono || compact ? nil : Self.wordedMinWidth)
+        self.minWidth = minWidth ?? (compact ? nil : mono ? minTouch : Self.wordedMinWidth)
         self.compact = compact
         self.action = action
     }
@@ -67,6 +68,7 @@ public struct BlueprintButton: View {
                     if leading == "+" {
                         Text(verbatim: leading)
                             .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
+                            .tracking(0.6)
                             .accessibilityHidden(true)
                     } else {
                         Text(verbatim: leading)
@@ -85,19 +87,19 @@ public struct BlueprintButton: View {
             .padding(.vertical, Space.xs)
             // docs/09 "Accessibility": the label is small, the button is not.
             .frame(minWidth: minWidth, maxWidth: fillsWidth ? .infinity : nil, minHeight: compact ? nil : minTouch)
-            .background(fill, in: RoundedRectangle(cornerRadius: Radius.node))
+            .background(fill, in: RoundedRectangle(cornerRadius: radius))
             .overlay {
                 // 2026-10-08 §12: a disabled button is dashed as well as muted — the shape survives
                 // high contrast, where the muted ink and the grid are both promoted to the body
                 // colour and a live quiet button would look the same (Windows' `dashedBorder`).
-                RoundedRectangle(cornerRadius: Radius.node)
+                RoundedRectangle(cornerRadius: radius)
                     .strokeBorder(
                         edge,
                         style: StrokeStyle(lineWidth: blueprint.line, dash: isEnabled ? [] : BlueprintButton.dash)
                     )
             }
             .contentShape(Rectangle())
-            .blueprintFocusRing(onFill: isEnabled && tone == .primary)
+            .blueprintFocusRing(radius: radius, onFill: isEnabled && tone == .primary)
             .modifier(TouchTarget(active: compact))
         }
         .buttonStyle(BlueprintPressStyle())
@@ -117,6 +119,9 @@ public struct BlueprintButton: View {
             if active { content.focusable(false) } else { content }
         }
     }
+
+    /// docs/09 "Shape": a compact box is drawn at the status badge's size, so it takes the badge's corner.
+    private var radius: CGFloat { compact ? Radius.badge : Radius.node }
 
     private var labelFont: Font {
         let size = compact ? TypeSize.small : TypeSize.bodySmall

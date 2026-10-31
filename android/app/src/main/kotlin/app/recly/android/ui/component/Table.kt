@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
@@ -53,7 +54,9 @@ fun ScreenHeader(
     singleLine: Boolean = false,
 ) {
     val compact = LocalConfiguration.current.screenHeightDp < 480
-    BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = if (compact) Space.s else Space.m)) {
+    // 16 above and 12 below, as the iPhone's header has them.
+    BoxWithConstraints(modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, top = if (compact) Space.s else Space.m,
+        bottom = if (compact) Space.s else Space.sm)) {
         val stacked = stackable && (maxWidth < 400.dp || (maxWidth < 560.dp && LocalDensity.current.fontScale > 1.3f))
         val heading: @Composable () -> Unit = {
             Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
@@ -111,22 +114,27 @@ fun TableRow(
     trailing: (@Composable () -> Unit)? = null,
     /** A line under the subtitle — a [TextLink] that belongs to this row rather than to a row of its own. */
     under: (@Composable () -> Unit)? = null,
+    /** False draws the words in `disabled`, as a disabled control's are (docs/09 "Derived tokens"). */
+    enabled: Boolean = true,
 ) {
     val palette = blueprint
     Column(modifier.fillMaxWidth().background(palette.surface)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                // docs/09 "Component measurements": 12 top and bottom, 16 at the sides.
+                // docs/09 "Component measurements": height at least the touch minimum, 12 top and bottom, 16 at the sides.
+                .heightIn(min = MinTouch)
                 .padding(horizontal = Space.m, vertical = Space.sm),
             horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 // A word longer than the column (German "Zusammenfassungsformat") breaks with a hyphen, not mid-word.
-                Text(title, style = MaterialTheme.typography.bodyMedium.copy(hyphens = Hyphens.Auto), color = palette.text)
+                Text(title, style = MaterialTheme.typography.bodyMedium.copy(hyphens = Hyphens.Auto),
+                    color = if (enabled) palette.text else palette.disabled)
                 subtitle?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = subtitleColor.takeOrElse { palette.textMuted })
+                    Text(it, style = MaterialTheme.typography.bodySmall,
+                        color = if (enabled) subtitleColor.takeOrElse { palette.textMuted } else palette.disabled)
                 }
                 under?.invoke()
             }
@@ -171,6 +179,7 @@ fun SwitchRow(
         ),
         subtitle = subtitle,
         trailing = { SwitchTrack(checked = checked, enabled = enabled) },
+        enabled = enabled,
     )
 }
 
@@ -188,7 +197,8 @@ fun SwitchTrack(checked: Boolean, enabled: Boolean = true, modifier: Modifier = 
         checked -> palette.accent
         else -> palette.textMuted
     }
-    Box(modifier = modifier.size(MinTouch), contentAlignment = Alignment.Center) {
+    // The track at the end of its box, as the iPhone's: its edge lines up with the row's 16, not 4 short of it.
+    Box(modifier = modifier.size(MinTouch), contentAlignment = Alignment.CenterEnd) {
         Row(
             modifier = Modifier
                 .size(width = 40.dp, height = 22.dp)

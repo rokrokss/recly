@@ -143,12 +143,14 @@ fun JobsScreen(
         )
 
         // What the last delete or retry had to say, above the ledger and whatever is in it — an
-        // empty list included, since the delete that emptied it is what it is about. A warning and
-        // not red (docs/09 "Accessibility": red is a failed state or a delete), and a tap puts it away.
+        // empty list included, since the delete that emptied it is what it is about. A warning, and
+        // red only when it says something failed (docs/09 "Accessibility": red is a failed state or a delete), as
+        // the iPhone's; a tap puts it away.
         state.message?.let { message ->
             MessageBanner(
                 text = message.text(),
                 onDismiss = onDismissMessage,
+                failed = state.messageFailed,
                 modifier = Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s),
             )
         }
@@ -157,6 +159,7 @@ fun JobsScreen(
             MessageBanner(
                 text = stringResource(R.string.import_failed) + "\n" + coreMessage(code).text(),
                 onDismiss = onDismissImport,
+                failed = true,
                 modifier = Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s),
             )
         }

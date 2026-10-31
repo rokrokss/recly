@@ -1,7 +1,6 @@
 package app.recly.android.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -393,8 +392,9 @@ internal fun CopyFooter(line: String, text: String, copyModifier: Modifier = Mod
     val clipboard = LocalClipboardManager.current
     var copied by remember(text) { mutableStateOf(false) }
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
+    // On the page under the text it belongs to, as the iPhone has it — the pane around it gives the space above and below.
     Row(
-        Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.m, vertical = Space.s),
+        Modifier.fillMaxWidth().padding(horizontal = Space.m),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -315,6 +315,7 @@ private struct NoteDelete: ViewModifier {
                         if pull >= Self.threshold {
                             Text(verbatim: label)
                                 .font(blueprint.fonts.label)
+                                .tracking(0.6)
                                 .foregroundStyle(blueprint.palette.onDanger)
                                 .lineLimit(1)
                         }

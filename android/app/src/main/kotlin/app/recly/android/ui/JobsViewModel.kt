@@ -166,6 +166,8 @@ data class JobsUiState(
      * Named, not resolved: this outlives the screen the language setting recreates (docs/07).
      */
     val message: UiMessage? = null,
+    /** The [message] says something failed — a delete the storage refused — and is shown in the failure colour, as the iPhone's. */
+    val messageFailed: Boolean = false,
     /** docs/03: a pull-to-refresh is asking Drive what the other devices have uploaded. */
     val refreshing: Boolean = false,
     /** The speech model download, for the banner and the rows that wait for it. */
@@ -661,7 +663,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** The list message tapped away — or a recording started, which is where the iPhone clears it. */
-    fun dismissMessage() = _state.update { it.copy(message = null) }
+    fun dismissMessage() = _state.update { it.copy(message = null, messageFailed = false) }
 
     /**
      * Fire and forget: the list draws what this phone already knows and gains the rest when Drive
@@ -680,7 +682,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun retry(item: JobItem) = action {
         val jobId = item.jobId ?: return@action false
         if (!core().jobs.retry(jobId)) {
-            _state.update { it.copy(message = UiMessage.Res(R.string.jobs_retry_unavailable)) }
+            _state.update { it.copy(message = UiMessage.Res(R.string.jobs_retry_unavailable), messageFailed = false) }
             return@action false
         }
         scheduler().onJobsDue(expedited = true)
@@ -745,7 +747,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.detail?.recordingId == request.recordingId) closeDetail()
         when (val result = core().recordings.delete(request.recordingId, deleteDrive)) {
             DeleteResult.Busy -> {
-                _state.update { it.copy(message = UiMessage.Res(R.string.delete_busy)) }
+                _state.update { it.copy(message = UiMessage.Res(R.string.delete_busy), messageFailed = false) }
                 false
             }
 
@@ -753,7 +755,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 result.driveError?.let { error ->
                     val failed = if (request.folder) R.string.delete_folder_failed else R.string.delete_drive_failed
                     _state.update {
-                        it.copy(message = UiMessage.Res(failed, listOf(error)))
+                        it.copy(message = UiMessage.Res(failed, listOf(error)), messageFailed = true)
                     }
                 }
                 result.driveError == null

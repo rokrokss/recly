@@ -73,11 +73,14 @@ val MinTouch: Dp = 48.dp
  */
 val ButtonMinWidth: Dp = 88.dp
 
-/** docs/09 "Shape": 4 for a node, 8 for a card, 0 for a table row. Badges and chips take half a node. */
+/** docs/09 "Shape": 4 for a node, 8 for a card, 0 for a table row, 24 for a bottom sheet. Badges and chips take half a node. */
 object Radius {
     val node: Dp = 4.dp
     val card: Dp = 8.dp
     val badge: Dp = 2.dp
+
+    /** A bottom sheet's top corners: the iPhone's, measured off the system's full-height sheet (2026-10-29). */
+    val sheet: Dp = 24.dp
 }
 
 val ReclyShapes: Shapes = Shapes(

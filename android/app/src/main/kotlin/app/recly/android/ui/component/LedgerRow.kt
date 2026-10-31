@@ -244,7 +244,8 @@ private fun TitleCell(title: String, subtitle: String, modifier: Modifier = Modi
     val palette = blueprint
     Column(
         modifier = modifier.clearAndSetSemantics {},
-        verticalArrangement = Arrangement.spacedBy(Space.xs),
+        // The iPhone's 2 between the title and its preview line.
+        verticalArrangement = Arrangement.spacedBy(Space.xxs),
     ) {
         Text(
             title,
