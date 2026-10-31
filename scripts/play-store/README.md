@@ -40,6 +40,10 @@ iPhone, Apple Watch or iCloud, and on-device transcription only on phones with 8
    `meta.json`, a `transcript.json` whose segment times are the real offsets in that audio, and job rows marked
    uploaded and transcribed. The transcripts are sample text, not transcription output.
 3. **Phone captures.** `push.sh <dir>` replaces the app's data with the seed; `demo-bar.sh` sets the status bar.
+   First give the emulator a punch-hole cutout, or its status bar is too short and clips the clock:
+   `adb shell cmd overlay enable-exclusive --category com.android.internal.display.cutout.emulation.hole`. That
+   restarts the system UI, so run `demo-bar.sh` after it, once: a second run draws a second Wi-Fi icon (send
+   `-e command exit` to the demo broadcast to reset). Wait for the waveform to load before capturing a Details screen.
    Time zone, the demo recordings' (not the host's, which the emulator takes): `adb shell cmd alarm set-timezone Asia/Dubai`.
    Language: `adb shell cmd locale set-app-locales app.recly --locales ko-KR` (or `en-US`). Capture with
    `adb exec-out screencap -p` into `build/play-store-assets/captures/<lang>/`: `list` (List tab), `detail` (the first
