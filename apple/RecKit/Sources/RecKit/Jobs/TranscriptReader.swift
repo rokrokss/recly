@@ -24,7 +24,7 @@ struct TranscriptReader: View {
     /// The find bar's own field, where the page offers one (the Mac's ⌘F), and the press that puts the cursor in it.
     var findQuery: Binding<String>? = nil
     var findFocus = 0
-    /// docs/09 "Transcript reader" — "After a correction": the segments the last correction changed, tinted.
+    /// docs/09 "Ask": the segments the answer on screen changed, tinted.
     var corrected: Set<Int> = []
 
     struct SpeakerActions {
@@ -182,7 +182,7 @@ struct TranscriptReader: View {
         }
     }
 
-    /// The paragraph with the find's matches on the accent, the current one stronger — over the words a correction
+    /// The paragraph with the find's matches on the accent, the current one stronger — over the words an answer
     /// changed, tinted as a match is.
     private func marked(_ group: TranscriptGroup) -> AttributedString {
         var text = AttributedString(group.text)

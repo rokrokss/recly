@@ -44,9 +44,8 @@ internal fun versionKindLabel(kind: TranscriptVersionKind): Str = when (kind) {
 }
 
 /**
- * Why a restore — a row's Restore, or Undo after a correction — did not bring the version back, or null when it did: the
- * job in the way by More's own reason for it ([busy]), and for anything else that it could not. A null [result] is a
- * call that threw.
+ * Why a row's Restore did not bring the version back, or null when it did: the job in the way by More's own reason for it
+ * ([busy]), and for anything else that it could not. A null [result] is a call that threw.
  */
 internal fun restoreRefusal(result: EditResult?, busy: Str): Str? = when (result) {
     is EditResult.Edited -> null

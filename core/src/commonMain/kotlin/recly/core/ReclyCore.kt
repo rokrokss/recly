@@ -262,6 +262,9 @@ class ReclyCore(
     val summaries: recly.core.chatgpt.Summaries = recly.core.chatgpt.Summaries(
         db, deps, chatGpt, recordings, { results(it).transcript }, transferConsents,
         memo = { recordingId -> memos.forAi(recordingId) },
+        summary = { recordingId -> notes.askSummary(recordingId) },
+        apply = ::applyAsk,
+        undo = ::undoAsk,
     )
 
     /**
@@ -518,55 +521,56 @@ class ReclyCore(
         pushes.launch { remote.pushTranscripts() }
     }
 
-    private val correction = recly.core.chatgpt.TranscriptCorrection(
-        deps, summaries, chatGpt, transferConsents,
-        transcript = { results(it).transcript },
-        busy = ::transcriptBusy,
-        memo = { recordingId -> memos.forAi(recordingId) },
-        apply = ::applyCorrection,
-    )
-
     /**
-     * docs/08 "Correcting": Correct transcript… — sends the transcript, the recording's memo and the user's [request] (what
-     * to fix, with anything pasted to help: names, terms, background, another transcript of the same conversation) to the
-     * user's ChatGPT plan, and saves what it changes as an edit: here at once, then in the recording's folder, with the
-     * version it replaced kept to undo it (docs/08 "Versions"). Refused like an edit while a transcription of the recording
-     * has not settled. On iPhone, `Failed(TRANSFER_CONSENT_REQUIRED)` before anything is sent. Cancelling the call drops
-     * the answer: nothing is saved.
+     * docs/08 "Ask": saves what a request asked to change — the transcript as an edit (here at once, then in the
+     * recording's folder, the version it replaced kept), unless a transcription of the recording has not settled; the
+     * final notes as the user's own edits. A segment, speaker or name the user changed while ChatGPT answered keeps the
+     * user's change. Null when nothing was saved.
      */
-    @Throws(Throwable::class)
-    suspend fun correctTranscript(recordingId: String, request: String): recly.core.chatgpt.CorrectionResult =
-        correction.correct(recordingId, request)
-
-    private suspend fun applyCorrection(
+    private suspend fun applyAsk(
         recordingId: String,
         sent: recly.core.transcribe.Transcript,
-        proposal: recly.core.chatgpt.CorrectionProposal,
-    ): recly.core.chatgpt.CorrectionResult = remote.transcriptWrite {
-        val record = recordings.get(recordingId) ?: return@transcriptWrite recly.core.chatgpt.CorrectionResult.NoTranscript
-        if (transcriptBusy(recordingId)) return@transcriptWrite recly.core.chatgpt.CorrectionResult.Busy
-        val current = results(recordingId).transcript ?: return@transcriptWrite recly.core.chatgpt.CorrectionResult.NoTranscript
-        val edits = recly.core.chatgpt.CorrectionEdits.of(sent, current, proposal)
-            ?: return@transcriptWrite recly.core.chatgpt.CorrectionResult.Busy
-        if (edits.isEmpty()) return@transcriptWrite recly.core.chatgpt.CorrectionResult.NothingToCorrect
-        when (val result = applyEdit(recordingId, recly.core.transcribe.TranscriptEdit.Batch(edits), recly.core.transcribe.TranscriptVersionKind.CORRECTED)) {
-            is recly.core.transcribe.EditResult.Edited -> {
-                val after = result.transcript
-                val segments = current.segments.indices.filter {
-                    after.segments[it].text != current.segments[it].text || after.segments[it].speaker != current.segments[it].speaker
+        summary: recly.core.chatgpt.AskSummary?,
+        proposal: recly.core.chatgpt.AskProposal,
+    ): recly.core.chatgpt.AskApplied? {
+        var segments = emptyList<Int>()
+        var names = 0
+        var after: recly.core.transcribe.Transcript? = null
+        var version: String? = null
+        if (proposal.changesTranscript) {
+            remote.transcriptWrite {
+                val record = recordings.get(recordingId) ?: return@transcriptWrite
+                if (transcriptBusy(recordingId)) return@transcriptWrite
+                val current = results(recordingId).transcript ?: return@transcriptWrite
+                val edits = recly.core.chatgpt.AskEdits.transcript(sent, current, proposal)?.takeIf { it.isNotEmpty() } ?: return@transcriptWrite
+                val edited = (applyEdit(recordingId, recly.core.transcribe.TranscriptEdit.Batch(edits), recly.core.transcribe.TranscriptVersionKind.CORRECTED)
+                    as? recly.core.transcribe.EditResult.Edited)?.transcript?.takeIf { it != current } ?: return@transcriptWrite
+                segments = current.segments.indices.filter {
+                    edited.segments[it].text != current.segments[it].text || edited.segments[it].speaker != current.segments[it].speaker
                 }
-                val names = after.speakers.count { speaker -> current.speakers.firstOrNull { it.id == speaker.id }?.name != speaker.name }
-                if (segments.isEmpty() && names == 0) {
-                    recly.core.chatgpt.CorrectionResult.NothingToCorrect
-                } else {
-                    recly.core.chatgpt.CorrectionResult.Corrected(segments, names, previousVersion(record))
-                }
+                names = edited.speakers.count { speaker -> current.speakers.firstOrNull { it.id == speaker.id }?.name != speaker.name }
+                after = edited
+                version = previousVersion(record)
             }
-            recly.core.transcribe.EditResult.Busy -> recly.core.chatgpt.CorrectionResult.Busy
-            recly.core.transcribe.EditResult.NoTranscript -> recly.core.chatgpt.CorrectionResult.NoTranscript
-            is recly.core.transcribe.EditResult.Invalid ->
-                recly.core.chatgpt.CorrectionResult.Failed(CoreMessage.PROVIDER_ERROR.code(detail = result.reason))
         }
+        val notesChange = if (proposal.changesSummary && summary != null) notes.applyAsk(recordingId, proposal.overview, proposal.items, proposal.added) else null
+        val changes = recly.core.chatgpt.AskChanges(
+            segments, names, notesChange?.items.orEmpty(), notesChange?.removed ?: 0, notesChange?.overview ?: false,
+        )
+        if (changes.transcriptCount == 0 && changes.summaryCount == 0) return null
+        return recly.core.chatgpt.AskApplied(changes, version, after, notesChange)
+    }
+
+    /** docs/08 "Ask" — `Undo`: each of the request's changes undone while what it changed is still as it left it. */
+    private suspend fun undoAsk(recordingId: String, applied: recly.core.chatgpt.AskApplied): Boolean {
+        var undone = true
+        val after = applied.transcriptAfter
+        if (after != null) {
+            val version = applied.transcriptVersion
+            undone = version != null && restore(recordingId, version, expected = after) is recly.core.transcribe.EditResult.Edited
+        }
+        applied.notes?.let { undone = notes.undoAsk(recordingId, it) && undone }
+        return undone
     }
 
     private suspend fun previousVersion(record: recly.core.recording.RecordingRecord): String? =
@@ -596,10 +600,20 @@ class ReclyCore(
      * while a transcription of the recording has not settled; `Invalid` for a version this device does not keep.
      */
     @Throws(Throwable::class)
-    suspend fun restoreTranscript(recordingId: String, versionId: String): recly.core.transcribe.EditResult = remote.transcriptWrite {
+    suspend fun restoreTranscript(recordingId: String, versionId: String): recly.core.transcribe.EditResult = restore(recordingId, versionId, null)
+
+    /** [restoreTranscript], only while the transcript is still [expected] when one is given (`Busy` otherwise). */
+    private suspend fun restore(
+        recordingId: String,
+        versionId: String,
+        expected: recly.core.transcribe.Transcript?,
+    ): recly.core.transcribe.EditResult = remote.transcriptWrite {
         val record = recordings.get(recordingId) ?: return@transcriptWrite recly.core.transcribe.EditResult.NoTranscript
         if (transcriptBusy(recordingId)) return@transcriptWrite recly.core.transcribe.EditResult.Busy
         val current = results(recordingId).transcript ?: return@transcriptWrite recly.core.transcribe.EditResult.NoTranscript
+        if (expected != null && (current.segments != expected.segments || current.speakers != expected.speakers)) {
+            return@transcriptWrite recly.core.transcribe.EditResult.Busy
+        }
         val version = kotlinx.coroutines.withContext(deps.io) {
             recly.core.transcribe.resultFileMutex.withLock { recly.core.transcribe.TranscriptVersions.read(deps.fileSystem, record.dir, versionId) }
         }?.takeIf { it.recordingId == recordingId }

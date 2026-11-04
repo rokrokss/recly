@@ -61,7 +61,7 @@ private data class GroupMenu(val block: Int, val at: Offset, val speaker: String
  * While playing, the group under the playhead wears an accent bar on its start edge and an accent time,
  * and the list keeps it in its upper third — until the user scrolls, when following pauses and
  * `Back to playback` brings it back. A group's speaker is a badge that opens the speaker menu. Find matches are
- * tinted, the current one more, and so are the words of the lines a correction changed.
+ * tinted, the current one more, and so are the words of the lines the answer on screen changed (docs/09 "Ask").
  */
 @Composable
 internal fun TranscriptReader(
@@ -73,7 +73,7 @@ internal fun TranscriptReader(
     playing: Boolean,
     matches: List<FindMatch>,
     currentMatch: Int?,
-    /** docs/09 "After a correction": the words of the segments it changed, tinted as a match is. */
+    /** docs/09 "Ask": the words of the segments the answer on screen changed, tinted as a match is. */
     marked: List<BlockRange> = emptyList(),
     /** A group (its index and its segments), and who should say it — null is a new speaker. */
     onChangeSpeaker: (Int, IntRange, String?) -> Unit,
@@ -258,8 +258,8 @@ private fun BackToPlayback(label: String, modifier: Modifier, onClick: () -> Uni
 }
 
 /**
- * A block's text with every find match tinted, the current one stronger — and the words a correction changed, at a
- * match's tint, under them.
+ * A block's text with every find match tinted, the current one stronger — and the words an answer changed, at a match's
+ * tint, under them.
  */
 @Composable
 private fun tinted(text: String, matches: List<FindMatch>, block: Int, current: Int?, marked: List<BlockRange>): AnnotatedString {

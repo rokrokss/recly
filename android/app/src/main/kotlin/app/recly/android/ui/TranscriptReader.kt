@@ -42,6 +42,7 @@ import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import recly.core.recording.RecordingSearch
 import recly.core.transcribe.Transcript
+import recly.core.transcribe.TranscriptDocument
 import app.recly.android.ui.component.dashedBorder
 import app.recly.android.ui.component.focusRing
 import androidx.compose.ui.unit.LayoutDirection
@@ -86,6 +87,11 @@ internal data class FindMatch(val group: Int, val offset: Int, val length: Int)
 internal fun findMatches(groups: List<ReaderGroup>, query: String): List<FindMatch> =
     groups.flatMap { group -> RecordingSearch.findRanges(group.text, query).map { FindMatch(group.index, it.offset, it.length) } }
 
+/** Where the words of [segments] are in the reader's groups — the core's blocks, which the groups are drawn from. */
+internal fun segmentTints(transcript: Transcript, segments: List<Int>): List<FindMatch> =
+    if (segments.isEmpty()) emptyList()
+    else TranscriptDocument(transcript).segmentRanges(segments).map { FindMatch(it.block, it.offset, it.length) }
+
 
 /**
  * The speaker a group header shows: the name the user gave, [me] — the app's word for "Me" — for the person who made
@@ -104,8 +110,8 @@ internal fun speakerIsWord(transcript: Transcript, id: String): Boolean =
  * docs/09 "Transcript reader": the transcript in utterance groups, each with its time (a seek) and its speaker
  * badge. While the recording plays, the group under the playhead carries an accent bar and an accent time, and the
  * list keeps it in the upper third; a scroll by the user stops that until [onFollow] is pressed again. With [find] the
- * matches are tinted and the current one is brought into view; [marks] — the lines a correction changed (docs/09 "After
- * a correction") — are tinted the way a match is.
+ * matches are tinted and the current one is brought into view; [marks] — the lines the answer on screen changed (docs/09
+ * "After an answer's changes") — are tinted the way a match is.
  */
 @Composable
 internal fun TranscriptReader(

@@ -28,7 +28,7 @@ final class TranscriptDraftTests: XCTestCase {
         XCTAssertEqual(match?.length, 6)
     }
 
-    /// docs/09 "Transcript reader" — "After a correction": a changed segment's words, wherever they are in their
+    /// docs/09 "Transcript reader" — "After an answer's changes": a changed segment's words, wherever they are in their
     /// paragraph — trimmed, a space between segments, a segment that says nothing left out — in UTF-16 units.
     func testACorrectionTintsTheWordsOfTheSegmentsItChanged() {
         let transcript = transcript(["S1", "S1", "S1", "S2"], texts: [" 👋 Hi ", " ", "there", "Bye"])

@@ -118,6 +118,8 @@ internal fun NotesPane(
                 strings = strings,
                 seekableDurationSec = detail.audio.totalSec,
                 spanSec = detail.spanSec,
+                changed = detail.askChanges?.items.orEmpty().toSet(),
+                overviewChanged = detail.askChanges?.overview == true,
             )
             ChatGptFooter(notes.model?.let { strings[Str.SUMMARY_MODEL, it] }.orEmpty(), detail.recordingId, strings) {
                 model.notesText(detail.recordingId)
@@ -203,7 +205,7 @@ private fun CopyAllButton(copied: Boolean, strings: Strings, onCopy: () -> Unit)
 /**
  * A centred notice and at most one centred button under it (docs/09 screen principle 8): Manage usage for a
  * spent plan, nothing where the sentence already says where to go or where trying again cannot help, Retry for the
- * rest. Organize's, and Ask's.
+ * rest. Organize's, and an Ask answer's.
  */
 @Composable
 internal fun ChatGptFailureNotice(failure: ChatGptFailure, onManageUsage: () -> Unit, onRetry: () -> Unit, strings: Strings) {

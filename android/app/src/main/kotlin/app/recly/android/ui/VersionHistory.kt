@@ -30,6 +30,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import recly.core.transcribe.EditResult
 import recly.core.transcribe.TranscriptVersion
 import recly.core.transcribe.TranscriptVersionKind
 
@@ -41,6 +42,16 @@ internal fun TranscriptVersionKind.label(): Int = when (this) {
     TranscriptVersionKind.CORRECTED -> R.string.version_corrected
     TranscriptVersionKind.RESTORED -> R.string.version_restored
     TranscriptVersionKind.RECEIVED -> R.string.version_received
+}
+
+/** Why a restore from Version history did not happen; [failed] is said as a failure. */
+internal data class RestoreRefusal(@param:StringRes val text: Int, val failed: Boolean)
+
+/** [result] of a restore as a refusal, or null when it was saved. A null [result] is a call that threw. */
+internal fun restoreRefusal(result: EditResult?, @StringRes busyReason: Int): RestoreRefusal? = when (result) {
+    is EditResult.Edited -> null
+    EditResult.Busy -> RestoreRefusal(busyReason, failed = false)
+    EditResult.NoTranscript, is EditResult.Invalid, null -> RestoreRefusal(R.string.version_restore_failed, failed = true)
 }
 
 /** When a version was made, in [locale]'s own words and [zone]'s time — or the stamp as it came when it cannot be read. */

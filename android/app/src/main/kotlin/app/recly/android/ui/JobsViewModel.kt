@@ -265,7 +265,7 @@ data class DetailState(
     val waitingForDrive: Boolean = false,
     /** docs/03 "Recordings from other devices": another device is transcribing it, so its transcript is on the way. */
     val remoteTranscribing: Boolean = false,
-    /** docs/08 "Ask": the one question about this recording, while this process holds it. */
+    /** docs/08 "Ask": the last request about this recording — a question or a change — while this process holds it. */
     val ask: AskState = AskState.None,
     /** docs/09 "Search": opened from a hit found only in the notes, so the page starts on them. */
     val openNotes: Boolean = false,
@@ -479,6 +479,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun openHit(hit: SearchHit) {
         val query = _state.value.query.trim()
         val find = hit.snippets.firstOrNull()?.let { FindRequest(query, it.atSec) }
+        closeAsk()
         detailJob?.cancel()
         resultJob?.cancel()
         detailJob = viewModelScope.launch {
@@ -509,6 +510,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun edit(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
         val core = core()
         return withContext(core.deps.io) { core.editTranscript(recordingId, edit) }.also {
+            if (it is recly.core.transcribe.EditResult.Edited) endAskChanges(core, recordingId)
             // An edit touches no job, so the row's first words are asked for here.
             val items = _state.value.items
             val previews = previews(core, items)
@@ -577,25 +579,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.await()
 
-    /**
-     * docs/08 "Correcting": More → Correct transcript…, in the caller's coroutine — the sheet's — so closing the sheet cancels
-     * it and the answer is dropped. What came of it; null when the call threw.
-     */
-    suspend fun correct(recordingId: String, request: String): recly.core.chatgpt.CorrectionResult? {
-        val core = core()
-        return try {
-            withContext(core.deps.io) { core.correctTranscript(recordingId, request) }.also {
-                // Saved as an edit is: the row's first words may have changed with it.
-                if (it is recly.core.chatgpt.CorrectionResult.Corrected) refreshPreviews(core)
-            }
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.correct.failed", mapOf("recordingId" to recordingId), e)
-            null
-        }
-    }
-
     /** docs/08 "Versions": the versions this device kept of the recording's transcript, newest first; none when they cannot be read. */
     suspend fun transcriptVersions(recordingId: String): List<recly.core.transcribe.TranscriptVersion> {
         val core = core()
@@ -610,14 +593,17 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * docs/08 "Versions": brings version [versionId] back — Version history's Restore, and Undo after a correction. It runs
-     * on here even if the page goes: a restore is several writes that belong together. Null when the call threw.
+     * docs/08 "Versions": brings version [versionId] back — Version history's Restore. It runs on here even if the page
+     * goes: a restore is several writes that belong together. Null when the call threw.
      */
     suspend fun restoreTranscript(recordingId: String, versionId: String): recly.core.transcribe.EditResult? = viewModelScope.async {
         val core = core()
         try {
             withContext(core.deps.io) { core.restoreTranscript(recordingId, versionId) }.also {
-                if (it is recly.core.transcribe.EditResult.Edited) refreshPreviews(core)
+                if (it is recly.core.transcribe.EditResult.Edited) {
+                    endAskChanges(core, recordingId)
+                    refreshPreviews(core)
+                }
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
@@ -639,13 +625,65 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         return runCatching { withContext(core.deps.io) { core.summaries.askPresets(recordingId) } }.getOrDefault(emptyList())
     }
 
-    /** docs/08 "Ask": one preset or the user's own question; the run is the core's, and the panel follows [DetailState.ask]. */
+    /**
+     * docs/08 "Ask": one preset, or the user's own words — a question or a change; the run is the core's, and the page
+     * follows [DetailState.ask].
+     */
     fun ask(recordingId: String, preset: AskPreset?, question: String?) = launch {
         runCatching { core().summaries.ask(recordingId, preset, question) }
     }
 
-    /** The Ask panel closed: nothing of the answer is kept (docs/08 "Ask"). */
+    /** The answer closed: nothing of it is kept, and what it changed stays — Version history undoes it from then on (docs/08 "Ask"). */
     fun clearAsk(recordingId: String) = launch { core().summaries.clearAsk(recordingId) }
+
+    /**
+     * docs/08 "Ask" — the changes line's Undo: the transcript and the summary as they were before the answer's changes, the
+     * transcript read again for the page. It runs on here even if the page goes. False when any of it was changed again
+     * since — the rest is undone — or the call threw.
+     */
+    suspend fun undoAsk(recordingId: String): Boolean = viewModelScope.async {
+        val core = core()
+        val undone = try {
+            withContext(core.deps.io) { core.summaries.undoAsk(recordingId) }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.ask.undo.failed", mapOf("recordingId" to recordingId), e)
+            false
+        }
+        readTranscript(core, recordingId)
+        refreshPreviews(core)
+        undone
+    }.await()
+
+    /**
+     * docs/09 "Ask": an edit over an answer's changes — saved, or a version restored — ends their tint, which would point into
+     * the transcript it replaced, and their Undo with it.
+     */
+    private fun endAskChanges(core: ReclyCore, recordingId: String) {
+        val ask = _state.value.detail?.takeIf { it.recordingId == recordingId }?.ask
+        if ((ask as? AskState.Ready)?.answer?.changes == null) return
+        core.summaries.clearAsk(recordingId)
+        updateDetail(recordingId) { it.copy(ask = AskState.None) }
+    }
+
+    /** The recording's transcript read again for its page, as the page's first read does. */
+    private suspend fun readTranscript(core: ReclyCore, recordingId: String) {
+        val result = try {
+            core.results(recordingId)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            return
+        }
+        updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
+    }
+
+    /** docs/09 "Ask": the answer goes with the page that showed it — a request still running finishes unseen. */
+    private fun closeAsk() {
+        val recordingId = _state.value.detail?.recordingId ?: return
+        launch { core().summaries.clearAsk(recordingId) }
+    }
 
     /** docs/08 "Organizing": a swipe deletes a note for good; the page follows on [DetailState.notes]. */
     fun deleteNote(recordingId: String, itemId: String) = launch {
@@ -829,6 +867,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         // One open detail at a time, and one job behind it: what the page it replaces was still
         // reading — Drive, and then every byte of the recording for the waveform — is work for a
         // page nobody is looking at any more.
+        closeAsk()
         detailJob?.cancel()
         resultJob?.cancel()
         detailJob = viewModelScope.launch { openDetail(item.recordingId, item.title) }
@@ -868,7 +907,14 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
         resultJob = viewModelScope.launch {
             launch {
-                core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
+                core.summaries.observeAsk(recordingId).collect { ask ->
+                    // docs/09 "Ask": the changed transcript first, so the tint never points into the one it replaced.
+                    if ((ask as? AskState.Ready)?.answer?.changes?.segments?.isNotEmpty() == true) {
+                        readTranscript(core, recordingId)
+                        refreshPreviews(core)
+                    }
+                    updateDetail(recordingId) { it.copy(ask = ask) }
+                }
             }
             launch {
                 core.notes.observe(recordingId).collect { notes -> updateDetail(recordingId) { it.copy(notes = notes) } }
@@ -1054,6 +1100,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun closeDetail() {
+        closeAsk()
         resultJob?.cancel()
         resultJob = null
         detailJob?.cancel()

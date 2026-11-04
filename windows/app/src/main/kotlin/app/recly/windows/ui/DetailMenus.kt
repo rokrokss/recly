@@ -193,8 +193,8 @@ private val EXPORTS = listOf(
 /**
  * docs/09 "Screen principles": the detail's ⋯, in groups with a hairline between them (2026-10-10) — Rename ·
  * Edit transcript · Transcribe again · Version history · Memo while the recording has none (docs/08 "Memo"), then
- * Organize (or Organize again) · Edit notes · Ask about this recording… · Correct transcript… · Fill in title · Fill in
- * speaker names where ChatGPT is offered (docs/09 "AI view"), then Open in Drive or Open the folder once the recording
+ * Organize (or Organize again) · Edit notes · Fill in title · Fill in speaker names where ChatGPT is offered (docs/09
+ * "AI view"; a question or a change goes in the composer under the detail, docs/09 "Ask"), then Open in Drive or Open the folder once the recording
  * has a folder there (D24), and last Delete, in red (2026-10-15). What cannot run now stays in its place, disabled, with
  * the reason under it — `Still recording` for every one of them but Memo while the take is being written.
  */
@@ -282,21 +282,6 @@ internal fun MoreButton(
                         secondary = editNotesBlocked?.let { strings[it] },
                     )
                 }
-                // docs/08 "Ask": one question about this recording, in a panel over the detail.
-                val askBlocked = askBlocked(detail.writing, detail.hasTranscript, busy, connection)
-                BlueprintMenuRow(
-                    strings[Str.ASK_MENU],
-                    { open = false; model.openAsk() },
-                    enabled = askBlocked == null,
-                    secondary = askBlocked?.let { strings[it] },
-                )
-                // docs/08 "Correcting": Ask's reasons, in Ask's order — a request about the transcript, in a dialog as Ask's.
-                BlueprintMenuRow(
-                    strings[Str.CORRECT_MENU],
-                    { open = false; model.openCorrect() },
-                    enabled = askBlocked == null,
-                    secondary = askBlocked?.let { strings[it] },
-                )
                 // docs/08 "Titles and speaker names": two items, the title and the names apart, each offered by what the
                 // recording still lacks, by the rule the core asks by.
                 val needs = detail.transcript?.let { FillNeeds.of((detail.title as? UiMessage.Text)?.value, it) }

@@ -50,6 +50,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -90,6 +91,7 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import app.recly.windows.i18n.message
@@ -276,10 +278,10 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                     )
                 }
             }
-            // D18: Ask is a modal question about the recording, as on the Mac — the detail under it dimmed while it is up; and
-            // so are Correct transcript and Version history (2026-11-04).
+            // D18: Version history is a modal dialog over the recording, as on the Mac — the detail under it dimmed while it is
+            // up (2026-11-04).
             val open = model.detail?.recordingId
-            if (open != null && (open == model.askingAbout || open == model.correctingAbout || open == model.versionsAbout)) {
+            if (open != null && open == model.versionsAbout) {
                 Box(Modifier.fillMaxSize().background(blueprint.background.copy(alpha = SCRIM_ALPHA)).clearAndSetSemantics { })
             }
         }
@@ -508,7 +510,7 @@ internal fun rowActions(item: RecentItem): RowActions = RowActions(
 )
 
 @Composable
-private fun Detail(
+private fun ColumnScope.Detail(
     model: ShellModel,
     detail: RecordingDetail,
     player: RecordingPlayer,
@@ -548,9 +550,13 @@ private fun Detail(
     var editRefused by remember(draft) { mutableStateOf(false) }
     // More's `Memo` opens the memo to be written in, its field focused; its chip only shows it.
     var memoFocus by remember(detail.recordingId) { mutableStateOf(false) }
-    // docs/09 "AI view" — "Correct transcript": what was typed stays while the detail is on the recording, so a second
-    // request starts from the first.
-    var correctRequest by remember(detail.recordingId) { mutableStateOf("") }
+    // docs/09 "Ask": what the composer holds, empty again on another recording — and the answer closed on leaving one, the
+    // window closing too.
+    var askField by remember(detail.recordingId) { mutableStateOf(TextFieldValue("")) }
+    DisposableEffect(detail.recordingId) {
+        val recordingId = detail.recordingId
+        onDispose { model.closeAsk(recordingId) }
+    }
     /**
      * A reading-mode change, saved at once with `Saving…` beside the group it was made on.
      * One at a time: while one saves, the speaker badges do not open ([TranscriptReader]'s `saving`).
@@ -628,10 +634,8 @@ private fun Detail(
                             model, detail,
                             {
                                 detail.transcript?.let {
-                                    // The editor is the transcript's: it opens over the Transcript view, and ends what a
-                                    // correction marked (docs/09 "After a correction").
+                                    // The editor is the transcript's: it opens over the Transcript view.
                                     model.showNotes(false)
-                                    model.forgetCorrection()
                                     onDraft(TranscriptDraft(it))
                                 }
                             },
@@ -670,8 +674,6 @@ private fun Detail(
                 failed.reason?.let { Text(coreMessage(it).text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
             }
         }
-        // docs/09 "After a correction": what it changed, with Undo — or, for a moment, why Undo did not.
-        detail.corrected?.takeIf { !detail.loading }?.let { marks -> CorrectedLine(marks, model::undoCorrection, strings) }
     }
     // docs/09 "AI view": Transcript · Notes · Memo, once there are notes or Organize was chosen, or there is a memo or it
     // was chosen — never over the transcript's editor. Over the notes' they stay, and going to the transcript or the memo
@@ -717,9 +719,20 @@ private fun Detail(
     }
     val finding = findOpen && draft == null && notesDraft == null && document != null && !notesShown && !memoShown
     val matches = remember(document, findQuery, finding) { if (finding) findMatches(document!!.blocks, findQuery) else emptyList() }
-    // docs/09 "After a correction": where the words of each segment it changed are, tinted as a match is.
-    val corrected = detail.corrected?.segments
-    val marked = remember(document, corrected) { corrected?.let { document?.segmentRanges(it) }.orEmpty() }
+    // docs/09 "Ask": where the words of each segment the answer on screen changed are, tinted as a match is.
+    val askChanges = detail.askChanges
+    val changedSegments = askChanges?.segments
+    val marked = remember(document, changedSegments) { changedSegments?.let { document?.segmentRanges(it) }.orEmpty() }
+    // docs/09 "Ask": changes to one of the two show it, where the page shows the other — unless an editor is open.
+    LaunchedEffect(askChanges) {
+        val changes = askChanges ?: return@LaunchedEffect
+        if (draft != null || notesDraft != null) return@LaunchedEffect
+        when (askChangesView(changes, hasNotes = detail.notes?.isEmpty == false)) {
+            DetailView.NOTES -> model.showNotes(true)
+            DetailView.TRANSCRIPT -> model.showNotes(false)
+            DetailView.MEMO, null -> Unit
+        }
+    }
     var currentMatch by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
     LaunchedEffect(matches) {
         // The first match at or after the search hit the detail was opened on, or the first of all.
@@ -754,79 +767,87 @@ private fun Detail(
             Modifier.padding(horizontal = Space.m, vertical = Space.s),
         )
     }
-    when {
-        detail.loading -> Placeholder(strings[Str.DETAIL_LOADING])
-        notesDraft != null -> NotesEditor(
-            notesDraft, notesEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
-        )
-        notesShown -> NotesPane(model, detail, canSeek, onSeek, strings, Modifier.fillMaxSize())
-        memoShown -> MemoPane(model, detail, memoFocus, strings, Modifier.fillMaxSize())
-        draft != null -> TranscriptEditor(
-            draft = draft,
-            canSeek = canSeek,
-            onSeek = onSeek,
-            onRenameSpeaker = { id -> naming = draft.nameOf(id).orEmpty() to { name: String -> draft.rename(id, name) } },
-            drive = !detail.folder,
-            speakersEnabled = editSave == null,
-            spanSec = detail.spanSec,
-            strings = strings,
-            modifier = Modifier.fillMaxSize(),
-        )
-        !detail.hasTranscript -> Column(
-            Modifier.fillMaxSize().padding(Space.l),
-            verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // A transcript waiting on the Drive connection says so, and the fix is right here rather than
-            // in the list (2026-10-08): the Settings' own Connect Drive, centred under the line (principle 8).
-            val remote = model.recents.firstOrNull { it.id == detail.recordingId }?.state == Str.STATE_REMOTE_TRANSCRIBING.message()
-            val notice = transcriptNotice(detail.availability, detail.waitsForDrive, remote)
-            Text(strings[notice], style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted, textAlign = TextAlign.Center)
-            if (notice == Str.DETAIL_WAITING_DRIVE) {
-                ProcessingButton(
-                    label = strings[Str.SIGN_IN],
-                    state = model.action,
-                    strings = strings,
-                    onClick = model::signIn,
-                    enabled = model.clientConfigured && DisconnectGuard.signInBlocker(model.disconnectPhase.owed) == null,
-                )
-                return@Column
-            }
-            if (detail.availability == TranscriptAvailability.UNAVAILABLE) {
-                BlueprintButton(strings[Str.RECENT_RETRY], model::reloadDetailResults)
-            }
-        }
-        else -> {
-            val transcript = detail.transcript!!
-            TranscriptReader(
-                transcript = transcript,
-                document = document!!,
+    // The view takes what the bar under it leaves.
+    Box(Modifier.fillMaxWidth().weight(1f)) {
+        when {
+            detail.loading -> Placeholder(strings[Str.DETAIL_LOADING])
+            notesDraft != null -> NotesEditor(
+                notesDraft, notesEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
+            )
+            notesShown -> NotesPane(model, detail, canSeek, onSeek, strings, Modifier.fillMaxSize())
+            memoShown -> MemoPane(model, detail, memoFocus, strings, Modifier.fillMaxSize())
+            draft != null -> TranscriptEditor(
+                draft = draft,
                 canSeek = canSeek,
                 onSeek = onSeek,
-                positionSec = player.positionSec,
-                playing = player.playing,
-                matches = matches,
-                currentMatch = currentMatch,
-                marked = marked,
-                onChangeSpeaker = { block, range, speaker ->
-                    val target = speaker ?: nextSpeakerId(transcript.speakers.map { it.id })
-                    val speakers = transcript.segments.mapIndexed { index, segment -> if (index in range) target else segment.speaker }
-                    transcriptEdit(transcript, transcript.segments.map { it.text }, speakers)?.let { saveInline(block, it) }
-                },
-                onRenameSpeaker = { block, id ->
-                    naming = transcript.speakers.firstOrNull { it.id == id }?.name.orEmpty() to { name: String ->
-                        saveInline(block, TranscriptEdit.RenameSpeaker(id, name.trim().ifEmpty { null }))
-                    }
-                },
-                saving = saving,
+                onRenameSpeaker = { id -> naming = draft.nameOf(id).orEmpty() to { name: String -> draft.rename(id, name) } },
+                drive = !detail.folder,
+                speakersEnabled = editSave == null,
+                spanSec = detail.spanSec,
                 strings = strings,
                 modifier = Modifier.fillMaxSize(),
-                seekableDurationSec = detail.audio.totalSec,
-                spanSec = detail.spanSec,
-                // The core refuses a speaker change while a job of the recording is unsettled, as it refuses Edit transcript.
-                speakersBlocked = detail.busyReason.takeIf { detail.transcribing }?.let { strings[it] },
             )
+            !detail.hasTranscript -> Column(
+                Modifier.fillMaxSize().padding(Space.l),
+                verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // A transcript waiting on the Drive connection says so, and the fix is right here rather than
+                // in the list (2026-10-08): the Settings' own Connect Drive, centred under the line (principle 8).
+                val remote = model.recents.firstOrNull { it.id == detail.recordingId }?.state == Str.STATE_REMOTE_TRANSCRIBING.message()
+                val notice = transcriptNotice(detail.availability, detail.waitsForDrive, remote)
+                Text(strings[notice], style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted, textAlign = TextAlign.Center)
+                if (notice == Str.DETAIL_WAITING_DRIVE) {
+                    ProcessingButton(
+                        label = strings[Str.SIGN_IN],
+                        state = model.action,
+                        strings = strings,
+                        onClick = model::signIn,
+                        enabled = model.clientConfigured && DisconnectGuard.signInBlocker(model.disconnectPhase.owed) == null,
+                    )
+                    return@Column
+                }
+                if (detail.availability == TranscriptAvailability.UNAVAILABLE) {
+                    BlueprintButton(strings[Str.RECENT_RETRY], model::reloadDetailResults)
+                }
+            }
+            else -> {
+                val transcript = detail.transcript!!
+                TranscriptReader(
+                    transcript = transcript,
+                    document = document!!,
+                    canSeek = canSeek,
+                    onSeek = onSeek,
+                    positionSec = player.positionSec,
+                    playing = player.playing,
+                    matches = matches,
+                    currentMatch = currentMatch,
+                    marked = marked,
+                    onChangeSpeaker = { block, range, speaker ->
+                        val target = speaker ?: nextSpeakerId(transcript.speakers.map { it.id })
+                        val speakers = transcript.segments.mapIndexed { index, segment -> if (index in range) target else segment.speaker }
+                        transcriptEdit(transcript, transcript.segments.map { it.text }, speakers)?.let { saveInline(block, it) }
+                    },
+                    onRenameSpeaker = { block, id ->
+                        naming = transcript.speakers.firstOrNull { it.id == id }?.name.orEmpty() to { name: String ->
+                            saveInline(block, TranscriptEdit.RenameSpeaker(id, name.trim().ifEmpty { null }))
+                        }
+                    },
+                    saving = saving,
+                    strings = strings,
+                    modifier = Modifier.fillMaxSize(),
+                    seekableDurationSec = detail.audio.totalSec,
+                    spanSec = detail.spanSec,
+                    // The core refuses a speaker change while a job of the recording is unsettled, as it refuses Edit transcript.
+                    speakersBlocked = detail.busyReason.takeIf { detail.transcribing }?.let { strings[it] },
+                )
+            }
         }
+    }
+    // docs/09 "Ask": the last thing in the detail column, under the transcript or the summary.
+    val connection = model.chatGpt?.connection
+    if (connection != null && showsAsk(connection, detail.loading, editing = draft != null || notesDraft != null, memoShown, detail.hasTranscript)) {
+        AskBar(model, detail, connection, askField, { askField = it }, canSeek, onPlay, strings)
     }
     naming?.let { (initial, save) ->
         SpeakerNameDialog(initial, strings, theme, onCancel = { naming = null }, onSave = { name ->
@@ -834,43 +855,7 @@ private fun Detail(
             save(name)
         })
     }
-    if (model.askingAbout == detail.recordingId) AskDialog(model, detail, canSeek, onPlay, strings, theme)
-    if (model.correctingAbout == detail.recordingId) {
-        CorrectDialog(model, detail, correctRequest, { correctRequest = it }, strings, theme)
-    }
     if (model.versionsAbout == detail.recordingId) VersionsDialog(model, detail, strings, theme)
-}
-
-/**
- * docs/09 "After a correction": `Corrected lines: 12` — or the speakers named, when no line changed — with a quiet Undo at
- * its end while there is a version to bring back; `Undoing…` while it does. An Undo refused says why here for a moment.
- */
-@Composable
-internal fun CorrectedLine(marks: CorrectionMarks, onUndo: () -> Unit, strings: Strings) {
-    marks.refused?.let { reason ->
-        Text(
-            strings[reason],
-            modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s),
-            style = MaterialTheme.typography.bodySmall,
-            color = refusalInk(reason),
-        )
-        return
-    }
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
-        horizontalArrangement = Arrangement.spacedBy(Space.s),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(correctedLine(marks, strings), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-        if (marks.previousVersionId != null) {
-            BlueprintButton(
-                strings[if (marks.undoing) Str.CORRECT_UNDOING else Str.CORRECT_UNDO],
-                onUndo,
-                tone = ButtonTone.QUIET,
-                busy = marks.undoing,
-            )
-        }
-    }
 }
 
 /**
@@ -1146,7 +1131,7 @@ private fun FetchProgress(fraction: Float, label: String, strings: Strings) {
 /** docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound. */
 private const val LOADER_BAND = 10
 
-/** The scrim over the detail while Ask is up: the page colour, as the Mac's `BlueprintDialogScrim` draws it. */
+/** The scrim over the detail while Version history is up: the page colour, as the Mac's `BlueprintDialogScrim` draws it. */
 private const val SCRIM_ALPHA = 0.86f
 
 /** docs/10 "Search": how long the list waits after the last key before it searches. */

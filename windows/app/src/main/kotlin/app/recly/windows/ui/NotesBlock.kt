@@ -85,12 +85,23 @@ internal fun NotesBlock(
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
     /** The recording's length, which picks the format of every time drawn ([LedgerFormat.clock]). */
     spanSec: Double? = null,
+    /**
+     * docs/09 "Ask": the items the answer on screen changed or added, and whether it rewrote the overview — their words
+     * tinted as the transcript's are.
+     */
+    changed: Set<String> = emptySet(),
+    overviewChanged: Boolean = false,
 ) {
     if (notes.isEmpty) return
     var open by remember(notes.recordingId) { mutableStateOf<String?>(null) }
+    val tint = blueprint.accent.copy(alpha = MATCH_TINT)
     Column(Modifier.fillMaxWidth()) {
         notes.overview?.let {
-            Text(it, style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content), color = blueprint.text)
+            Text(
+                if (overviewChanged) tinted(it, tint) else AnnotatedString(it),
+                style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                color = blueprint.text,
+            )
         }
         noteGroups(notes, strings).forEach { (header, items) ->
             SectionHeader(header)
@@ -105,6 +116,7 @@ internal fun NotesBlock(
                     onDelete = onDelete,
                     strings = strings,
                     spanSec = spanSec,
+                    tint = tint.takeIf { item.id in changed },
                 )
             }
         }
@@ -138,6 +150,8 @@ internal fun NoteRow(
     onDelete: (NoteItem) -> Unit,
     strings: Strings,
     spanSec: Double?,
+    /** docs/09 "Ask": the background of its words, where the answer on screen changed or added it. */
+    tint: Color? = null,
 ) {
     val palette = blueprint
     // Where the context menu hangs: the click, or the row's foot for a key.
@@ -175,7 +189,7 @@ internal fun NoteRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    noteText(item, palette.textMuted),
+                    noteText(item, palette.textMuted, tint),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
@@ -240,12 +254,18 @@ private fun NoteLines(item: NoteItem, linesAround: suspend (Double) -> List<Note
     }
 }
 
-/** A note as its row says it: the text, the owner after a dash, and the deadline after that, quieter. */
-internal fun noteText(item: NoteItem, muted: Color): AnnotatedString = buildAnnotatedString {
-    append(item.text)
-    item.owner?.let { append(" — $it") }
+/**
+ * A note as its row says it: the text, the owner after a dash, and the deadline after that, quieter — the text and the
+ * owner on [tint] where an answer changed it (docs/09 "Ask").
+ */
+internal fun noteText(item: NoteItem, muted: Color, tint: Color? = null): AnnotatedString = buildAnnotatedString {
+    val words = item.text + item.owner?.let { " — $it" }.orEmpty()
+    if (tint != null) withStyle(SpanStyle(background = tint)) { append(words) } else append(words)
     item.due?.let { withStyle(SpanStyle(color = muted)) { append(" · $it") } }
 }
+
+/** [text] on [tint] whole: the overview an answer rewrote (docs/09 "Ask"). */
+private fun tinted(text: String, tint: Color): AnnotatedString = buildAnnotatedString { withStyle(SpanStyle(background = tint)) { append(text) } }
 
 /** One line under an opened note: who said it, quieter, when they have a name — an unnamed `me` is [me] — then what. */
 internal fun noteLineText(line: NoteLine, me: String, muted: Color): AnnotatedString = buildAnnotatedString {

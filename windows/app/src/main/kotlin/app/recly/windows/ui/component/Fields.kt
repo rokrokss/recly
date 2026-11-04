@@ -132,8 +132,9 @@ fun BlueprintTextField(
     minHeight: Dp = MinTouch,
     placeholder: String? = null,
     focusRequester: FocusRequester? = null,
+    labelShown: Boolean = true,
 ) {
-    FieldFrame(label, modifier, hint, enabled, monospace, minHeight, if (value.text.isEmpty()) placeholder else null, focusRequester, true) { box, style, decoration ->
+    FieldFrame(label, modifier, hint, enabled, monospace, minHeight, if (value.text.isEmpty()) placeholder else null, focusRequester, labelShown) { box, style, decoration ->
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -236,6 +237,8 @@ fun Modifier.fieldBox(enabled: Boolean = true): Modifier = composed {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(Radius.node)
     onFocusChanged { focused = it.hasFocus }
+        // Under the edge: the dashed one is drawn behind what follows it, which the fill would cover.
+        .background(palette.surface, shape)
         .then(
             when {
                 !enabled -> Modifier.dashedBorder(palette.line, palette.disabled, Radius.node)
@@ -243,7 +246,6 @@ fun Modifier.fieldBox(enabled: Boolean = true): Modifier = composed {
                 else -> Modifier.border(palette.line, palette.inputBorder, shape)
             },
         )
-        .background(palette.surface, shape)
 }
 
 /**

@@ -294,10 +294,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     private func adopt(_ next: Transcript?) {
         guard transcript != next else { return }
-        // Another transcription's segments are not the ones a correction marked.
-        if corrected != nil, next?.createdAt != transcript?.createdAt || next?.segments.count != transcript?.segments.count {
-            corrected = nil
-        }
         transcript = next
         document = next.map { TranscriptDocument(transcript: $0) }
         groups = next.map(TranscriptGroup.make) ?? []
@@ -808,12 +804,16 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public func followAsk() async {
         for await state in core.summaries.observeAsk(recordingId: recordingId) {
             guard !Task.isCancelled else { return }
+            // The changed transcript first, so the tint never points into the one it replaced.
+            if case .ready(let ready) = onEnum(of: state), ready.answer.changes?.segments.isEmpty == false {
+                await reloadResults(repair: false)
+            }
             ask = state
         }
     }
 
-    /// The panel opened: the presets this recording has.
-    public func openAsk() async {
+    /// The presets this recording has, for the composer's chips — read again whenever the transcript changes.
+    public func loadAskPresets() async {
         do {
             askPresets = try await core.summaries.askPresets(recordingId: recordingId)
         } catch {
@@ -821,7 +821,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    /// The panel closed: the answer goes with it, and a question still running finishes unseen.
+    /// The answer closed: it goes, a question still running finishes unseen, and its changes stay — version history
+    /// undoes them from then on.
     public func closeAsk() {
         core.summaries.clearAsk(recordingId: recordingId)
     }
@@ -879,89 +880,34 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         return false
     }
 
-    // MARK: - Correct transcript · Version history (docs/08 "Correcting" · "Versions")
+    // MARK: - Ask's changes · Version history (docs/08 "Ask" — "Changes" · "Versions")
 
-    /// docs/09 "AI view" — "Correct transcript": what the field holds, kept while the page stays on the recording, so a
-    /// second request starts from the first.
-    @Published public var correctionRequest = ""
-    /// A correction asked from this page is running.
-    @Published public private(set) var correcting = false
-    /// What the last correction came to when it saved nothing, in its sheet.
-    @Published public private(set) var correctionNotice: CorrectionNotice?
-    /// docs/09 "Transcript reader" — "After a correction": what the last one changed, until it is undone, edited over,
-    /// a version is restored or the page leaves the recording.
-    @Published public private(set) var corrected: CorrectionMarks?
-    /// The corrected line's Undo is bringing the version before it back.
-    @Published public private(set) var undoingCorrection = false
-    private var correctTask: Task<Void, Never>?
-
-    /// Why `Correct transcript…` cannot run now, or nil when it can: Ask's reasons (docs/09 "AI view").
-    public var correctReason: String? { askReason }
+    /// docs/09 "Ask": what the answer on screen changed in the transcript and the summary, until it is undone or closed.
+    public var askChanges: AskChanges? {
+        guard case .ready(let ready) = onEnum(of: ask) else { return nil }
+        return ready.answer.changes
+    }
+    /// The changes line's Undo is bringing the transcript and the summary back.
+    @Published public private(set) var undoingAsk = false
 
     /// Why `Version history` cannot run now, or nil when it can: `Edit transcript`'s (docs/09 "Transcript reader").
     public var versionHistoryReason: String? { editReason }
 
-    /// The sheet's Correct: the core asks ChatGPT and saves what it proposes as one edit. On the iPhone a destination not
-    /// allowed yet is asked about first, as for Summarize, and nothing is sent before.
-    public func correct() {
-        guard !correcting else { return }
-        let request = correctionRequest
-        correctionNotice = nil
-        correcting = true
-        correctTask = Task { [weak self] in await self?.runCorrection(request) }
-    }
-
-    private func runCorrection(_ request: String) async {
-        let result: CorrectionResult
+    /// docs/09 "Ask" — the changes line's `Undo`: the transcript and the summary as they were before the answer's changes;
+    /// any of it changed again since stays, and the line says so for a few seconds.
+    public func undoAsk() async {
+        guard askChanges != nil, !undoingAsk else { return }
+        undoingAsk = true
+        let undone: Bool
         do {
-            result = try await core.correctTranscript(recordingId: recordingId, request: request)
+            undone = try await core.summaries.undoAsk(recordingId: recordingId).boolValue
         } catch {
-            // A cancel is the sheet closing, which has already put the page back as it was.
-            guard !Task.isCancelled else { return }
-            logger.error("shell.chatgpt.correct.failed error=\(String(describing: error), privacy: .private)")
-            correcting = false
-            correctionNotice = .failed("")
-            return
+            logger.error("shell.chatgpt.ask.undo.failed error=\(String(describing: error), privacy: .private)")
+            undone = false
         }
-        guard !Task.isCancelled else { return }
-        switch onEnum(of: result) {
-        case .corrected(let done):
-            // The corrected transcript first, so the marks never point into the one it replaced.
-            await reloadResults(repair: false)
-            corrected = CorrectionMarks(
-                segments: Set(done.segments.map(\.intValue)),
-                names: Int(done.names),
-                previousVersionId: done.previousVersionId
-            )
-        case .nothingToCorrect: correctionNotice = .nothing
-        case .busy: correctionNotice = .refused(busyReasonKey)
-        case .noTranscript: correctionNotice = .refused("No transcript yet")
-        case .failed(let failed):
-            if ChatGptText.message(failed.reason) == .transferConsentRequired {
-                askConsent { [weak self] in self?.correct() }
-            } else {
-                correctionNotice = .failed(failed.reason)
-            }
-        }
-        correcting = false
-    }
-
-    /// The sheet closed: a request still running is dropped, and nothing is saved (docs/08 "Correcting").
-    public func closeCorrect() {
-        correctTask?.cancel()
-        correctTask = nil
-        correcting = false
-        correctionNotice = nil
-    }
-
-    /// The corrected line's Undo: the version the correction replaced, brought back; refused, the line says why for a
-    /// few seconds.
-    public func undoCorrection() async {
-        guard let previous = corrected?.previousVersionId, !undoingCorrection else { return }
-        undoingCorrection = true
-        let refusal = await restoreVersion(previous)
-        undoingCorrection = false
-        if let refusal { refuse(refusal) }
+        await reloadResults(repair: false)
+        undoingAsk = false
+        if !undone { refuse("Could not undo") }
     }
 
     /// The versions this device keeps of the transcript, newest first — the one shown first.
@@ -979,7 +925,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         do {
             switch onEnum(of: try await core.restoreTranscript(recordingId: recordingId, versionId: id)) {
             case .edited(let edited):
-                corrected = nil
+                // The answer's tint points into the transcript it changed, which this one replaces.
+                if askChanges != nil { closeAsk() }
                 adopt(edited.transcript)
                 return nil
             case .busy: return busyReasonKey
@@ -1078,8 +1025,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         let edit: any TranscriptEdit = edits.count == 1 ? edits[0] : TranscriptEditBatch(edits: edits)
         do {
             if case .edited(let edited) = onEnum(of: try await core.editTranscript(recordingId: recordingId, edit: edit)) {
-                // docs/09 "Transcript reader": an edit over a correction ends its marks.
-                corrected = nil
+                // docs/09 "Ask": an edit over an answer's changes ends their tint, and their Undo with it.
+                if askChanges != nil { closeAsk() }
                 adopt(edited.transcript)
                 saving = .idle
                 return true
@@ -1273,11 +1220,9 @@ public struct RecordingDetailView: View {
     @State private var pane: Pane = .transcript
     /// The permission dialog's "I turned off …" answer (iPhone).
     @State private var trainingOff = false
-    /// docs/09 "Ask": the panel is up, and the question typed in it.
-    @State private var asking = false
+    /// docs/09 "Ask": what the composer holds, and whether it has the cursor.
     @State private var question = ""
-    /// docs/09 "AI view" — "Correct transcript": its sheet (dialog on the Mac) is up.
-    @State private var correctingOpen = false
+    @FocusState private var askFocused: Bool
     /// docs/09 "Transcript reader" — "Version history": its sheet (dialog on the Mac) is up, the versions once read, the
     /// one being brought back, and why the last restore did not happen.
     @State private var versionsOpen = false
@@ -1351,9 +1296,7 @@ public struct RecordingDetailView: View {
                                         pane = .notes
                                         notesDraft = NotesDraft(model.notes)
                                     }
-                                },
-                                askAbout: openAsk,
-                                correct: { correctingOpen = true }
+                                }
                             )
                         }
                         if let onClose {
@@ -1411,12 +1354,6 @@ public struct RecordingDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("fill-notice")
-            } else if let marks = model.corrected, !editing {
-                // docs/09 "Transcript reader" — "After a correction": what it changed, and the way back.
-                correctedLine(marks)
-                    .padding(.horizontal, Space.m)
-                    .padding(.top, Space.s)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             // docs/09 "AI view": what ChatGPT is filling in now — the title sheet's ask or More's — the title's
             // line first. Apart from the lines above: a publication's fill runs whatever else the page says.
@@ -1525,16 +1462,24 @@ public struct RecordingDetailView: View {
                     onCloseFind: { model.find = nil },
                     findQuery: findQuery,
                     findFocus: model.findFocus,
-                    corrected: model.corrected?.segments ?? []
+                    corrected: Set(model.askChanges?.segments.map(\.intValue) ?? [])
                 )
                 .id(model.recordingId)
             }
+            #if os(macOS)
+            askBar
+            #endif
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         #if os(iOS)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !model.loading, !model.writing {
-                VStack(spacing: 0) { HairLine(); playerBar }
+            VStack(spacing: 0) {
+                askBar
+                // The composer above the keyboard has the room the player had.
+                if !model.loading, !model.writing, !askFocused {
+                    HairLine()
+                    playerBar
+                }
             }
         }
         #endif
@@ -1581,36 +1526,11 @@ public struct RecordingDetailView: View {
         #if os(iOS)
         // docs/15 "iPhone providers": the transcript goes to OpenAI only once the user has allowed it — asked
         // here, or in the Ask sheet when the question came from there.
-        .blueprintDialogOverlay(isPresented: Binding(get: { !asking && !correctingOpen && !model.summaryConsent.isEmpty }, set: { _ in })) {
+        .blueprintDialogOverlay(isPresented: Binding(get: { !model.summaryConsent.isEmpty }, set: { _ in })) {
             SummaryConsentDialog(targets: model.summaryConsent, trainingOff: $trainingOff, answer: answerSummaryConsent)
         }
         // docs/09 "Share / export": a list to pick from rather than a question, so a tap on the dim closes it.
         .blueprintBottomSheet(isPresented: sharing, onDismiss: { sharing = false }) { DetailShareSheet(model: model) }
-        // docs/09 "Ask": a full-height sheet of its own, presented from a node of its own — the page already
-        // presents Share.
-        .background {
-            Color.clear.sheet(isPresented: $asking, onDismiss: closeAsk) {
-                AskFrame(close: { asking = false }) { askPanel }
-                    .blueprintDialogOverlay(isPresented: Binding(get: { !model.summaryConsent.isEmpty }, set: { _ in })) {
-                        SummaryConsentDialog(targets: model.summaryConsent, trainingOff: $trainingOff, answer: answerSummaryConsent)
-                    }
-                    .presentationDetents([.large])
-                    // The sheet closes only through its close icon, whatever it holds — a question half typed is
-                    // not thrown away by a swipe either, as Android's sheet keeps it.
-                    .interactiveDismissDisabled(true)
-            }
-        }
-        // docs/09 "AI view" — "Correct transcript": Ask's sheet, from a node of its own, with the permission over it.
-        .background {
-            Color.clear.sheet(isPresented: $correctingOpen, onDismiss: model.closeCorrect) {
-                AskFrame(title: loc("Correct transcript"), close: { correctingOpen = false }) { correctPanel }
-                    .blueprintDialogOverlay(isPresented: Binding(get: { !model.summaryConsent.isEmpty }, set: { _ in })) {
-                        SummaryConsentDialog(targets: model.summaryConsent, trainingOff: $trainingOff, answer: answerSummaryConsent)
-                    }
-                    .presentationDetents([.large])
-                    .interactiveDismissDisabled(true)
-            }
-        }
         // docs/09 "Transcript reader" — "Version history": a list to pick from, so a tap on the dim closes it, as Share's.
         .background {
             Color.clear.blueprintBottomSheet(isPresented: versionsOpen, onDismiss: { versionsOpen = false }) {
@@ -1625,22 +1545,15 @@ public struct RecordingDetailView: View {
             }
         }
         #else
-        // docs/09 "Ask": a card over the detail, as its other questions are — one that scrolls its own body.
-        .blueprintDialogOverlay(isPresented: $asking, scrolls: false) {
-            AskFrame(close: { asking = false; closeAsk() }) { askPanel }
-        }
-        .blueprintDialogOverlay(isPresented: $correctingOpen, scrolls: false) {
-            AskFrame(title: loc("Correct transcript"), close: { correctingOpen = false; model.closeCorrect() }) { correctPanel }
-        }
         .blueprintDialogOverlay(isPresented: $versionsOpen, scrolls: false) {
-            AskFrame(title: loc("Version history"), close: { versionsOpen = false }) { versionsPanel }
+            PanelFrame(title: loc("Version history"), close: { versionsOpen = false }) { versionsPanel }
         }
         #endif
-        // docs/09 "AI view": a correction that saved closes its sheet and shows the transcript it marked.
-        .onChange(of: model.corrected) { _, marks in
-            guard marks != nil else { return }
-            correctingOpen = false
-            pane = .transcript
+        // docs/09 "Ask": changes to one of the two show it, where the page shows the other.
+        .onChange(of: model.askChanges) { _, changes in
+            guard let changes, draft == nil, notesDraft == nil else { return }
+            if changes.transcriptCount == 0, changes.summaryCount > 0, model.hasNotes { pane = .notes }
+            if changes.summaryCount == 0, changes.transcriptCount > 0 { pane = .transcript }
         }
         // The identity of the *model*, not of the recording: the Mac keeps one view here and hands
         // it a new model on every pick — including a second pick of the row already open — and a
@@ -1657,9 +1570,7 @@ public struct RecordingDetailView: View {
             memoOpensFocused = false
             // docs/10 "Search": a hit found only in the notes opens on them, one found only in the memo on it.
             pane = model.opensOnNotes ? .notes : model.opensOnMemo ? .memo : .transcript
-            asking = false
             question = ""
-            correctingOpen = false
             versionsOpen = false
             await model.load()
             guard !Task.isCancelled else { return }
@@ -2087,27 +1998,48 @@ public struct RecordingDetailView: View {
 
     // MARK: Ask (docs/09 "Ask")
 
-    private func openAsk() {
-        asking = true
-        Task { await model.openAsk() }
+    /// docs/09 "Ask": the foot of the page — what the last request came to, then the composer. Only where ChatGPT is
+    /// offered and the recording has a transcript to ask about, and not while either editor is up or the memo is shown;
+    /// while Ask cannot run the field says why.
+    @ViewBuilder
+    private var askBar: some View {
+        if showsAsk {
+            VStack(spacing: 0) {
+                HairLine()
+                VStack(alignment: .leading, spacing: Space.s) {
+                    if !(model.ask is AskState.None) {
+                        AskResult(
+                            state: model.ask,
+                            modelLabel: { ChatGptText.modelLabel($0, connection: model.chatGpt) },
+                            undoing: model.undoingAsk,
+                            undo: { Task { await model.undoAsk() } },
+                            retry: { Task { await model.retryAsk() } },
+                            copy: model.copyAnswer,
+                            close: model.closeAsk,
+                            seekableSec: model.totalSec,
+                            onSeek: citationSeek
+                        )
+                    }
+                    AskComposer(
+                        question: $question,
+                        presets: model.askPresets,
+                        reason: model.askReason,
+                        running: model.ask is AskState.Running,
+                        ask: { preset, typed in Task { await model.ask(preset: preset, question: typed) } },
+                        focused: $askFocused
+                    )
+                }
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.s)
+            }
+            .background(blueprint.palette.surface)
+            .task(id: model.transcript?.createdAt) { await model.loadAskPresets() }
+        }
     }
 
-    /// Closing drops the answer and the question typed for it; a question still running finishes, and reopening
-    /// shows it running.
-    private func closeAsk() {
-        model.closeAsk()
-        question = ""
-    }
-
-    // MARK: Correct transcript · Version history (docs/09 "AI view" · "Transcript reader")
-
-    private var correctPanel: some View {
-        CorrectPanel(
-            request: $model.correctionRequest,
-            running: model.correcting,
-            notice: model.correctionNotice,
-            correct: model.correct
-        )
+    private var showsAsk: Bool {
+        model.chatGptOffered && !model.loading && !editing && pane != .memo && model.transcript != nil
+            && model.availability != .empty
     }
 
     private func openVersions() {
@@ -2134,39 +2066,6 @@ public struct RecordingDetailView: View {
                 }
             }
         }
-    }
-
-    /// `Corrected lines: 12`, or the names when only they changed, with a quiet Undo at its end.
-    private func correctedLine(_ marks: CorrectionMarks) -> some View {
-        HStack(spacing: Space.s) {
-            Text(verbatim: marks.segments.isEmpty
-                ? RecKitStrings.localized("Corrected speaker names: %@", String(marks.names))
-                : RecKitStrings.localized("Corrected lines: %@", String(marks.segments.count)))
-                .font(blueprint.fonts.sans(TypeSize.small))
-                .foregroundStyle(blueprint.palette.textMuted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityIdentifier("corrected-line")
-            if model.undoingCorrection {
-                LoadingText(text: loc("Undoing…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
-            } else if marks.previousVersionId != nil {
-                BlueprintButton(loc("Undo"), tone: .quiet) { Task { await model.undoCorrection() } }
-                    .accessibilityIdentifier("corrected-undo")
-            }
-        }
-    }
-
-    private var askPanel: some View {
-        AskPanel(
-            state: model.ask,
-            presets: model.askPresets,
-            modelLabel: { ChatGptText.modelLabel($0, connection: model.chatGpt) },
-            question: $question,
-            ask: { preset, typed in Task { await model.ask(preset: preset, question: typed) } },
-            retry: { Task { await model.retryAsk() } },
-            copy: model.copyAnswer,
-            seekableSec: model.totalSec,
-            onSeek: citationSeek
-        )
     }
 
     private func answerSummaryConsent(allow: Bool) {

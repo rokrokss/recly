@@ -22,6 +22,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import app.recly.windows.FakeSettings
@@ -250,37 +251,33 @@ class ShotsTest {
             model.rename(RenameRequest(model.detail!!.recordingId, ""), named)
             until { (model.detail?.title as? app.recly.windows.i18n.UiMessage.Text)?.value == named }
             shot("settings-signed-in-$lang", 640, SETTINGS_HEIGHT, ko) { SettingsWindow(model, strings) }
-            // docs/08 "Ask": the panel's body as the dialog holds it, running and answered — states drawn, not asked.
+            // docs/09 "Ask": the foot of the detail — the composer, then over it a request running, answered with what it
+            // changed, changed only, changing nothing and failed — states drawn, not asked.
             val presets = AskPreset.entries
-            val panel: @Composable (AskState) -> Unit = { state ->
+            val bar: @Composable (AskState, String) -> Unit = { state, typed ->
                 Column(
                     androidx.compose.ui.Modifier.fillMaxSize().border(1.dp, blueprint.grid).background(blueprint.surface).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(strings[Str.ASK_TITLE], style = MaterialTheme.typography.titleMedium, color = blueprint.text)
-                    AskPanel(state, presets, { _, _ -> "GPT-5.4" }, canPlay = true, onPlay = {}, onAsk = { _, _ -> }, onManageUsage = {}, strings = strings)
+                    if (state != AskState.None) {
+                        AskResult(state, { _, _ -> "GPT-5.4" }, undoing = false, onUndo = {}, onAsk = { _, _ -> }, onClose = {}, onManageUsage = {},
+                            canPlay = true, onPlay = {}, strings = strings)
+                    }
+                    AskComposer(TextFieldValue(typed), {}, presets, null, state is AskState.Running, { _, _ -> }, strings)
                 }
             }
-            shot("ask-running-$lang", 460, 560, ko) { panel(AskState.Running(AskPreset.ACTION_ITEMS, null)) }
-            shot("ask-ready-$lang", 460, 560, ko) {
-                panel(AskState.Ready(AskAnswer(model.detail!!.recordingId, AskPreset.ACTION_ITEMS, null, ANSWER, "gpt-5.4")))
+            val recordingId = model.detail!!.recordingId
+            val changes = recly.core.chatgpt.AskChanges(listOf(1, 3), names = 0, items = listOf("d1"), removed = 0, overview = false)
+            shot("ask-$lang", 460, 140, ko) { bar(AskState.None, "") }
+            shot("ask-typed-$lang", 460, 160, ko) { bar(AskState.None, ASK_REQUEST) }
+            shot("ask-running-$lang", 460, 200, ko) { bar(AskState.Running(null, ASK_REQUEST), "") }
+            shot("ask-ready-$lang", 460, 360, ko) {
+                bar(AskState.Ready(AskAnswer(recordingId, null, ASK_REQUEST, ANSWER, "gpt-5.4", changes = changes)), "")
             }
-            shot("ask-failed-$lang", 460, 560, ko) {
-                panel(AskState.Failed(recly.core.message.CoreMessage.CHATGPT_USAGE_LIMIT.code(), null, "When do we ship?"))
-            }
-            // docs/09 "AI view" — "Correct transcript": the dialog's card empty, running, with nothing to correct and failed —
-            // states drawn, not asked.
-            val correct: @Composable (String, CorrectionState) -> Unit = { text, state ->
-                DialogCard(
-                    strings[Str.CORRECT_TITLE], androidx.compose.ui.Modifier, null,
-                    { CorrectPanel(state, text, {}, {}, {}, strings) }, fill = false, closeLabel = strings[Str.CLOSE],
-                )
-            }
-            shot("correct-$lang", 460, 400, ko) { correct("", CorrectionState.None) }
-            shot("correct-running-$lang", 460, 440, ko) { correct(CORRECT_REQUEST, CorrectionState.Running) }
-            shot("correct-nothing-$lang", 460, 440, ko) { correct(CORRECT_REQUEST, CorrectionState.NothingToCorrect) }
-            shot("correct-failed-$lang", 460, 520, ko) {
-                correct(CORRECT_REQUEST, CorrectionState.Failed(recly.core.message.CoreMessage.CHATGPT_USAGE_LIMIT.code()))
+            shot("ask-changed-$lang", 460, 200, ko) { bar(AskState.Ready(AskAnswer(recordingId, null, ASK_REQUEST, "", "gpt-5.4", changes = changes)), "") }
+            shot("ask-nothing-$lang", 460, 200, ko) { bar(AskState.Ready(AskAnswer(recordingId, null, ASK_REQUEST, "", "gpt-5.4")), "") }
+            shot("ask-failed-$lang", 460, 300, ko) {
+                bar(AskState.Failed(recly.core.message.CoreMessage.CHATGPT_USAGE_LIMIT.code(), null, ASK_REQUEST), "")
             }
             // docs/09 "Version history": the transcript shown first with no Restore, a restore running, and one refused.
             val history: @Composable (String?, Str?) -> Unit = { restoring, refused ->
@@ -292,24 +289,27 @@ class ShotsTest {
             shot("versions-$lang", 460, 420, ko) { history(null, null) }
             shot("versions-restoring-$lang", 460, 420, ko) { history(VERSIONS[1].id, null) }
             shot("versions-refused-$lang", 460, 440, ko) { history(null, Str.VERSIONS_RESTORE_FAILED) }
-            // docs/09 "After a correction": the line under the header with Undo, over the reader with the changed lines tinted.
+            // docs/09 "Ask": the reader with the lines an answer changed tinted.
             val sampled = model.detail!!.transcript!!
             val document = recly.core.transcribe.TranscriptDocument(sampled)
-            val corrected: @Composable (CorrectionMarks) -> Unit = { marks ->
-                Column(androidx.compose.ui.Modifier.fillMaxSize().background(blueprint.background)) {
-                    CorrectedLine(marks, {}, strings)
-                    TranscriptReader(
-                        sampled, document, canSeek = true, onSeek = {}, positionSec = 0.0, playing = false,
-                        matches = emptyList(), currentMatch = null, marked = document.segmentRanges(marks.segments),
-                        onChangeSpeaker = { _, _, _ -> }, onRenameSpeaker = { _, _ -> }, saving = emptyMap(),
-                        strings = strings, modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+            shot("reader-changed-$lang", 700, 420, ko) {
+                TranscriptReader(
+                    sampled, document, canSeek = true, onSeek = {}, positionSec = 0.0, playing = false,
+                    matches = emptyList(), currentMatch = null, marked = document.segmentRanges(changes.segments),
+                    onChangeSpeaker = { _, _, _ -> }, onRenameSpeaker = { _, _ -> }, saving = emptyMap(),
+                    strings = strings, modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                )
+            }
+            // And the summary with the overview it rewrote and an item it changed tinted.
+            val notes = model.detail!!.notes!!
+            shot("notes-changed-$lang", 700, 620, ko) {
+                Column(androidx.compose.ui.Modifier.fillMaxSize().background(blueprint.background).padding(16.dp)) {
+                    NotesBlock(
+                        notes, canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, strings = strings,
+                        changed = setOf(notes.decisions.first().id), overviewChanged = true,
                     )
                 }
             }
-            val marks = CorrectionMarks(listOf(1, 3), names = 1, previousVersionId = "1", createdAt = sampled.createdAt)
-            shot("reader-corrected-$lang", 700, 420, ko) { corrected(marks) }
-            shot("reader-corrected-undoing-$lang", 700, 420, ko) { corrected(marks.copy(undoing = true)) }
-            shot("reader-corrected-names-$lang", 700, 420, ko) { corrected(marks.copy(segments = emptyList())) }
         }
         chatGpt.connection = ChatGptConnection.SignedOut
         // The notes go with the file they were seeded as, and the detail opened again is the transcript's alone.
@@ -550,8 +550,7 @@ class ShotsTest {
         val NOTES_FIELD = Offset(900f, 513f)
         const val SETTINGS_HEIGHT = 3100
 
-        const val CORRECT_REQUEST = "Mina's name is spelled Minna. The product is Recly.\n\nThe same meeting from the room mic:\n" +
-            "[00:00:00] Minna: Thanks for joining. Let's go over the release notes for Recly first."
+        const val ASK_REQUEST = "Mina's name is spelled Minna. Who publishes the release notes?"
 
         val VERSIONS = listOf(
             recly.core.transcribe.TranscriptVersion("4", recly.core.transcribe.TranscriptVersionKind.CORRECTED, "2026-11-04T09:12:00Z", current = true),

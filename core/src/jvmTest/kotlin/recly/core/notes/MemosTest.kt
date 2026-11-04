@@ -191,6 +191,6 @@ class MemosTest {
 
         assertIs<AskState.Ready>(f.core.summaries.ask(meta.recordingId, null, "Who owns it?"))
         val sent = input(0)
-        assertTrue(sent.endsWith("\n" + block("Who owns pricing?") + Summaries.QUESTION_HEADING + "\nWho owns it?\n"), sent)
+        assertTrue(sent.endsWith("\n" + block("Who owns pricing?") + recly.core.chatgpt.AskPrompts.REQUEST_HEADING + "\nWho owns it?\n"), sent)
     }
 }

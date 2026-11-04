@@ -11,9 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import recly.core.chatgpt.AskAnswer
 import recly.core.chatgpt.AskPreset
-import recly.core.chatgpt.AskState
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
 import recly.core.message.CoreMessage
@@ -213,10 +211,6 @@ class ChatGptReasonsTest {
         assertEquals("한국어로 번역", askPresetLabel(AskPreset.TRANSLATE, StringTable.of(StringTable.KOREAN)).plain())
         assertEquals("Feedback on how I spoke", askPresetLabel(AskPreset.MY_SPEAKING, base))
         assertEquals("Follow-up email", askPresetLabel(AskPreset.FOLLOW_UP_EMAIL, base))
-        val answer = AskAnswer("r1", AskPreset.ACTION_ITEMS, null, "- Mina: notes [00:31]", "gpt-x")
-        assertEquals(AskPreset.ACTION_ITEMS, AskState.Ready(answer).askedPreset())
-        assertNull(AskState.Running(null, "When do we ship?").askedPreset())
-        assertEquals("When do we ship?", AskState.Failed("PROVIDER_ERROR", null, "When do we ship?").askedQuestion())
     }
 
     @Test

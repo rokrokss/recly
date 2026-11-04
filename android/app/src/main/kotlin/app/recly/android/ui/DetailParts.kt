@@ -91,7 +91,6 @@ internal class MoreActions(
     /** docs/09 "AI view": Organize or Organize again, which asks nothing; and Edit notes. */
     val onOrganize: () -> Unit,
     val onEditNotes: () -> Unit,
-    val onAsk: () -> Unit,
     /** docs/08 "Titles and speaker names": Fill in title or Fill in speaker names. */
     val onFill: (FillHalf) -> Unit,
     /** docs/03 "Deleting in the app": the delete question, about this recording. */
@@ -100,14 +99,13 @@ internal class MoreActions(
     val onMemo: () -> Unit = {},
     /** docs/09 "Version history": the versions of the transcript this device kept. */
     val onVersions: () -> Unit = {},
-    /** docs/09 "AI view": the Correct transcript sheet. */
-    val onCorrect: () -> Unit = {},
 )
 
 /**
  * docs/09 "Detail header and More menu" · "AI view": Rename · Edit transcript · Transcribe again · Version history · Memo (while it is
- * empty) ─ Organize (Organize again once there are notes) · Edit notes · Ask about this recording… · Correct transcript… · Fill in
- * title · Fill in speaker names ─ Open in Drive ─ Delete, in that order and in those groups, a hairline between them. An item
+ * empty) ─ Organize (Organize again once there are notes) · Edit notes · Fill in title · Fill in speaker names ─ Open in
+ * Drive ─ Delete, in that order and in those groups, a hairline between them — asking is the composer at the foot of the
+ * page (docs/09 "Ask"). An item
  * that cannot run is shown disabled with its reason under it — every one of them `Still recording` while the recorder is writing into this take;
  * the ChatGPT items are not there at all where ChatGPT is not offered, Edit notes not while the recording has none, and
  * Open in Drive not before it has a folder there. The menu is as tall as the window lets it be, so no item is out of
@@ -173,12 +171,6 @@ internal fun MoreButton(
                     MenuAction(stringResource(R.string.notes_edit), pick(actions.onEditNotes), enabled = editReason == null,
                         reason = editReason, modifier = Modifier.testTag("more-edit-notes"))
                 }
-                val askReason = writing ?: askReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt)?.let { stringResource(it) }
-                MenuAction(stringResource(R.string.ask_menu), pick(actions.onAsk), enabled = askReason == null,
-                    reason = askReason, modifier = Modifier.testTag("more-ask"))
-                // docs/09 "AI view": Correct transcript… waits for what Ask waits for.
-                MenuAction(stringResource(R.string.correct_menu), pick(actions.onCorrect), enabled = askReason == null,
-                    reason = askReason, modifier = Modifier.testTag("more-correct"))
                 // docs/08 "Titles and speaker names": two items, the title and the names apart, each offered by what the
                 // recording still lacks, by the rule the core asks by.
                 val needs = transcript?.let { FillNeeds.of(detail.title, it) }

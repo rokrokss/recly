@@ -8,9 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import recly.core.chatgpt.AskAnswer
 import recly.core.chatgpt.AskPreset
-import recly.core.chatgpt.AskState
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
 import recly.core.message.CoreMessage
@@ -25,8 +23,8 @@ import recly.core.transcribe.TranscriptSpeaker
 
 /**
  * docs/09 "Detail header and More menu" · "AI view": why Organize and Edit notes wait, in the order the reasons are
- * checked; what failed notes or a failed answer offer; Ask; the footer's model; citations; a notes-only search hit;
- * and "Me".
+ * checked; what failed notes or a failed answer offer; why Ask waits; the footer's model; citations; a notes-only search
+ * hit; and "Me".
  */
 class ChatGptMenuTest {
 
@@ -140,15 +138,6 @@ class ChatGptMenuTest {
     }
 
     @Test
-    fun `the preset chip of the answer on screen is marked, and none for an own question`() {
-        assertNull(askedPreset(AskState.None))
-        assertEquals(AskPreset.ACTION_ITEMS, askedPreset(AskState.Running(AskPreset.ACTION_ITEMS, null)))
-        assertEquals(AskPreset.TRANSLATE, askedPreset(AskState.Ready(AskAnswer("r1", AskPreset.TRANSLATE, null, "Hola", "gpt-5"))))
-        assertEquals(AskPreset.OPEN_QUESTIONS, askedPreset(AskState.Failed(CoreMessage.PROVIDER_ERROR.code(), AskPreset.OPEN_QUESTIONS, null)))
-        assertNull(askedPreset(AskState.Ready(AskAnswer("r1", null, "Why?", "Because.", "gpt-5"))))
-    }
-
-    @Test
     fun `text with no citation, or one that starts and ends on one, is still covered`() {
         assertEquals(listOf(TextRun(0, 5)), textRuns("plain"))
         assertEquals(emptyList(), textRuns(""))
@@ -208,19 +197,6 @@ class ChatGptMenuTest {
         assertTrue(speakerIsWord(transcript, "S1"))
         assertFalse(speakerIsWord(transcript, "S2"))
         assertTrue(speakerIsWord(transcript, "S3"))
-    }
-
-    @Test
-    fun `the Ask field starts from the question asked, and Ask needs words and nothing running`() {
-        assertEquals("", askedQuestion(AskState.None))
-        assertEquals("", askedQuestion(AskState.Running(AskPreset.ACTION_ITEMS, null)))
-        assertEquals("Who owns the budget?", askedQuestion(AskState.Running(null, "Who owns the budget?")))
-        assertEquals("Why?", askedQuestion(AskState.Ready(AskAnswer("r1", null, "Why?", "Because [00:01].", "gpt-5"))))
-        assertEquals("Why?", askedQuestion(AskState.Failed(CoreMessage.PROVIDER_ERROR.code(), null, "Why?")))
-        assertFalse(canAsk(AskState.None, "  "))
-        assertTrue(canAsk(AskState.None, "Why?"))
-        assertFalse(canAsk(AskState.Running(null, "Why?"), "Why?"))
-        assertTrue(canAsk(AskState.Failed(CoreMessage.PROVIDER_ERROR.code(), null, "Why?"), "Why?"))
     }
 
     @Test

@@ -610,8 +610,8 @@ internal fun notesEditNote(storage: StorageKind?): Str =
     if (storage == StorageKind.DRIVE || storage == StorageKind.ICLOUD) Str.NOTES_EDIT_NOTE_SHARED else Str.NOTES_EDIT_NOTE_LOCAL
 
 /**
- * Why More → Ask about this recording cannot run now (docs/08 "Ask"): Organize's reasons, but the notes being made
- * are none — a question is asked beside them.
+ * Why the Ask composer cannot send now (docs/09 "Ask") — its field says it in its place: Organize's reasons, but the notes
+ * being made are none — a question is asked beside them.
  */
 internal fun askBlocked(
     writing: Boolean,

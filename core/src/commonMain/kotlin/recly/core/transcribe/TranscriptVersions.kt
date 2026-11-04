@@ -14,7 +14,7 @@ enum class TranscriptVersionKind {
     /** The user's edit, a rename of a speaker, or names filled in from the detail. */
     EDITED,
 
-    /** Correct transcript… (docs/08 "Correcting"). */
+    /** A change asked for in Ask (docs/08 "Ask" — "Changes"). */
     CORRECTED,
 
     /** An earlier version brought back. */

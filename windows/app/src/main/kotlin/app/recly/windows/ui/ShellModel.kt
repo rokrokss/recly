@@ -79,7 +79,6 @@ import okio.Path
 import recly.core.DisconnectResult
 import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.AskState
-import recly.core.chatgpt.CorrectionResult
 import recly.core.chatgpt.FillRun
 import recly.core.job.Job
 import recly.core.job.JobStatus
@@ -232,10 +231,10 @@ data class RecordingDetail(
     val showingMemo: Boolean = false,
     /** docs/08 "Memo": the user's memo of it as the core has it, empty when there is none; null until read. */
     val memo: String? = null,
-    /** docs/08 "Ask": the question asked about it in this run of the app, and where it has got to. */
+    /** docs/08 "Ask": the last request about it in this run of the app, and where it has got to. */
     val ask: AskState = AskState.None,
-    /** docs/09 "After a correction": what the last Correct transcript… changed, while the reader marks it. */
-    val corrected: CorrectionMarks? = null,
+    /** docs/09 "Ask": the changes line's Undo is bringing the transcript and the summary back. */
+    val askUndoing: Boolean = false,
     /** docs/08 "Organizing": its notes as the core has them — whether they are being made, and the last failure; null until read. */
     val notes: RecordingNotes? = null,
     /**
@@ -498,21 +497,6 @@ class ShellModel(
     /** docs/10 "Re-transcription": the confirmation, while it is up. */
     var retranscribeRequest: RetranscribeRequest? by mutableStateOf(null)
         private set
-
-    /** docs/08 "Ask": the recording the Ask panel is open over, while it is. */
-    var askingAbout: String? by mutableStateOf(null)
-        private set
-
-    /** docs/08 "Correcting": the recording the Correct transcript dialog is open over, while it is. */
-    var correctingAbout: String? by mutableStateOf(null)
-        private set
-
-    /** Where that dialog's request has got to; back to nothing when it closes. */
-    var correction: CorrectionState by mutableStateOf(CorrectionState.None)
-        private set
-
-    /** The request running, which closing the dialog cancels: its answer is then never saved. */
-    private var correctionJob: kotlinx.coroutines.Job? = null
 
     /** docs/08 "Versions": the recording the Version history dialog is open over, while it is. */
     var versionsAbout: String? by mutableStateOf(null)
@@ -1453,20 +1437,23 @@ class ShellModel(
         val graph = graph ?: return@coroutineScope
         launch {
             graph.core.observeResults(recordingId).collect { result ->
-                updateDetail(recordingId) {
-                    it.copy(
-                        transcript = result.transcript,
-                        availability = result.availability,
-                        // A transcript transcribed again is another one: what a correction marked was in the one before.
-                        corrected = it.corrected?.takeIf { marks -> marks.createdAt == result.transcript?.createdAt },
-                    )
-                }
+                updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
                 // A transcript read from Drive for this detail is now one this PC holds: its row says its first words.
                 if (result.transcript != null) refreshPreviews()
             }
         }
         launch {
-            graph.core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
+            graph.core.summaries.observeAsk(recordingId).collect { ask ->
+                // docs/09 "Ask": the changed transcript first, so the tint never points into the one it replaced.
+                val reread = if ((ask as? AskState.Ready)?.answer?.changes?.segments?.isNotEmpty() == true) {
+                    runCatching { graph.core.results(recordingId) }.getOrNull()
+                } else {
+                    null
+                }
+                updateDetail(recordingId) {
+                    if (reread == null) it.copy(ask = ask) else it.copy(ask = ask, transcript = reread.transcript, availability = reread.availability)
+                }
+            }
         }
         launch {
             graph.core.notes.observe(recordingId).collect { notes ->
@@ -1553,8 +1540,7 @@ class ShellModel(
             .getOrDefault(EditResult.Invalid("failed"))
             .also {
                 if (it is EditResult.Edited) {
-                    // An edit ends what a correction marked (docs/09 "After a correction").
-                    updateDetail(recordingId) { detail -> detail.copy(corrected = null) }
+                    endAskChanges(recordingId)
                     // The row's first words follow the edit.
                     refreshPreviews()
                 }
@@ -1721,19 +1707,15 @@ class ShellModel(
         }
     }
 
-    /** More → Ask about this recording (docs/08 "Ask"). */
-    fun openAsk() {
-        askingAbout = detail?.recordingId
-    }
-
-    /** Closing the panel forgets its answer; a question still running finishes, and reopening shows it. */
-    fun closeAsk() {
-        val recordingId = askingAbout ?: return
-        askingAbout = null
+    /**
+     * docs/09 "Ask": the answer closed — leaving the recording closes it too. It goes, a question still running finishes
+     * unseen, and its changes stay: Version history undoes them from then on.
+     */
+    fun closeAsk(recordingId: String) {
         graph?.core?.summaries?.clearAsk(recordingId)
     }
 
-    /** The presets the Ask panel offers for [recordingId]: Translate and Feedback only where they make sense. */
+    /** The presets the composer offers for [recordingId]: Translate and Feedback only where they make sense. */
     suspend fun askPresets(recordingId: String): List<AskPreset> {
         val graph = graph ?: return emptyList()
         return runCatching { graph.core.summaries.askPresets(recordingId) }
@@ -1741,10 +1723,12 @@ class ShellModel(
             .getOrDefault(emptyList())
     }
 
-    /** A preset, or the user's own [question], about the recording the panel is open over; the detail follows the answer. */
-    fun ask(preset: AskPreset?, question: String?) {
+    /**
+     * A preset, or the user's own [question] — which may ask for a change to the transcript and the summary, saved at once
+     * by the core (docs/08 "Ask") — about [recordingId]; the detail follows the answer ([followDetailResults]).
+     */
+    fun ask(recordingId: String, preset: AskPreset?, question: String?) {
         val graph = graph ?: return
-        val recordingId = askingAbout ?: return
         scope.launch {
             try {
                 graph.core.summaries.ask(recordingId, preset, question)
@@ -1756,79 +1740,45 @@ class ShellModel(
         }
     }
 
-    /** More → Correct transcript… (docs/08 "Correcting"). */
-    fun openCorrect() {
-        correctingAbout = detail?.recordingId
-        correction = CorrectionState.None
-    }
-
-    /** The close mark or Escape: a request still running is cancelled, and what it would have changed is never saved. */
-    fun closeCorrect() {
-        if (correctingAbout == null) return
-        correctingAbout = null
-        correctionJob?.cancel()
-        correctionJob = null
-        correction = CorrectionState.None
-    }
-
     /**
-     * Correct in the dialog: [request] and the transcript go to the user's ChatGPT plan, and what it changes is saved at
-     * once. Saved, the dialog closes onto the transcript, which marks what changed; anything else is said in the dialog.
+     * docs/09 "Ask" — the changes line's Undo: the transcript and the summary as they were before the answer's changes. Any of
+     * it changed again since stays, and the detail says `Could not undo` for a moment, where a refused Transcribe again is
+     * said.
      */
-    fun correct(request: String) {
+    fun undoAsk(recordingId: String) {
         val graph = graph ?: return
-        val recordingId = correctingAbout ?: return
-        if (correction == CorrectionState.Running || request.isBlank()) return
-        correction = CorrectionState.Running
-        correctionJob = scope.launch {
-            val result = try {
-                graph.core.correctTranscript(recordingId, request)
+        val open = detail?.takeIf { it.recordingId == recordingId } ?: return
+        if (open.askChanges == null || open.askUndoing) return
+        updateDetail(recordingId) { it.copy(askUndoing = true) }
+        scope.launch {
+            val undone = try {
+                graph.core.summaries.undoAsk(recordingId)
             } catch (e: kotlin.coroutines.cancellation.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.correct.failed", mapOf("recordingId" to recordingId), e)
-                null
+                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.ask.undo.failed", mapOf("recordingId" to recordingId), e)
+                false
             }
-            if (result is CorrectionResult.Corrected) {
-                // A correction marks only its own lines, and Undo brings back the version before it.
-                updateDetail(recordingId) {
-                    it.copy(
-                        showingNotes = false,
-                        showingMemo = false,
-                        corrected = CorrectionMarks(result.segments, result.names, result.previousVersionId, it.transcript?.createdAt),
-                    )
+            // The transcript as it is now, read at once rather than when the results next change.
+            val reread = runCatching { graph.core.results(recordingId) }.getOrNull()
+            updateDetail(recordingId) {
+                if (reread == null) {
+                    it.copy(askUndoing = false)
+                } else {
+                    it.copy(askUndoing = false, transcript = reread.transcript, availability = reread.availability)
                 }
-                refreshPreviews()
             }
-            if (correctingAbout != recordingId) return@launch
-            correction = correctionState(result, busyReasonOf(recordingId))
-            correctionJob = null
-            if (result is CorrectionResult.Corrected) correctingAbout = null
-        }
-    }
-
-    /** Entering the transcript's editor: the reader marks nothing any more (docs/09 "After a correction"). */
-    fun forgetCorrection() {
-        val recordingId = detail?.recordingId ?: return
-        updateDetail(recordingId) { it.copy(corrected = null) }
-    }
-
-    /**
-     * Undo after a correction (docs/09 "After a correction"): the version it replaced, brought back as a restore is. Refused,
-     * the line says why for a moment in its own place.
-     */
-    fun undoCorrection() {
-        val recordingId = detail?.recordingId ?: return
-        val marks = detail?.corrected ?: return
-        val versionId = marks.previousVersionId ?: return
-        if (marks.undoing) return
-        updateDetail(recordingId) { it.copy(corrected = marks.copy(undoing = true, refused = null)) }
-        scope.launch {
-            val reason = restoreRefusal(restore(recordingId, versionId), busyReasonOf(recordingId)) ?: return@launch
-            updateDetail(recordingId) { it.copy(corrected = it.corrected?.copy(undoing = false, refused = reason)) }
+            refreshPreviews()
+            val notice = askUndoNotice(undone) ?: return@launch
+            updateDetail(recordingId) { it.copy(notice = notice) }
             delay(NOTICE_MS)
-            updateDetail(recordingId) { it.copy(corrected = it.corrected?.let { now -> if (now.refused == reason) now.copy(refused = null) else now }) }
+            updateDetail(recordingId) { if (it.notice == notice) it.copy(notice = null) else it }
         }
+    }
+
+    /** docs/09 "Ask": an edit or a restore over an answer's changes ends their tint, and their Undo with it. */
+    private fun endAskChanges(recordingId: String) {
+        if (detail?.takeIf { it.recordingId == recordingId }?.askChanges != null) closeAsk(recordingId)
     }
 
     /** More → Version history (docs/08 "Versions"). */
@@ -1859,7 +1809,7 @@ class ShellModel(
         return reason
     }
 
-    /** [versionId] brought back; the detail then shows the transcript, and what a correction marked is gone. */
+    /** [versionId] brought back; the detail then shows the transcript, and an answer's changes are no longer tinted. */
     private suspend fun restore(recordingId: String, versionId: String): EditResult {
         val graph = graph ?: return EditResult.NoTranscript
         return runCatching { graph.core.restoreTranscript(recordingId, versionId) }
@@ -1867,7 +1817,8 @@ class ShellModel(
             .getOrDefault(EditResult.Invalid("failed"))
             .also {
                 if (it is EditResult.Edited) {
-                    updateDetail(recordingId) { detail -> detail.copy(corrected = null, showingNotes = false, showingMemo = false) }
+                    endAskChanges(recordingId)
+                    updateDetail(recordingId) { detail -> detail.copy(showingNotes = false, showingMemo = false) }
                     refreshPreviews()
                 }
             }

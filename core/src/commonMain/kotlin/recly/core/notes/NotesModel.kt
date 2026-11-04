@@ -250,6 +250,18 @@ internal data class StoredNote(
     val shown: String get() = userText ?: text
 }
 
+/**
+ * docs/08 "Ask": what a request changed in a recording's notes — the file [before] and [after] it, for its `Undo` — the
+ * items it changed or added, by id, how many it removed, and whether it rewrote the overview.
+ */
+internal class NotesAskChange(
+    val before: NotesFile,
+    val after: NotesFile,
+    val items: List<String>,
+    val removed: Int,
+    val overview: Boolean,
+)
+
 /** A [NoteSection] as Settings and the notes file keep it. */
 @Serializable
 internal data class StoredSection(val id: String, val name: String, val description: String = "", val kind: NoteKind = NoteKind.SECTION) {

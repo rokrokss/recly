@@ -25,6 +25,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import okio.Path.Companion.toPath
+import recly.core.chatgpt.AskState
 import recly.core.message.CoreMessage
 import recly.core.model.Track
 import recly.core.transcribe.EditResult
@@ -35,9 +36,9 @@ import recly.core.transcribe.TranscriptSegment
 import recly.core.transcribe.TranscriptVersionKind
 
 /**
- * docs/08 "Versions" · "Correcting" through the shell, over a real core: Version history lists what this PC kept and a
- * row's Restore brings it back and closes the dialog; a version the PC does not keep is said under the list; and Correct
- * says in its dialog what stood in its way — here the ChatGPT sign-in — until the dialog closes.
+ * docs/08 "Versions" · "Ask" through the shell, over a real core: Version history lists what this PC kept and a row's
+ * Restore brings it back and closes the dialog; a version the PC does not keep is said under the list; and a request in
+ * the Ask composer says over it what stood in its way — here the ChatGPT sign-in — until it is closed.
  */
 class ShellVersionsTest {
 
@@ -64,21 +65,23 @@ class ShellVersionsTest {
     }
 
     @Test
-    fun `Correct says what stood in its way in the dialog, and closing it forgets that`() = withRecording { model, id ->
-        model.openCorrect()
-        assertEquals(id, model.correctingAbout)
-        assertEquals(CorrectionState.None, model.correction)
-        // Not signed in to ChatGPT here: nothing is sent, and the dialog says so.
-        model.correct("Mina is Minna")
-        until { model.correction != CorrectionState.Running }
-        val failed = assertIs<CorrectionState.Failed>(model.correction)
-        assertTrue(failed.reason.orEmpty().startsWith(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()), "${failed.reason}")
-        assertEquals(id, model.correctingAbout, "a failure keeps the dialog open")
-        assertNull(model.detail?.corrected, "nothing was saved, so nothing is marked")
+    fun `a request says what stood in its way over the composer, and closing it forgets that`() = withRecording { model, id ->
+        // Not signed in to ChatGPT here: nothing is sent, and the answer's place says so.
+        model.ask(id, null, "Mina is Minna")
+        until { model.detail?.ask is AskState.Failed }
+        val failed = assertIs<AskState.Failed>(model.detail?.ask)
+        assertTrue(failed.reason.startsWith(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()), failed.reason)
+        // Retry asks the same words again.
+        assertEquals("Mina is Minna", failed.question)
+        assertNull(model.detail?.askChanges, "nothing was saved, so nothing is tinted")
+        // Nothing to undo: Undo does nothing, and says nothing.
+        model.undoAsk(id)
+        assertNull(model.detail?.notice)
+        assertEquals(false, model.detail?.askUndoing)
 
-        model.closeCorrect()
-        assertNull(model.correctingAbout)
-        assertEquals(CorrectionState.None, model.correction)
+        model.closeAsk(id)
+        until { model.detail?.ask == AskState.None }
+        assertEquals("Thanks for joining.", model.detail?.transcript?.segments?.first()?.text, "the transcript is as it was")
     }
 
     /**

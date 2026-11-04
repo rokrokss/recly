@@ -139,6 +139,10 @@ public struct NotesBlock: View {
     /// The transcript's lines around a moment (`notes.linesAround`).
     let lines: (Double) async -> [NoteLine]
     let delete: (NoteItem) -> Void
+    /// docs/09 "Ask": the items the answer on screen changed or added, and whether it rewrote the overview — their
+    /// words tinted as the transcript's are.
+    let changed: Set<String>
+    let overviewChanged: Bool
 
     @State private var expanded: String?
     @State private var shownLines: [NoteLine] = []
@@ -153,7 +157,9 @@ public struct NotesBlock: View {
         seekableSec: Double,
         onSeek: ((Double) -> Void)?,
         lines: @escaping (Double) async -> [NoteLine],
-        delete: @escaping (NoteItem) -> Void
+        delete: @escaping (NoteItem) -> Void,
+        changed: Set<String> = [],
+        overviewChanged: Bool = false
     ) {
         self.notes = notes
         self.showsOverview = showsOverview
@@ -163,12 +169,14 @@ public struct NotesBlock: View {
         self.onSeek = onSeek
         self.lines = lines
         self.delete = delete
+        self.changed = changed
+        self.overviewChanged = overviewChanged
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let overview = NoteGroups.overview(notes, shown: showsOverview) {
-                Text(verbatim: overview)
+                Text(tinted(overview, overviewChanged))
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.text)
                     .textSelection(.enabled)
@@ -213,7 +221,7 @@ public struct NotesBlock: View {
 
     /// The item, its owner after a dash, and the deadline after them in the secondary colour.
     private func words(_ item: NoteItem) -> some View {
-        var text = Text(verbatim: NoteGroups.text(item)).foregroundStyle(blueprint.palette.text)
+        var text = Text(tinted(NoteGroups.text(item), changed.contains(item.id))).foregroundStyle(blueprint.palette.text)
         if let due = NoteGroups.due(item) {
             text = text + Text(verbatim: " · \(due)").foregroundStyle(blueprint.palette.textMuted)
         }
@@ -224,6 +232,12 @@ public struct NotesBlock: View {
             .accessibilityAction { toggle(item) }
             // docs/09 trend 4: the swipe's static alternative.
             .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Delete"))) { delete(item) }
+    }
+
+    private func tinted(_ words: String, _ tint: Bool) -> AttributedString {
+        var text = AttributedString(words)
+        if tint { text.backgroundColor = blueprint.palette.accent.opacity(0.16) }
+        return text
     }
 
     @ViewBuilder

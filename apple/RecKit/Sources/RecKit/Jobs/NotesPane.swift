@@ -36,7 +36,9 @@ struct NotesPane: View {
                         seekableSec: seekableSec,
                         onSeek: onSeek,
                         lines: model.noteLines(atSec:),
-                        delete: model.deleteNote
+                        delete: model.deleteNote,
+                        changed: Set(model.askChanges?.items ?? []),
+                        overviewChanged: model.askChanges?.overview == true
                     )
                     .id(model.recordingId)
                     footer

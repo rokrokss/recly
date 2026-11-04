@@ -77,7 +77,7 @@ struct ReasonedMenuItem: View {
 }
 
 /// docs/09 "Detail header and More menu" · "AI view": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again · Notes (the memo) ─ Summarize again · Edit summary · Ask about this recording… · Fill in title · Fill in speaker names — with the ones
+/// again · Notes (the memo) ─ Summarize again · Edit summary · Fill in title · Fill in speaker names — with the ones
 /// that cannot run now shown off, and why. The two groups are parted by a hairline, and a group with nothing in it
 /// (no ChatGPT) takes its divider with it (2026-10-10, 2.2). On the Mac a third group is the recording's folder —
 /// Open in Drive, or Show in Finder — where the shell hands the page one, and the last is the red Delete
@@ -91,8 +91,6 @@ struct DetailMoreMenu: View {
     let memo: () -> Void
     let organize: () -> Void
     let editNotes: () -> Void
-    let askAbout: () -> Void
-    let correct: () -> Void
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -130,10 +128,6 @@ struct DetailMoreMenu: View {
             if model.notesEditable {
                 ReasonedMenuItem(title: RecKitStrings.localized("Edit summary"), reason: model.editNotesReason, action: editNotes)
             }
-            // docs/08 "Ask": one question about the recording, in a panel of its own.
-            ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
-            // docs/08 "Correcting": the transcript corrected from a request in the user's words, saved at once.
-            ReasonedMenuItem(title: RecKitStrings.localized("Correct transcript…"), reason: model.correctReason, action: correct)
             // docs/08 "Titles and speaker names": what the recording lacks, from the plan — the title and the names
             // apart. They open nothing: the title shows in the header and the names in the transcript.
             ReasonedMenuItem(title: RecKitStrings.localized("Fill in title"), reason: model.fillTitleReason) {

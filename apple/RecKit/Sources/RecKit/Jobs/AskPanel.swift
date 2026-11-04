@@ -2,59 +2,120 @@
 import ReclyCore
 import SwiftUI
 
-/// docs/09 "Ask": one question about this recording — a preset, or the user's own — and ChatGPT's answer under
-/// it, with its citations playable as the summary's are. Nothing here is saved: the core keeps the answer in
-/// this process until the panel closes (docs/08 "Ask").
-///
-/// What it draws comes in as values rather than as the page's model, so a state can be drawn without asking
-/// anything. The Mac draws it as a card over the detail; the phone in a sheet of its own ([AskSheet]).
-struct AskPanel: View {
-    let state: AskState
-    let presets: [AskPreset]
-    /// The plan's name for an answer's model (`ChatGPT · <model>`).
-    let modelLabel: (String) -> String
+/// docs/09 "Ask": the composer at the foot of the detail — one field for a question about the recording or a change to its
+/// transcript and summary, and the presets as chips over it while it is empty and has the cursor. While Ask cannot run, the
+/// field says why and takes nothing.
+struct AskComposer: View {
     @Binding var question: String
+    let presets: [AskPreset]
+    /// Why nothing can be asked now, or nil.
+    let reason: String?
+    let running: Bool
     let ask: (AskPreset?, String?) -> Void
-    let retry: () -> Void
-    let copy: () -> Void
-    /// How far the recording here can be played, and the seek a citation makes (see [CitedText]).
-    let seekableSec: Double
-    let onSeek: ((Double) -> Void)?
-    @State private var copied = false
-    @FocusState private var questionFocused: Bool
+    /// The page's focus on the field: the phone puts the player away while it has the cursor.
+    var focused: FocusState<Bool>.Binding
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.m) {
-            if !presets.isEmpty {
-                // docs/09 §9 principle 4: filled on the phone, left-aligned in a desktop window.
-                ChoiceRow {
-                    ForEach(presets, id: \.self) { preset in
-                        BlueprintChip(ChatGptText.presetLabel(preset), selected: asked?.preset == preset && asked?.question == nil, fill: true) {
-                            ask(preset, nil)
+        VStack(alignment: .leading, spacing: Space.s) {
+            if focused.wrappedValue, typed.isEmpty, !running, reason == nil, !presets.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Space.s) {
+                        ForEach(presets, id: \.self) { preset in
+                            BlueprintChip(ChatGptText.presetLabel(preset), selected: false) { ask(preset, nil) }
+                                .accessibilityIdentifier("ask-preset-\(preset.name.lowercased())")
                         }
-                        .accessibilityIdentifier("ask-preset-\(preset.name.lowercased())")
                     }
                 }
-                .disabled(running)
+                .scrollClipDisabled()
             }
             HStack(alignment: .bottom, spacing: Space.s) {
-                questionField
+                field
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.text)
                     // 2026-10-10 (2.13): the user's words in their own direction.
                     .contentDirection(question)
                     .frame(minHeight: minTouch)
-                    .fieldBox(focused: questionFocused, inset: EdgeInsets())
-                    .disabled(running)
-                    .accessibilityLabel(Text(verbatim: loc("Ask your own question")))
+                    .fieldBox(focused: focused.wrappedValue, inset: EdgeInsets())
+                    .disabled(running || reason != nil)
+                    .accessibilityLabel(Text(verbatim: reason ?? loc("Ask, or say what to change")))
                     .accessibilityIdentifier("ask-question")
-                BlueprintButton(loc("Ask"), tone: .primary, action: askOwn)
-                    .disabled(running || typed.isEmpty)
+                BlueprintButton(loc("Send"), tone: .primary, action: send)
+                    .disabled(running || reason != nil || typed.isEmpty)
                     .accessibilityIdentifier("ask-send")
             }
-            answer
+        }
+        .onChange(of: question) { old, typed in
+            let max = Int(AskRequest.shared.MAX)
+            if typed.utf16.count > max { question = String(typed.utf16.prefix(max)) ?? String(typed.prefix(max)) }
+            #if os(iOS)
+            // Return sends, as the keyboard's key says; a paste keeps its lines — another transcript is pasted whole.
+            if typed.count == old.count + 1, typed.filter({ $0 == "\n" }).count == old.filter({ $0 == "\n" }).count + 1 {
+                question = old
+                send()
+            }
+            #endif
+        }
+    }
+
+    /// The request, from one line up to six, scrolling past them. On the Mac Return sends and Shift+Return starts a new
+    /// line (2026-10-10, 3.3); on the phone Return sends too, and a paste keeps its lines.
+    @ViewBuilder
+    private var field: some View {
+        let placeholder = reason ?? loc("Ask, or say what to change")
+        #if os(macOS)
+        GrowingTextEditor(text: $question, placeholder: placeholder, lines: 1...6, focused: focused, onReturn: send)
+            .padding(FieldInset.textView)
+        #else
+        TextField("", text: $question, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette), axis: .vertical)
+            .lineLimit(1...6)
+            .textFieldStyle(.plain)
+            .focused(focused)
+            .submitLabel(.send)
+            .padding(FieldInset.field)
+        #endif
+    }
+
+    private var typed: String { question.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private func send() {
+        guard !running, reason == nil, !typed.isEmpty else { return }
+        let asked = typed
+        question = ""
+        ask(nil, asked)
+    }
+
+    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// docs/09 "Ask": what came of the last request, over the composer — `Working…` while it runs; the answer with its
+/// citations playable as the summary's are, its model and Copy; what it changed, with `Undo`; that it changed nothing;
+/// or why it failed. Its close icon puts it away. Nothing here is saved: the core keeps it in this process (docs/08 "Ask").
+struct AskResult: View {
+    let state: AskState
+    /// The plan's name for an answer's model (`ChatGPT · <model>`).
+    let modelLabel: (String) -> String
+    let undoing: Bool
+    let undo: () -> Void
+    let retry: () -> Void
+    let copy: () -> Void
+    let close: () -> Void
+    /// How far the recording here can be played, and the seek a citation makes (see [CitedText]).
+    let seekableSec: Double
+    let onSeek: ((Double) -> Void)?
+    @State private var copied = false
+    @Environment(\.blueprint) private var blueprint
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Space.s) {
+            content
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if !(state is AskState.Running) {
+                BlueprintIconButton("xmark", label: loc("Close"), action: close)
+                    .accessibilityIdentifier("ask-close")
+            }
         }
         .task(id: copied) {
             guard copied else { return }
@@ -64,28 +125,46 @@ struct AskPanel: View {
     }
 
     @ViewBuilder
-    private var answer: some View {
+    private var content: some View {
         switch onEnum(of: state) {
         case .none:
             EmptyView()
         case .running:
-            LoadingText(text: loc("Asking…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+            LoadingText(text: loc("Working…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+                .frame(minHeight: minTouch)
                 .accessibilityIdentifier("ask-running")
         case .ready(let ready):
-            VStack(alignment: .leading, spacing: Space.m) {
-                CitedText(text: ready.answer.text, seekableSec: seekableSec, onSeek: onSeek)
-                    .accessibilityIdentifier("ask-answer")
-                HStack(spacing: Space.s) {
-                    // The plan's name for the model when the answer was written, as a summary's footer has it.
-                    Text(verbatim: RecKitStrings.localized("ChatGPT · %@", ready.answer.modelName ?? modelLabel(ready.answer.model)))
+            VStack(alignment: .leading, spacing: Space.s) {
+                if !ready.answer.text.isEmpty {
+                    ScrollView {
+                        CitedText(text: ready.answer.text, seekableSec: seekableSec, onSeek: onSeek)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("ask-answer")
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(maxHeight: Self.answerHeight)
+                    .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: Space.s) {
+                        // The plan's name for the model when the answer was written, as a summary's footer has it.
+                        Text(verbatim: RecKitStrings.localized("ChatGPT · %@", ready.answer.modelName ?? modelLabel(ready.answer.model)))
+                            .font(blueprint.fonts.sans(TypeSize.small))
+                            .foregroundStyle(blueprint.palette.textMuted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        CopyAllButton(copied: copied) {
+                            copy()
+                            copied = true
+                        }
+                        .accessibilityIdentifier("ask-copy")
+                    }
+                }
+                if let changes = ready.answer.changes {
+                    changed(changes)
+                } else if ready.answer.text.isEmpty {
+                    Text(verbatim: loc("Nothing changed"))
                         .font(blueprint.fonts.sans(TypeSize.small))
                         .foregroundStyle(blueprint.palette.textMuted)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    CopyAllButton(copied: copied) {
-                        copy()
-                        copied = true
-                    }
-                    .accessibilityIdentifier("ask-copy")
+                        .frame(minHeight: minTouch, alignment: .leading)
+                        .accessibilityIdentifier("ask-nothing")
                 }
             }
         case .failed(let failed):
@@ -94,83 +173,52 @@ struct AskPanel: View {
         }
     }
 
-    /// The question, up to four lines. 2026-10-10 (3.3): on the Mac Return asks and Shift+Return starts a new line —
-    /// a text view, because a `TextField` there keeps the new line for ⌥Return. On the phone Return asks too, as on
-    /// Android: the keyboard's key says Send, and the new line a vertical field would take for it is the ask
-    /// instead — the question wraps onto its four lines by itself.
-    @ViewBuilder
-    private var questionField: some View {
-        #if os(macOS)
-        GrowingTextEditor(
-            text: $question, placeholder: loc("Ask your own question"), lines: 1...4, focused: $questionFocused, onReturn: askOwn
-        )
-            .padding(FieldInset.textView)
-        #else
-        TextField("", text: $question, prompt: FieldPlaceholder.prompt(loc("Ask your own question"), blueprint.palette), axis: .vertical)
-            .lineLimit(1...4)
-            .textFieldStyle(.plain)
-            .focused($questionFocused)
-            .submitLabel(.send)
-            .onSubmit(askOwn)
-            .onChange(of: question) { _, typed in
-                guard typed.contains("\n") else { return }
-                question = typed.replacingOccurrences(of: "\n", with: "")
-                askOwn()
+    /// `Changed: Transcript 2 · Summary 1`, and the way back.
+    private func changed(_ changes: AskChanges) -> some View {
+        let parts = [
+            changes.transcriptCount > 0 ? RecKitStrings.localized("Transcript %@", String(changes.transcriptCount)) : nil,
+            changes.summaryCount > 0 ? RecKitStrings.localized("Summary %@", String(changes.summaryCount)) : nil,
+        ].compactMap { $0 }
+        return HStack(spacing: Space.s) {
+            Text(verbatim: RecKitStrings.localized("Changed: %@", parts.joined(separator: " · ")))
+                .font(blueprint.fonts.sans(TypeSize.small))
+                .foregroundStyle(blueprint.palette.textMuted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("ask-changed")
+            if undoing {
+                LoadingText(text: loc("Undoing…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+            } else {
+                BlueprintButton(loc("Undo"), tone: .quiet, action: undo)
+                    .accessibilityIdentifier("ask-undo")
             }
-            .padding(FieldInset.field)
-        #endif
-    }
-
-    private var running: Bool { state is AskState.Running }
-
-    /// What the answer on screen — or the one being written — was asked with.
-    private var asked: (preset: AskPreset?, question: String?)? {
-        switch onEnum(of: state) {
-        case .none: return nil
-        case .running(let running): return (running.preset, running.question)
-        case .ready(let ready): return (ready.answer.preset, ready.answer.question)
-        case .failed(let failed): return (failed.preset, failed.question)
         }
     }
 
-    private var typed: String { question.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-    private func askOwn() {
-        guard !running, !typed.isEmpty else { return }
-        ask(nil, typed)
+    /// An answer taller than this scrolls in its place, so the page above keeps some of its height.
+    private static var answerHeight: CGFloat {
+        #if os(iOS)
+        240
+        #else
+        320
+        #endif
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// The panel's frame on each platform: the Mac's card, drawn over the detail the way its other questions are,
-/// sized like them; the phone's full-height sheet, under a header with its close icon.
-struct AskFrame<Content: View>: View {
-    /// `Ask about this recording`, or `Correct transcript` for the correction's sheet (docs/09 "AI view").
-    var title = RecKitStrings.localized("Ask about this recording")
+#if os(macOS)
+/// A panel's card on the Mac — Version history (docs/09 "Transcript reader") — drawn over the detail the way its other
+/// questions are, sized like them, under a title row with its close icon. The phone's is a bottom sheet of its own.
+struct PanelFrame<Content: View>: View {
+    let title: String
     let close: () -> Void
     @ViewBuilder let content: () -> Content
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
-    /// The body's own height, which the Mac card is as tall as until the window stops it.
+    /// The body's own height, which the card is as tall as until the window stops it.
     @State private var bodyHeight: CGFloat = 0
 
     var body: some View {
-        #if os(iOS)
-        VStack(spacing: 0) {
-            ScreenHeader(title: title, trailingAlignment: .trailing, oneRow: true) {
-                closeButton
-            }
-            HairLine()
-            ScrollView {
-                content()
-                    .padding(Space.m)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .scrollDismissesKeyboard(.interactively)
-        }
-        .dotGridBackground()
-        #else
         // 2026-10-10 (3.3): the title row and its close icon stay put; the body under them scrolls once the card
         // is as tall as the window lets it be.
         VStack(alignment: .leading, spacing: Space.sm) {
@@ -180,7 +228,8 @@ struct AskFrame<Content: View>: View {
                     .foregroundStyle(blueprint.palette.text)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityAddTraits(.isHeader)
-                closeButton
+                BlueprintIconButton("xmark", label: RecKitStrings.localized("Close"), action: close)
+                    .accessibilityIdentifier("panel-close")
             }
             ScrollView {
                 content()
@@ -197,17 +246,12 @@ struct AskFrame<Content: View>: View {
             RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
         }
         .onExitCommand(perform: close)
-        #endif
-    }
-
-    private var closeButton: some View {
-        BlueprintIconButton("xmark", label: RecKitStrings.localized("Close"), action: close)
-            .accessibilityIdentifier("ask-close")
     }
 }
+#endif
 
 /// docs/15 "iPhone providers": the permission a summary, a question or a fill of the title and names waits on — drawn
-/// where the user is, the detail, the Ask sheet over it, or the title sheet after Stop.
+/// where the user is: the detail, or the title sheet after Stop.
 struct SummaryConsentDialog: View {
     let targets: [TransferTarget]
     @Binding var trainingOff: Bool

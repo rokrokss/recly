@@ -41,7 +41,7 @@ class TranscriptDocument(transcript: Transcript) {
 
     /**
      * docs/09 "Transcript reader": where the words of [segments] — indices into the transcript's segments, such as a
-     * correction's (docs/08 "Correcting") — are in [blocks], in reading order, for a reader to tint.
+     * request's changes (docs/08 "Ask") — are in [blocks], in reading order, for a reader to tint.
      */
     fun segmentRanges(segments: List<Int>): List<BlockRange> = segments.distinct().mapNotNull { placed[it] }
         .sortedWith(compareBy({ it.block }, { it.offset }))

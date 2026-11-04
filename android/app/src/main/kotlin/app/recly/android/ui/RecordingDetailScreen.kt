@@ -61,6 +61,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -81,8 +82,8 @@ import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.AskPreset
+import recly.core.chatgpt.AskState
 import recly.core.chatgpt.ChatGptConnection
-import recly.core.chatgpt.CorrectionResult
 import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
 import recly.core.notes.NoteEdit
@@ -122,7 +123,6 @@ import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import recly.core.transcribe.TranscriptAvailability
 
@@ -157,10 +157,14 @@ class DetailActions(
     val onEditNotes: suspend (overview: String?, items: List<NoteEdit>) -> Boolean? = { _, _ -> null },
     /** docs/08 "Organizing" — "Copy and share": the notes as text, for Copy all under them. */
     val notesText: suspend () -> String? = { null },
-    /** docs/08 "Ask": the presets that make sense for the recording, the question, and letting its answer go. */
+    /**
+     * docs/08 "Ask": the presets that make sense for the recording, a request — a preset, or the user's own words — letting
+     * its answer go, and the changes line's Undo: false when not all of it could be undone.
+     */
     val askPresets: suspend () -> List<AskPreset> = { emptyList() },
     val onAsk: (AskPreset?, String?) -> Unit = { _, _ -> },
     val onClearAsk: () -> Unit = {},
+    val onUndoAsk: suspend () -> Boolean = { false },
     /** docs/08 "Titles and speaker names": More → Fill in title or Fill in speaker names, and what came of it — null when the call threw. */
     val onFill: suspend (FillHalf) -> FillResult? = { null },
     /**
@@ -185,11 +189,6 @@ class DetailActions(
     /** docs/08 "Memo": the memo view's save, and whether its line about the notes reading it is said. */
     val onSaveMemo: (String) -> Unit = {},
     val notesAgreed: Boolean = false,
-    /**
-     * docs/08 "Correcting": More → Correct transcript…'s request, and what came of it — null when the call threw. It runs in
-     * the caller's coroutine: closing the sheet cancels it, and the answer is dropped.
-     */
-    val onCorrect: suspend (String) -> CorrectionResult? = { null },
     /** docs/08 "Versions": the versions this device kept, newest first, and bringing one back — null when the call threw. */
     val versions: suspend () -> List<TranscriptVersion> = { emptyList() },
     val onRestore: suspend (String) -> EditResult? = { null },
@@ -281,10 +280,6 @@ fun RecordingDetailScreen(
         )
     }
 
-    // docs/09 "After a correction": what the last correction changed, until the user undoes it, edits or corrects again,
-    // restores a version, or the page leaves the recording.
-    var marks by remember(detail.recordingId) { mutableStateOf<CorrectionMarks?>(null) }
-
     // docs/09 "Editing and speakers": the editor's draft, while it is open.
     var draft by remember(detail.recordingId) { mutableStateOf<EditDraft?>(null) }
     var discarding by remember(detail.recordingId) { mutableStateOf(false) }
@@ -339,8 +334,7 @@ fun RecordingDetailScreen(
         savingGroup = group
         scope.launch {
             val started = SystemClock.elapsedRealtime()
-            // An edit ends what a correction marked: its Undo would take this change back with it.
-            if (actions.onEdit(edit) is EditResult.Edited) marks = null
+            actions.onEdit(edit)
             delay(processingHoldMs(SystemClock.elapsedRealtime() - started))
             savingGroup = null
         }
@@ -372,8 +366,6 @@ fun RecordingDetailScreen(
             }
         }
     }
-    // docs/08 "Ask": the panel, while it is open; its answer lives in the core for as long as it is.
-    var asking by remember(detail.recordingId) { mutableStateOf(false) }
     val leaveNotesEditor = { to: DetailView ->
         if (notesDraft?.changed == true) notesLeaving = to else { notesDraft = null; view = to }
     }
@@ -431,58 +423,22 @@ fun RecordingDetailScreen(
         }
     }
     val models = (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty()
-    if (asking) {
-        val presets by produceState(emptyList<AskPreset>(), detail.recordingId) { value = actions.askPresets() }
-        AskPanel(detail.ask, presets, models, canSeekTo, playFrom, actions.onAsk, onClose = { asking = false; actions.onClearAsk() })
-    }
 
-    // docs/08 "Correcting": the sheet while it is open; what its field holds — kept while the page stays on the recording,
-    // so a second request starts from the first; the request running; and what came of the last one.
-    var correcting by remember(detail.recordingId) { mutableStateOf(false) }
-    var correctionRequest by remember(detail.recordingId) { mutableStateOf("") }
-    var correctionRun by remember(detail.recordingId) { mutableStateOf<Job?>(null) }
-    var correctionOutcome by remember(detail.recordingId) { mutableStateOf<CorrectOutcome?>(null) }
-    // A page that becomes another recording's lets the request go, as closing the sheet does.
-    DisposableEffect(detail.recordingId) { onDispose { correctionRun?.cancel() } }
-    val correct = correct@{
-        if (!canCorrect(correctionRun != null, correctionRequest)) return@correct
-        val request = correctionRequest
-        val busyReason = detail.busyReason
-        val createdAt = transcript?.createdAt
-        correctionOutcome = CorrectOutcome.Running
-        correctionRun = scope.launch {
-            val result = actions.onCorrect(request)
-            correctionRun = null
-            correctionOutcome = correctOutcome(result, busyReason)
-            if (result is CorrectionResult.Corrected) {
-                // Saved: the sheet closes and the transcript shows what changed.
-                marks = CorrectionMarks(result.segments, result.names, result.previousVersionId, createdAt)
-                correcting = false
-                view = DetailView.TRANSCRIPT
+    // docs/09 "Ask": what the composer holds — emptied when the page becomes another recording's — whether it has the cursor,
+    // and the changes line's Undo running. What the answer changed is tinted where it is, until it is undone or closed.
+    var question by remember(detail.recordingId) { mutableStateOf("") }
+    var askFocused by remember(detail.recordingId) { mutableStateOf(false) }
+    var undoingAsk by remember(detail.recordingId) { mutableStateOf(false) }
+    val askChanges = (detail.ask as? AskState.Ready)?.answer?.changes
+    val undoAsk = {
+        if (!undoingAsk) {
+            undoingAsk = true
+            scope.launch {
+                val undone = actions.onUndoAsk()
+                undoingAsk = false
+                // Not all of it: said where a refused start is, for as long as a refusal stays.
+                undoRefusal(undone)?.let { refusal = it }
             }
-        }
-    }
-    val closeCorrect = {
-        correctionRun?.cancel()
-        correctionRun = null
-        correctionOutcome = null
-        correcting = false
-    }
-    if (correcting) CorrectPanel(correctionRequest, { correctionRequest = it }, correctionOutcome, correct, closeCorrect)
-
-    // docs/09 "After a correction": Undo, and why it did not happen — in the line, for as long as a refusal stays.
-    var undoing by remember(detail.recordingId) { mutableStateOf(false) }
-    var undoRefusal by remember(detail.recordingId) { mutableStateOf<RestoreRefusal?>(null) }
-    LaunchedEffect(undoRefusal) { if (undoRefusal != null) { delay(REFUSAL_MS); undoRefusal = null } }
-    val undo = undo@{
-        val version = marks?.previousVersionId ?: return@undo
-        if (undoing) return@undo
-        undoing = true
-        val busyReason = detail.busyReason
-        scope.launch {
-            val refused = restoreRefusal(actions.onRestore(version), busyReason)
-            undoing = false
-            if (refused == null) marks = null else undoRefusal = refused
         }
     }
 
@@ -504,7 +460,6 @@ fun RecordingDetailScreen(
                         if (refused == null) {
                             // Saved: the dialog closes on the transcript it brought back.
                             history = false
-                            marks = null
                             view = DetailView.TRANSCRIPT
                         } else {
                             historyRefusal = refused
@@ -514,11 +469,21 @@ fun RecordingDetailScreen(
             },
             onClose = { history = false; historyRefusal = null })
     }
-    // The marks belong to the transcript they were made on: one made again since has other lines.
-    val shownMarks = marks?.takeIf { transcript != null && it.createdAt == transcript.createdAt }
-    val tints = remember(transcript, shownMarks) {
-        if (transcript != null && shownMarks != null) correctionTints(transcript, shownMarks.segments) else emptyList()
+    val tints = remember(transcript, askChanges) {
+        if (transcript != null && askChanges != null) segmentTints(transcript, askChanges.segments) else emptyList()
     }
+    // docs/09 "Ask": changes to one of the two turn the page to it, unless an editor is open.
+    LaunchedEffect(askChanges) {
+        val changes = askChanges ?: return@LaunchedEffect
+        if (draft == null && notesDraft == null) askChangesView(changes, hasNotes(detail.notes))?.let { view = it }
+    }
+    // docs/09 "Ask": the composer is at the foot of the page where it can be, over the player, which it puts away while it
+    // has the cursor — the keyboard leaves no room for both. The keyboard put away leaves the composer too, so the player
+    // comes back, and so does a composer that goes.
+    val asks = showsAskBar(actions.chatGpt, detail.loading, editing = draft != null || notesDraft != null, view, transcript)
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(keyboardVisible) { if (!keyboardVisible && askFocused) focusManager.clearFocus() }
+    LaunchedEffect(asks) { if (!asks) askFocused = false }
 
     // docs/09 "Typography": every time on this page takes its format from the recording's own length.
     val scale = recordingScale(detail)
@@ -545,13 +510,12 @@ fun RecordingDetailScreen(
                         if (!detail.loading) {
                             MoreButton(detail, transcription, actions.chatGpt, MoreActions(
                                 onRename = { renaming = true },
-                                onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT; marks = null } },
+                                onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
                                 onRetranscribe = { askAgain = true },
                                 onOrganize = organize,
                                 onEditNotes = {
                                     detail.notes?.takeIf(::hasNotes)?.let { notesDraft = NotesDraft.of(it); view = DetailView.NOTES }
                                 },
-                                onAsk = { asking = true },
                                 onMemo = {
                                     memoFocus = true
                                     view = DetailView.MEMO
@@ -567,7 +531,6 @@ fun RecordingDetailScreen(
                                 },
                                 onDelete = { detail.row?.let(actions.onDelete) },
                                 onVersions = { history = true },
-                                onCorrect = { correcting = true },
                             ), fill = actions.fill, organizing = organizing)
                         }
                     }
@@ -596,32 +559,6 @@ fun RecordingDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(stringResource(failed.half.failed), style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                 failed.reason?.let { Text(coreMessage(it).text(), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
-            }
-            HairLine()
-        }
-        // docs/09 "After a correction": how many lines it changed — or speakers it named — and the quiet way back at its end;
-        // an Undo that did not happen says why there for a moment.
-        if (shownMarks != null && !detail.loading && draft == null && notesDraft == null) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.xs).testTag("detail-corrected"),
-                horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-                val refused = undoRefusal
-                if (refused != null) {
-                    Text(stringResource(refused.text), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
-                        color = if (refused.failed) blueprint.danger else blueprint.textMuted)
-                } else {
-                    val (line, count) = correctedLine(shownMarks)
-                    Text(stringResource(line, count), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-                }
-                if (shownMarks.previousVersionId != null) {
-                    if (undoing) {
-                        // In the button's own height, so the line does not move.
-                        Box(Modifier.defaultMinSize(minHeight = MinTouch), contentAlignment = Alignment.Center) {
-                            LoadingText(stringResource(R.string.corrected_undoing), MaterialTheme.typography.bodySmall, blueprint.textMuted)
-                        }
-                    } else {
-                        BlueprintButton(stringResource(R.string.corrected_undo), undo, tone = ButtonTone.QUIET, modifier = Modifier.testTag("detail-undo"))
-                    }
-                }
             }
             HairLine()
         }
@@ -662,7 +599,7 @@ fun RecordingDetailScreen(
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()))
                 chips && view == DetailView.NOTES -> NotesPane(detail.notes, organizing, notesText, onRetry = organize, scaleSec = scale,
                     onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canSeek = canSeekTo, onSeek = seek,
-                    modifier = Modifier.fillMaxSize())
+                    modifier = Modifier.fillMaxSize(), changed = askChanges?.items.orEmpty().toSet(), overviewChanged = askChanges?.overview == true)
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list — whatever
                 // the transcript's own state says, a step that never ran included.
                 transcript == null && detail.waitingForDrive -> Notice(
@@ -755,8 +692,27 @@ fun RecordingDetailScreen(
                 onCancel = { leaveNotesEditor(DetailView.NOTES) }, onSave = saveNotes)
         }
 
+        if (asks) {
+            val presets by produceState(emptyList<AskPreset>(), detail.recordingId, transcript?.createdAt) { value = actions.askPresets() }
+            AskBar(
+                state = detail.ask,
+                presets = presets,
+                reason = composerReason(detail.writing, transcript != null, detail.transcribing, detail.busyReason, actions.chatGpt),
+                models = models,
+                question = question,
+                onQuestion = { question = it },
+                focused = askFocused,
+                onFocus = { askFocused = it },
+                undoing = undoingAsk,
+                canSeek = canSeekTo,
+                onSeek = playFrom,
+                onAsk = actions.onAsk,
+                onUndo = undoAsk,
+                onClose = actions.onClearAsk,
+            )
+        }
         // A take still being written to has nothing whole to play yet, and nothing to say about it.
-        if (!keyboardVisible && !detail.loading && !detail.writing) {
+        if (!keyboardVisible && !(asks && askFocused) && !detail.loading && !detail.writing) {
             HairLine()
             PlayerBar(detail, player, actions)
         }

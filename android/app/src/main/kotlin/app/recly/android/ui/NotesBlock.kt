@@ -149,10 +149,14 @@ internal data class NotesDraft(val original: RecordingNotes, val overview: Strin
     }
 }
 
-/** A row's words: the item, its owner after a dash (`Send the quote — Minji`), then its deadline as it was said, [muted]. */
-internal fun noteText(item: NoteItem, muted: Color): AnnotatedString = buildAnnotatedString {
+/**
+ * A row's words: the item, its owner after a dash (`Send the quote — Minji`), then its deadline as it was said, [muted].
+ * With [tint] — an item the answer on screen changed or added (docs/09 "Ask") — the item and its owner are on it.
+ */
+internal fun noteText(item: NoteItem, muted: Color, tint: Color? = null): AnnotatedString = buildAnnotatedString {
     append(item.text.trim())
     item.owner?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" — "); append(it) }
+    tint?.let { addStyle(SpanStyle(background = it), 0, length) }
     item.due?.trim()?.takeIf { it.isNotEmpty() }?.let { withStyle(SpanStyle(color = muted)) { append(" · "); append(it) } }
 }
 
@@ -180,7 +184,8 @@ private fun letters(text: String): String = text.lowercase().filter { it.isLette
  *
  * [onSeek] makes the time a button that moves the playhead to it — a transcript time's way, playing or paused as it
  * was — where [canSeek] allows; without it (while recording) the time is a label. [scaleSec] picks the time format
- * ([clock]).
+ * ([clock]). [changed] — the items the answer on screen changed or added — and the overview when [overviewChanged] have the
+ * transcript's tint behind their words (docs/09 "Ask").
  */
 @Composable
 internal fun NotesBlock(
@@ -192,14 +197,20 @@ internal fun NotesBlock(
     modifier: Modifier = Modifier,
     canSeek: (Double) -> Boolean = { false },
     onSeek: ((Double) -> Unit)? = null,
+    changed: Set<String> = emptySet(),
+    overviewChanged: Boolean = false,
 ) {
     val palette = blueprint
+    val tint = palette.accent.copy(alpha = MATCH_TINT)
     var open by remember(notes.recordingId) { mutableStateOf<String?>(null) }
     Column(modifier.fillMaxWidth().testTag("notes")) {
         // On the page, as the iPhone has them: no table rows and no lines between them — the section headers part the groups.
         if (overview) noteOverview(notes)?.let { text ->
             Text(
-                text,
+                buildAnnotatedString {
+                    append(text)
+                    if (overviewChanged) addStyle(SpanStyle(background = tint), 0, text.length)
+                },
                 Modifier.fillMaxWidth().padding(horizontal = Space.m).testTag("notes-overview"),
                 style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                 color = palette.text,
@@ -218,6 +229,7 @@ internal fun NotesBlock(
                         onSeek = onSeek,
                         onDelete = onDelete,
                         lines = lines,
+                        tint = tint.takeIf { item.id in changed },
                     )
                 }
             }
@@ -235,6 +247,7 @@ private fun NoteRow(
     onSeek: ((Double) -> Unit)?,
     onDelete: (NoteItem) -> Unit,
     lines: suspend (Double) -> List<NoteLine>,
+    tint: Color?,
 ) {
     val palette = blueprint
     val delete = stringResource(R.string.action_delete)
@@ -281,7 +294,7 @@ private fun NoteRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    noteText(item, palette.textMuted),
+                    noteText(item, palette.textMuted, tint),
                     Modifier.weight(1f).alignByBaseline(),
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
@@ -334,7 +347,8 @@ private fun NoteLines(item: NoteItem, lines: suspend (Double) -> List<NoteLine>)
  * docs/09 "AI view": the `Notes` chip's body — `Organizing…` with the square loader while a pass of the notes runs
  * ([organizing]), or the failure of the last Organize with the one button that helps ([onRetry] for Retry), over the
  * notes there are (§9 "Notes view"); under them `ChatGPT · <model>` and Copy all, which copies [text] — `notes.text`.
- * Nothing at all for notes with nothing in them: there is no empty state.
+ * Nothing at all for notes with nothing in them: there is no empty state. [changed] and [overviewChanged] are what the
+ * answer on screen changed in them (docs/09 "Ask").
  */
 @Composable
 internal fun NotesPane(
@@ -348,6 +362,8 @@ internal fun NotesPane(
     canSeek: (Double) -> Boolean,
     onSeek: (Double) -> Unit,
     modifier: Modifier = Modifier,
+    changed: Set<String> = emptySet(),
+    overviewChanged: Boolean = false,
 ) {
     val shown = notes?.takeIf { showsNotes(it, overview = true) }
     val failure = notes?.failure?.takeIf { !organizing }
@@ -370,7 +386,8 @@ internal fun NotesPane(
                 ChatGptFailure(failure, R.string.notes_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "notes-retry")
             }
             if (shown != null) {
-                NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, lines = lines, canSeek = canSeek, onSeek = onSeek)
+                NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, lines = lines, canSeek = canSeek, onSeek = onSeek,
+                    changed = changed, overviewChanged = overviewChanged)
                 CopyFooter(notesFooter(shown.model), text.orEmpty(), Modifier.testTag("notes-copy"))
             }
         }

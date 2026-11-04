@@ -334,6 +334,70 @@ class Notes internal constructor(
 
     private fun tombstone(note: StoredNote, now: String) = NoteTombstone(note.kind, note.text, note.evidence.atSec, now, note.section)
 
+    // --- Ask (docs/08 "Ask") ---
+
+    /** The recording's final notes as a request of Ask shows them, or null while it has none. */
+    internal suspend fun askSummary(recordingId: String): recly.core.chatgpt.AskSummary? {
+        val file = readNotes(recordingId)?.takeIf { it.isFinal } ?: return null
+        val notes = get(recordingId).takeIf { it.stage == NotesStage.FINAL } ?: return null
+        return recly.core.chatgpt.AskSummary(notes, file.sections.map { it.section() })
+    }
+
+    /**
+     * A request's changes to the final notes, as Edit notes saves the user's: [overview] rewritten, [items]' new words by id
+     * (empty removes one, for good), and [added] items — the user's own, which no later pass changes. Null when nothing
+     * changed.
+     */
+    internal suspend fun applyAsk(
+        recordingId: String,
+        overview: String?,
+        items: Map<String, String>,
+        added: List<recly.core.chatgpt.AskNote>,
+    ): NotesAskChange? {
+        val now = deps.clock.now().isoUtc()
+        var change: NotesAskChange? = null
+        update(recordingId) { file ->
+            file?.takeIf { it.isFinal } ?: return@update null
+            val gone = file.items.filter { items[it.id]?.isEmpty() == true }
+            val edited = mutableListOf<String>()
+            val kept = (file.items - gone.toSet()).map { note ->
+                val text = items[note.id]?.takeIf { it.isNotEmpty() && it != note.shown } ?: return@map note
+                edited += note.id
+                if (text == note.text) note.copy(userText = null, editedAt = null) else note.copy(userText = text, editedAt = now)
+            }
+            val adds = added.map {
+                StoredNote(
+                    id = ulid(), kind = it.kind, text = it.text, owner = it.owner, due = it.due, evidence = NoteEvidence(it.atSec, it.quote),
+                    provisional = false, section = it.section, editedAt = now, createdAt = now,
+                )
+            }
+            val newOverview = overview?.takeIf { it != file.overview.orEmpty() }
+            if (edited.isEmpty() && gone.isEmpty() && adds.isEmpty() && newOverview == null) return@update null
+            val next = file.copy(
+                overview = newOverview ?: file.overview,
+                overviewEditedAt = if (newOverview != null) now else file.overviewEditedAt,
+                items = kept + adds,
+                tombstones = file.tombstones + gone.map { tombstone(it, now) },
+                updatedAt = now,
+            )
+            change = NotesAskChange(file, next, edited + adds.map { it.id }, gone.size, newOverview != null)
+            next
+        }
+        change?.let {
+            deps.logger.log(
+                Logger.Level.INFO, "organize.edited",
+                mapOf("recordingId" to recordingId, "items" to it.items.size, "deleted" to it.removed, "overview" to it.overview, "by" to "ask"),
+            )
+        }
+        return change
+    }
+
+    /** Brings the notes back to how they were before [change], while they are still as it left them; true when it did. */
+    internal suspend fun undoAsk(recordingId: String, change: NotesAskChange): Boolean {
+        val now = deps.clock.now().isoUtc()
+        return update(recordingId) { file -> if (file == change.after) change.before.copy(updatedAt = now) else null }
+    }
+
     /**
      * The notes as text — Copy all, Share → Notes — under [NotesHeadings]: the overview, then each group's items with
      * their owner, due date and `[HH:MM:SS]`. Null when there are none.

@@ -93,7 +93,7 @@ internal fun organizeReason(
 @StringRes
 internal fun editNotesReason(organizing: Boolean): Int? = if (organizing) R.string.notes_organizing else null
 
-/** Why More → Ask about this recording cannot open now: Organize's reasons, but notes being organized are none (docs/08 "Ask"). */
+/** Why nothing can be asked in the Ask composer now: Organize's reasons, but notes being organized are none (docs/09 "Ask"). */
 @StringRes
 internal fun askReason(hasTranscript: Boolean, transcribing: Boolean, @StringRes busyReason: Int, connection: ChatGptConnection): Int? = when {
     !hasTranscript -> R.string.detail_no_transcript
@@ -384,17 +384,18 @@ internal fun citationTargets(layout: TextLayoutResult, runs: List<TextRun>): Lis
 
 /**
  * Who wrote the text above it, and Copy all as the copy icon (2026-10-28), which is the check mark — `Copied` to a screen
- * reader — for the moment the transcript's says `✓ Copied`.
+ * reader — for the moment the transcript's says `✓ Copied`. [padding] at its sides: the page's gutter, or none in the Ask
+ * bar, which has its own.
  */
 @Composable
-internal fun CopyFooter(line: String, text: String, copyModifier: Modifier = Modifier) {
+internal fun CopyFooter(line: String, text: String, copyModifier: Modifier = Modifier, padding: Dp = Space.m) {
     val palette = blueprint
     val clipboard = LocalClipboardManager.current
     var copied by remember(text) { mutableStateOf(false) }
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
     // On the page under the text it belongs to, as the iPhone has it — the pane around it gives the space above and below.
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = Space.m),
+        Modifier.fillMaxWidth().padding(horizontal = padding),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {

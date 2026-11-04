@@ -215,9 +215,9 @@ internal fun DialogCard(
     }
 }
 
-/** The title row's close: a mark in a [MinTouch] square, named for a reader by [label]. */
+/** The title row's close: a mark in a [MinTouch] square, named for a reader by [label]. Also an Ask answer's (docs/09 "Ask"). */
 @Composable
-private fun CloseMark(label: String, onClick: () -> Unit) {
+internal fun CloseMark(label: String, onClick: () -> Unit) {
     Box(
         Modifier
             .size(MinTouch)

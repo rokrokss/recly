@@ -69,6 +69,11 @@ data class AskAnswer(
     val model: String,
     /** The plan's name for [model] (`GPT-5.4`), so the footer reads the same signed out. */
     val modelName: String? = null,
+    /**
+     * What a question of the user's own changed in the transcript and the summary, saved as it came; null when nothing
+     * did, or once it was undone. [text] is empty when the request was only a change.
+     */
+    val changes: AskChanges? = null,
 )
 
 sealed class AskState {
@@ -119,6 +124,12 @@ class Summaries internal constructor(
     private val consents: TransferConsents,
     /** The user's memo of the recording as a request carries it, empty when there is none (docs/08 "Memo"). */
     private val memo: suspend (String) -> String = { "" },
+    /** The recording's final summary as a request shows it, or null while it has none (docs/08 "Ask"). */
+    private val summary: suspend (String) -> AskSummary? = { null },
+    /** Saves a request's changes, made of the transcript [Transcript] as sent; null when none was saved. */
+    private val apply: suspend (String, Transcript, AskSummary?, AskProposal) -> AskApplied? = { _, _, _, _ -> null },
+    /** Undoes a request's saved changes; false when any of them could not be. */
+    private val undo: suspend (String, AskApplied) -> Boolean = { _, _ -> false },
 ) {
     private val startLock = Mutex()
 
@@ -136,6 +147,9 @@ class Summaries internal constructor(
     }
     private val asks = MutableStateFlow<Map<String, AskState>>(emptyMap())
     private val askRuns = mutableMapOf<String, Deferred<AskState>>()
+
+    /** The changes on screen, by recording, with what undoes them — this process only, as their answers are. */
+    private val applied = MutableStateFlow<Map<String, AskApplied>>(emptyMap())
 
     /** What a request about one recording is made from (docs/15 §10): its transcript lines. */
     private class Source(val transcript: String, val language: String, val hasMe: Boolean)
@@ -279,11 +293,13 @@ class Summaries internal constructor(
 
     /**
      * Asks ChatGPT [preset], or the user's own [question], about [recordingId]'s transcript, and answers how it ended.
-     * One at a time per recording: while one runs, asking again answers the running one. The answer replaces the last.
+     * A question of the user's own may ask for a change too: what it changes in the transcript or the summary is saved
+     * at once, and the answer says what ([AskAnswer.changes]; docs/08 "Ask"). One at a time per recording: while one
+     * runs, asking again answers the running one. The answer replaces the last.
      */
     @Throws(Throwable::class)
     suspend fun ask(recordingId: String, preset: AskPreset?, question: String?): AskState {
-        val asked = question?.trim()?.takeIf { it.isNotEmpty() }?.take(ASK_MAX)
+        val asked = question?.trim()?.takeIf { it.isNotEmpty() }?.take(AskRequest.MAX)
         if (preset == null && asked == null) return asks.value[recordingId] ?: AskState.None
         if (consents.missing(listOf(TransferTargets.chatGptSummary())).isNotEmpty()) {
             return AskState.Failed(CoreMessage.TRANSFER_CONSENT_REQUIRED.code(), preset, asked)
@@ -295,22 +311,48 @@ class Summaries internal constructor(
         return run.await()
     }
 
-    /** Closes the answer: the next look at the recording starts with nothing asked. A running question still finishes. */
+    /**
+     * Closes the answer: the next look at the recording starts with nothing asked. A running question still finishes.
+     * Its changes stay; only version history undoes them from then on.
+     */
     fun clearAsk(recordingId: String) {
         asks.update { all -> all[recordingId]?.takeUnless { it is AskState.Running }?.let { all - recordingId } ?: all }
+        if (asks.value[recordingId] !is AskState.Running) applied.update { it - recordingId }
+    }
+
+    /**
+     * docs/08 "Ask" — `Undo`: brings the transcript and the summary back to how they were before the answer's changes —
+     * each one still as the change left it — and drops the changes from the answer. False when there was nothing to undo,
+     * or when any of it was changed again since (the rest is undone).
+     */
+    @Throws(Throwable::class)
+    suspend fun undoAsk(recordingId: String): Boolean {
+        val change = applied.value[recordingId] ?: return false
+        val undone = undo(recordingId, change)
+        applied.update { it - recordingId }
+        asks.update { all ->
+            val ready = all[recordingId] as? AskState.Ready ?: return@update all
+            if (ready.answer.text.isEmpty()) all - recordingId else all + (recordingId to AskState.Ready(ready.answer.copy(changes = null)))
+        }
+        deps.logger.log(Logger.Level.INFO, "summary.ask.undone", mapOf("recordingId" to recordingId, "complete" to undone))
+        return undone
     }
 
     private suspend fun runAsk(recordingId: String, preset: AskPreset?, question: String?): AskState {
         asks.update { it + (recordingId to AskState.Running(preset, question)) }
+        applied.update { it - recordingId }
         val outcome = try {
-            val source = source(recordingId)
-            val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
-            deps.logger.log(Logger.Level.INFO, "summary.ask.start", mapOf("recordingId" to recordingId, "model" to model, "preset" to (preset?.name ?: "own")))
-            val preferences = preferences()
-            val instructions = askInstructions(source.language, SummaryLanguage.app(locale.value), preset, preferences, source.hasMe)
-            val input = source.transcript + "\n" + recly.core.notes.NotesPrompts.memoBlock(memo(recordingId)) +
-                QUESTION_HEADING + "\n" + (question ?: presetQuestion(preset!!)) + "\n"
-            AskState.Ready(AskAnswer(recordingId, preset, question, complete(model, instructions, input), model, account.modelLabel(model)))
+            if (question != null) {
+                request(recordingId, question)
+            } else {
+                val source = source(recordingId)
+                val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
+                deps.logger.log(Logger.Level.INFO, "summary.ask.start", mapOf("recordingId" to recordingId, "model" to model, "preset" to preset!!.name))
+                val instructions = askInstructions(source.language, SummaryLanguage.app(locale.value), preset, preferences(), source.hasMe)
+                val input = source.transcript + "\n" + recly.core.notes.NotesPrompts.memoBlock(memo(recordingId)) +
+                    QUESTION_HEADING + "\n" + presetQuestion(preset) + "\n"
+                AskState.Ready(AskAnswer(recordingId, preset, null, complete(model, instructions, input), model, account.modelLabel(model)))
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: ChatGptFailure) {
@@ -318,17 +360,48 @@ class Summaries internal constructor(
         } catch (e: Exception) {
             AskState.Failed(CoreMessage.PROVIDER_ERROR.code(detail = e.message ?: e::class.simpleName), preset, question)
         }
+        val changes = (outcome as? AskState.Ready)?.answer?.changes
         deps.logger.log(
             if (outcome is AskState.Failed) Logger.Level.WARN else Logger.Level.INFO,
             if (outcome is AskState.Failed) "summary.ask.failed" else "summary.ask.done",
             buildMap {
                 put("recordingId", recordingId)
                 if (outcome is AskState.Failed) put("reason", outcome.reason.substringBefore('|'))
+                if (changes != null) {
+                    put("transcript", changes.transcriptCount)
+                    put("summary", changes.summaryCount)
+                }
             },
         )
         asks.update { it + (recordingId to outcome) }
         startLock.withLock { askRuns.remove(recordingId) }
         return outcome
+    }
+
+    /**
+     * A question of the user's own (docs/08 "Ask"): the transcript by segment, its speakers, the final summary by item,
+     * the memo and the request go in one request, which ChatGPT answers, changes the transcript or the summary with, or
+     * both. The changes are saved before the answer is shown, each one as the user's own edit.
+     */
+    private suspend fun request(recordingId: String, question: String): AskState {
+        val transcript = transcript(recordingId)?.takeIf { t -> t.segments.any { it.text.isNotBlank() } }
+            ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
+        val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
+        val summary = summary(recordingId)
+        deps.logger.log(
+            Logger.Level.INFO, "summary.ask.start",
+            mapOf("recordingId" to recordingId, "model" to model, "preset" to "own", "summary" to (summary != null), "chars" to question.length),
+        )
+        val answer = complete(
+            model, AskPrompts.instructions(transcript, summary, preferences()),
+            AskPrompts.input(transcript, summary, memo(recordingId), question), timeoutSec = REQUEST_TIMEOUT_SEC,
+        )
+        val proposal = AskProposal.parse(answer, transcript, summary)
+        val saved = if (proposal.changesTranscript || proposal.changesSummary) apply(recordingId, transcript, summary, proposal) else null
+        if (saved != null) applied.update { it + (recordingId to saved) }
+        return AskState.Ready(
+            AskAnswer(recordingId, null, question, proposal.answer.orEmpty(), model, account.modelLabel(model), changes = saved?.changes),
+        )
     }
 
     internal companion object {
@@ -346,8 +419,8 @@ class Summaries internal constructor(
          */
         val FILL_MODELS: List<Pair<String, String>> = listOf("gpt-6.1-sol" to "low", "gpt-6.1-terra" to "low")
 
-        /** The longest question the user can ask in their own words. */
-        const val ASK_MAX = 500
+        /** A long transcript, and a reasoning model comparing it line by line with another pasted, can take many minutes. */
+        const val REQUEST_TIMEOUT_SEC = 1800
 
         const val QUESTION_HEADING = "Question:"
 

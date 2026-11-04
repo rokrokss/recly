@@ -92,9 +92,10 @@ class SummariesTest {
         val answer = (f.summaries.ask(ID, AskPreset.ACTION_ITEMS, "  언제 배포하나요?  ") as AskState.Ready).answer
         assertNull(answer.preset)
         assertEquals("언제 배포하나요?", answer.question)
+        assertEquals("금요일", answer.text, "an answer that is no object is all words")
         val (instructions, input) = f.request()
-        assertTrue("Write everything in the language of the question" in instructions)
-        assertTrue(input.endsWith("${Summaries.QUESTION_HEADING}\n언제 배포하나요?\n"))
+        assertTrue("\"answer\": what you say to the person, in the language of the request." in instructions)
+        assertTrue(input.endsWith("${AskPrompts.REQUEST_HEADING}\n언제 배포하나요?\n"))
         assertEquals(AskState.None, Fixture().summaries.ask(ID, null, "   "), "nothing asked")
     }
 
