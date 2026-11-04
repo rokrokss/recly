@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import app.recly.windows.APP_NAME
 import app.recly.windows.detect.MeetingDetectionRule
@@ -105,12 +106,14 @@ private fun Header(model: ShellModel, strings: Strings) {
             }
         }
         // docs/09 screen principle 1 (2026-11-04): the phones' square record node, with the timer beside it —
-        // `00:00` while idle, so a start and a stop happen in the one place and nothing below them moves.
-        // Both at the popup's scale, not the phone's: a 44 node and a 20 timer, 12 apart.
+        // `00:00` while idle, so a start and a stop happen in the one place. Both at the popup's scale, not the
+        // phone's: a 44 node and a 20 timer, 12 apart. Beside the timer, the track (screen principle 6), and under
+        // them the two input lines — all four up whether or not it records, so a start or a stop changes what they
+        // say and nothing moves. The track's levels are the helper's own write path (`HelperEvent.Level`).
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, top = Space.s),
             horizontalArrangement = Arrangement.spacedBy(Space.sm),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
             // Off while a capture is coming up or being saved (STARTING, STOPPING), as Start was.
             val startable = model.ready && !model.helperMissing && model.titlePrompt == null && model.transition == null
@@ -123,26 +126,21 @@ private fun Header(model: ShellModel, strings: Strings) {
                 onClick = { if (model.recording) model.stop() else model.start() },
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
-                // While it saves, the recording's final length stays on it until the recorder is idle (2026-10-08).
-                Elapsed(model.recordingSince, model.recordingEndedAt)
-                // What a start made now would capture. Only before a start: the helper names the defaults, and
-                // what a running capture follows is its own (docs/09 screen principle 1).
-                if (!model.recording && model.transition == null) {
-                    model.nextDevices.microphone?.let { DeviceLine(strings[Str.TRAY_MICROPHONE, it]) }
-                    model.nextDevices.output?.let { DeviceLine(strings[Str.TRAY_SYSTEM_AUDIO, it]) }
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
+                    // While it saves, the recording's final length stays on it until the recorder is idle (2026-10-08).
+                    Elapsed(model.recordingSince, model.recordingEndedAt)
+                    LiveWaveform(
+                        peaks = model::livePeaks,
+                        live = model.recording,
+                        track = true,
+                        modifier = Modifier.weight(1f).testTag("live-waveform"),
+                    )
                 }
+                // The default devices, in every state: before a start what it would capture, while it records what it
+                // captures. A line with nothing to say keeps its height.
+                DeviceLine(model.nextDevices.microphone?.let { strings[Str.TRAY_MICROPHONE, it] })
+                DeviceLine(model.nextDevices.output?.let { strings[Str.TRAY_SYSTEM_AUDIO, it] })
             }
-        }
-        // docs/09 screen principle 6: and under them the track being written, so the capture is visible as
-        // well as counted. The levels are the helper's own write path (`HelperEvent.Level`).
-        if (model.recording) {
-            LiveWaveform(
-                peaks = model::livePeaks,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = Space.m, end = Space.m, top = Space.sm)
-                    .testTag("live-waveform"),
-            )
         }
         // docs/14 "Detection": an AWT balloon has no buttons (`TrayNotifier`), so the offer it
         // made stands here for as long as it stands at all.
@@ -161,8 +159,15 @@ private fun Header(model: ShellModel, strings: Strings) {
 
 /** A device a start would capture, in the status lines' muted mono (Hangul, Kana and Han in the sans). */
 @Composable
-private fun DeviceLine(text: String) {
-    Text(text, style = mono.small.forWord(text), color = blueprint.textMuted)
+private fun DeviceLine(text: String?) {
+    // One line at most, cut at its end — a long device name does not push the ledger down either.
+    Text(
+        text ?: " ",
+        style = mono.small.forWord(text ?: ""),
+        color = blueprint.textMuted,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 /**

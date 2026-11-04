@@ -31,37 +31,47 @@ import kotlinx.coroutines.delay
  *
  * docs/09 "Motion": nothing here is animated. Each tick is a fresh drawing of a new reading — a state
  * change, not a transition — so reduce motion has nothing to turn off.
+ *
+ * The tray's popup keeps the strip up whether or not it records (2026-11-04), as the Mac popover does: [track]
+ * draws the slots no window has reached as the empty track — the whole strip before a start, so a start fills
+ * it in rather than putting it there — and [live] is false while nothing records, when the strip is that track
+ * alone and the recorder is not asked.
  */
 @Composable
-fun LiveWaveform(peaks: () -> List<Float>, modifier: Modifier = Modifier) {
+fun LiveWaveform(peaks: () -> List<Float>, modifier: Modifier = Modifier, live: Boolean = true, track: Boolean = false) {
     val ink = blueprint.danger
+    val empty = blueprint.grid
     // The levels are the recorder's and change on the helper's reader without Compose noticing; a
     // state of three hundred floats at 10 Hz would instead recompose everything that reads the
     // model. This counter is the whole of the state, and reading it is what asks for a new reading.
     var tick by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(TICK_MS)
-            tick++
+    if (live) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(TICK_MS)
+                tick++
+            }
         }
     }
     // The tick is read *here*, in the composition, and the recorder is asked in the same breath: a
     // drawing that only called [peaks] would, from outside, be the same closure over the same
     // nothing every time — and a strip that stands still is the one answer this must never give.
-    val levels = tick.let { peaks() }
+    val levels = if (live) tick.let { peaks() } else emptyList()
     Canvas(
         modifier
             .height(ROW)
-            // The timer above it says the same thing in words; a picture of it would be read twice.
+            // The timer beside it says the same thing in words; a picture of it would be read twice.
             .clearAndSetSemantics {},
     ) {
         val step = STEP.toPx()
-        val bars = min(levels.size, (size.width / step).toInt())
-        for (index in 0 until bars) {
+        val fit = (size.width / step).toInt()
+        val slots = if (track) fit else min(levels.size, fit)
+        for (index in 0 until slots) {
             // From the right: the newest window is the one at the edge the strip grows from.
-            val height = max(barHeight(levels[levels.size - 1 - index]) * size.height, MIN_BAR.toPx())
+            val recorded = index < levels.size
+            val height = if (recorded) max(barHeight(levels[levels.size - 1 - index]) * size.height, MIN_BAR.toPx()) else MIN_BAR.toPx()
             drawRect(
-                color = ink,
+                color = if (recorded) ink else empty,
                 topLeft = Offset(size.width - (index + 1) * step, (size.height - height) / 2),
                 size = Size(BAR.toPx(), height),
             )
@@ -83,7 +93,7 @@ private val STEP = 3.dp
 /** A window with nothing in it is still a window that was recorded. */
 private val MIN_BAR = 1.dp
 
-/** The height of the buttons it sits between in the popup. */
+/** The height of the record node it sits beside in the popup. */
 private val ROW = 44.dp
 
 /** The rate the helper finishes a window at. */

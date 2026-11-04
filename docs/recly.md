@@ -2656,7 +2656,7 @@ The principle in one line: **intent, not decoration**.
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
   | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, the Ask presets, Version history's `Restore` and the popover's and tray's `Settings` and `Quit` (2026-11-04); in a notes row, among the presets and in the popover's and tray's footer the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31), so the footer is as low as its boxes: 8 above and below them, 40 in all on both desktops (2026-11-04) |
-  | Record node | 72 square, a 3 border in the recording colour, the 22 stop square inside; in the popover and the tray (2026-11-04) 44, a 2 border and the 14 stop square, the timer beside it at 20, 12 apart — the phone's size outweighed the ledger in a panel that small |
+  | Record node | 72 square, a 3 border in the recording colour, the 22 stop square inside; in the popover and the tray (2026-11-04) 44, a 2 border and the 14 stop square, the timer beside it at 20, 12 apart — the phone's size outweighed the ledger in a panel that small — and in the 44 row with the timer the track, 12 from it to the edge; the input lines under them, 4 apart |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
   | Ledger row | 12 top and bottom; the time column as wide as the longest time in that shell's mono font (62 Android and Apple, 68 Windows) |
@@ -2708,9 +2708,10 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
 ### Screen principles
 
 1. **Recording screen = instrument panel**: a mono timer and the square record node — on the phones the timer in the middle and the node
-   at the bottom; in the Mac popover and the Windows tray the node at the start with the timer beside it, `00:00` while idle, so a start and a
-   stop happen in one place and nothing below them moves (2026-11-04, user decision: the desktops' `Start recording` and `Stop recording`
-   buttons gave way to the phones' node, so a start looks alike on every device). The three state nodes that stood above them — device,
+   at the bottom; in the Mac popover and the Windows tray the node at the start with the timer beside it, `00:00` while idle, the track
+   beside the timer (screen principle 6) and the two input lines under them (§12 "Input lines") — all of them up in every state, so a start
+   or a stop changes what they say and the header's edge never moves (2026-11-04, user decisions: the desktops' `Start recording` and
+   `Stop recording` buttons gave way to the phones' node, so a start looks alike on every device; the header's edge stays put). The three state nodes that stood above them — device,
    transcription, state, joined by straight lines — were removed from all four shells the same day (user decision): the device said nothing
    the user does not know, the transcription provider is in Settings, and what the state said, the timer, the record node (`…` while starting
    or saving) and the ledger's badges already say. While recording, only the elapsed time, as a mono timer (2026-09-03: part numbers, segment
@@ -3048,8 +3049,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    swipe, no tap on the dim. `Share`, a list with no answers, also closes with a tap on the dim (2026-10-29, user decision:
    iOS 26 floats a shorter system sheet as a card inset from both sides and the bottom).
 6. **macOS menu bar**: a popover (glass allowed) with the record node and the timer (screen principle 1) + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
-   popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) runs under the record node and the timer — the iPhone
-   recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
+   popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) runs beside the timer, right of it to the
+   popover's edge; while idle the same strip is the empty track, a flat dot in `grid` per slot, and a recording fills it from the right (2026-11-04) — the iPhone
+   recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same strip beside the timer — the helper
    sends peaks of 0.1-second windows as `level {peaks[]}` events (2026-09-03). The Android recording screen has the same band under the timer —
    it reads `MediaRecorder.getMaxAmplitude()` every 0.1 seconds (2026-09-03).
    The Mac also has the App Intents `Start recording` · `Stop recording`.
@@ -3985,18 +3987,23 @@ With the built-in speakers the microphone's input node runs with voice processin
   While a recording runs, its elapsed time stands beside the icon in digits of one width (`12:34`), and the item is the icon's square
   again once it stops (2026-11-04): a recording is mostly made with the popover closed, and a red icon says that one runs, not for how
   long. A Windows tray icon takes no text, so the tray's tooltip carries it there (`Recly — Recording · 12:34`, §14 "App").
-- **Menu bar** popover: the record node with the timer and the input lines beside it (§9 screen principle 1) + the recent ledger (infinite scroll, 20 rows at a time; time · title with the transcript's first words
+- **Menu bar** popover: the record node with the timer, the track and the input lines beside it (§9 screen principle 1) + the recent ledger (infinite scroll, 20 rows at a time; time · title with the transcript's first words
   under it · length · state, and a click opens the recording in the Details window, §9 principle 2) + actions, with a notice banner at the top.
-- **Mac popover size**: the height is limited so the popover fits inside the current screen minus the menu bar and the Dock. Only settings and the ledger scroll, and
+- **Mac popover size**: one height, 620 (the idle header over a 420 ledger), limited so the popover fits inside the current screen minus the
+  menu bar and the Dock. Only settings and the ledger scroll, and they give and take what the header's changes need — a recording's memo
+  row, its field opening and folding — so the window never resizes under the pointer (2026-11-04, user: Done on the memo flashed; the
+  window follows a size change a turn later, and that frame showed an empty band). The Windows tray's popup is a fixed 520 × 560.
   Settings/Hide settings and Quit at the bottom are always shown, at the status badge's size (2026-11-04, user decision; the Windows tray's
-  too). While settings are open, the button reads `Hide settings`.
-  Hiding settings shrinks it to the ledger's size, and when the screen layout changes, the position and height are fitted again.
-- **Input lines** (2026-11-04): beside the timer, what is being recorded from — `Microphone: <name>` and `System audio: <name>` — while
-  a recording runs (the Mac since M4-L3) and, while idle, what a start made now would record from: the microphone the recorder would take
-  first and the default output its tap would follow. A microphone that is not the one meant (the AirPods case, 2026-09-04) shows before
-  the recording rather than after it. The Mac reads them when the popover opens and every 2 s while it is up; the Windows tray asks the
-  capture helper's `--devices` (§14 "App") every 3 s while its popup is up, and names them only before a start — the helper reports no
-  device during a capture. Nothing while saving. The phones have no such line: an iPhone's audio session reports its input only once it
+  too). While settings are open, the button reads `Hide settings`. When the screen layout changes, the position and height are fitted again.
+- **Input lines** (2026-11-04): under the timer, what is being recorded from — `Microphone: <name>` and `System audio: <name>` — while
+  a recording runs or is saved (the Mac since M4-L3) and, while idle, what a start made now would record from: the microphone the recorder
+  would take first and the default output its tap would follow. A microphone that is not the one meant (the AirPods case, 2026-09-04) shows
+  before the recording rather than after it. Always these two lines, one line each and cut at its end: a capture finding its way back
+  (`Reconnecting microphone…`, the system audio's warnings) takes its own line's place, and a line with nothing to say keeps its height, so
+  the header's edge does not move (user decision, 2026-11-04). The Mac reads the idle names when the popover opens and every 2 s while it is
+  up, and while it records names what the recorder took (the idle names until the recorder has said); the Windows tray asks the capture
+  helper's `--devices` (§14 "App") every 3 s while its popup is up, in every state — the helper re-creates a stream onto a new default, so
+  the default is what a running capture takes. The phones have no such line: an iPhone's audio session reports its input only once it
   is active, Android chooses the microphone as the recording starts, and both record the device the system has routed to them.
 - **The popover holds these items**: start · stop (the record node), the recent ledger, settings, sign-in (the workflow editing window was retired 2026-09-24). The AWT menu on Windows is
   a reduced fallback (macOS uses a `.window` MenuBarExtra, so there is no NSMenu).

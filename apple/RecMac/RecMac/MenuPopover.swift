@@ -25,12 +25,12 @@ struct MenuPopover: View {
     @FocusState private var memoFocused: Bool
 
     var body: some View {
-        // One height for the ledger and the settings: a popover that changed size on "Hide settings"
-        // had its window follow a turn later (the panel resizes outside the layout pass that asked
-        // for it — see `MenuBarPanel.scheduleFit`), and that frame flashed a different layout. Each
-        // section still opens at its top: only the scrolled middle is rebuilt, never the header
-        // and footer around it.
-        MenuPanelContent(maximumSize: maximumSize, preferredContentHeight: 420, contentID: showingSettings) {
+        // One height for the whole popover — the ledger and the settings, a recording's memo row and its field: a
+        // popover that changed size on "Hide settings", or on the memo's Done, had its window follow a turn later
+        // (the panel resizes outside the layout pass that asked for it — see `MenuBarPanel.scheduleFit`), and that
+        // frame flashed a different layout. 620 is the idle header over a 420 ledger. Each section still opens at
+        // its top: only the scrolled middle is rebuilt, never the header and footer around it.
+        MenuPanelContent(maximumSize: maximumSize, preferredHeight: 620, contentID: showingSettings) {
             header
             HairLine()
         } content: {
@@ -82,9 +82,11 @@ struct MenuPopover: View {
             // 2026-10-08 §2: the app's name and nothing under it — the device id is in Settings → About.
             ScreenHeader(title: "Recly")
             // docs/09 screen principle 1 (2026-11-04): the phone's square record node, with the timer beside it —
-            // `00:00` while idle, so a start and a stop happen in the one place and nothing below them moves.
-            // Both at the panel's scale, not the phone's: a 44 node and a 20 timer, 12 apart.
-            HStack(alignment: .center, spacing: Space.sm) {
+            // `00:00` while idle, so a start and a stop happen in the one place. Both at the panel's scale, not the
+            // phone's: a 44 node and a 20 timer, 12 apart. Beside the timer, the track (screen principle 6), and
+            // under them the two input lines — all four up whether or not it records, so a start or a stop
+            // changes what they say and nothing moves.
+            HStack(alignment: .top, spacing: Space.sm) {
                 RecordNode(recording: model.isRecording, working: model.state == .starting || model.state == .stopping, compact: true) {
                     if model.canStop { model.stop() } else { model.start() }
                 }
@@ -95,35 +97,27 @@ struct MenuPopover: View {
                 .accessibilityIdentifier(model.canStop ? "stop" : "start")
                 .accessibilityLabel(Text(verbatim: model.canStop ? loc("Stop recording") : loc("Start recording")))
                 VStack(alignment: .leading, spacing: Space.xs) {
-                    // 2026-10-08 §4: the recording's length stays up while it is saved; `00:00` once idle.
-                    MonoTimer(
-                        model.state == .idle || model.elapsed.isEmpty ? LedgerFormat.elapsed(0) : model.elapsed,
-                        color: model.isRecording ? blueprint.palette.danger : nil,
-                        size: TypeSize.title
-                    )
-                    .accessibilityIdentifier("elapsed")
-                    ForEach(inputLines, id: \.self) { line in
-                        // 2026-10-11 (N3): these status lines are words — Hangul, Kana and Han take the sans.
-                        Text(verbatim: line.text)
-                            .font(blueprint.fonts.mono(TypeSize.small, words: line.text))
-                            .foregroundStyle(line.warning ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.textMuted)
-                            .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: Space.sm) {
+                        // 2026-10-08 §4: the recording's length stays up while it is saved; `00:00` once idle.
+                        MonoTimer(
+                            model.state == .idle || model.elapsed.isEmpty ? LedgerFormat.elapsed(0) : model.elapsed,
+                            color: model.isRecording ? blueprint.palette.danger : nil,
+                            size: TypeSize.title
+                        )
+                        .fixedSize()
+                        .accessibilityIdentifier("elapsed")
+                        // The answer to "is it hearing me" that a clock alone cannot give; the empty track until then.
+                        LiveWaveformView(peaks: model.livePeaks, live: model.isRecording, track: true)
+                            .frame(maxWidth: .infinity)
+                            .accessibilityIdentifier("live-waveform")
                     }
+                    inputLine(microphoneLine)
+                    inputLine(systemAudioLine)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, Space.m)
             .padding(.top, Space.s)
-            // docs/09 screen principle 6: the track being written, under the node and the timer — the answer to "is it
-            // hearing me" that a clock alone cannot give.
-            if model.isRecording {
-                LiveWaveformView(peaks: model.livePeaks)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("live-waveform")
-                    .padding(.horizontal, Space.m)
-                    .padding(.top, Space.sm)
-            }
-            // docs/08 "Memo": under the waveform while recording, empty or not; a click opens the field in its place,
+            // docs/08 "Memo": under the input lines while recording, empty or not; a click opens the field in its place,
             // and Done folds it back. The field saves as it goes, so a popover closed by Escape loses nothing.
             if model.isRecording {
                 Group {
@@ -148,37 +142,43 @@ struct MenuPopover: View {
 
     /// docs/12 M4-L3 "Menu bar": what is being recorded from, while it is — and, since 2026-11-04, what a start made now
     /// would record from (the microphone the recorder would take and the output its tap would follow), so a
-    /// microphone that is not the one meant shows before the recording rather than after it. Nothing while it saves.
+    /// microphone that is not the one meant shows before the recording rather than after it.
+    ///
+    /// Always these two lines, one each, in every state (2026-11-04): while it records, or saves, the devices
+    /// it took — the ones named before the start until the recorder has said — and a capture finding its way
+    /// back in its own line's place. A line with nothing to say keeps its height, so the header's edge never moves.
     /// 2026-10-08 §12: a capture finding its way back is a wait, not a failure — the warning tone; red stays for
     /// deletion and for the recording state.
-    private var inputLines: [InputLine] {
-        var lines: [InputLine] = []
-        if model.isRecording {
-            if model.microphoneRecovering {
-                lines.append(InputLine(text: loc("Reconnecting microphone…"), warning: true))
-            } else if let device = model.capturedInputDevice {
-                lines.append(InputLine(text: AppStrings.localized("Microphone: %@", device), warning: false))
-            }
-            if model.captureHealth != .healthy {
-                lines.append(InputLine(text: loc(model.captureHealth == .failed
-                    ? "System audio unavailable. Microphone recording continues."
-                    : "Reconnecting system audio…"), warning: true))
-            }
-            if let device = model.capturedOutputDevice {
-                lines.append(InputLine(text: AppStrings.localized("System audio: %@", device), warning: false))
-            }
-        } else if model.isIdle {
-            if let device = model.nextInputDevice {
-                lines.append(InputLine(text: AppStrings.localized("Microphone: %@", device), warning: false))
-            }
-            if let device = model.nextOutputDevice {
-                lines.append(InputLine(text: AppStrings.localized("System audio: %@", device), warning: false))
-            }
+    private var microphoneLine: InputLine? {
+        if model.isRecording, model.microphoneRecovering {
+            return InputLine(text: loc("Reconnecting microphone…"), warning: true)
         }
-        return lines
+        let device = model.isIdle ? model.nextInputDevice : model.capturedInputDevice ?? model.nextInputDevice
+        return device.map { InputLine(text: AppStrings.localized("Microphone: %@", $0), warning: false) }
     }
 
-    private struct InputLine: Hashable {
+    private var systemAudioLine: InputLine? {
+        if model.isRecording, model.captureHealth != .healthy {
+            return InputLine(text: loc(model.captureHealth == .failed
+                ? "System audio unavailable. Microphone recording continues."
+                : "Reconnecting system audio…"), warning: true)
+        }
+        let device = model.isIdle ? model.nextOutputDevice : model.capturedOutputDevice ?? model.nextOutputDevice
+        return device.map { InputLine(text: AppStrings.localized("System audio: %@", $0), warning: false) }
+    }
+
+    /// One line at most, cut at its end — a long device name does not push the ledger down either.
+    private func inputLine(_ line: InputLine?) -> some View {
+        let text = line?.text ?? " "
+        // 2026-10-11 (N3): these status lines are words — Hangul, Kana and Han take the sans.
+        return Text(verbatim: text)
+            .font(blueprint.fonts.mono(TypeSize.small, words: text))
+            .foregroundStyle(line?.warning == true ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.textMuted)
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+    private struct InputLine {
         let text: String
         let warning: Bool
     }

@@ -9,7 +9,7 @@ final class MenuPanelContentTests: XCTestCase {
     func testLongSettingsKeepTheFooterInsideAShortViewport() throws {
         for height: CGFloat in [400, 600] {
             let probes = Probes()
-            let hosting = host(view(height: height, preferred: 420, probes: probes))
+            let hosting = host(view(height: height, preferred: 620, probes: probes))
             XCTAssertLessThanOrEqual(hosting.frame.height, height)
             let footer = try XCTUnwrap(probes.footer)
             let frame = footer.convert(footer.bounds, to: hosting)
@@ -22,21 +22,26 @@ final class MenuPanelContentTests: XCTestCase {
         }
     }
 
+    /// 2026-11-04: a header that grows or shrinks — the memo's field opening, its Done — leaves the panel's height
+    /// as it was; the scrolled middle takes the difference.
     @MainActor
-    func testReturningToTheLedgerShrinksTheSameHostingView() {
+    func testAHeaderThatChangesLeavesThePanelItsHeight() throws {
         let probes = Probes()
-        let hosting = host(view(height: 900, preferred: 420, probes: probes))
-        let expanded = hosting.frame.height
-        hosting.rootView = view(height: 900, preferred: 280, probes: probes)
-        layout(hosting)
-        XCTAssertLessThan(hosting.frame.height, expanded)
-        XCTAssertEqual(expanded - hosting.frame.height, 140, accuracy: 1)
+        let hosting = host(view(height: 900, preferred: 620, headerHeight: 180, probes: probes))
+        XCTAssertEqual(hosting.frame.height, 620, accuracy: 1)
+        for headerHeight: CGFloat in [300, 120] {
+            hosting.rootView = view(height: 900, preferred: 620, headerHeight: headerHeight, probes: probes)
+            layout(hosting)
+            XCTAssertEqual(hosting.frame.height, 620, accuracy: 1)
+            let footer = try XCTUnwrap(probes.footer)
+            XCTAssertEqual(footer.convert(footer.bounds, to: hosting).height, 60, accuracy: 1)
+        }
     }
 
     @MainActor
     func testRecordingHeaderAndQuitActionKeepTheirHeightWhenSpaceIsLimited() throws {
         let probes = Probes()
-        let hosting = host(view(height: 440, preferred: 420, headerHeight: 300, probes: probes))
+        let hosting = host(view(height: 440, preferred: 620, headerHeight: 300, probes: probes))
         XCTAssertLessThanOrEqual(hosting.frame.height, 440)
         let header = try XCTUnwrap(probes.header)
         let footer = try XCTUnwrap(probes.footer)
@@ -61,7 +66,7 @@ final class MenuPanelContentTests: XCTestCase {
 
     @MainActor
     private func view(height: CGFloat, preferred: CGFloat, headerHeight: CGFloat = 180, probes: Probes) -> AnyView {
-        AnyView(MenuPanelContent(maximumSize: CGSize(width: 460, height: height), preferredContentHeight: preferred) {
+        AnyView(MenuPanelContent(maximumSize: CGSize(width: 460, height: height), preferredHeight: preferred) {
             Probe { probes.header = $0 }.frame(height: headerHeight)
         } content: {
             Probe { probes.content = $0 }.frame(height: 1600)

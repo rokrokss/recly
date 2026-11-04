@@ -780,9 +780,10 @@ class ShellModel(
     private var helperCommand: List<String>? = null
 
     /**
-     * docs/12 "Menu bar" (2026-11-04): the microphone and the output a start made now would capture, read while the
-     * popup is up and nothing records ([refreshNextDevices]) — so a microphone that is not the one meant shows
-     * before the recording rather than after it.
+     * docs/12 "Menu bar" (2026-11-04): the default microphone and output, read while the popup is up
+     * ([refreshNextDevices]) — before a start what a start made now would capture, so a microphone that is not the
+     * one meant shows before the recording rather than after it; while one runs what it captures, since the
+     * helper re-creates a stream onto the new default when the default changes.
      */
     var nextDevices: CaptureDevices by mutableStateOf(CaptureDevices.NONE)
         private set
@@ -790,7 +791,6 @@ class ShellModel(
     /** Asked by the popup while it is up: the defaults change under it (a headset plugged in, a dock unplugged). */
     suspend fun refreshNextDevices() {
         val command = helperCommand ?: return
-        if (recording || transition != null) return
         val next = withContext(Dispatchers.IO) { readDevices(command) }
         if (next != nextDevices) nextDevices = next
     }
