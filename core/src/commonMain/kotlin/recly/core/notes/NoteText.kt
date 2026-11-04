@@ -30,6 +30,15 @@ internal object NoteText {
         return out.toString()
     }
 
+    /**
+     * docs/08 "Organizing", "Ask" (2026-11-04): an item's words without the `[HH:MM:SS]` an answer copied from the lines it
+     * was sent — a time, a run of them or a range, and the space before it. The item's time is its evidence, shown beside
+     * it, never in its words. Empty when the words were only times.
+     */
+    fun withoutTimes(text: String): String = TIMES.replace(text, "").trim()
+
+    private val TIMES = Regex("""\s*\[\d{1,2}:\d{2}(?::\d{2})?(?:\s*[,–-]\s*\d{1,2}:\d{2}(?::\d{2})?)*\]""")
+
     /** `chars`: the normalized text without its spaces — what a quote is compared by. */
     fun chars(text: String): String = normalize(text).replace(" ", "")
 

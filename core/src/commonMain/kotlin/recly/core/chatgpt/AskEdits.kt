@@ -8,6 +8,7 @@ import kotlinx.serialization.json.intOrNull
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteKind
 import recly.core.notes.NoteSection
+import recly.core.notes.NoteText
 import recly.core.notes.NotesAnswer
 import recly.core.notes.NotesPrompts
 import recly.core.notes.RecordingNotes
@@ -156,13 +157,17 @@ internal data class AskProposal(
                 for (element in (json["items"] as? JsonArray).orEmpty()) {
                     val item = element as? JsonObject ?: continue
                     val note = summary.items.getOrNull((number(item["n"]) ?: continue) - 1) ?: continue
-                    val text = string(item["text"])?.let(::oneLine)?.take(NotesAnswer.TEXT_MAX) ?: continue
+                    val said = string(item["text"])?.let(::oneLine) ?: continue
+                    // The item's time is shown beside it: a time copied into its words is dropped, and words that were
+                    // only times remove nothing (2026-11-04).
+                    val text = NoteText.withoutTimes(said).takeIf { it.isNotEmpty() || said.isEmpty() }?.take(NotesAnswer.TEXT_MAX) ?: continue
                     if (text != note.text) items[note.id] = text
                 }
                 for (element in (json["add"] as? JsonArray).orEmpty()) {
                     val item = element as? JsonObject ?: continue
                     val (kind, section) = string(item["section"])?.trim()?.let(summary::place) ?: continue
-                    val text = string(item["text"])?.let(::oneLine)?.takeIf { it.isNotEmpty() }?.take(NotesAnswer.TEXT_MAX) ?: continue
+                    val text = string(item["text"])?.let(::oneLine)?.let(NoteText::withoutTimes)?.takeIf { it.isNotEmpty() }
+                        ?.take(NotesAnswer.TEXT_MAX) ?: continue
                     val segment = number(item["line"])?.let { sent.segments.getOrNull(it - 1) }?.takeIf { it.text.isNotBlank() }
                     val owner = string(item["owner"])?.trim()?.takeIf { kind == NoteKind.TODO && it in ids }
                     val due = string(item["due"])?.trim()?.takeIf { kind == NoteKind.TODO && it.isNotEmpty() }?.take(NotesAnswer.DUE_MAX)
@@ -214,7 +219,7 @@ internal object AskEdits {
 internal object AskPrompts {
     const val TRANSCRIPT_HEADING = "TRANSCRIPT — one line per segment: #number [HH:MM:SS] speaker id: text"
     const val SPEAKERS_HEADING = "SPEAKERS"
-    const val SUMMARY_HEADING = "SUMMARY — its overview, then its items under their sections, one line per item: @number text"
+    const val SUMMARY_HEADING = "SUMMARY — its overview, then its items under their sections, one line per item: @number text [HH:MM:SS], the item's time last"
     const val REQUEST_HEADING = "REQUEST — what the user asks or wants changed, with anything they give to help"
 
     /** The built-in groups as the request names them, whatever the user calls them. */
@@ -271,6 +276,8 @@ internal object AskPrompts {
             append("number of the transcript segment it comes from}, and for a to-do \"owner\", the speaker id who does it, and \"due\", ")
             append("its due date as it was said.\n")
             append("Write the summary's words in the language the summary is in, in the style of its other items.\n")
+            append("An item's text is its words alone, never a time: the [HH:MM:SS] that ends a summary line is the item's time, kept ")
+            append("apart and shown beside it, and an added item's time is its line's.\n")
             append("A name or term corrected in the transcript is corrected wherever the summary has it too, and the other way round.\n")
         }
         preferences.aboutMe.trim().takeIf { it.isNotEmpty() }?.let {

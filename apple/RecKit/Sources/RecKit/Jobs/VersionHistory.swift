@@ -56,7 +56,8 @@ struct VersionHistoryPanel: View {
                 if restoring == version.id {
                     LoadingText(text: loc("Restoring…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
                 } else {
-                    BlueprintButton(loc("Restore"), tone: .quiet) { restore(version.id) }
+                    // At the status badge's size, as a time button is (2026-11-04); the row keeps the touch minimum.
+                    BlueprintButton(loc("Restore"), tone: .quiet, compact: true) { restore(version.id) }
                         .disabled(restoring != nil)
                         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Restore the version from %@", when)))
                         .accessibilityIdentifier("version-restore-\(version.id)")

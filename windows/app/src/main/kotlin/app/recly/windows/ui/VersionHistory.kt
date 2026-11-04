@@ -141,6 +141,8 @@ internal fun VersionsPanel(
                             tone = ButtonTone.QUIET,
                             enabled = restoring == null || restoring == version.id,
                             busy = restoring == version.id,
+                            // At the status badge's size, as a time button is (2026-11-04); the row keeps the touch minimum.
+                            compact = true,
                         )
                     }
                 }

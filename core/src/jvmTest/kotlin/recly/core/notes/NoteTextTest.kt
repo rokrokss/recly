@@ -115,11 +115,22 @@ class NoteTextTest {
     }
 
     @Test
+    fun `a time copied into an item's words is dropped, and nothing else in brackets`() {
+        assertEquals("채널은 #ext-sumsub이다.", NoteText.withoutTimes("채널은 #ext-sumsub이다. [00:04:17]"))
+        assertEquals("팀에 문의한다.", NoteText.withoutTimes("팀에 문의한다. [00:16:06] [00:17:42] [00:17:55]"))
+        assertEquals("Ship it, then launch.", NoteText.withoutTimes("Ship it [00:01:02], then launch."))
+        assertEquals("Agreed.", NoteText.withoutTimes("Agreed. [1:02–1:30]"))
+        assertEquals("Agreed.", NoteText.withoutTimes("Agreed. [00:09:21, 00:09:39]"))
+        assertEquals("Meet at 10:30 in [room 2].", NoteText.withoutTimes("Meet at 10:30 in [room 2]."))
+        assertEquals("", NoteText.withoutTimes("[00:00:01]"))
+    }
+
+    @Test
     fun `answers are read leniently and only for what makes an item`() {
         val json = NotesAnswer.parse(
             """Here you go: ```json {"items":[
               {"kind":"todo","text":"Call [phone#1]","owner":"S2","due":"Friday","at":"00:01:05","quote":"I'll call"},
-              {"kind":"decision","text":"Ship","owner":"S1","due":"never","at":"[01:02:03]","quote":"we ship"},
+              {"kind":"decision","text":"Ship [01:02:03]","owner":"S1","due":"never","at":"[01:02:03]","quote":"we ship"},
               {"kind":"question","text":"Why?","at":"61:00","quote":"why"},
               {"kind":"todo","text":"Ask Mina","owner":"Mina","at":"00:00:10","quote":"ask her"},
               {"kind":"idea","text":"x","at":"00:00:01","quote":"x"},
@@ -130,7 +141,7 @@ class NoteTextTest {
         val items = NotesAnswer.items(json, { it.replace("[phone#1]", "010-1234-5678") })
         assertEquals(4, items.size)
         assertEquals(Extracted(NoteKind.TODO, "Call 010-1234-5678", "S2", "Friday", 65.0, "I'll call"), items[0])
-        assertEquals(Extracted(NoteKind.DECISION, "Ship", null, null, 3723.0, "we ship"), items[1], "an owner and a due date only for a to-do")
+        assertEquals(Extracted(NoteKind.DECISION, "Ship", null, null, 3723.0, "we ship"), items[1], "an owner and a due date only for a to-do; its time is not its words")
         assertEquals(3660.0, items[2].atSec)
         assertEquals(null, items[3].owner, "a name is not a speaker label")
         assertEquals(7, NotesAnswer.offered(json))

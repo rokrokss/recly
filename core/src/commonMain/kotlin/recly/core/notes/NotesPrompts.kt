@@ -102,7 +102,7 @@ internal object NotesPrompts {
         append("\"kind\": ").append(kinds.joinToString(", ")).append(";\n")
         if (ask.own.isNotEmpty()) append("An item that fits one of the user's own sections takes that section's kind.\n")
         append(
-            """"text": the item in one short sentence, in $language;
+            """"text": the item in one short sentence, in $language, with no time in it — its time is "at";
 "owner": for a todo, the speaker label of the person who will do it when the transcript makes that clear, else null; null for the other kinds;
 "due": for a todo, the deadline as it was said, in $language, or null when none was said;
 "at": the time of the line the evidence is on, HH:MM:SS, copied from that line;
@@ -333,8 +333,9 @@ internal object NotesAnswer {
             }
             // A group the user removed is not asked for, and an answer that gives one anyway is not kept.
             if (kind != NoteKind.SECTION && !ask.asks(kind)) return@mapNotNull null
-            val text = string(item["text"])?.let(restore)?.trim()?.lineSequence()?.joinToString(" ")?.takeIf { it.isNotEmpty() }?.take(TEXT_MAX)
-                ?: return@mapNotNull null
+            // The item's time is "at", shown beside it: a time copied into its words is dropped (2026-11-04).
+            val text = string(item["text"])?.let(restore)?.trim()?.lineSequence()?.joinToString(" ")?.let(NoteText::withoutTimes)
+                ?.takeIf { it.isNotEmpty() }?.take(TEXT_MAX) ?: return@mapNotNull null
             val atSec = seconds(item["at"] ?: item["atSec"]) ?: return@mapNotNull null
             val quote = string(item["quote"])?.let(restore)?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
             val owner = string(item["owner"])?.trim()?.takeIf { kind == NoteKind.TODO && OWNER.matches(it) }

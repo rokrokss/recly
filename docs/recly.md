@@ -2226,7 +2226,8 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   conclusion; after Stop only) and `section` (an item of one of the user's own sections, with that section's id). Each has its text, in
   the notes' language (§8 "AI requests" — `SummaryLanguage`),
   an owner for a to-do — the transcript's speaker label, never a name — a deadline only when one was said, and its evidence: the time
-  of the line it is on (`[HH:MM:SS]`, read back as seconds) and a quote copied from that line verbatim. Only the owner carries a label
+  of the line it is on (`[HH:MM:SS]`, read back as seconds) and a quote copied from that line verbatim. The time is never in the text
+  (2026-11-04): the shells show it beside the item, so the request asks for none and a time copied in anyway is dropped (`NoteText.withoutTimes`). Only the owner carries a label
   (2026-10-28): the requests that write words ask for no speaker label in them — an item's text, a summary, the overview — and for a
   person only as the transcript names them or their role, since a label left in the text stays after the user names that speaker,
   beside the owner's name.
@@ -2439,7 +2440,7 @@ and the summary together (§8 "AI requests"). `summaries.ask(recordingId, preset
     only where it fits: a segment that is there and says something, its words on one line (a line break becomes a space), at most 5,000
     characters and not its own words again; a speaker id the transcript has, on a transcript whose speakers were identified; a name as a
     fill takes one (at most 100 characters, never `Me` or an id, never one two speakers were both given, not the name the speaker
-    already has); an item the summary has, a section it has; an added item's evidence is the segment it names — its start and its first
+    already has); an item the summary has, a section it has; an item's words without the times copied into them (`[HH:MM:SS]`, a run of them or a range — the item's time is shown beside it; 2026-11-04), words that were only times changing nothing; an added item's evidence is the segment it names — its start and its first
     300 characters. Segments are never split, merged, moved or retimed; a segment whose words change loses its word timings, as with a
     manual edit.
   - **Saved at once** (2026-11-04, user decision: no review step — `Undo` and the versions take it back). The transcript's changes are one
@@ -2654,7 +2655,7 @@ The principle in one line: **intent, not decoration**.
   | Screen header | 16 above, 12 below, 16 at the sides |
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
-  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, and the Ask presets (2026-11-04); in a notes row and among the presets the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31) |
+  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, the Ask presets and Version history's `Restore` (2026-11-04); in a notes row and among the presets the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31) |
   | State node | padding 12 × 8, label up to two lines from the start edge; the three one height; stacked, joined by the same connectors turned downwards |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
@@ -2927,7 +2928,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      with the reasons `Edit transcript` has. A sheet on the phones (a bottom sheet on iPhone, a dialog on Android) and a modal dialog on
      the desktops: the title `Version history` with a ✕, then one row per version, newest first — what made it (`Transcribed`, `Edited`,
      `Corrected`, `Restored`, `Changed on another device`) over its date and time (the device's locale and time zone),
-     secondary — and, on every row but the first (the transcript shown, which has no button and no label), a quiet `Restore` at its end
+     secondary — and, on every row but the first (the transcript shown, which has no button and no label), a quiet `Restore` at its end, at the status badge's size (2026-11-04, "Component measurements")
      (accessibility `Restore the version from {date}`), `Restoring…` while it runs. No confirmation: the version replaced is kept, and the
      first row of the list undoes it. A restore closes the sheet and shows the transcript; refused, it says why under the list
      (`Transcribing…`, or `Could not restore this version`). Under the rows, secondary: `This device keeps the last 20 versions. Restoring

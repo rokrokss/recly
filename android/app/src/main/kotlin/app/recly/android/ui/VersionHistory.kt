@@ -101,8 +101,9 @@ internal fun VersionHistoryDialog(
                     }
                     else -> {
                         val label = stringResource(R.string.version_restore_from, stamp)
+                        // At the status badge's size, as a time button is (2026-11-04); the row keeps the touch minimum.
                         BlueprintButton(stringResource(R.string.version_restore), { onRestore(version) }, tone = ButtonTone.QUIET,
-                            enabled = restoring == null,
+                            enabled = restoring == null, compact = true,
                             modifier = Modifier.semantics { contentDescription = label }.testTag("version-restore-$index"))
                     }
                 }

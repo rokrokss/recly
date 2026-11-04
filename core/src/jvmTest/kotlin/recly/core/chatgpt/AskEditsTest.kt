@@ -317,6 +317,23 @@ class AskEditsTest {
     }
 
     @Test
+    fun `a time copied into a summary item's words is dropped, and words that were only times change nothing`() {
+        val proposal = AskProposal.parse(
+            """{"items":[
+                {"n":1,"text":"Ship it on Friday. [00:00:00] [00:00:01]"},
+                {"n":2,"text":"[00:00:01]"}
+            ],"add":[
+                {"section":"decision","text":"Price later [00:00:01], then launch.","line":2},
+                {"section":"decision","text":"[00:00:01–00:00:05]","line":2}
+            ]}""",
+            sent, summary,
+        )
+        assertEquals(mapOf("D1" to "Ship it on Friday."), proposal.items)
+        assertEquals(listOf("Price later, then launch."), proposal.added.map { it.text })
+        assertTrue("never a time" in AskPrompts.instructions(sent, summary, SummaryPreferences()))
+    }
+
+    @Test
     fun `the request names segments by number, speakers by id and summary items by number, with the memo`() {
         val transcript = sent.copy(speakers = sent.speakers + TranscriptSpeaker("S3", me = true))
         val input = AskPrompts.input(transcript, summary, "Agenda: launch", "Fix it.")
