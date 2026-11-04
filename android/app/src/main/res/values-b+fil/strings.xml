@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Hindi mapunan ang mga pangalan ng nagsasalita</string>
     <string name="fill_names_none">Walang nakitang pangalan ng nagsasalita sa transcript</string>
     <string name="speaker_me">Ako</string>
+    <string name="correct_menu">Itama ang transcript…</string>
+    <string name="correct_title">Itama ang transcript</string>
+    <string name="correct_placeholder">Ano ang dapat itama, at anumang makakatulong: mga pangalan, termino, background, o isa pang transcript ng parehong usapan.</string>
+    <string name="correct_footnote">Nase-save agad. Itinatago ng kasaysayan ng bersyon ang transcript gaya ng dati.</string>
+    <string name="correct_correct">Itama</string>
+    <string name="correct_running">Itinatama…</string>
+    <string name="correct_nothing">Walang itatama</string>
+    <string name="correct_failed">Hindi maitama ang transcript</string>
+    <string name="corrected_lines">Mga naitamang linya: %1$d</string>
+    <string name="corrected_names">Mga naitamang pangalan ng nagsasalita: %1$d</string>
+    <string name="corrected_undo">I-undo</string>
+    <string name="corrected_undoing">Ina-undo…</string>
+    <string name="versions_title">Kasaysayan ng bersyon</string>
+    <string name="version_transcribed">Na-transcribe</string>
+    <string name="version_edited">Na-edit</string>
+    <string name="version_corrected">Naitama</string>
+    <string name="version_restored">Naibalik</string>
+    <string name="version_received">Binago sa ibang device</string>
+    <string name="version_restore">Ibalik</string>
+    <string name="version_restoring">Ibinabalik…</string>
+    <string name="version_restore_from">Ibalik ang bersyon noong %1$s</string>
+    <string name="versions_footnote">Itinatago ng device na ito ang huling 20 bersyon. Kapag ibinalik mo ang isa, ise-save ito bilang transcript at itatago rin ang papalitan nito.</string>
+    <string name="version_restore_failed">Hindi maibalik ang bersyong ito</string>
 </resources>

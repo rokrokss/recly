@@ -460,4 +460,27 @@
     <string name="fill_names_failed">No se pudieron completar los nombres de hablantes</string>
     <string name="fill_names_none">No se encontraron nombres de hablantes en la transcripción</string>
     <string name="speaker_me">Yo</string>
+    <string name="correct_menu">Corregir transcripción…</string>
+    <string name="correct_title">Corregir transcripción</string>
+    <string name="correct_placeholder">Qué corregir y todo lo que ayude: nombres, términos, contexto u otra transcripción de la misma conversación.</string>
+    <string name="correct_footnote">Se guarda al instante. El historial de versiones conserva la transcripción como estaba.</string>
+    <string name="correct_correct">Corregir</string>
+    <string name="correct_running">Corrigiendo…</string>
+    <string name="correct_nothing">Nada que corregir</string>
+    <string name="correct_failed">No se pudo corregir la transcripción</string>
+    <string name="corrected_lines">Líneas corregidas: %1$d</string>
+    <string name="corrected_names">Nombres de hablantes corregidos: %1$d</string>
+    <string name="corrected_undo">Deshacer</string>
+    <string name="corrected_undoing">Deshaciendo…</string>
+    <string name="versions_title">Historial de versiones</string>
+    <string name="version_transcribed">Transcrita</string>
+    <string name="version_edited">Editada</string>
+    <string name="version_corrected">Corregida</string>
+    <string name="version_restored">Restaurada</string>
+    <string name="version_received">Cambiada en otro dispositivo</string>
+    <string name="version_restore">Restaurar</string>
+    <string name="version_restoring">Restaurando…</string>
+    <string name="version_restore_from">Restaurar la versión del %1$s</string>
+    <string name="versions_footnote">Este dispositivo conserva las últimas 20 versiones. Al restaurar una, se guarda como transcripción y se conserva la que reemplaza.</string>
+    <string name="version_restore_failed">No se pudo restaurar esta versión</string>
 </resources>

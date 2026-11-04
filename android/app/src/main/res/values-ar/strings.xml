@@ -460,4 +460,27 @@
     <string name="fill_names_failed">تعذّر ملء أسماء المتحدثين</string>
     <string name="fill_names_none">لم يُعثر على أسماء المتحدثين في النص</string>
     <string name="speaker_me">أنا</string>
+    <string name="correct_menu">تصحيح النص…</string>
+    <string name="correct_title">تصحيح النص</string>
+    <string name="correct_placeholder">ما الذي يجب تصحيحه، وكل ما يساعد: أسماء أو مصطلحات أو خلفية أو نص آخر للمحادثة نفسها.</string>
+    <string name="correct_footnote">يُحفظ فورًا. يحتفظ سجل الإصدارات بالنص كما كان.</string>
+    <string name="correct_correct">تصحيح</string>
+    <string name="correct_running">جارٍ التصحيح…</string>
+    <string name="correct_nothing">لا شيء يحتاج إلى تصحيح</string>
+    <string name="correct_failed">تعذّر تصحيح النص</string>
+    <string name="corrected_lines">الأسطر المصحّحة: %1$d</string>
+    <string name="corrected_names">أسماء المتحدثين المصحّحة: %1$d</string>
+    <string name="corrected_undo">تراجع</string>
+    <string name="corrected_undoing">جارٍ التراجع…</string>
+    <string name="versions_title">سجل الإصدارات</string>
+    <string name="version_transcribed">تم النسخ</string>
+    <string name="version_edited">تم التعديل</string>
+    <string name="version_corrected">تم التصحيح</string>
+    <string name="version_restored">تمت الاستعادة</string>
+    <string name="version_received">تم التغيير على جهاز آخر</string>
+    <string name="version_restore">استعادة</string>
+    <string name="version_restoring">جارٍ الاستعادة…</string>
+    <string name="version_restore_from">استعادة إصدار %1$s</string>
+    <string name="versions_footnote">يحتفظ هذا الجهاز بآخر 20 إصدارًا. تؤدي استعادة أحدها إلى حفظه كنص، مع الاحتفاظ بالنص الحالي أيضًا.</string>
+    <string name="version_restore_failed">تعذّرت استعادة هذا الإصدار</string>
 </resources>

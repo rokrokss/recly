@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Impossibile completare i nomi degli interlocutori</string>
     <string name="fill_names_none">Nessun nome di interlocutore trovato nella trascrizione</string>
     <string name="speaker_me">Io</string>
+    <string name="correct_menu">Correggi trascrizione…</string>
+    <string name="correct_title">Correggi trascrizione</string>
+    <string name="correct_placeholder">Cosa correggere e tutto ciò che può aiutare: nomi, termini, contesto o un’altra trascrizione della stessa conversazione.</string>
+    <string name="correct_footnote">Salvato subito. La cronologia versioni conserva la trascrizione com’era.</string>
+    <string name="correct_correct">Correggi</string>
+    <string name="correct_running">Correzione in corso…</string>
+    <string name="correct_nothing">Niente da correggere</string>
+    <string name="correct_failed">Impossibile correggere la trascrizione</string>
+    <string name="corrected_lines">Righe corrette: %1$d</string>
+    <string name="corrected_names">Nomi degli interlocutori corretti: %1$d</string>
+    <string name="corrected_undo">Annulla</string>
+    <string name="corrected_undoing">Annullamento…</string>
+    <string name="versions_title">Cronologia versioni</string>
+    <string name="version_transcribed">Trascritta</string>
+    <string name="version_edited">Modificata</string>
+    <string name="version_corrected">Corretta</string>
+    <string name="version_restored">Ripristinata</string>
+    <string name="version_received">Modificata su un altro dispositivo</string>
+    <string name="version_restore">Ripristina</string>
+    <string name="version_restoring">Ripristino in corso…</string>
+    <string name="version_restore_from">Ripristina la versione del %1$s</string>
+    <string name="versions_footnote">Questo dispositivo conserva le ultime 20 versioni. Ripristinarne una la salva come trascrizione e conserva quella che sostituisce.</string>
+    <string name="version_restore_failed">Impossibile ripristinare questa versione</string>
 </resources>

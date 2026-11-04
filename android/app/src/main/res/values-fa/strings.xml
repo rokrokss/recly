@@ -460,4 +460,27 @@
     <string name="fill_names_failed">تکمیل نام گویندگان ممکن نشد</string>
     <string name="fill_names_none">نام گویندگان در رونوشت پیدا نشد</string>
     <string name="speaker_me">من</string>
+    <string name="correct_menu">اصلاح رونوشت…</string>
+    <string name="correct_title">اصلاح رونوشت</string>
+    <string name="correct_placeholder">چه چیزی باید اصلاح شود، و هر چیزی که کمک می‌کند: نام‌ها، اصطلاحات، زمینه یا رونوشت دیگری از همین گفتگو.</string>
+    <string name="correct_footnote">بلافاصله ذخیره می‌شود. تاریخچهٔ نسخه‌ها رونوشت را همان‌طور که بود نگه می‌دارد.</string>
+    <string name="correct_correct">اصلاح</string>
+    <string name="correct_running">در حال اصلاح…</string>
+    <string name="correct_nothing">چیزی برای اصلاح نیست</string>
+    <string name="correct_failed">اصلاح رونوشت ممکن نشد</string>
+    <string name="corrected_lines">خط‌های اصلاح‌شده: %1$d</string>
+    <string name="corrected_names">نام‌های اصلاح‌شده برای گویندگان: %1$d</string>
+    <string name="corrected_undo">واگرد</string>
+    <string name="corrected_undoing">در حال واگرد…</string>
+    <string name="versions_title">تاریخچهٔ نسخه‌ها</string>
+    <string name="version_transcribed">رونویسی‌شده</string>
+    <string name="version_edited">ویرایش‌شده</string>
+    <string name="version_corrected">اصلاح‌شده</string>
+    <string name="version_restored">بازگردانده‌شده</string>
+    <string name="version_received">تغییریافته در دستگاه دیگر</string>
+    <string name="version_restore">بازگرداندن</string>
+    <string name="version_restoring">در حال بازگرداندن…</string>
+    <string name="version_restore_from">بازگرداندن نسخهٔ %1$s</string>
+    <string name="versions_footnote">این دستگاه ۲۰ نسخهٔ آخر را نگه می‌دارد. با بازگرداندن یک نسخه، آن نسخه به‌عنوان رونوشت ذخیره می‌شود و رونوشت قبلی هم نگه داشته می‌شود.</string>
+    <string name="version_restore_failed">بازگرداندن این نسخه ممکن نشد</string>
 </resources>

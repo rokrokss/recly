@@ -34,6 +34,8 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
+import app.recly.android.R
 import app.recly.android.ui.theme.BlueprintColors
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
@@ -66,15 +69,19 @@ import app.recly.android.ui.theme.blueprint
  * makes the font size the user's, so the two things that grow with it are both bounded: the title
  * keeps [TITLE_LINES] in the header and spills the rest into that same scroll region, and [actions]
  * stack when a row of them would no longer fit (see [DialogActions]).
+ *
+ * A dialog with nothing to answer — a list to act on, such as Version history — has no [actions] and a ✕ at the end of
+ * its title instead ([onClose]).
  */
 @Composable
 fun BlueprintDialog(
     title: String,
     onDismissRequest: () -> Unit,
-    actions: @Composable () -> Unit,
+    actions: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
     /** The answers in a stack whatever the width — for three of them, which a phone only just fits. */
     stackedActions: Boolean = false,
+    onClose: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = blueprint
@@ -100,21 +107,24 @@ fun BlueprintDialog(
             verticalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
             // docs/09 "Component measurements": the title is 20 — and a heading.
-            Text(
-                title,
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.titleLarge,
-                color = palette.text,
-                maxLines = TITLE_LINES,
-                overflow = TextOverflow.Clip,
-                onTextLayout = { layout ->
-                    spill = if (layout.hasVisualOverflow) {
-                        title.substring(layout.getLineEnd(layout.lineCount - 1, visibleEnd = true)).trimStart()
-                    } else {
-                        ""
-                    }
-                },
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    title,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                    style = MaterialTheme.typography.titleLarge,
+                    color = palette.text,
+                    maxLines = TITLE_LINES,
+                    overflow = TextOverflow.Clip,
+                    onTextLayout = { layout ->
+                        spill = if (layout.hasVisualOverflow) {
+                            title.substring(layout.getLineEnd(layout.lineCount - 1, visibleEnd = true)).trimStart()
+                        } else {
+                            ""
+                        }
+                    },
+                )
+                onClose?.let { GlyphButton(Glyph.CLOSE, stringResource(R.string.action_close), it, Modifier.testTag("dialog-close")) }
+            }
             Column(
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(Space.s),
@@ -124,7 +134,7 @@ fun BlueprintDialog(
                 }
                 content()
             }
-            DialogActions(actions, stackedActions)
+            actions?.let { DialogActions(it, stackedActions) }
         }
     }
 }

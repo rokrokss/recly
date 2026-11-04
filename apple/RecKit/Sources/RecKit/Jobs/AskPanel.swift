@@ -146,6 +146,8 @@ struct AskPanel: View {
 /// The panel's frame on each platform: the Mac's card, drawn over the detail the way its other questions are,
 /// sized like them; the phone's full-height sheet, under a header with its close icon.
 struct AskFrame<Content: View>: View {
+    /// `Ask about this recording`, or `Correct transcript` for the correction's sheet (docs/09 "AI view").
+    var title = RecKitStrings.localized("Ask about this recording")
     let close: () -> Void
     @ViewBuilder let content: () -> Content
     @Environment(\.blueprint) private var blueprint
@@ -156,7 +158,7 @@ struct AskFrame<Content: View>: View {
     var body: some View {
         #if os(iOS)
         VStack(spacing: 0) {
-            ScreenHeader(title: RecKitStrings.localized("Ask about this recording"), trailingAlignment: .trailing, oneRow: true) {
+            ScreenHeader(title: title, trailingAlignment: .trailing, oneRow: true) {
                 closeButton
             }
             HairLine()
@@ -173,7 +175,7 @@ struct AskFrame<Content: View>: View {
         // is as tall as the window lets it be.
         VStack(alignment: .leading, spacing: Space.sm) {
             HStack(spacing: Space.s) {
-                Text(verbatim: RecKitStrings.localized("Ask about this recording"))
+                Text(verbatim: title)
                     .font(blueprint.fonts.title)
                     .foregroundStyle(blueprint.palette.text)
                     .frame(maxWidth: .infinity, alignment: .leading)

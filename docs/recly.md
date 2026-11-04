@@ -290,6 +290,8 @@ in):
   `retranscribe` (§10 "Re-transcription"), `editTranscript` (§8 "Editing"), `exportFile` (§8 "Exports"), `search` (§10 "Search"), and the
   pure rules every shell applies the same way — `SpeakerTurns`, `SilenceRanges`, and (2026-10-27) `SilenceReminder`, `BatteryStop`
   (§10 "Shared rules for the shells")
+- (2026-11-04) `correctTranscript` (§8 "Correcting"), `transcriptVersions` · `restoreTranscript` (§8 "Versions") and
+  `TranscriptDocument.segmentRanges` (§9 "Transcript reader")
 - (2026-10-27) `notes` — a recording's organized notes: `observe`, `get`, `deleteItem`, `linesAround`, and the consent
   (`needsConsent`, `observeNeedsConsent`, `consent`) (§8 "Organizing"); `StepReport.notesOnly` for a job with only its notes left
 
@@ -2112,7 +2114,64 @@ recordings and other devices' alike. `TranscriptEdit` is one of four concrete cl
   it read from the folder (`RemoteRecordings.transcriptWrite`): two quick edits apply in order, the second on the first, and a refresh that
   read the folder before an edit writes nothing while the edit is pending or the copy here is at least as new.
 - A publication that failed and is retried after an edit publishes the edited copy — the edit is of that very result (same `createdAt`). A
-  re-transcription replaces edits: the shells ask first.
+  re-transcription replaces edits: the shells ask first, and the edited transcript stays in this device's versions (§8 "Versions").
+
+### Correcting
+
+2026-11-04 (user decision). More → `Correct transcript…` asks the user's ChatGPT plan (§8 "AI requests") to correct a recording's
+transcript from a request in the user's own words — what to fix, with anything pasted under it that helps: names and terms, background,
+or another transcript of the same conversation made where the sound was clearer, to compare with. Manual editing (§8 "Editing") stays as
+it is; this is its second way in. `ReclyCore.correctTranscript(recordingId, request): CorrectionResult`.
+
+- **What is sent.** The transcript one line per segment — `#12 [00:01:23] S1: …`, the segment's number, its time and its speaker id (the
+  segments that say nothing left out) — then `SPEAKERS`, each id with the name the user gave, `Me` for an unnamed `me`, or `no name`; the
+  recording's memo when it says something (§8 "Memo"), under a heading of its own that tells the model the user spells names and terms
+  that way; and `REQUEST`, the user's words as typed, trimmed, at most 200,000 characters (`CorrectionRequest.MAX`, room for the
+  transcript of a two-hour conversation pasted under it; the shells' field takes no more). No title, never audio, and no placeholders: a
+  number is often what is being corrected. The model is the one Settings → ChatGPT picked, at its own effort, given 30 minutes.
+- **What comes back.** One JSON object: `lines`, only the segments that change, each `{"n": 12, "text": "…"}` (the segment's whole
+  corrected words) and/or `"speaker": "S2"` (another of the speakers listed), and `names`, a speaker's name only where the request or
+  its material says who they are. Read leniently, as a fill's answer is (§8 "Titles and speaker names"), and kept only where it fits:
+  a segment that is there and says something, its words on one line (a line break becomes a space), at most 5,000 characters and not
+  its own words again; a speaker id the transcript has, on a transcript whose speakers were identified; a name as a fill takes one
+  (at most 100 characters, never `Me` or an id, never one two speakers were both given, not the name the speaker already has).
+  Segments are never split, merged, moved or retimed; a segment whose words change loses its word timings, as with a manual edit.
+- **Saved at once** (2026-11-04, user decision: no review step — the version kept before it undoes it). The answer is applied as one edit
+  (§8 "Editing": `editedAt`, the folder's copy marked `edited`, pushed now or with the next pull) of the transcript as it is when the
+  answer arrives: a segment, speaker or name the user changed while ChatGPT answered keeps the user's change. A transcript transcribed
+  again meanwhile is not touched (`Busy`). The version it replaced is kept (§8 "Versions") and its id comes back to undo it.
+- **Results.** `Corrected(segments, names, previousVersionId)` — the indices of the segments whose words or speaker changed, how many
+  speakers were named, and the version to bring back for `Undo`; `NothingToCorrect` (an empty request, an answer with no change, or
+  none of it still applicable — nothing saved); `NoTranscript` (none, or nothing said); `Busy` (a job of the recording has not settled,
+  it is being transcribed here, it was transcribed again meanwhile, or a correction of it is already running); `Failed(reason)` with a
+  `CoreMessage` code, as every request has (§8 "AI requests"), `TRANSFER_CONSENT_REQUIRED` on iPhone before anything is sent.
+  Cancelling the call — closing its sheet — drops the answer; nothing is saved.
+- **On request only**: it needs the sign-in, not the consent to background use (§8 "Organizing"). It does not make the notes again: the
+  next `Summarize again` reads the corrected transcript.
+- **Logs**: `summary.correct.start` (recordingId, model, segments, request characters), `summary.correct.done` (recordingId, segments
+  changed, names given; with `outcome` when nothing was saved), `summary.correct.failed` (recordingId, reason code); the edit itself is
+  `rec.transcript.edited` with `kind` `corrected`. Never a word of the transcript or the request.
+
+### Versions
+
+2026-11-04 (user decision). Every transcript a recording has on this device is kept as a version, so any change — a manual edit, a
+correction, a transcription again — can be undone. `ReclyCore.transcriptVersions(recordingId)` lists them, newest first — the one shown
+first, `current` — as `TranscriptVersion(id, kind, at, current)`; `restoreTranscript(recordingId, versionId): EditResult` brings one back.
+
+- **What keeps a version.** Every writer of `{base}.transcript.json` keeps the transcript it writes, under the lock they all take, right
+  before it writes — after the copy it replaces, when that one was not kept yet (written before versions existed, or downloaded from the
+  folder when opened): `TRANSCRIBED` (a transcription — the first or one again — on either path; the names a publication fills in replace
+  that version rather than adding one), `EDITED` (an edit, a speaker renamed or names filled in from the detail), `CORRECTED` (§8
+  "Correcting"), `RESTORED`, and `RECEIVED` (another device's change read from the folder at a pull). `at` is the version's `editedAt`,
+  else its `createdAt`. A write of the transcript already kept last keeps nothing new.
+- **Only this device's** (2026-11-04, user decision). `versions/` in the recording's directory: `index.json` and one file per version,
+  the transcript as it was. The newest 20 are kept (`TranscriptVersions.MAX`), the one shown included. Nothing of it goes to the
+  recording's folder, so another device lists the versions it had itself; it goes with the recording when that is deleted.
+- **Restore** saves the version as the transcript with `editedAt` now — an edit, so the folder's copy and the other devices follow — and
+  keeps it as a `RESTORED` version, so a restore is undone the same way. Refused like an edit (`Busy`) while a transcription of the
+  recording has not settled; `Invalid` for a version this device does not keep; bringing back what is shown changes nothing. Notes are
+  not made again.
+- **Logs**: `rec.transcript.restored` (recordingId), and `rec.transcript.edited` with `kind` `restored`.
 
 ### Exports
 
@@ -2823,8 +2882,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      `No recordings match` over the dimmed `Search looks in titles and in transcripts on this device.`
    - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in two groups parted by a hairline (2026-10-10, the same
-     on every shell): `Rename` · `Edit transcript` · `Transcribe again`; `Summarize` (`Summarize again` once there are notes) · `Edit summary` · `Ask about this
-     recording…` · `Fill in title` · `Fill in speaker names` (§9 "AI view"; the group is absent where ChatGPT is not offered).
+     on every shell): `Rename` · `Edit transcript` · `Transcribe again` · `Version history` (2026-11-04, §9 "Transcript reader"); `Summarize` (`Summarize again` once there are notes) · `Edit summary` · `Ask about this
+     recording…` · `Correct transcript…` (2026-11-04, §9 "AI view") · `Fill in title` · `Fill in speaker names` (§9 "AI view"; the group is absent where ChatGPT is not offered).
      Two more groups follow (the desktops 2026-10-15, the phones 2026-10-28): the recording's folder — `Open in Drive` (when there is a link), or on
      the desktops `Show in Finder` / `Open the folder` — and last, the red `Delete`, which opens the delete dialog over the page (§3 "Deleting in the
      app"; no keyboard shortcut, user decision; disabled with `Still recording` or the importing word while the recording is being written). The menu
@@ -2852,6 +2911,22 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      colours** — not on the waveform bars, not as tinted rows (2026-10-02 user decision, restated 2026-10-07). While a re-transcription runs, the old text
      stays under a one-line status, the square loader and `Transcribing again…` (external) or `Transcribing on this device` (local), until the new
      transcript replaces it (the reading position goes back to the top only if the user had not scrolled).
+   - **After a correction** (2026-11-04, §8 "Correcting"; user decision: the changed lines shown and counted). The words of each segment it
+     changed are tinted in the reader the way a search match is — the accent at 16 % behind them (`TranscriptDocument.segmentRanges` where the
+     reader draws the core's blocks, Android and Windows; the Apple reader finds them in its own paragraphs, `TranscriptMatch.segments`) — and
+     the line under the header says `Corrected lines: 12` (or `Corrected speaker names: 1` when only names changed) with a quiet `Undo`
+     at its end, which brings back the version before it (`restoreTranscript(previousVersionId)`, `Undoing…` while it runs). Both stay
+     until the user undoes it, edits or corrects again, restores a version, or leaves the recording; a restore or undo that is refused
+     says why in that line for a few seconds, as refused starts do. No other mark: the reader is otherwise as it was.
+   - **Version history** (2026-11-04, §8 "Versions"). More → `Version history`, in the first group after `Transcribe again`, disabled
+     with the reasons `Edit transcript` has. A sheet on the phones (a bottom sheet on iPhone, a dialog on Android) and a modal dialog on
+     the desktops: the title `Version history` with a ✕, then one row per version, newest first — what made it (`Transcribed`, `Edited`,
+     `Corrected`, `Restored`, `Changed on another device`) over its date and time (the device's locale and time zone),
+     secondary — and, on every row but the first (the transcript shown, which has no button and no label), a quiet `Restore` at its end
+     (accessibility `Restore the version from {date}`), `Restoring…` while it runs. No confirmation: the version replaced is kept, and the
+     first row of the list undoes it. A restore closes the sheet and shows the transcript; refused, it says why under the list
+     (`Transcribing…`, or `Could not restore this version`). Under the rows, secondary: `This device keeps the last 20 versions. Restoring
+     one saves it as the transcript and keeps the one it replaces.` The watches have none.
    - **Editing and speakers**: the speaker menu (from a badge) has `Rename speaker` and `Change speaker for this line` → every speaker by name or id,
      and `New speaker`. `Rename speaker` is a dialog — `Speaker name`, the field `Name` prefilled, `Cancel` · `Save`; an empty name clears it and the id
      shows again. Changes from the menu save at once (`editTranscript`, inline `Saving…`; no `✓` after — the change shows itself, 2026-10-30). **Edit mode** (More → `Edit transcript`) turns the
@@ -3064,6 +3139,19 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   `Fill in title` answered without a title says the failure sentence alone. A failure says `Could not fill in the title` or `Could not fill in speaker names`
   with the core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on
   iPhone the ChatGPT permission is asked first, as for `Summarize`.
+- **Correct transcript** (2026-11-04, §8 "Correcting"). More → `Correct transcript…`, after `Ask about this recording…`, disabled with
+  the first reason that applies: `Still recording`; `No transcript yet` (nothing said included) or the reason of an unsettled job
+  (`Transcribing…`); `Sign in to ChatGPT in Settings`; absent while the transcript or the notes are being edited. It opens what Ask opens
+  — a modal dialog on the desktops, a full-height sheet on the phones — titled `Correct transcript` with a ✕: one multi-line plain-text
+  field taking the room there is (at least six lines; the placeholder `What to fix, and anything that helps: names, terms, background,
+  or another transcript of the same conversation.`; no more than `CorrectionRequest.MAX` characters), under it, secondary, `Saved at
+  once. Version history keeps the transcript as it was.`, and a primary `Correct` at the end, enabled while the field says something
+  (on the desktops ⌘Return / Ctrl+Enter corrects and Return adds a line; on the phones the keyboard's Return adds a line). While it
+  runs the field is read-only and the square loader says `Correcting…`; the ✕ still closes it, which cancels the request. The field
+  keeps what was typed while the detail stays on the recording, so a second request starts from the first. `Corrected`: the sheet
+  closes, the body shows the `Transcript` chip, and the reader marks the lines (§9 principle 2, "Transcript reader"). `Nothing to
+  correct` (muted) and failures — `Could not correct the transcript` with the core's sentence, `Manage usage` for the usage limit, as the
+  notes' notice (below) — stay in the sheet under the button. On iPhone the ChatGPT permission is asked first, as for `Summarize`.
 - **The chips.** Once a recording has notes, or `Summarize` was asked, two chips under the header — at their own width, on the page under the
   header's line (2026-10-31: Android's filled band gave way to the iPhone's row) — switch the body between `Transcript`
   and `Summary`, and a third, `Notes`, follows once it has a memo (2026-10-30, "Memo" below); a memo alone gives `Transcript` · `Notes` (the detail opens on `Transcript`; no chips while the transcript is edited, and while notes or the memo are edited they step aside only for the keyboard). The `Summary` body is §9 "Notes view": while the recording is
@@ -4264,7 +4352,7 @@ Recly **has no server.** Data goes to (1) the user's Google Drive (§1, includin
 (§1b) if iCloud was chosen on iPhone · Mac, (2) the STT provider (§3), **only when the user chose external API
 transcription** in the recording processing settings, and (3) **the user's own other paired device** (watch ↔ phone,
 §4) — the first two go with the user's account and the user's keys, and the third stays between two of the user's own
-devices. (4) OpenAI receives a recording's transcript text — with the user's `About you` and, for its notes, the user's notes instructions and sections — only when the user signed in with ChatGPT and asks a question about it or to organize it again (§10), and — for a user who signed in and agreed to organizing — the text of each recording made on the device, part by part while it is recorded and again after Stop, with numbers and addresses left out, to organize its notes (§10, 2026-10-27). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
+devices. (4) OpenAI receives a recording's transcript text — with the user's `About you` and, for its notes, the user's notes instructions and sections — only when the user signed in with ChatGPT and asks a question about it, to organize it again or to correct it — with what the user types or pastes into that request (§10), and — for a user who signed in and agreed to organizing — the text of each recording made on the device, part by part while it is recorded and again after Stop, with numbers and addresses left out, to organize its notes (§10, 2026-10-27). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
 links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
@@ -4356,6 +4444,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | Original recording (`.m4a` parts) | §3 Local storage path | The Drive upload step uploads it to the user's Drive (§1), or copies it into the local folder the user picked (§1c). If external API transcription was chosen, one file of the concatenated track goes to that provider (§3). **Recordings made on the watch first move to the paired phone** (§4) |
 | `meta.json` | Same folder | The upload step uploads it alongside. The watch's moves to the phone together with the parts |
 | Transcription result files | Same folder (local copy) | Written alongside into the Drive recording folder — the user's edits too (§8 "Editing"). Exports for a share sheet are written to `{dataDir}/exports/` and leave only where the user sends them |
+| Transcript versions (`versions/`, the newest 20 transcripts a recording had here, 2026-11-04) | The recording's folder | **Never leaves**: a version brought back is saved as an edit, and only that edit goes to the recording's folder (§8 "Versions") |
 | Job · step state, retry budget, upload session offsets | Local SQLite (`rec.db`) | **Never leaves** (principle 2) |
 | `deviceId` (a new UUID v4 per install) | Secure storage / on macOS `{dataDir}/device.id` | Carried in `deviceId` of the `meta.json` uploaded to Drive (§1). Does not leave any other way |
 | Logs (`rec.*`, `shell.*`, `detect.*`) | Platform logs (Android `Log`, Apple `os.Logger`, JVM stdout) | Only when the user takes them out with "Export logs" |
@@ -4624,7 +4713,8 @@ chosen by the user, as with the skills (`skills/`). `--print-config` prints the 
 
 The Android phone, iPhone, Mac and Windows apps can sign in to the user's ChatGPT account and use its plan (§8 "AI requests") for a
 question about one recording (§8 "Ask"), for its title and speaker names (§8 "Titles and speaker names"), and to organize recordings'
-notes — every recording's once the user agreed, and one recording's again when the user asks (§8 "Organizing", 2026-10-27, 2026-10-28). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
+notes — every recording's once the user agreed, and one recording's again when the user asks (§8 "Organizing", 2026-10-27, 2026-10-28) —
+and to correct one recording's transcript from the user's request (§8 "Correcting", 2026-11-04). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
 the device registers as a public client the first time (`client_id=dynamic_agent_client`, no secret, no API key, and
 `agent_name_hint` `Recly Android`, `Recly iPhone`, `Recly macOS` or `Recly Windows`, so ChatGPT's connected apps tell the devices apart;
 recly-events never signs in to ChatGPT, so it has no entry there) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
@@ -4638,10 +4728,11 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`); Recly offers those marked `list`, less `HIDDEN_MODELS` (§8) |
 | Ask | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `About you` when set — and **the recording's transcript text with its times and the speakers' names**, the recording's **memo** when it says something (2026-10-30, §8 "Memo"), and the preset's question or the user's own — no title, never audio | the answer as a stream (`store: false`); kept in memory only |
 | Titles and speaker names | the same | the access token, the model (§8 "Titles and speaker names" — `gpt-6.1-sol` at effort `low` when the plan offers it), the instructions and **the transcript's text with its times and the speakers' names**, and the recording's **memo** when it says something (2026-10-30) — no title, never audio | a JSON object with a title and speaker names, as a stream (`store: false`); applied before the transcript is published, or after it from the detail's More menu — the names also with `Summarize` |
+| Correcting (2026-11-04) | the same | the access token, the model Settings picked, the instructions, **the transcript's text by segment with its times, speaker ids and the speakers' names**, the recording's **memo** when it says something, and **the user's request as typed — with whatever they pasted into it**, such as another transcript of the same conversation (§8 "Correcting") — no title, never audio | a JSON object with the segments to change and speaker names, as a stream (`store: false`); saved as an edit of the transcript, which goes to the recording's folder (§1, §1b) |
 | Organizing (2026-10-27; `Summarize again`, 2026-10-28) | the same | the access token, the model Settings picked, the instructions — with the user's `Summary instructions`, `Sections` — the built-in groups kept, in the user's words, and their own — and `About you` when set — and **transcript text with its times and speaker labels** (never the names the user gave): while recording, one part's lines with the notes already shown and the end of the part before; after Stop and at `Summarize again`, each conversation's lines, a long stretch's lines to find where its conversations change, and the conversations' summaries for the overview; with each of these but the boundaries, the recording's **memo** when it says something (2026-10-30, §8 "Memo") — phone numbers, e-mail addresses and runs of eight digits or more replaced by placeholders on the device in the transcript and the memo alike, no title, never audio | a JSON object with the items (and a summary, the boundaries or the overview), as a stream (`store: false`); the placeholders are put back and the quotes checked on the device, and the final notes go to the recording's Drive or iCloud folder (§1, §1b) |
 
-- Only when the user asks: signing in, and choosing `Summarize` or `Summarize again`, a question in `Ask about this recording…`, `Fill in
-  title` or `Fill in speaker names` on one recording. There are two background uses, both for a user who agreed — under the sign-in, or
+- Only when the user asks: signing in, and choosing `Summarize` or `Summarize again`, a question in `Ask about this recording…`, `Correct
+  transcript…`, `Fill in title` or `Fill in speaker names` on one recording. There are two background uses, both for a user who agreed — under the sign-in, or
   asked once at the first recording of a user signed in before; that consent is the user's express consent, which OpenAI's terms require.
   One is organizing (2026-10-27, §8 "Organizing"): every recording this device makes, part by part while it is recorded and from its
   transcript after Stop (a watch's recording part by part as its parts arrive while the watch records, and after its transfer). The other

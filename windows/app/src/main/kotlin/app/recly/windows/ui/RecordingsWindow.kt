@@ -276,8 +276,10 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                     )
                 }
             }
-            // D18: Ask is a modal question about the recording, as on the Mac — the detail under it dimmed while it is up.
-            if (model.askingAbout != null && model.askingAbout == model.detail?.recordingId) {
+            // D18: Ask is a modal question about the recording, as on the Mac — the detail under it dimmed while it is up; and
+            // so are Correct transcript and Version history (2026-11-04).
+            val open = model.detail?.recordingId
+            if (open != null && (open == model.askingAbout || open == model.correctingAbout || open == model.versionsAbout)) {
                 Box(Modifier.fillMaxSize().background(blueprint.background.copy(alpha = SCRIM_ALPHA)).clearAndSetSemantics { })
             }
         }
@@ -546,6 +548,9 @@ private fun Detail(
     var editRefused by remember(draft) { mutableStateOf(false) }
     // More's `Memo` opens the memo to be written in, its field focused; its chip only shows it.
     var memoFocus by remember(detail.recordingId) { mutableStateOf(false) }
+    // docs/09 "AI view" — "Correct transcript": what was typed stays while the detail is on the recording, so a second
+    // request starts from the first.
+    var correctRequest by remember(detail.recordingId) { mutableStateOf("") }
     /**
      * A reading-mode change, saved at once with `Saving…` beside the group it was made on.
      * One at a time: while one saves, the speaker badges do not open ([TranscriptReader]'s `saving`).
@@ -623,8 +628,10 @@ private fun Detail(
                             model, detail,
                             {
                                 detail.transcript?.let {
-                                    // The editor is the transcript's: it opens over the Transcript view.
+                                    // The editor is the transcript's: it opens over the Transcript view, and ends what a
+                                    // correction marked (docs/09 "After a correction").
                                     model.showNotes(false)
+                                    model.forgetCorrection()
                                     onDraft(TranscriptDraft(it))
                                 }
                             },
@@ -663,6 +670,8 @@ private fun Detail(
                 failed.reason?.let { Text(coreMessage(it).text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
             }
         }
+        // docs/09 "After a correction": what it changed, with Undo — or, for a moment, why Undo did not.
+        detail.corrected?.takeIf { !detail.loading }?.let { marks -> CorrectedLine(marks, model::undoCorrection, strings) }
     }
     // docs/09 "AI view": Transcript · Notes · Memo, once there are notes or Organize was chosen, or there is a memo or it
     // was chosen — never over the transcript's editor. Over the notes' they stay, and going to the transcript or the memo
@@ -708,6 +717,9 @@ private fun Detail(
     }
     val finding = findOpen && draft == null && notesDraft == null && document != null && !notesShown && !memoShown
     val matches = remember(document, findQuery, finding) { if (finding) findMatches(document!!.blocks, findQuery) else emptyList() }
+    // docs/09 "After a correction": where the words of each segment it changed are, tinted as a match is.
+    val corrected = detail.corrected?.segments
+    val marked = remember(document, corrected) { corrected?.let { document?.segmentRanges(it) }.orEmpty() }
     var currentMatch by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
     LaunchedEffect(matches) {
         // The first match at or after the search hit the detail was opened on, or the first of all.
@@ -795,6 +807,7 @@ private fun Detail(
                 playing = player.playing,
                 matches = matches,
                 currentMatch = currentMatch,
+                marked = marked,
                 onChangeSpeaker = { block, range, speaker ->
                     val target = speaker ?: nextSpeakerId(transcript.speakers.map { it.id })
                     val speakers = transcript.segments.mapIndexed { index, segment -> if (index in range) target else segment.speaker }
@@ -822,6 +835,42 @@ private fun Detail(
         })
     }
     if (model.askingAbout == detail.recordingId) AskDialog(model, detail, canSeek, onPlay, strings, theme)
+    if (model.correctingAbout == detail.recordingId) {
+        CorrectDialog(model, detail, correctRequest, { correctRequest = it }, strings, theme)
+    }
+    if (model.versionsAbout == detail.recordingId) VersionsDialog(model, detail, strings, theme)
+}
+
+/**
+ * docs/09 "After a correction": `Corrected lines: 12` — or the speakers named, when no line changed — with a quiet Undo at
+ * its end while there is a version to bring back; `Undoing…` while it does. An Undo refused says why here for a moment.
+ */
+@Composable
+internal fun CorrectedLine(marks: CorrectionMarks, onUndo: () -> Unit, strings: Strings) {
+    marks.refused?.let { reason ->
+        Text(
+            strings[reason],
+            modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s),
+            style = MaterialTheme.typography.bodySmall,
+            color = refusalInk(reason),
+        )
+        return
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
+        horizontalArrangement = Arrangement.spacedBy(Space.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(correctedLine(marks, strings), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        if (marks.previousVersionId != null) {
+            BlueprintButton(
+                strings[if (marks.undoing) Str.CORRECT_UNDOING else Str.CORRECT_UNDO],
+                onUndo,
+                tone = ButtonTone.QUIET,
+                busy = marks.undoing,
+            )
+        }
+    }
 }
 
 /**

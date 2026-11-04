@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Не удалось заполнить имена говорящих</string>
     <string name="fill_names_none">В расшифровке не найдены имена говорящих</string>
     <string name="speaker_me">Я</string>
+    <string name="correct_menu">Исправить расшифровку…</string>
+    <string name="correct_title">Исправить расшифровку</string>
+    <string name="correct_placeholder">Что исправить и всё, что поможет: имена, термины, контекст или другая расшифровка того же разговора.</string>
+    <string name="correct_footnote">Сохраняется сразу. В истории версий остаётся прежняя расшифровка.</string>
+    <string name="correct_correct">Исправить</string>
+    <string name="correct_running">Исправление…</string>
+    <string name="correct_nothing">Нечего исправлять</string>
+    <string name="correct_failed">Не удалось исправить расшифровку</string>
+    <string name="corrected_lines">Исправлено строк: %1$d</string>
+    <string name="corrected_names">Исправлено имён говорящих: %1$d</string>
+    <string name="corrected_undo">Отменить</string>
+    <string name="corrected_undoing">Отмена…</string>
+    <string name="versions_title">История версий</string>
+    <string name="version_transcribed">Расшифровка</string>
+    <string name="version_edited">Правка</string>
+    <string name="version_corrected">Исправление</string>
+    <string name="version_restored">Восстановление</string>
+    <string name="version_received">Изменение на другом устройстве</string>
+    <string name="version_restore">Восстановить</string>
+    <string name="version_restoring">Восстановление…</string>
+    <string name="version_restore_from">Восстановить версию от %1$s</string>
+    <string name="versions_footnote">На этом устройстве хранятся последние 20 версий. Восстановленная версия сохраняется как расшифровка, а заменённая остаётся в истории.</string>
+    <string name="version_restore_failed">Не удалось восстановить эту версию</string>
 </resources>

@@ -493,4 +493,27 @@
     <string name="fill_names_failed">화자 이름을 채우지 못했습니다</string>
     <string name="fill_names_none">전사본에서 화자 이름을 찾지 못했습니다</string>
     <string name="speaker_me">나</string>
+    <string name="correct_menu">전사본 교정…</string>
+    <string name="correct_title">전사본 교정</string>
+    <string name="correct_placeholder">고칠 점과 도움이 될 내용을 적어 주세요. 이름, 용어, 배경 지식, 같은 대화를 다른 곳에서 전사한 자료 등.</string>
+    <string name="correct_footnote">바로 저장됩니다. 이전 전사본은 버전 기록에 남습니다.</string>
+    <string name="correct_correct">교정하기</string>
+    <string name="correct_running">교정하는 중…</string>
+    <string name="correct_nothing">고칠 곳이 없습니다</string>
+    <string name="correct_failed">전사본을 교정하지 못했습니다</string>
+    <string name="corrected_lines">교정한 줄: %1$d개</string>
+    <string name="corrected_names">교정한 화자 이름: %1$d개</string>
+    <string name="corrected_undo">되돌리기</string>
+    <string name="corrected_undoing">되돌리는 중…</string>
+    <string name="versions_title">버전 기록</string>
+    <string name="version_transcribed">전사됨</string>
+    <string name="version_edited">편집됨</string>
+    <string name="version_corrected">교정됨</string>
+    <string name="version_restored">복원됨</string>
+    <string name="version_received">다른 기기에서 바뀜</string>
+    <string name="version_restore">복원</string>
+    <string name="version_restoring">복원하는 중…</string>
+    <string name="version_restore_from">%1$s 버전 복원</string>
+    <string name="versions_footnote">이 기기에 최근 20개 버전이 남습니다. 복원하면 그 버전이 전사본으로 저장되고, 바뀌기 전 버전도 남습니다.</string>
+    <string name="version_restore_failed">이 버전을 복원하지 못했습니다</string>
 </resources>

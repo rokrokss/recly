@@ -47,6 +47,9 @@ import app.recly.android.ui.theme.blueprint
  *
  * docs/09 "Component measurements": the text is inset 12 × 8. [leading] (the list's search glyph) and [trailing]
  * (its clear) sit inside the border but outside that inset, so a 48dp clear appearing does not make the box taller.
+ *
+ * [readOnly] keeps the words as they are, still readable and scrollable, while something works on them. A box made
+ * taller than its text from outside (a `fillMaxHeight` in [fieldModifier]) holds the text at [verticalAlignment].
  */
 @Composable
 fun BlueprintField(
@@ -66,6 +69,8 @@ fun BlueprintField(
     enabled: Boolean = true,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    readOnly: Boolean = false,
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
 ) {
     val palette = blueprint
     var focused by remember { mutableStateOf(false) }
@@ -83,6 +88,7 @@ fun BlueprintField(
             minLines = minLines,
             maxLines = maxLines,
             enabled = enabled,
+            readOnly = readOnly,
             textStyle = textStyle.copy(color = if (enabled) palette.text else palette.disabled),
             cursorBrush = SolidColor(palette.accent),
             visualTransformation = visualTransformation,
@@ -101,7 +107,7 @@ fun BlueprintField(
                         .background(palette.surface, shape)
                         .padding(start = Space.sm, end = if (trailing != null) 0.dp else Space.sm),
                     horizontalArrangement = Arrangement.spacedBy(Space.s),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = verticalAlignment,
                 ) {
                     leading?.invoke()
                     Box(Modifier.weight(1f).padding(vertical = Space.s)) {

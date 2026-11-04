@@ -87,10 +87,12 @@ struct DetailMoreMenu: View {
     let rename: () -> Void
     let edit: () -> Void
     let transcribeAgain: () -> Void
+    let versionHistory: () -> Void
     let memo: () -> Void
     let organize: () -> Void
     let editNotes: () -> Void
     let askAbout: () -> Void
+    let correct: () -> Void
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -113,6 +115,8 @@ struct DetailMoreMenu: View {
         ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
         ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
         ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
+        // docs/08 "Versions": every transcript this device kept of the recording, any of them brought back.
+        ReasonedMenuItem(title: RecKitStrings.localized("Version history"), reason: model.versionHistoryReason, action: versionHistory)
         // docs/08 "Memo": a memo can be written at any time, so the item is never off; once there is one, its chip opens it.
         if !model.hasMemo {
             Button(RecKitStrings.localized("Notes"), action: memo)
@@ -128,6 +132,8 @@ struct DetailMoreMenu: View {
             }
             // docs/08 "Ask": one question about the recording, in a panel of its own.
             ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
+            // docs/08 "Correcting": the transcript corrected from a request in the user's words, saved at once.
+            ReasonedMenuItem(title: RecKitStrings.localized("Correct transcript…"), reason: model.correctReason, action: correct)
             // docs/08 "Titles and speaker names": what the recording lacks, from the plan — the title and the names
             // apart. They open nothing: the title shows in the header and the names in the transcript.
             ReasonedMenuItem(title: RecKitStrings.localized("Fill in title"), reason: model.fillTitleReason) {

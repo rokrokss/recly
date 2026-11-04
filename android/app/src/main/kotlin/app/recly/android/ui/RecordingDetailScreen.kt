@@ -82,6 +82,7 @@ import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.CorrectionResult
 import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
 import recly.core.notes.NoteEdit
@@ -94,6 +95,7 @@ import recly.core.transcribe.EditResult
 import recly.core.transcribe.RetranscribeResult
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptEdit
+import recly.core.transcribe.TranscriptVersion
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
@@ -120,6 +122,7 @@ import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import recly.core.transcribe.TranscriptAvailability
 
@@ -182,6 +185,14 @@ class DetailActions(
     /** docs/08 "Memo": the memo view's save, and whether its line about the notes reading it is said. */
     val onSaveMemo: (String) -> Unit = {},
     val notesAgreed: Boolean = false,
+    /**
+     * docs/08 "Correcting": More → Correct transcript…'s request, and what came of it — null when the call threw. It runs in
+     * the caller's coroutine: closing the sheet cancels it, and the answer is dropped.
+     */
+    val onCorrect: suspend (String) -> CorrectionResult? = { null },
+    /** docs/08 "Versions": the versions this device kept, newest first, and bringing one back — null when the call threw. */
+    val versions: suspend () -> List<TranscriptVersion> = { emptyList() },
+    val onRestore: suspend (String) -> EditResult? = { null },
 )
 
 /**
@@ -270,6 +281,10 @@ fun RecordingDetailScreen(
         )
     }
 
+    // docs/09 "After a correction": what the last correction changed, until the user undoes it, edits or corrects again,
+    // restores a version, or the page leaves the recording.
+    var marks by remember(detail.recordingId) { mutableStateOf<CorrectionMarks?>(null) }
+
     // docs/09 "Editing and speakers": the editor's draft, while it is open.
     var draft by remember(detail.recordingId) { mutableStateOf<EditDraft?>(null) }
     var discarding by remember(detail.recordingId) { mutableStateOf(false) }
@@ -324,7 +339,8 @@ fun RecordingDetailScreen(
         savingGroup = group
         scope.launch {
             val started = SystemClock.elapsedRealtime()
-            actions.onEdit(edit)
+            // An edit ends what a correction marked: its Undo would take this change back with it.
+            if (actions.onEdit(edit) is EditResult.Edited) marks = null
             delay(processingHoldMs(SystemClock.elapsedRealtime() - started))
             savingGroup = null
         }
@@ -420,6 +436,90 @@ fun RecordingDetailScreen(
         AskPanel(detail.ask, presets, models, canSeekTo, playFrom, actions.onAsk, onClose = { asking = false; actions.onClearAsk() })
     }
 
+    // docs/08 "Correcting": the sheet while it is open; what its field holds — kept while the page stays on the recording,
+    // so a second request starts from the first; the request running; and what came of the last one.
+    var correcting by remember(detail.recordingId) { mutableStateOf(false) }
+    var correctionRequest by remember(detail.recordingId) { mutableStateOf("") }
+    var correctionRun by remember(detail.recordingId) { mutableStateOf<Job?>(null) }
+    var correctionOutcome by remember(detail.recordingId) { mutableStateOf<CorrectOutcome?>(null) }
+    // A page that becomes another recording's lets the request go, as closing the sheet does.
+    DisposableEffect(detail.recordingId) { onDispose { correctionRun?.cancel() } }
+    val correct = correct@{
+        if (!canCorrect(correctionRun != null, correctionRequest)) return@correct
+        val request = correctionRequest
+        val busyReason = detail.busyReason
+        val createdAt = transcript?.createdAt
+        correctionOutcome = CorrectOutcome.Running
+        correctionRun = scope.launch {
+            val result = actions.onCorrect(request)
+            correctionRun = null
+            correctionOutcome = correctOutcome(result, busyReason)
+            if (result is CorrectionResult.Corrected) {
+                // Saved: the sheet closes and the transcript shows what changed.
+                marks = CorrectionMarks(result.segments, result.names, result.previousVersionId, createdAt)
+                correcting = false
+                view = DetailView.TRANSCRIPT
+            }
+        }
+    }
+    val closeCorrect = {
+        correctionRun?.cancel()
+        correctionRun = null
+        correctionOutcome = null
+        correcting = false
+    }
+    if (correcting) CorrectPanel(correctionRequest, { correctionRequest = it }, correctionOutcome, correct, closeCorrect)
+
+    // docs/09 "After a correction": Undo, and why it did not happen — in the line, for as long as a refusal stays.
+    var undoing by remember(detail.recordingId) { mutableStateOf(false) }
+    var undoRefusal by remember(detail.recordingId) { mutableStateOf<RestoreRefusal?>(null) }
+    LaunchedEffect(undoRefusal) { if (undoRefusal != null) { delay(REFUSAL_MS); undoRefusal = null } }
+    val undo = undo@{
+        val version = marks?.previousVersionId ?: return@undo
+        if (undoing) return@undo
+        undoing = true
+        val busyReason = detail.busyReason
+        scope.launch {
+            val refused = restoreRefusal(actions.onRestore(version), busyReason)
+            undoing = false
+            if (refused == null) marks = null else undoRefusal = refused
+        }
+    }
+
+    // docs/09 "Version history": the dialog, the restore running from it, and why the last one did not happen.
+    var history by remember(detail.recordingId) { mutableStateOf(false) }
+    var restoring by remember(detail.recordingId) { mutableStateOf<String?>(null) }
+    var historyRefusal by remember(detail.recordingId) { mutableStateOf<RestoreRefusal?>(null) }
+    if (history) {
+        val versions by produceState<List<TranscriptVersion>?>(null, detail.recordingId) { value = actions.versions() }
+        VersionHistoryDialog(versions, restoring, historyRefusal,
+            onRestore = { version ->
+                if (restoring == null) {
+                    restoring = version.id
+                    historyRefusal = null
+                    val busyReason = detail.busyReason
+                    scope.launch {
+                        val refused = restoreRefusal(actions.onRestore(version.id), busyReason)
+                        restoring = null
+                        if (refused == null) {
+                            // Saved: the dialog closes on the transcript it brought back.
+                            history = false
+                            marks = null
+                            view = DetailView.TRANSCRIPT
+                        } else {
+                            historyRefusal = refused
+                        }
+                    }
+                }
+            },
+            onClose = { history = false; historyRefusal = null })
+    }
+    // The marks belong to the transcript they were made on: one made again since has other lines.
+    val shownMarks = marks?.takeIf { transcript != null && it.createdAt == transcript.createdAt }
+    val tints = remember(transcript, shownMarks) {
+        if (transcript != null && shownMarks != null) correctionTints(transcript, shownMarks.segments) else emptyList()
+    }
+
     // docs/09 "Typography": every time on this page takes its format from the recording's own length.
     val scale = recordingScale(detail)
     Column(modifier = modifier.fillMaxSize()) {
@@ -445,7 +545,7 @@ fun RecordingDetailScreen(
                         if (!detail.loading) {
                             MoreButton(detail, transcription, actions.chatGpt, MoreActions(
                                 onRename = { renaming = true },
-                                onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
+                                onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT; marks = null } },
                                 onRetranscribe = { askAgain = true },
                                 onOrganize = organize,
                                 onEditNotes = {
@@ -466,6 +566,8 @@ fun RecordingDetailScreen(
                                     }
                                 },
                                 onDelete = { detail.row?.let(actions.onDelete) },
+                                onVersions = { history = true },
+                                onCorrect = { correcting = true },
                             ), fill = actions.fill, organizing = organizing)
                         }
                     }
@@ -494,6 +596,32 @@ fun RecordingDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(stringResource(failed.half.failed), style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                 failed.reason?.let { Text(coreMessage(it).text(), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
+            }
+            HairLine()
+        }
+        // docs/09 "After a correction": how many lines it changed — or speakers it named — and the quiet way back at its end;
+        // an Undo that did not happen says why there for a moment.
+        if (shownMarks != null && !detail.loading && draft == null && notesDraft == null) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.xs).testTag("detail-corrected"),
+                horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                val refused = undoRefusal
+                if (refused != null) {
+                    Text(stringResource(refused.text), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
+                        color = if (refused.failed) blueprint.danger else blueprint.textMuted)
+                } else {
+                    val (line, count) = correctedLine(shownMarks)
+                    Text(stringResource(line, count), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                }
+                if (shownMarks.previousVersionId != null) {
+                    if (undoing) {
+                        // In the button's own height, so the line does not move.
+                        Box(Modifier.defaultMinSize(minHeight = MinTouch), contentAlignment = Alignment.Center) {
+                            LoadingText(stringResource(R.string.corrected_undoing), MaterialTheme.typography.bodySmall, blueprint.textMuted)
+                        }
+                    } else {
+                        BlueprintButton(stringResource(R.string.corrected_undo), undo, tone = ButtonTone.QUIET, modifier = Modifier.testTag("detail-undo"))
+                    }
+                }
             }
             HairLine()
         }
@@ -602,6 +730,7 @@ fun RecordingDetailScreen(
                         savingLabel = savingGroup?.let { stringResource(R.string.edit_saving) },
                         find = matches,
                         findCurrent = current,
+                        marks = tints,
                         following = following,
                         onFollowChange = { following = it },
                         startAt = detail.find?.atSec?.let { activeGroup(groups, it) },

@@ -460,4 +460,27 @@
     <string name="fill_names_failed">話者の名前を入力できませんでした</string>
     <string name="fill_names_none">文字起こしに話者の名前が見つかりませんでした</string>
     <string name="speaker_me">自分</string>
+    <string name="correct_menu">文字起こしを修正…</string>
+    <string name="correct_title">文字起こしを修正</string>
+    <string name="correct_placeholder">修正したい内容と、名前や用語、背景、同じ会話の別の文字起こしなど役立つ情報。</string>
+    <string name="correct_footnote">すぐに保存されます。バージョン履歴に元の文字起こしが残ります。</string>
+    <string name="correct_correct">修正する</string>
+    <string name="correct_running">修正しています…</string>
+    <string name="correct_nothing">修正する箇所はありません</string>
+    <string name="correct_failed">文字起こしを修正できませんでした</string>
+    <string name="corrected_lines">%1$d行を修正しました</string>
+    <string name="corrected_names">話者の名前を%1$d件修正しました</string>
+    <string name="corrected_undo">元に戻す</string>
+    <string name="corrected_undoing">元に戻しています…</string>
+    <string name="versions_title">バージョン履歴</string>
+    <string name="version_transcribed">文字起こし</string>
+    <string name="version_edited">編集</string>
+    <string name="version_corrected">修正</string>
+    <string name="version_restored">復元</string>
+    <string name="version_received">別のデバイスで変更</string>
+    <string name="version_restore">復元</string>
+    <string name="version_restoring">復元しています…</string>
+    <string name="version_restore_from">%1$sのバージョンを復元</string>
+    <string name="versions_footnote">このデバイスには最新の20バージョンが残ります。復元すると、そのバージョンが文字起こしとして保存され、置き換えられたバージョンも残ります。</string>
+    <string name="version_restore_failed">このバージョンを復元できませんでした</string>
 </resources>

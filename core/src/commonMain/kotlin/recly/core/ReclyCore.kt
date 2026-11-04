@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.withLock
 import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.missingTranscriptAvailability
 import recly.core.transcribe.LocalEngineStatus
@@ -485,7 +486,11 @@ class ReclyCore(
         // newest transcript, and a pull never writes over one (docs/08 "Editing").
         remote.transcriptWrite { applyEdit(recordingId, edit) }
 
-    private suspend fun applyEdit(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
+    private suspend fun applyEdit(
+        recordingId: String,
+        edit: recly.core.transcribe.TranscriptEdit,
+        kind: recly.core.transcribe.TranscriptVersionKind = recly.core.transcribe.TranscriptVersionKind.EDITED,
+    ): recly.core.transcribe.EditResult {
         val record = recordings.get(recordingId) ?: return recly.core.transcribe.EditResult.NoTranscript
         if (transcriptBusy(recordingId)) return recly.core.transcribe.EditResult.Busy
         val current = results(recordingId).transcript ?: return recly.core.transcribe.EditResult.NoTranscript
@@ -495,13 +500,116 @@ class ReclyCore(
             return recly.core.transcribe.EditResult.Invalid(e.message ?: "invalid edit")
         }
         if (edited == current) return recly.core.transcribe.EditResult.Edited(current)
-        transcriptWriter.writeLocal(record, edited, markdown = record.storage == StorageKind.FOLDER)
-        recordings.transcriptPending(recordingId)
+        saveTranscript(record, edited, kind)
+        return recly.core.transcribe.EditResult.Edited(edited)
+    }
+
+    /** An edit's transcript, kept here and on its way to the recording's folder (docs/08 "Editing"). */
+    private suspend fun saveTranscript(
+        record: recly.core.recording.RecordingRecord,
+        transcript: recly.core.transcribe.Transcript,
+        kind: recly.core.transcribe.TranscriptVersionKind,
+    ) {
+        transcriptWriter.writeLocal(record, transcript, markdown = record.storage == StorageKind.FOLDER, kind = kind)
+        recordings.transcriptPending(record.id)
         resultChanges.value++
-        deps.logger.log(Logger.Level.INFO, "rec.transcript.edited", mapOf("recordingId" to recordingId))
+        deps.logger.log(Logger.Level.INFO, "rec.transcript.edited", mapOf("recordingId" to record.id, "kind" to kind.name.lowercase()))
         // The edit is saved once it is on disk; storage gets it in the background (or by the next pass).
         pushes.launch { remote.pushTranscripts() }
-        return recly.core.transcribe.EditResult.Edited(edited)
+    }
+
+    private val correction = recly.core.chatgpt.TranscriptCorrection(
+        deps, summaries, chatGpt, transferConsents,
+        transcript = { results(it).transcript },
+        busy = ::transcriptBusy,
+        memo = { recordingId -> memos.forAi(recordingId) },
+        apply = ::applyCorrection,
+    )
+
+    /**
+     * docs/08 "Correcting": Correct transcript… — sends the transcript, the recording's memo and the user's [request] (what
+     * to fix, with anything pasted to help: names, terms, background, another transcript of the same conversation) to the
+     * user's ChatGPT plan, and saves what it changes as an edit: here at once, then in the recording's folder, with the
+     * version it replaced kept to undo it (docs/08 "Versions"). Refused like an edit while a transcription of the recording
+     * has not settled. On iPhone, `Failed(TRANSFER_CONSENT_REQUIRED)` before anything is sent. Cancelling the call drops
+     * the answer: nothing is saved.
+     */
+    @Throws(Throwable::class)
+    suspend fun correctTranscript(recordingId: String, request: String): recly.core.chatgpt.CorrectionResult =
+        correction.correct(recordingId, request)
+
+    private suspend fun applyCorrection(
+        recordingId: String,
+        sent: recly.core.transcribe.Transcript,
+        proposal: recly.core.chatgpt.CorrectionProposal,
+    ): recly.core.chatgpt.CorrectionResult = remote.transcriptWrite {
+        val record = recordings.get(recordingId) ?: return@transcriptWrite recly.core.chatgpt.CorrectionResult.NoTranscript
+        if (transcriptBusy(recordingId)) return@transcriptWrite recly.core.chatgpt.CorrectionResult.Busy
+        val current = results(recordingId).transcript ?: return@transcriptWrite recly.core.chatgpt.CorrectionResult.NoTranscript
+        val edits = recly.core.chatgpt.CorrectionEdits.of(sent, current, proposal)
+            ?: return@transcriptWrite recly.core.chatgpt.CorrectionResult.Busy
+        if (edits.isEmpty()) return@transcriptWrite recly.core.chatgpt.CorrectionResult.NothingToCorrect
+        when (val result = applyEdit(recordingId, recly.core.transcribe.TranscriptEdit.Batch(edits), recly.core.transcribe.TranscriptVersionKind.CORRECTED)) {
+            is recly.core.transcribe.EditResult.Edited -> {
+                val after = result.transcript
+                val segments = current.segments.indices.filter {
+                    after.segments[it].text != current.segments[it].text || after.segments[it].speaker != current.segments[it].speaker
+                }
+                val names = after.speakers.count { speaker -> current.speakers.firstOrNull { it.id == speaker.id }?.name != speaker.name }
+                if (segments.isEmpty() && names == 0) {
+                    recly.core.chatgpt.CorrectionResult.NothingToCorrect
+                } else {
+                    recly.core.chatgpt.CorrectionResult.Corrected(segments, names, previousVersion(record))
+                }
+            }
+            recly.core.transcribe.EditResult.Busy -> recly.core.chatgpt.CorrectionResult.Busy
+            recly.core.transcribe.EditResult.NoTranscript -> recly.core.chatgpt.CorrectionResult.NoTranscript
+            is recly.core.transcribe.EditResult.Invalid ->
+                recly.core.chatgpt.CorrectionResult.Failed(CoreMessage.PROVIDER_ERROR.code(detail = result.reason))
+        }
+    }
+
+    private suspend fun previousVersion(record: recly.core.recording.RecordingRecord): String? =
+        kotlinx.coroutines.withContext(deps.io) {
+            recly.core.transcribe.resultFileMutex.withLock { recly.core.transcribe.TranscriptVersions.previous(deps.fileSystem, record.dir) }
+        }
+
+    /**
+     * docs/08 "Versions": the transcripts this recording had on this device, newest first — the one shown first
+     * (`current`) — at most [recly.core.transcribe.TranscriptVersions.MAX]. Empty when it has no transcript here yet.
+     */
+    @Throws(Throwable::class)
+    suspend fun transcriptVersions(recordingId: String): List<recly.core.transcribe.TranscriptVersion> {
+        val record = recordings.get(recordingId) ?: return emptyList()
+        // A transcript only in the folder so far is read here first, as the detail reads it.
+        if (results(recordingId).transcript == null) return emptyList()
+        return kotlinx.coroutines.withContext(deps.io) {
+            recly.core.transcribe.resultFileMutex.withLock {
+                recly.core.transcribe.TranscriptVersions.list(deps.fileSystem, record.dir, recly.core.recording.MetaWriter.baseName(record.meta))
+            }
+        }
+    }
+
+    /**
+     * docs/08 "Versions": brings back version [versionId] as the transcript — saved as an edit, so the folder's copy and
+     * the other devices follow, and kept as a version of its own, so it can be undone the same way. Refused like an edit
+     * while a transcription of the recording has not settled; `Invalid` for a version this device does not keep.
+     */
+    @Throws(Throwable::class)
+    suspend fun restoreTranscript(recordingId: String, versionId: String): recly.core.transcribe.EditResult = remote.transcriptWrite {
+        val record = recordings.get(recordingId) ?: return@transcriptWrite recly.core.transcribe.EditResult.NoTranscript
+        if (transcriptBusy(recordingId)) return@transcriptWrite recly.core.transcribe.EditResult.Busy
+        val current = results(recordingId).transcript ?: return@transcriptWrite recly.core.transcribe.EditResult.NoTranscript
+        val version = kotlinx.coroutines.withContext(deps.io) {
+            recly.core.transcribe.resultFileMutex.withLock { recly.core.transcribe.TranscriptVersions.read(deps.fileSystem, record.dir, versionId) }
+        }?.takeIf { it.recordingId == recordingId }
+            ?: return@transcriptWrite recly.core.transcribe.EditResult.Invalid("no version $versionId")
+        if (version.copy(editedAt = null) == current.copy(editedAt = null)) return@transcriptWrite recly.core.transcribe.EditResult.Edited(current)
+        // Stamped now, so the folder and the other devices take it as the newest version (docs/08 "Result files").
+        val restored = version.copy(editedAt = deps.clock.now().isoUtc())
+        saveTranscript(record, restored, recly.core.transcribe.TranscriptVersionKind.RESTORED)
+        deps.logger.log(Logger.Level.INFO, "rec.transcript.restored", mapOf("recordingId" to recordingId))
+        recly.core.transcribe.EditResult.Edited(restored)
     }
 
     /**

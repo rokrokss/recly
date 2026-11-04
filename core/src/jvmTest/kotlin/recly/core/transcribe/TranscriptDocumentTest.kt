@@ -38,4 +38,18 @@ class TranscriptDocumentTest {
         assertTrue(document.plainText.contains("Hello world"))
         assertTrue(document.plainText.contains("안녕하세요"))
     }
+
+    @Test fun segmentRangesFindEachSegmentsWordsInItsBlock() {
+        val document = TranscriptDocument(transcript(listOf(
+            TranscriptSegment(0.0, 1.0, "S1", " Hello "),
+            TranscriptSegment(1.0, 2.0, "S1", "world"),
+            TranscriptSegment(3.0, 4.0, "S2", " "),
+            TranscriptSegment(5.0, 6.0, "S2", "안녕하세요"),
+        )))
+        assertEquals(
+            listOf(BlockRange(0, 0, 5), BlockRange(0, 6, 5), BlockRange(1, 0, 5)),
+            document.segmentRanges(listOf(3, 1, 0, 2, 1, 9)),
+        )
+        assertEquals("world", document.blocks[0].text.substring(6, 11))
+    }
 }

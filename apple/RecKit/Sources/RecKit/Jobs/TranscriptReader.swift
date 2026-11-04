@@ -24,6 +24,8 @@ struct TranscriptReader: View {
     /// The find bar's own field, where the page offers one (the Mac's ⌘F), and the press that puts the cursor in it.
     var findQuery: Binding<String>? = nil
     var findFocus = 0
+    /// docs/09 "Transcript reader" — "After a correction": the segments the last correction changed, tinted.
+    var corrected: Set<Int> = []
 
     struct SpeakerActions {
         let rename: (String) -> Void
@@ -36,6 +38,8 @@ struct TranscriptReader: View {
     @State private var following = true
     @State private var matchIndex = 0
     @State private var matches: [TranscriptMatch] = []
+    /// Where [corrected]'s words are in the paragraphs, found once for each change rather than on every playback tick.
+    @State private var correctedMatches: [TranscriptMatch] = []
 
     var body: some View {
         // Once per pass, not per paragraph: the body is drawn on every playback tick.
@@ -95,6 +99,9 @@ struct TranscriptReader: View {
                 .onChange(of: matchIndex) { _, index in
                     if matches.indices.contains(index) { scroll(proxy, to: matches[index].group) }
                 }
+                .task(id: CorrectedKey(segments: corrected, groups: groups.count, at: transcript.editedAt)) {
+                    correctedMatches = TranscriptMatch.segments(corrected, in: groups, of: transcript)
+                }
                 .task(id: FindKey(query: find?.query, groups: groups.count)) {
                     matches = TranscriptMatch.all(find?.query ?? "", in: groups)
                     // From search: the first match at or after the hit the row showed.
@@ -112,6 +119,12 @@ struct TranscriptReader: View {
     private struct FindKey: Hashable {
         let query: String?
         let groups: Int
+    }
+
+    private struct CorrectedKey: Hashable {
+        let segments: Set<Int>
+        let groups: Int
+        let at: String?
     }
 
     private var activeGroup: Int? { TranscriptGroup.active(groups, at: positionSec)?.id }
@@ -169,19 +182,26 @@ struct TranscriptReader: View {
         }
     }
 
-    /// The paragraph with the find's matches on the accent, the current one stronger.
+    /// The paragraph with the find's matches on the accent, the current one stronger — over the words a correction
+    /// changed, tinted as a match is.
     private func marked(_ group: TranscriptGroup) -> AttributedString {
         var text = AttributedString(group.text)
-        let utf16 = group.text.utf16
+        for match in correctedMatches where match.group == group.id {
+            tint(&text, group, match, blueprint.palette.accent.opacity(0.16))
+        }
         for (index, match) in matches.enumerated() where match.group == group.id {
-            guard match.offset >= 0, match.length > 0, match.offset + match.length <= utf16.count else { continue }
-            let start = String.Index(utf16Offset: match.offset, in: group.text)
-            let end = String.Index(utf16Offset: match.offset + match.length, in: group.text)
-            guard let from = AttributedString.Index(start, within: text),
-                  let to = AttributedString.Index(end, within: text) else { continue }
-            text[from ..< to].backgroundColor = blueprint.palette.accent.opacity(index == matchIndex ? 0.36 : 0.16)
+            tint(&text, group, match, blueprint.palette.accent.opacity(index == matchIndex ? 0.36 : 0.16))
         }
         return text
+    }
+
+    private func tint(_ text: inout AttributedString, _ group: TranscriptGroup, _ match: TranscriptMatch, _ color: Color) {
+        guard match.offset >= 0, match.length > 0, match.offset + match.length <= group.text.utf16.count else { return }
+        let start = String.Index(utf16Offset: match.offset, in: group.text)
+        let end = String.Index(utf16Offset: match.offset + match.length, in: group.text)
+        guard let from = AttributedString.Index(start, within: text),
+              let to = AttributedString.Index(end, within: text) else { return }
+        text[from ..< to].backgroundColor = color
     }
 }
 

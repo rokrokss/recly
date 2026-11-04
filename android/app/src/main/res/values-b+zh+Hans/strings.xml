@@ -460,4 +460,27 @@
     <string name="fill_names_failed">无法填写说话人名称</string>
     <string name="fill_names_none">转录文本中未找到说话人名称</string>
     <string name="speaker_me">我</string>
+    <string name="correct_menu">校正转录文本…</string>
+    <string name="correct_title">校正转录文本</string>
+    <string name="correct_placeholder">要修正的内容，以及任何有帮助的信息：名称、术语、背景，或同一段对话的另一份转录文本。</string>
+    <string name="correct_footnote">立即保存。版本历史会保留转录文本原来的样子。</string>
+    <string name="correct_correct">校正</string>
+    <string name="correct_running">正在校正…</string>
+    <string name="correct_nothing">没有需要校正的内容</string>
+    <string name="correct_failed">无法校正转录文本</string>
+    <string name="corrected_lines">已校正%1$d行</string>
+    <string name="corrected_names">已校正%1$d个说话人名称</string>
+    <string name="corrected_undo">撤销</string>
+    <string name="corrected_undoing">正在撤销…</string>
+    <string name="versions_title">版本历史</string>
+    <string name="version_transcribed">转录</string>
+    <string name="version_edited">编辑</string>
+    <string name="version_corrected">校正</string>
+    <string name="version_restored">恢复</string>
+    <string name="version_received">在其他设备上更改</string>
+    <string name="version_restore">恢复</string>
+    <string name="version_restoring">正在恢复…</string>
+    <string name="version_restore_from">恢复%1$s的版本</string>
+    <string name="versions_footnote">此设备保留最近20个版本。恢复某个版本会将其保存为转录文本，并保留被替换的版本。</string>
+    <string name="version_restore_failed">无法恢复此版本</string>
 </resources>

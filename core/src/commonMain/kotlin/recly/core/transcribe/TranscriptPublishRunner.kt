@@ -53,7 +53,13 @@ class TranscriptPublishRunner(
         // publish that has to try again finds nothing left to ask for.
         val filled = fill.fill(ctx.recording, current)
         val transcript = filled.transcript
-        if (transcript != current) writer.writeLocal(ctx.recording, transcript, markdown = false, result = resultName.takeIf { current === result })
+        if (transcript != current) {
+            writer.writeLocal(
+                ctx.recording, transcript, markdown = false,
+                kind = if (current === result) TranscriptVersionKind.TRANSCRIBED else TranscriptVersionKind.EDITED,
+                result = resultName.takeIf { current === result },
+            )
+        }
         val meta = filled.title?.let { ctx.recording.meta.copy(title = it) } ?: ctx.recording.meta
         val json = recJson.encodeToString(transcript).encodeToByteArray()
         val marks = TranscriptMarks.of(transcript)

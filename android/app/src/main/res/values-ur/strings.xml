@@ -460,4 +460,27 @@
     <string name="fill_names_failed">بولنے والوں کے نام نہیں بھرے جا سکے</string>
     <string name="fill_names_none">ٹرانسکرپٹ میں بولنے والوں کے نام نہیں ملے</string>
     <string name="speaker_me">میں</string>
+    <string name="correct_menu">ٹرانسکرپٹ درست کریں…</string>
+    <string name="correct_title">ٹرانسکرپٹ درست کریں</string>
+    <string name="correct_placeholder">کیا درست کرنا ہے، اور جو کچھ بھی مدد کرے: نام، اصطلاحات، پس منظر، یا اسی گفتگو کا کوئی اور ٹرانسکرپٹ۔</string>
+    <string name="correct_footnote">فوراً محفوظ ہو جاتا ہے۔ ورژن کی تاریخ میں ٹرانسکرپٹ کی پچھلی شکل رہتی ہے۔</string>
+    <string name="correct_correct">درست کریں</string>
+    <string name="correct_running">درست کیا جا رہا ہے…</string>
+    <string name="correct_nothing">درست کرنے کو کچھ نہیں</string>
+    <string name="correct_failed">ٹرانسکرپٹ درست نہیں ہو سکا</string>
+    <string name="corrected_lines">درست کی گئی سطریں: %1$d</string>
+    <string name="corrected_names">درست کیے گئے بولنے والوں کے نام: %1$d</string>
+    <string name="corrected_undo">کالعدم کریں</string>
+    <string name="corrected_undoing">کالعدم کیا جا رہا ہے…</string>
+    <string name="versions_title">ورژن کی تاریخ</string>
+    <string name="version_transcribed">ٹرانسکرائب کیا گیا</string>
+    <string name="version_edited">ترمیم شدہ</string>
+    <string name="version_corrected">درست کیا گیا</string>
+    <string name="version_restored">بحال کیا گیا</string>
+    <string name="version_received">دوسرے آلے پر تبدیل کیا گیا</string>
+    <string name="version_restore">بحال کریں</string>
+    <string name="version_restoring">بحال کیا جا رہا ہے…</string>
+    <string name="version_restore_from">%1$s کا ورژن بحال کریں</string>
+    <string name="versions_footnote">یہ آلہ آخری 20 ورژن رکھتا ہے۔ کسی ورژن کو بحال کرنے پر وہ ٹرانسکرپٹ کے طور پر محفوظ ہوتا ہے، اور جس ورژن کی جگہ وہ لیتا ہے وہ بھی رکھا جاتا ہے۔</string>
+    <string name="version_restore_failed">یہ ورژن بحال نہیں ہو سکا</string>
 </resources>

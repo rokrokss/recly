@@ -577,6 +577,62 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.await()
 
+    /**
+     * docs/08 "Correcting": More → Correct transcript…, in the caller's coroutine — the sheet's — so closing the sheet cancels
+     * it and the answer is dropped. What came of it; null when the call threw.
+     */
+    suspend fun correct(recordingId: String, request: String): recly.core.chatgpt.CorrectionResult? {
+        val core = core()
+        return try {
+            withContext(core.deps.io) { core.correctTranscript(recordingId, request) }.also {
+                // Saved as an edit is: the row's first words may have changed with it.
+                if (it is recly.core.chatgpt.CorrectionResult.Corrected) refreshPreviews(core)
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.correct.failed", mapOf("recordingId" to recordingId), e)
+            null
+        }
+    }
+
+    /** docs/08 "Versions": the versions this device kept of the recording's transcript, newest first; none when they cannot be read. */
+    suspend fun transcriptVersions(recordingId: String): List<recly.core.transcribe.TranscriptVersion> {
+        val core = core()
+        return try {
+            withContext(core.deps.io) { core.transcriptVersions(recordingId) }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.WARN, "shell.transcript.versions.failed", mapOf("recordingId" to recordingId), e)
+            emptyList()
+        }
+    }
+
+    /**
+     * docs/08 "Versions": brings version [versionId] back — Version history's Restore, and Undo after a correction. It runs
+     * on here even if the page goes: a restore is several writes that belong together. Null when the call threw.
+     */
+    suspend fun restoreTranscript(recordingId: String, versionId: String): recly.core.transcribe.EditResult? = viewModelScope.async {
+        val core = core()
+        try {
+            withContext(core.deps.io) { core.restoreTranscript(recordingId, versionId) }.also {
+                if (it is recly.core.transcribe.EditResult.Edited) refreshPreviews(core)
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.ERROR, "shell.transcript.restore.failed", mapOf("recordingId" to recordingId), e)
+            null
+        }
+    }.await()
+
+    /** A change of a transcript touches no job, so the rows' first words are asked for here. */
+    private suspend fun refreshPreviews(core: ReclyCore) {
+        val previews = previews(core, _state.value.items)
+        _state.update { state -> state.copy(previews = previews) }
+    }
+
     /** docs/08 "Ask": the presets that make sense for the recording; none when it cannot be read. */
     suspend fun askPresets(recordingId: String): List<AskPreset> {
         val core = core()

@@ -95,6 +95,8 @@ fun BlueprintTextField(
     focusRequester: FocusRequester? = null,
     /** False where the label is drawn elsewhere — above what the field adds to: it still names the field for a reader. */
     labelShown: Boolean = true,
+    /** What is there can be read, selected and copied, and not changed — a request while it is being answered. */
+    readOnly: Boolean = false,
 ) {
     FieldFrame(label, modifier, hint, enabled, monospace, minHeight, if (value.isEmpty()) placeholder else null, focusRequester, labelShown) { box, style, decoration ->
         BasicTextField(
@@ -102,6 +104,7 @@ fun BlueprintTextField(
             onValueChange = onValueChange,
             modifier = box,
             enabled = enabled,
+            readOnly = readOnly,
             singleLine = singleLine,
             minLines = minLines,
             maxLines = maxLines,

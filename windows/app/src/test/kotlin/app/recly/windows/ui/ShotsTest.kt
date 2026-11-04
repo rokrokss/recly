@@ -268,6 +268,48 @@ class ShotsTest {
             shot("ask-failed-$lang", 460, 560, ko) {
                 panel(AskState.Failed(recly.core.message.CoreMessage.CHATGPT_USAGE_LIMIT.code(), null, "When do we ship?"))
             }
+            // docs/09 "AI view" — "Correct transcript": the dialog's card empty, running, with nothing to correct and failed —
+            // states drawn, not asked.
+            val correct: @Composable (String, CorrectionState) -> Unit = { text, state ->
+                DialogCard(
+                    strings[Str.CORRECT_TITLE], androidx.compose.ui.Modifier, null,
+                    { CorrectPanel(state, text, {}, {}, {}, strings) }, fill = false, closeLabel = strings[Str.CLOSE],
+                )
+            }
+            shot("correct-$lang", 460, 400, ko) { correct("", CorrectionState.None) }
+            shot("correct-running-$lang", 460, 440, ko) { correct(CORRECT_REQUEST, CorrectionState.Running) }
+            shot("correct-nothing-$lang", 460, 440, ko) { correct(CORRECT_REQUEST, CorrectionState.NothingToCorrect) }
+            shot("correct-failed-$lang", 460, 520, ko) {
+                correct(CORRECT_REQUEST, CorrectionState.Failed(recly.core.message.CoreMessage.CHATGPT_USAGE_LIMIT.code()))
+            }
+            // docs/09 "Version history": the transcript shown first with no Restore, a restore running, and one refused.
+            val history: @Composable (String?, Str?) -> Unit = { restoring, refused ->
+                DialogCard(
+                    strings[Str.VERSIONS_TITLE], androidx.compose.ui.Modifier, null,
+                    { VersionsPanel(VERSIONS, restoring, refused, {}, strings) }, fill = false, closeLabel = strings[Str.CLOSE],
+                )
+            }
+            shot("versions-$lang", 460, 420, ko) { history(null, null) }
+            shot("versions-restoring-$lang", 460, 420, ko) { history(VERSIONS[1].id, null) }
+            shot("versions-refused-$lang", 460, 440, ko) { history(null, Str.VERSIONS_RESTORE_FAILED) }
+            // docs/09 "After a correction": the line under the header with Undo, over the reader with the changed lines tinted.
+            val sampled = model.detail!!.transcript!!
+            val document = recly.core.transcribe.TranscriptDocument(sampled)
+            val corrected: @Composable (CorrectionMarks) -> Unit = { marks ->
+                Column(androidx.compose.ui.Modifier.fillMaxSize().background(blueprint.background)) {
+                    CorrectedLine(marks, {}, strings)
+                    TranscriptReader(
+                        sampled, document, canSeek = true, onSeek = {}, positionSec = 0.0, playing = false,
+                        matches = emptyList(), currentMatch = null, marked = document.segmentRanges(marks.segments),
+                        onChangeSpeaker = { _, _, _ -> }, onRenameSpeaker = { _, _ -> }, saving = emptyMap(),
+                        strings = strings, modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                    )
+                }
+            }
+            val marks = CorrectionMarks(listOf(1, 3), names = 1, previousVersionId = "1", createdAt = sampled.createdAt)
+            shot("reader-corrected-$lang", 700, 420, ko) { corrected(marks) }
+            shot("reader-corrected-undoing-$lang", 700, 420, ko) { corrected(marks.copy(undoing = true)) }
+            shot("reader-corrected-names-$lang", 700, 420, ko) { corrected(marks.copy(segments = emptyList())) }
         }
         chatGpt.connection = ChatGptConnection.SignedOut
         // The notes go with the file they were seeded as, and the detail opened again is the transcript's alone.
@@ -500,12 +542,23 @@ class ShotsTest {
         val BADGE_CHANGE = Offset(534f, 307f)
         val SEARCH = Offset(150f, 103f)
         val FIND_NEXT = Offset(900f, 210f)
-        val MORE_EDIT_NOTES = Offset(835f, 265f)
+        // Edit summary, under Summarize again and its reason — below Version history and Notes in the first group (2026-11-04).
+        val MORE_EDIT_NOTES = Offset(835f, 359f)
         // The tray popup's Memo row while recording, in the 520×560 popup.
         val TRAY_MEMO = Offset(60f, 300f)
         // The decision's field in Edit notes, past the end of its words.
         val NOTES_FIELD = Offset(900f, 513f)
         const val SETTINGS_HEIGHT = 3100
+
+        const val CORRECT_REQUEST = "Mina's name is spelled Minna. The product is Recly.\n\nThe same meeting from the room mic:\n" +
+            "[00:00:00] Minna: Thanks for joining. Let's go over the release notes for Recly first."
+
+        val VERSIONS = listOf(
+            recly.core.transcribe.TranscriptVersion("4", recly.core.transcribe.TranscriptVersionKind.CORRECTED, "2026-11-04T09:12:00Z", current = true),
+            recly.core.transcribe.TranscriptVersion("3", recly.core.transcribe.TranscriptVersionKind.EDITED, "2026-11-04T08:40:00Z", current = false),
+            recly.core.transcribe.TranscriptVersion("2", recly.core.transcribe.TranscriptVersionKind.RECEIVED, "2026-11-03T18:05:00Z", current = false),
+            recly.core.transcribe.TranscriptVersion("1", recly.core.transcribe.TranscriptVersionKind.TRANSCRIBED, "2026-11-03T17:58:00Z", current = false),
+        )
 
         const val ANSWER = "- Mina: publish the release notes by Thursday [00:00:20]\n" +
             "- Unassigned: check the speed controls on the player bar [00:00:11]\n- Ship the release on Friday [00:00:31]"

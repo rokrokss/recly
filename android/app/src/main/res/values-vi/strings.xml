@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Không thể điền tên người nói</string>
     <string name="fill_names_none">Không tìm thấy tên người nói trong bản chép lời</string>
     <string name="speaker_me">Tôi</string>
+    <string name="correct_menu">Sửa lỗi bản chép lời…</string>
+    <string name="correct_title">Sửa lỗi bản chép lời</string>
+    <string name="correct_placeholder">Cần sửa gì, cùng mọi thông tin hữu ích: tên, thuật ngữ, bối cảnh hoặc một bản chép lời khác của cùng cuộc trò chuyện.</string>
+    <string name="correct_footnote">Được lưu ngay. Lịch sử phiên bản giữ lại bản chép lời như trước.</string>
+    <string name="correct_correct">Sửa lỗi</string>
+    <string name="correct_running">Đang sửa lỗi…</string>
+    <string name="correct_nothing">Không có gì để sửa</string>
+    <string name="correct_failed">Không thể sửa lỗi bản chép lời</string>
+    <string name="corrected_lines">Số dòng đã sửa: %1$d</string>
+    <string name="corrected_names">Số tên người nói đã sửa: %1$d</string>
+    <string name="corrected_undo">Hoàn tác</string>
+    <string name="corrected_undoing">Đang hoàn tác…</string>
+    <string name="versions_title">Lịch sử phiên bản</string>
+    <string name="version_transcribed">Đã chép lời</string>
+    <string name="version_edited">Đã chỉnh sửa</string>
+    <string name="version_corrected">Đã sửa lỗi</string>
+    <string name="version_restored">Đã khôi phục</string>
+    <string name="version_received">Đã thay đổi trên thiết bị khác</string>
+    <string name="version_restore">Khôi phục</string>
+    <string name="version_restoring">Đang khôi phục…</string>
+    <string name="version_restore_from">Khôi phục phiên bản lúc %1$s</string>
+    <string name="versions_footnote">Thiết bị này giữ 20 phiên bản gần nhất. Khi khôi phục một phiên bản, phiên bản đó được lưu làm bản chép lời và phiên bản bị thay thế vẫn được giữ lại.</string>
+    <string name="version_restore_failed">Không thể khôi phục phiên bản này</string>
 </resources>

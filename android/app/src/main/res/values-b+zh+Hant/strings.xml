@@ -460,4 +460,27 @@
     <string name="fill_names_failed">無法填寫說話者名稱</string>
     <string name="fill_names_none">逐字稿中找不到說話者名稱</string>
     <string name="speaker_me">我</string>
+    <string name="correct_menu">校正逐字稿…</string>
+    <string name="correct_title">校正逐字稿</string>
+    <string name="correct_placeholder">要修正的內容，以及任何有幫助的資訊：名稱、術語、背景，或同一段對話的另一份逐字稿。</string>
+    <string name="correct_footnote">立即儲存。版本記錄會保留逐字稿原本的樣子。</string>
+    <string name="correct_correct">校正</string>
+    <string name="correct_running">正在校正…</string>
+    <string name="correct_nothing">沒有需要校正的內容</string>
+    <string name="correct_failed">無法校正逐字稿</string>
+    <string name="corrected_lines">已校正%1$d行</string>
+    <string name="corrected_names">已校正%1$d個說話者名稱</string>
+    <string name="corrected_undo">復原</string>
+    <string name="corrected_undoing">正在復原…</string>
+    <string name="versions_title">版本記錄</string>
+    <string name="version_transcribed">轉錄</string>
+    <string name="version_edited">編輯</string>
+    <string name="version_corrected">校正</string>
+    <string name="version_restored">還原</string>
+    <string name="version_received">在其他裝置上變更</string>
+    <string name="version_restore">還原</string>
+    <string name="version_restoring">正在還原…</string>
+    <string name="version_restore_from">還原%1$s的版本</string>
+    <string name="versions_footnote">此裝置保留最近20個版本。還原某個版本會將其儲存為逐字稿，並保留被取代的版本。</string>
+    <string name="version_restore_failed">無法還原此版本</string>
 </resources>

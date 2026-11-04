@@ -578,7 +578,7 @@ class RemoteRecordings(
                     // goes up. So does a copy here at least as new — the edit went up while this was read.
                     val newer = localVersion(row.dir / name)?.let { it >= TranscriptMarks.version(transcript) } == true
                     if (row.id in recordings.pendingTranscripts() || newer) return@withLock false
-                    writer.writeLocal(row, transcript, markdown = false)
+                    writer.writeLocal(row, transcript, markdown = false, kind = recly.core.transcribe.TranscriptVersionKind.RECEIVED)
                     recordings.setTranscriptSeen(row.id, stamp ?: TranscriptMarks.version(transcript))
                     true
                 }

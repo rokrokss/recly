@@ -188,6 +188,7 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
                 resultFileMutex.withLock {
                     if (transcript != null) {
                         val base = MetaWriter.baseName(ctx.recording.meta)
+                        TranscriptVersions.keep(deps.fileSystem, ctx.recording.dir, base, transcript, TranscriptVersionKind.TRANSCRIBED)
                         atomic(ctx.recording.dir / resultName(ctx.stepRunId), recJson.encodeToString(transcript))
                         atomic(ctx.recording.dir / TranscribeRunner.jsonFileName(base), recJson.encodeToString(transcript))
                         atomic(ctx.recording.dir / TranscribeRunner.textFileName(base), TranscriptNormalizer.text(transcript))

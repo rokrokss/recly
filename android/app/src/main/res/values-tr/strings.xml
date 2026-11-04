@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Konuşmacı adları doldurulamadı</string>
     <string name="fill_names_none">Transkriptte konuşmacı adı bulunamadı</string>
     <string name="speaker_me">Ben</string>
+    <string name="correct_menu">Transkripti düzelt…</string>
+    <string name="correct_title">Transkripti düzelt</string>
+    <string name="correct_placeholder">Neyin düzeltileceği ve yardımcı olacak her şey: adlar, terimler, arka plan veya aynı konuşmanın başka bir transkripti.</string>
+    <string name="correct_footnote">Hemen kaydedilir. Sürüm geçmişi transkriptin önceki halini saklar.</string>
+    <string name="correct_correct">Düzelt</string>
+    <string name="correct_running">Düzeltiliyor…</string>
+    <string name="correct_nothing">Düzeltilecek bir şey yok</string>
+    <string name="correct_failed">Transkript düzeltilemedi</string>
+    <string name="corrected_lines">Düzeltilen satırlar: %1$d</string>
+    <string name="corrected_names">Düzeltilen konuşmacı adları: %1$d</string>
+    <string name="corrected_undo">Geri al</string>
+    <string name="corrected_undoing">Geri alınıyor…</string>
+    <string name="versions_title">Sürüm geçmişi</string>
+    <string name="version_transcribed">Metne dönüştürüldü</string>
+    <string name="version_edited">Düzenlendi</string>
+    <string name="version_corrected">Düzeltildi</string>
+    <string name="version_restored">Geri yüklendi</string>
+    <string name="version_received">Başka bir cihazda değiştirildi</string>
+    <string name="version_restore">Geri yükle</string>
+    <string name="version_restoring">Geri yükleniyor…</string>
+    <string name="version_restore_from">%1$s tarihli sürümü geri yükle</string>
+    <string name="versions_footnote">Bu cihaz son 20 sürümü saklar. Bir sürümü geri yüklemek onu transkript olarak kaydeder ve yerine geçtiği sürümü de saklar.</string>
+    <string name="version_restore_failed">Bu sürüm geri yüklenemedi</string>
 </resources>

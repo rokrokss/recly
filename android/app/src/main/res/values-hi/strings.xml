@@ -460,4 +460,27 @@
     <string name="fill_names_failed">वक्ताओं के नाम नहीं भरे जा सके</string>
     <string name="fill_names_none">ट्रांसक्रिप्ट में वक्ताओं के नाम नहीं मिले</string>
     <string name="speaker_me">मैं</string>
+    <string name="correct_menu">ट्रांसक्रिप्ट सुधारें…</string>
+    <string name="correct_title">ट्रांसक्रिप्ट सुधारें</string>
+    <string name="correct_placeholder">क्या ठीक करना है, और जो कुछ भी मदद करे: नाम, शब्द, पृष्ठभूमि, या उसी बातचीत की कोई दूसरी ट्रांसक्रिप्ट।</string>
+    <string name="correct_footnote">तुरंत सहेजा जाता है। संस्करण इतिहास में ट्रांसक्रिप्ट का पिछला रूप बना रहता है।</string>
+    <string name="correct_correct">सुधारें</string>
+    <string name="correct_running">सुधारा जा रहा है…</string>
+    <string name="correct_nothing">सुधारने को कुछ नहीं</string>
+    <string name="correct_failed">ट्रांसक्रिप्ट सुधारी नहीं जा सकी</string>
+    <string name="corrected_lines">सुधारी गई पंक्तियाँ: %1$d</string>
+    <string name="corrected_names">सुधारे गए वक्ताओं के नाम: %1$d</string>
+    <string name="corrected_undo">पहले जैसा करें</string>
+    <string name="corrected_undoing">पहले जैसा किया जा रहा है…</string>
+    <string name="versions_title">संस्करण इतिहास</string>
+    <string name="version_transcribed">ट्रांसक्राइब किया गया</string>
+    <string name="version_edited">संपादित</string>
+    <string name="version_corrected">सुधारा गया</string>
+    <string name="version_restored">बहाल किया गया</string>
+    <string name="version_received">दूसरे डिवाइस पर बदला गया</string>
+    <string name="version_restore">बहाल करें</string>
+    <string name="version_restoring">बहाल किया जा रहा है…</string>
+    <string name="version_restore_from">%1$s का संस्करण बहाल करें</string>
+    <string name="versions_footnote">यह डिवाइस हाल के 20 संस्करण रखता है। किसी संस्करण को बहाल करने पर वह ट्रांसक्रिप्ट के रूप में सहेजा जाता है, और जिसकी जगह वह लेता है, वह भी रखा जाता है।</string>
+    <string name="version_restore_failed">यह संस्करण बहाल नहीं हो सका</string>
 </resources>

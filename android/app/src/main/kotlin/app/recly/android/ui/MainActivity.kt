@@ -522,6 +522,9 @@ private fun JobsTab(
                 onDelete = model::confirmDelete,
                 onSaveMemo = { model.saveMemo(detail.recordingId, it) },
                 notesAgreed = state.notesAgreed,
+                onCorrect = { model.correct(detail.recordingId, it) },
+                versions = { model.transcriptVersions(detail.recordingId) },
+                onRestore = { model.restoreTranscript(detail.recordingId, it) },
             ),
         )
     } else {

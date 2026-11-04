@@ -577,6 +577,31 @@ enum class Str {
     MEMO_TITLE,
     MEMO_PLACEHOLDER,
     MEMO_NOTE,
+
+    // docs/08 "Correcting" · "Versions" (2026-11-04): More → Correct transcript… and Version history.
+    CORRECT_MENU,
+    CORRECT_TITLE,
+    CORRECT_PLACEHOLDER,
+    CORRECT_NOTE,
+    CORRECT,
+    CORRECT_RUNNING,
+    CORRECT_NOTHING,
+    CORRECT_FAILED,
+    CORRECTED_LINES,
+    CORRECTED_NAMES,
+    CORRECT_UNDO,
+    CORRECT_UNDOING,
+    VERSIONS_TITLE,
+    VERSIONS_TRANSCRIBED,
+    VERSIONS_EDITED,
+    VERSIONS_CORRECTED,
+    VERSIONS_RESTORED,
+    VERSIONS_RECEIVED,
+    VERSIONS_RESTORE,
+    VERSIONS_RESTORING,
+    VERSIONS_RESTORE_LABEL,
+    VERSIONS_NOTE,
+    VERSIONS_RESTORE_FAILED,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

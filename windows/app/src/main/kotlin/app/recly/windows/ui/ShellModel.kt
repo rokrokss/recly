@@ -65,6 +65,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
@@ -78,6 +79,7 @@ import okio.Path
 import recly.core.DisconnectResult
 import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.AskState
+import recly.core.chatgpt.CorrectionResult
 import recly.core.chatgpt.FillRun
 import recly.core.job.Job
 import recly.core.job.JobStatus
@@ -232,6 +234,8 @@ data class RecordingDetail(
     val memo: String? = null,
     /** docs/08 "Ask": the question asked about it in this run of the app, and where it has got to. */
     val ask: AskState = AskState.None,
+    /** docs/09 "After a correction": what the last Correct transcript… changed, while the reader marks it. */
+    val corrected: CorrectionMarks? = null,
     /** docs/08 "Organizing": its notes as the core has them — whether they are being made, and the last failure; null until read. */
     val notes: RecordingNotes? = null,
     /**
@@ -497,6 +501,21 @@ class ShellModel(
 
     /** docs/08 "Ask": the recording the Ask panel is open over, while it is. */
     var askingAbout: String? by mutableStateOf(null)
+        private set
+
+    /** docs/08 "Correcting": the recording the Correct transcript dialog is open over, while it is. */
+    var correctingAbout: String? by mutableStateOf(null)
+        private set
+
+    /** Where that dialog's request has got to; back to nothing when it closes. */
+    var correction: CorrectionState by mutableStateOf(CorrectionState.None)
+        private set
+
+    /** The request running, which closing the dialog cancels: its answer is then never saved. */
+    private var correctionJob: kotlinx.coroutines.Job? = null
+
+    /** docs/08 "Versions": the recording the Version history dialog is open over, while it is. */
+    var versionsAbout: String? by mutableStateOf(null)
         private set
 
     /** docs/09 "Screen principles": the detail player's speed and Skip silence, this PC's own. */
@@ -1434,7 +1453,14 @@ class ShellModel(
         val graph = graph ?: return@coroutineScope
         launch {
             graph.core.observeResults(recordingId).collect { result ->
-                updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
+                updateDetail(recordingId) {
+                    it.copy(
+                        transcript = result.transcript,
+                        availability = result.availability,
+                        // A transcript transcribed again is another one: what a correction marked was in the one before.
+                        corrected = it.corrected?.takeIf { marks -> marks.createdAt == result.transcript?.createdAt },
+                    )
+                }
                 // A transcript read from Drive for this detail is now one this PC holds: its row says its first words.
                 if (result.transcript != null) refreshPreviews()
             }
@@ -1525,8 +1551,14 @@ class ShellModel(
         return runCatching { graph.core.editTranscript(recordingId, edit) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.transcript.edit.failed", error = it) }
             .getOrDefault(EditResult.Invalid("failed"))
-            // The row's first words follow the edit.
-            .also { if (it is EditResult.Edited) refreshPreviews() }
+            .also {
+                if (it is EditResult.Edited) {
+                    // An edit ends what a correction marked (docs/09 "After a correction").
+                    updateDetail(recordingId) { detail -> detail.copy(corrected = null) }
+                    // The row's first words follow the edit.
+                    refreshPreviews()
+                }
+            }
     }
 
     /** docs/08 "Exports": one file of the recording, made by the core under a name for people; null when there is nothing. */
@@ -1723,6 +1755,127 @@ class ShellModel(
             }
         }
     }
+
+    /** More → Correct transcript… (docs/08 "Correcting"). */
+    fun openCorrect() {
+        correctingAbout = detail?.recordingId
+        correction = CorrectionState.None
+    }
+
+    /** The close mark or Escape: a request still running is cancelled, and what it would have changed is never saved. */
+    fun closeCorrect() {
+        if (correctingAbout == null) return
+        correctingAbout = null
+        correctionJob?.cancel()
+        correctionJob = null
+        correction = CorrectionState.None
+    }
+
+    /**
+     * Correct in the dialog: [request] and the transcript go to the user's ChatGPT plan, and what it changes is saved at
+     * once. Saved, the dialog closes onto the transcript, which marks what changed; anything else is said in the dialog.
+     */
+    fun correct(request: String) {
+        val graph = graph ?: return
+        val recordingId = correctingAbout ?: return
+        if (correction == CorrectionState.Running || request.isBlank()) return
+        correction = CorrectionState.Running
+        correctionJob = scope.launch {
+            val result = try {
+                graph.core.correctTranscript(recordingId, request)
+            } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.correct.failed", mapOf("recordingId" to recordingId), e)
+                null
+            }
+            if (result is CorrectionResult.Corrected) {
+                // A correction marks only its own lines, and Undo brings back the version before it.
+                updateDetail(recordingId) {
+                    it.copy(
+                        showingNotes = false,
+                        showingMemo = false,
+                        corrected = CorrectionMarks(result.segments, result.names, result.previousVersionId, it.transcript?.createdAt),
+                    )
+                }
+                refreshPreviews()
+            }
+            if (correctingAbout != recordingId) return@launch
+            correction = correctionState(result, busyReasonOf(recordingId))
+            correctionJob = null
+            if (result is CorrectionResult.Corrected) correctingAbout = null
+        }
+    }
+
+    /** Entering the transcript's editor: the reader marks nothing any more (docs/09 "After a correction"). */
+    fun forgetCorrection() {
+        val recordingId = detail?.recordingId ?: return
+        updateDetail(recordingId) { it.copy(corrected = null) }
+    }
+
+    /**
+     * Undo after a correction (docs/09 "After a correction"): the version it replaced, brought back as a restore is. Refused,
+     * the line says why for a moment in its own place.
+     */
+    fun undoCorrection() {
+        val recordingId = detail?.recordingId ?: return
+        val marks = detail?.corrected ?: return
+        val versionId = marks.previousVersionId ?: return
+        if (marks.undoing) return
+        updateDetail(recordingId) { it.copy(corrected = marks.copy(undoing = true, refused = null)) }
+        scope.launch {
+            val reason = restoreRefusal(restore(recordingId, versionId), busyReasonOf(recordingId)) ?: return@launch
+            updateDetail(recordingId) { it.copy(corrected = it.corrected?.copy(undoing = false, refused = reason)) }
+            delay(NOTICE_MS)
+            updateDetail(recordingId) { it.copy(corrected = it.corrected?.let { now -> if (now.refused == reason) now.copy(refused = null) else now }) }
+        }
+    }
+
+    /** More → Version history (docs/08 "Versions"). */
+    fun openVersions() {
+        versionsAbout = detail?.recordingId
+    }
+
+    fun closeVersions() {
+        versionsAbout = null
+    }
+
+    /** The versions this PC kept of [recordingId]'s transcript, newest first; empty when they cannot be read. */
+    suspend fun transcriptVersions(recordingId: String): List<recly.core.transcribe.TranscriptVersion> {
+        val graph = graph ?: return emptyList()
+        return runCatching { graph.core.transcriptVersions(recordingId) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.WARN, "shell.transcript.versions.failed", mapOf("recordingId" to recordingId), it) }
+            .getOrDefault(emptyList())
+    }
+
+    /**
+     * A row's Restore: [versionId] saved as the transcript. On the shell's scope, so the dialog closing meanwhile does not
+     * stop it halfway. Done, the dialog closes onto the transcript; null then, else why it was not.
+     */
+    suspend fun restoreVersion(recordingId: String, versionId: String): Str? {
+        val result = scope.async { restore(recordingId, versionId) }.await()
+        val reason = restoreRefusal(result, busyReasonOf(recordingId))
+        if (reason == null && versionsAbout == recordingId) versionsAbout = null
+        return reason
+    }
+
+    /** [versionId] brought back; the detail then shows the transcript, and what a correction marked is gone. */
+    private suspend fun restore(recordingId: String, versionId: String): EditResult {
+        val graph = graph ?: return EditResult.NoTranscript
+        return runCatching { graph.core.restoreTranscript(recordingId, versionId) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.transcript.restore.failed", mapOf("recordingId" to recordingId), it) }
+            .getOrDefault(EditResult.Invalid("failed"))
+            .also {
+                if (it is EditResult.Edited) {
+                    updateDetail(recordingId) { detail -> detail.copy(corrected = null, showingNotes = false, showingMemo = false) }
+                    refreshPreviews()
+                }
+            }
+    }
+
+    /** What More says about the job in the way of [recordingId]'s transcript, as a refusal says it. */
+    private fun busyReasonOf(recordingId: String): Str =
+        detail?.takeIf { it.recordingId == recordingId }?.busyReason ?: Str.DETAIL_TRANSCRIBING
 
     /**
      * Edit notes' Save (docs/09 "AI view"): the overview when it changed, and the items whose words did — an emptied one

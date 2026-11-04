@@ -552,4 +552,27 @@
     <string name="fill_names_failed">Could not fill in speaker names</string>
     <string name="fill_names_none">No speaker names found in the transcript</string>
     <string name="speaker_me">Me</string>
+    <string name="correct_menu">Correct transcript…</string>
+    <string name="correct_title">Correct transcript</string>
+    <string name="correct_placeholder">What to fix, and anything that helps: names, terms, background, or another transcript of the same conversation.</string>
+    <string name="correct_footnote">Saved at once. Version history keeps the transcript as it was.</string>
+    <string name="correct_correct">Correct</string>
+    <string name="correct_running">Correcting…</string>
+    <string name="correct_nothing">Nothing to correct</string>
+    <string name="correct_failed">Could not correct the transcript</string>
+    <string name="corrected_lines">Corrected lines: %1$d</string>
+    <string name="corrected_names">Corrected speaker names: %1$d</string>
+    <string name="corrected_undo">Undo</string>
+    <string name="corrected_undoing">Undoing…</string>
+    <string name="versions_title">Version history</string>
+    <string name="version_transcribed">Transcribed</string>
+    <string name="version_edited">Edited</string>
+    <string name="version_corrected">Corrected</string>
+    <string name="version_restored">Restored</string>
+    <string name="version_received">Changed on another device</string>
+    <string name="version_restore">Restore</string>
+    <string name="version_restoring">Restoring…</string>
+    <string name="version_restore_from">Restore the version from %1$s</string>
+    <string name="versions_footnote">This device keeps the last 20 versions. Restoring one saves it as the transcript and keeps the one it replaces.</string>
+    <string name="version_restore_failed">Could not restore this version</string>
 </resources>

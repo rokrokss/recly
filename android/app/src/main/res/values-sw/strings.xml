@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Imeshindwa kujaza majina ya wazungumzaji</string>
     <string name="fill_names_none">Hakuna majina ya wazungumzaji yaliyopatikana kwenye nakala</string>
     <string name="speaker_me">Mimi</string>
+    <string name="correct_menu">Sahihisha nakala…</string>
+    <string name="correct_title">Sahihisha nakala</string>
+    <string name="correct_placeholder">Kinachohitaji kusahihishwa, na chochote kinachosaidia: majina, istilahi, muktadha, au nakala nyingine ya mazungumzo hayo hayo.</string>
+    <string name="correct_footnote">Huhifadhiwa mara moja. Historia ya matoleo huweka nakala jinsi ilivyokuwa.</string>
+    <string name="correct_correct">Sahihisha</string>
+    <string name="correct_running">Inasahihisha…</string>
+    <string name="correct_nothing">Hakuna cha kusahihisha</string>
+    <string name="correct_failed">Imeshindwa kusahihisha nakala</string>
+    <string name="corrected_lines">Mistari iliyosahihishwa: %1$d</string>
+    <string name="corrected_names">Majina ya wazungumzaji yaliyosahihishwa: %1$d</string>
+    <string name="corrected_undo">Tendua</string>
+    <string name="corrected_undoing">Inatendua…</string>
+    <string name="versions_title">Historia ya matoleo</string>
+    <string name="version_transcribed">Imenukuliwa</string>
+    <string name="version_edited">Imehaririwa</string>
+    <string name="version_corrected">Imesahihishwa</string>
+    <string name="version_restored">Imerejeshwa</string>
+    <string name="version_received">Imebadilishwa kwenye kifaa kingine</string>
+    <string name="version_restore">Rejesha</string>
+    <string name="version_restoring">Inarejesha…</string>
+    <string name="version_restore_from">Rejesha toleo la %1$s</string>
+    <string name="versions_footnote">Kifaa hiki huhifadhi matoleo 20 ya mwisho. Ukirejesha moja, linahifadhiwa kama nakala na toleo lililokuwepo linahifadhiwa pia.</string>
+    <string name="version_restore_failed">Imeshindwa kurejesha toleo hili</string>
 </resources>

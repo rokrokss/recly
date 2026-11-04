@@ -192,11 +192,11 @@ private val EXPORTS = listOf(
 
 /**
  * docs/09 "Screen principles": the detail's ⋯, in groups with a hairline between them (2026-10-10) — Rename ·
- * Edit transcript · Transcribe again · Memo while the recording has none (docs/08 "Memo"), then Organize (or Organize
- * again) · Edit notes · Ask about this recording… · Fill in title · Fill in speaker names where ChatGPT is offered
- * (docs/09 "AI view"), then Open in Drive or Open the folder once the recording has a folder there (D24), and last
- * Delete, in red (2026-10-15). What cannot run now stays in its place, disabled, with the reason under it — `Still
- * recording` for every one of them but Memo while the take is being written.
+ * Edit transcript · Transcribe again · Version history · Memo while the recording has none (docs/08 "Memo"), then
+ * Organize (or Organize again) · Edit notes · Ask about this recording… · Correct transcript… · Fill in title · Fill in
+ * speaker names where ChatGPT is offered (docs/09 "AI view"), then Open in Drive or Open the folder once the recording
+ * has a folder there (D24), and last Delete, in red (2026-10-15). What cannot run now stays in its place, disabled, with
+ * the reason under it — `Still recording` for every one of them but Memo while the take is being written.
  */
 @Composable
 internal fun MoreButton(
@@ -245,6 +245,13 @@ internal fun MoreButton(
                 enabled = againBlocked == null,
                 secondary = againBlocked?.let { strings[it] },
             )
+            // docs/08 "Versions": waits for what Edit transcript waits for — a restore is an edit.
+            BlueprintMenuRow(
+                strings[Str.VERSIONS_TITLE],
+                { open = false; model.openVersions() },
+                enabled = editBlocked == null,
+                secondary = editBlocked?.let { strings[it] },
+            )
             // docs/08 "Memo": where a recording without one gets its memo — the Memo chip once there is one. A memo can be
             // written while it records, so nothing waits here.
             if (detail.memo != null && !hasMemo(detail.memo)) {
@@ -280,6 +287,13 @@ internal fun MoreButton(
                 BlueprintMenuRow(
                     strings[Str.ASK_MENU],
                     { open = false; model.openAsk() },
+                    enabled = askBlocked == null,
+                    secondary = askBlocked?.let { strings[it] },
+                )
+                // docs/08 "Correcting": Ask's reasons, in Ask's order — a request about the transcript, in a dialog as Ask's.
+                BlueprintMenuRow(
+                    strings[Str.CORRECT_MENU],
+                    { open = false; model.openCorrect() },
                     enabled = askBlocked == null,
                     secondary = askBlocked?.let { strings[it] },
                 )

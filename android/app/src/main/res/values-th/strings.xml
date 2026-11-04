@@ -460,4 +460,27 @@
     <string name="fill_names_failed">เติมชื่อผู้พูดไม่ได้</string>
     <string name="fill_names_none">ไม่พบชื่อผู้พูดในข้อความถอดเสียง</string>
     <string name="speaker_me">ฉัน</string>
+    <string name="correct_menu">ตรวจแก้ข้อความถอดเสียง…</string>
+    <string name="correct_title">ตรวจแก้ข้อความถอดเสียง</string>
+    <string name="correct_placeholder">สิ่งที่ต้องแก้ และข้อมูลที่ช่วยได้ เช่น ชื่อ คำศัพท์ ภูมิหลัง หรือข้อความถอดเสียงอื่นของบทสนทนาเดียวกัน</string>
+    <string name="correct_footnote">บันทึกทันที ประวัติเวอร์ชันจะเก็บข้อความถอดเสียงแบบเดิมไว้</string>
+    <string name="correct_correct">ตรวจแก้</string>
+    <string name="correct_running">กำลังตรวจแก้…</string>
+    <string name="correct_nothing">ไม่มีอะไรต้องแก้</string>
+    <string name="correct_failed">ตรวจแก้ข้อความถอดเสียงไม่ได้</string>
+    <string name="corrected_lines">บรรทัดที่แก้แล้ว: %1$d</string>
+    <string name="corrected_names">ชื่อผู้พูดที่แก้แล้ว: %1$d</string>
+    <string name="corrected_undo">เลิกทำ</string>
+    <string name="corrected_undoing">กำลังเลิกทำ…</string>
+    <string name="versions_title">ประวัติเวอร์ชัน</string>
+    <string name="version_transcribed">ถอดเสียง</string>
+    <string name="version_edited">แก้ไข</string>
+    <string name="version_corrected">ตรวจแก้</string>
+    <string name="version_restored">กู้คืน</string>
+    <string name="version_received">เปลี่ยนในอุปกรณ์อื่น</string>
+    <string name="version_restore">กู้คืน</string>
+    <string name="version_restoring">กำลังกู้คืน…</string>
+    <string name="version_restore_from">กู้คืนเวอร์ชันเมื่อ %1$s</string>
+    <string name="versions_footnote">อุปกรณ์นี้เก็บ 20 เวอร์ชันล่าสุด การกู้คืนจะบันทึกเวอร์ชันนั้นเป็นข้อความถอดเสียง และเก็บเวอร์ชันที่ถูกแทนที่ไว้ด้วย</string>
+    <string name="version_restore_failed">กู้คืนเวอร์ชันนี้ไม่ได้</string>
 </resources>

@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Impossible de compléter les noms des locuteurs</string>
     <string name="fill_names_none">Aucun nom de locuteur trouvé dans la transcription</string>
     <string name="speaker_me">Moi</string>
+    <string name="correct_menu">Corriger la transcription…</string>
+    <string name="correct_title">Corriger la transcription</string>
+    <string name="correct_placeholder">Ce qu’il faut corriger, et tout ce qui peut aider : noms, termes, contexte ou une autre transcription de la même conversation.</string>
+    <string name="correct_footnote">Enregistré immédiatement. L’historique des versions conserve la transcription telle qu’elle était.</string>
+    <string name="correct_correct">Corriger</string>
+    <string name="correct_running">Correction en cours…</string>
+    <string name="correct_nothing">Rien à corriger</string>
+    <string name="correct_failed">Impossible de corriger la transcription</string>
+    <string name="corrected_lines">Lignes corrigées : %1$d</string>
+    <string name="corrected_names">Noms des locuteurs corrigés : %1$d</string>
+    <string name="corrected_undo">Annuler</string>
+    <string name="corrected_undoing">Annulation…</string>
+    <string name="versions_title">Historique des versions</string>
+    <string name="version_transcribed">Transcrite</string>
+    <string name="version_edited">Modifiée</string>
+    <string name="version_corrected">Corrigée</string>
+    <string name="version_restored">Restaurée</string>
+    <string name="version_received">Modifiée sur un autre appareil</string>
+    <string name="version_restore">Restaurer</string>
+    <string name="version_restoring">Restauration…</string>
+    <string name="version_restore_from">Restaurer la version du %1$s</string>
+    <string name="versions_footnote">Cet appareil conserve les 20 dernières versions. Restaurer une version l’enregistre comme transcription et conserve celle qu’elle remplace.</string>
+    <string name="version_restore_failed">Impossible de restaurer cette version</string>
 </resources>

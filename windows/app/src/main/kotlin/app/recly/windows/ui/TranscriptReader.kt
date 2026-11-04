@@ -46,6 +46,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import recly.core.transcribe.BlockRange
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptDocument
 
@@ -60,7 +61,7 @@ private data class GroupMenu(val block: Int, val at: Offset, val speaker: String
  * While playing, the group under the playhead wears an accent bar on its start edge and an accent time,
  * and the list keeps it in its upper third — until the user scrolls, when following pauses and
  * `Back to playback` brings it back. A group's speaker is a badge that opens the speaker menu. Find matches are
- * tinted, the current one more.
+ * tinted, the current one more, and so are the words of the lines a correction changed.
  */
 @Composable
 internal fun TranscriptReader(
@@ -72,6 +73,8 @@ internal fun TranscriptReader(
     playing: Boolean,
     matches: List<FindMatch>,
     currentMatch: Int?,
+    /** docs/09 "After a correction": the words of the segments it changed, tinted as a match is. */
+    marked: List<BlockRange> = emptyList(),
     /** A group (its index and its segments), and who should say it — null is a new speaker. */
     onChangeSpeaker: (Int, IntRange, String?) -> Unit,
     onRenameSpeaker: (Int, String) -> Unit,
@@ -138,7 +141,7 @@ internal fun TranscriptReader(
                         index = index,
                         start = block.start,
                         speaker = block.speaker,
-                        text = tinted(block.text, matches, index, currentMatch),
+                        text = tinted(block.text, matches, index, currentMatch, marked),
                         isActive = index == active,
                         canSeek = canSeek && block.start < seekableDurationSec,
                         onSeek = onSeek,
@@ -254,14 +257,21 @@ private fun BackToPlayback(label: String, modifier: Modifier, onClick: () -> Uni
     }
 }
 
-/** A block's text with every find match tinted, the current one stronger. */
+/**
+ * A block's text with every find match tinted, the current one stronger — and the words a correction changed, at a
+ * match's tint, under them.
+ */
 @Composable
-private fun tinted(text: String, matches: List<FindMatch>, block: Int, current: Int?): AnnotatedString {
+private fun tinted(text: String, matches: List<FindMatch>, block: Int, current: Int?, marked: List<BlockRange>): AnnotatedString {
     val accent = blueprint.accent
     val mine = matches.withIndex().filter { it.value.block == block }
-    if (mine.isEmpty()) return AnnotatedString(text)
+    val changed = marked.filter { it.block == block }
+    if (mine.isEmpty() && changed.isEmpty()) return AnnotatedString(text)
     return buildAnnotatedString {
         append(text)
+        changed.forEach { range ->
+            addStyle(SpanStyle(background = accent.copy(alpha = MATCH_TINT)), range.offset.coerceAtMost(text.length), (range.offset + range.length).coerceAtMost(text.length))
+        }
         mine.forEach { (index, match) ->
             val alpha = if (index == current) CURRENT_TINT else MATCH_TINT
             addStyle(SpanStyle(background = accent.copy(alpha = alpha)), match.start, (match.start + match.length).coerceAtMost(text.length))

@@ -24,6 +24,7 @@ internal object TranscriptCache {
         resultFileMutex.withLock {
             val base = MetaWriter.baseName(ctx.recording.meta)
             val json = recJson.encodeToString(transcript)
+            TranscriptVersions.keep(ctx.deps.fileSystem, ctx.recording.dir, base, transcript, TranscriptVersionKind.TRANSCRIBED)
             for ((name, value) in listOf(
                 LocalTranscriptionService.resultName(ctx.stepRunId) to json,
                 TranscribeRunner.jsonFileName(base) to json,

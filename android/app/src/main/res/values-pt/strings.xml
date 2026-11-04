@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Não foi possível preencher os nomes dos falantes</string>
     <string name="fill_names_none">Nenhum nome de falante encontrado na transcrição</string>
     <string name="speaker_me">Eu</string>
+    <string name="correct_menu">Corrigir transcrição…</string>
+    <string name="correct_title">Corrigir transcrição</string>
+    <string name="correct_placeholder">O que corrigir e tudo o que ajudar: nomes, termos, contexto ou outra transcrição da mesma conversa.</string>
+    <string name="correct_footnote">Salvo na hora. O histórico de versões mantém a transcrição como estava.</string>
+    <string name="correct_correct">Corrigir</string>
+    <string name="correct_running">Corrigindo…</string>
+    <string name="correct_nothing">Nada para corrigir</string>
+    <string name="correct_failed">Não foi possível corrigir a transcrição</string>
+    <string name="corrected_lines">Linhas corrigidas: %1$d</string>
+    <string name="corrected_names">Nomes de falantes corrigidos: %1$d</string>
+    <string name="corrected_undo">Desfazer</string>
+    <string name="corrected_undoing">Desfazendo…</string>
+    <string name="versions_title">Histórico de versões</string>
+    <string name="version_transcribed">Transcrita</string>
+    <string name="version_edited">Editada</string>
+    <string name="version_corrected">Corrigida</string>
+    <string name="version_restored">Restaurada</string>
+    <string name="version_received">Alterada em outro dispositivo</string>
+    <string name="version_restore">Restaurar</string>
+    <string name="version_restoring">Restaurando…</string>
+    <string name="version_restore_from">Restaurar a versão de %1$s</string>
+    <string name="versions_footnote">Este dispositivo mantém as últimas 20 versões. Restaurar uma versão a salva como transcrição e mantém a que ela substitui.</string>
+    <string name="version_restore_failed">Não foi possível restaurar esta versão</string>
 </resources>

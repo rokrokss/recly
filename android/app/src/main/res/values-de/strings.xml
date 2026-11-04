@@ -460,4 +460,27 @@
     <string name="fill_names_failed">Sprechernamen konnten nicht ergänzt werden</string>
     <string name="fill_names_none">Keine Sprechernamen im Transkript gefunden</string>
     <string name="speaker_me">Ich</string>
+    <string name="correct_menu">Transkript korrigieren…</string>
+    <string name="correct_title">Transkript korrigieren</string>
+    <string name="correct_placeholder">Was korrigiert werden soll und alles, was hilft: Namen, Begriffe, Hintergrund oder ein anderes Transkript desselben Gesprächs.</string>
+    <string name="correct_footnote">Wird sofort gespeichert. Der Versionsverlauf behält das Transkript, wie es war.</string>
+    <string name="correct_correct">Korrigieren</string>
+    <string name="correct_running">Wird korrigiert…</string>
+    <string name="correct_nothing">Nichts zu korrigieren</string>
+    <string name="correct_failed">Transkript konnte nicht korrigiert werden</string>
+    <string name="corrected_lines">Korrigierte Zeilen: %1$d</string>
+    <string name="corrected_names">Korrigierte Sprechernamen: %1$d</string>
+    <string name="corrected_undo">Rückgängig</string>
+    <string name="corrected_undoing">Wird rückgängig gemacht…</string>
+    <string name="versions_title">Versionsverlauf</string>
+    <string name="version_transcribed">Transkribiert</string>
+    <string name="version_edited">Bearbeitet</string>
+    <string name="version_corrected">Korrigiert</string>
+    <string name="version_restored">Wiederhergestellt</string>
+    <string name="version_received">Auf anderem Gerät geändert</string>
+    <string name="version_restore">Wiederherstellen</string>
+    <string name="version_restoring">Wird wiederhergestellt…</string>
+    <string name="version_restore_from">Version vom %1$s wiederherstellen</string>
+    <string name="versions_footnote">Dieses Gerät behält die letzten 20 Versionen. Eine wiederhergestellte Version wird als Transkript gespeichert, und die ersetzte bleibt erhalten.</string>
+    <string name="version_restore_failed">Diese Version konnte nicht wiederhergestellt werden</string>
 </resources>

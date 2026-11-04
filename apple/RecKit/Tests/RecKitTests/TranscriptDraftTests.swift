@@ -28,6 +28,17 @@ final class TranscriptDraftTests: XCTestCase {
         XCTAssertEqual(match?.length, 6)
     }
 
+    /// docs/09 "Transcript reader" — "After a correction": a changed segment's words, wherever they are in their
+    /// paragraph — trimmed, a space between segments, a segment that says nothing left out — in UTF-16 units.
+    func testACorrectionTintsTheWordsOfTheSegmentsItChanged() {
+        let transcript = transcript(["S1", "S1", "S1", "S2"], texts: [" 👋 Hi ", " ", "there", "Bye"])
+        let groups = TranscriptGroup.make(transcript)
+        let marks = TranscriptMatch.segments([2, 3], in: groups, of: transcript)
+        XCTAssertEqual(marks, [TranscriptMatch(group: 0, offset: 6, length: 5), TranscriptMatch(group: 1, offset: 0, length: 3)])
+        XCTAssertEqual(marks.map { (groups[$0.group].text as NSString).substring(with: NSRange(location: $0.offset, length: $0.length)) }, ["there", "Bye"])
+        XCTAssertEqual(TranscriptMatch.segments([1], in: groups, of: transcript), [], "a segment that says nothing has no words to tint")
+    }
+
     func testNewSpeakersOnAnUnidentifiedTranscriptBecomeTheCoresOwn() throws {
         let original = transcript(["", "", ""], texts: ["One", "Two", "Three"])
         let draft = TranscriptDraft(original)

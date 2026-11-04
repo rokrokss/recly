@@ -104,7 +104,8 @@ internal fun speakerIsWord(transcript: Transcript, id: String): Boolean =
  * docs/09 "Transcript reader": the transcript in utterance groups, each with its time (a seek) and its speaker
  * badge. While the recording plays, the group under the playhead carries an accent bar and an accent time, and the
  * list keeps it in the upper third; a scroll by the user stops that until [onFollow] is pressed again. With [find] the
- * matches are tinted and the current one is brought into view.
+ * matches are tinted and the current one is brought into view; [marks] — the lines a correction changed (docs/09 "After
+ * a correction") — are tinted the way a match is.
  */
 @Composable
 internal fun TranscriptReader(
@@ -130,6 +131,7 @@ internal fun TranscriptReader(
     savingLabel: String? = null,
     find: List<FindMatch> = emptyList(),
     findCurrent: Int = -1,
+    marks: List<FindMatch> = emptyList(),
     /** Following the playhead is paused by the user's own scroll, and resumed by "Back to playback". */
     following: Boolean = true,
     onFollowChange: (Boolean) -> Unit = {},
@@ -159,6 +161,7 @@ internal fun TranscriptReader(
     val tint = palette.accent.copy(alpha = MATCH_TINT)
     val currentTint = palette.accent.copy(alpha = CURRENT_MATCH_TINT)
     val currentMatch = find.getOrNull(findCurrent)
+    val marked = remember(marks) { marks.groupBy { it.group } }
     val me = stringResource(R.string.speaker_me)
     SelectionContainer(modifier) {
         LazyColumn(Modifier.fillMaxSize().testTag("transcript-passages"), state = list,
@@ -190,9 +193,11 @@ internal fun TranscriptReader(
                         }
                     }
                     val matches = find.filter { it.group == group.index }
+                    val changed = marked[group.index].orEmpty()
                     // What was said takes its direction from itself: English in an Arabic app still reads left to right.
-                    Text(if (matches.isEmpty()) AnnotatedString(group.text) else buildAnnotatedString {
+                    Text(if (matches.isEmpty() && changed.isEmpty()) AnnotatedString(group.text) else buildAnnotatedString {
                         append(group.text)
+                        changed.forEach { addStyle(SpanStyle(background = tint), it.offset, it.offset + it.length) }
                         matches.forEach { addStyle(SpanStyle(background = if (it == currentMatch) currentTint else tint), it.offset, it.offset + it.length) }
                     }, style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content), color = palette.text,
                         modifier = Modifier.testTag("transcript-text-${group.index}"))
