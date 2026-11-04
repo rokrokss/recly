@@ -2710,8 +2710,10 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
 1. **Recording screen = instrument panel**: a mono timer and the square record node — on the phones the timer in the middle and the node
    at the bottom; in the Mac popover and the Windows tray the node at the start with the timer beside it, `00:00` while idle, the track
    beside the timer (screen principle 6) and the two input lines under them (§12 "Input lines") — all of them up in every state, so a start
-   or a stop changes what they say and the header's edge never moves (2026-11-04, user decisions: the desktops' `Start recording` and
-   `Stop recording` buttons gave way to the phones' node, so a start looks alike on every device; the header's edge stays put). The three state nodes that stood above them — device,
+   or a stop changes what they say and moves none of them (2026-11-04, user decisions: the desktops' `Start recording` and
+   `Stop recording` buttons gave way to the phones' node, so a start looks alike on every device; the header's edge stays put). Only the
+   recording's memo row (§8 "Memo") comes and goes, under the input lines while a recording runs: a memo belongs to one recording, so before
+   a start there is none to write in (2026-11-04, user decision). The three state nodes that stood above them — device,
    transcription, state, joined by straight lines — were removed from all four shells the same day (user decision): the device said nothing
    the user does not know, the transcription provider is in Settings, and what the state said, the timer, the record node (`…` while starting
    or saving) and the ledger's badges already say. While recording, only the elapsed time, as a mono timer (2026-09-03: part numbers, segment
