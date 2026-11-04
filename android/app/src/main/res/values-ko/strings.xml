@@ -471,7 +471,6 @@
     <string name="chatgpt_page_declined">로그인이 취소되었습니다. 이 창을 닫고 Recly로 돌아가세요.</string>
     <string name="chatgpt_page_done">이 로그인은 이미 처리되었습니다. 이 창을 닫아도 됩니다.</string>
     <string name="citation_play_from">%1$s부터 재생</string>
-    <string name="ask_follow_up_email">후속 메일</string>
     <string name="ask_action_items">할 일</string>
     <string name="ask_open_questions">남은 질문</string>
     <string name="ask_translate">%1$s로 번역</string>

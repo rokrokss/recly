@@ -213,7 +213,8 @@ private fun ButtonBox(
  * edge around padding 8 × 4, with no minimum — is drawn at the status badge's measure, centred in a target of at least
  * [MinTouch] each way that is laid out as such — or, [tight], laid out only as wide, its height left to the touch layer.
  * The target takes the tap, the focus and the caller's [modifier] (a tag, what a screen reader hears); the box draws the
- * press and the focus ring, so both are the size the eye sees.
+ * press and the focus ring, so both are the size the eye sees. A compact chip passes [selected] and its [role], so the
+ * target is announced as a choice and whether it is chosen.
  */
 @Composable
 internal fun CompactTarget(
@@ -224,6 +225,8 @@ internal fun CompactTarget(
     box: Modifier,
     onFill: Boolean = false,
     tight: Boolean = false,
+    selected: Boolean? = null,
+    role: Role = Role.Button,
     content: @Composable RowScope.() -> Unit,
 ) {
     val palette = blueprint
@@ -232,7 +235,13 @@ internal fun CompactTarget(
     Box(
         modifier
             .defaultMinSize(minWidth = MinTouch, minHeight = if (tight) Dp.Unspecified else MinTouch)
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
+            .then(
+                if (selected == null) {
+                    Modifier.clickable(interactionSource = interaction, indication = null, enabled = enabled, role = role, onClick = onClick)
+                } else {
+                    Modifier.selectable(selected, interactionSource = interaction, indication = null, enabled = enabled, role = role, onClick = onClick)
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Row(
@@ -293,6 +302,12 @@ fun BlueprintChip(
     // RadioButton for an exclusive choice (a provider, a language, a secret); Checkbox for a
     // multi-select row (sources, tracks), so the announced role matches what a tap does.
     role: Role = Role.RadioButton,
+    /**
+     * docs/09 "Component measurements" — Chip (2026-11-04): drawn at the status badge's size and corner, label 12, in a
+     * [CompactTarget] [MinTouch] wide that takes only the box's height in the layout — the detail's Transcript · Summary
+     * · Notes.
+     */
+    compact: Boolean = false,
 ) {
     val palette = blueprint
     // A disabled chip is the disabled button: `disabled` words in a dashed `disabled` edge (docs/09 "Disabled, focus
@@ -302,38 +317,26 @@ fun BlueprintChip(
         selected -> palette.accent
         else -> palette.textMuted
     }
-    Row(
-        modifier = modifier
-            // docs/09 "Accessibility": the label is small, the target is not — in both directions. A height
-            // alone left a two- or three-letter chip a target barely half that wide; docs/09 "Shape"
-            // wants a chip square anyway, so the box grows to the target rather than hiding behind
-            // an invisible one.
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .focusRing(palette, Radius.node)
-            .then(
-                if (enabled) {
-                    Modifier.border(
-                        width = if (selected) palette.selectedLine else palette.line,
-                        color = if (selected) ink else palette.inputBorder,
-                        shape = RoundedCornerShape(Radius.node),
-                    )
-                } else {
-                    // Chosen and disabled, the dashed edge keeps the chosen weight, as the iPhone's does.
-                    Modifier.dashedBorder(if (selected) palette.selectedLine else palette.line, palette.disabled, Radius.node)
-                },
-            )
-            // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
-            // border is not something a screen reader can read. `selectable` puts the same fact in
-            // the semantics — one node, in place of the plain click, so it is announced as a choice
-            // rather than as a button whose state nobody mentioned.
-            .selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
-            .padding(horizontal = Space.s, vertical = Space.xs),
-        // A short label sits in the middle of the target it grew to, not against its left edge.
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // docs/09 "Component measurements": a chip's label is 14, sans or mono.
-        val style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge
+    // docs/09 "Shape": a compact chip is drawn at the status badge's size, so it takes the badge's corner.
+    val radius = if (compact) Radius.badge else Radius.node
+    val edge = if (enabled) {
+        Modifier.border(
+            width = if (selected) palette.selectedLine else palette.line,
+            color = if (selected) ink else palette.inputBorder,
+            shape = RoundedCornerShape(radius),
+        )
+    } else {
+        // Chosen and disabled, the dashed edge keeps the chosen weight, as the iPhone's does.
+        Modifier.dashedBorder(if (selected) palette.selectedLine else palette.line, palette.disabled, radius)
+    }
+    val content: @Composable RowScope.() -> Unit = {
+        // docs/09 "Component measurements": a chip's label is 14, sans or mono; a compact one's the status badge's 12.
+        val style = when {
+            compact && monospace -> mono.small
+            compact -> MaterialTheme.typography.labelMedium
+            monospace -> mono.bodySmall
+            else -> MaterialTheme.typography.labelLarge
+        }
         // UX decisions of 2026-10-08: a chosen chip says so with `✓` as well as its border. The chip is
         // as wide as it is with the mark either way, so choosing one does not move its neighbours.
         Box(contentAlignment = Alignment.Center) {
@@ -345,6 +348,30 @@ fun BlueprintChip(
                 overflow = TextOverflow.Ellipsis, modifier = Modifier.clearAndSetSemantics { contentDescription = label })
         }
     }
+    if (compact) {
+        CompactTarget(onClick, enabled, modifier, radius, edge, tight = true, selected = selected, role = role, content = content)
+        return
+    }
+    Row(
+        modifier = modifier
+            // docs/09 "Accessibility": the label is small, the target is not — in both directions. A height
+            // alone left a two- or three-letter chip a target barely half that wide; docs/09 "Shape"
+            // wants a chip square anyway, so the box grows to the target rather than hiding behind
+            // an invisible one.
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .focusRing(palette, radius)
+            .then(edge)
+            // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
+            // border is not something a screen reader can read. `selectable` puts the same fact in
+            // the semantics — one node, in place of the plain click, so it is announced as a choice
+            // rather than as a button whose state nobody mentioned.
+            .selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
+            .padding(horizontal = Space.s, vertical = Space.xs),
+        // A short label sits in the middle of the target it grew to, not against its left edge.
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+    )
 }
 
 /** Where the caller's operation actually is — what the screen knows, not what the button draws. */

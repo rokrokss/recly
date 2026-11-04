@@ -57,7 +57,7 @@ data class SummaryPreferences(
 }
 
 /** docs/08 "Ask": the questions on offer besides the user's own. */
-enum class AskPreset { FOLLOW_UP_EMAIL, ACTION_ITEMS, OPEN_QUESTIONS, TRANSLATE, MY_SPEAKING }
+enum class AskPreset { ACTION_ITEMS, OPEN_QUESTIONS, TRANSLATE, MY_SPEAKING }
 
 /** One answer about one recording; kept in this process only, never written or uploaded (docs/08 "Ask"). */
 data class AskAnswer(
@@ -477,7 +477,6 @@ Use plain text. No Markdown: no #, no **, no tables. Start list items with "- ".
 
         /** What each preset asks, in English like the rest of the instructions; the answer comes in the notes' language. */
         fun presetQuestion(preset: AskPreset): String = when (preset) {
-            AskPreset.FOLLOW_UP_EMAIL -> "Draft a short follow-up email to the other participants: a subject line first, then thanks, what was decided, who does what by when, and the open questions. Put a placeholder such as [name] where the transcript does not give a name."
             AskPreset.ACTION_ITEMS -> "List only the action items, each \"owner: task\", with the due date when the transcript gives one."
             AskPreset.OPEN_QUESTIONS -> "List the questions and issues that were raised but not settled."
             AskPreset.TRANSLATE -> "Translate the whole transcript, line by line, keeping each line's [HH:MM:SS] time and speaker name."

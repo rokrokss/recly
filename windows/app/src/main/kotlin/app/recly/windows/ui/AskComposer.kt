@@ -29,7 +29,6 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
@@ -37,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.BlueprintButton
-import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.CloseMark
@@ -188,7 +186,8 @@ internal fun AskComposer(
         if (focused && typed.isEmpty() && !running && reason == null && presets.isNotEmpty()) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Space.s)) {
                 presets.forEach { preset ->
-                    BlueprintChip(askPresetLabel(preset, strings), selected = false, onClick = { onAsk(preset, null) }, role = Role.Button)
+                    // An action, not a choice: at the status badge's size, as a time button is (2026-11-04).
+                    BlueprintButton(askPresetLabel(preset, strings), onClick = { onAsk(preset, null) }, tone = ButtonTone.QUIET, compact = true, tight = true)
                 }
             }
         }

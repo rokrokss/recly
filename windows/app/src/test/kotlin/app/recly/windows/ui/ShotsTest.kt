@@ -271,6 +271,8 @@ class ShotsTest {
             val recordingId = model.detail!!.recordingId
             val changes = recly.core.chatgpt.AskChanges(listOf(1, 3), names = 0, items = listOf("d1"), removed = 0, overview = false)
             shot("ask-$lang", 460, 140, ko) { bar(AskState.None, "") }
+            // The field with the cursor and nothing in it: the presets over it, at the status badge's size (2026-11-04).
+            shot("ask-presets-$lang", 460, 180, ko, clicks = listOf(ASK_FIELD)) { bar(AskState.None, "") }
             shot("ask-typed-$lang", 460, 160, ko) { bar(AskState.None, ASK_REQUEST) }
             shot("ask-running-$lang", 460, 200, ko) { bar(AskState.Running(null, ASK_REQUEST), "") }
             shot("ask-ready-$lang", 460, 360, ko) {
@@ -546,6 +548,8 @@ class ShotsTest {
         val FIND_NEXT = Offset(900f, 210f)
         // Edit summary, under Summarize again and its reason — below Version history and Notes in the first group (2026-11-04).
         val MORE_EDIT_NOTES = Offset(835f, 359f)
+        // The Ask field in its 460-wide shot, where a click gives it the cursor.
+        val ASK_FIELD = Offset(120f, 38f)
         // The tray popup's Memo row while recording, in the 520×560 popup.
         val TRAY_MEMO = Offset(60f, 300f)
         // The decision's field in Edit notes, past the end of its words.

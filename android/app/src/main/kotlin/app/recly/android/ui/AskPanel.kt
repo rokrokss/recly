@@ -25,7 +25,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -35,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.settings.AppLanguage
 import app.recly.android.ui.component.BlueprintButton
-import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.Glyph
@@ -56,7 +54,6 @@ import recly.core.transcribe.Transcript
 /** docs/08 "Ask": each preset under its own words; Translate names the app's language, as the App language list does. */
 @StringRes
 internal fun AskPreset.presetLabel(): Int = when (this) {
-    AskPreset.FOLLOW_UP_EMAIL -> R.string.ask_follow_up_email
     AskPreset.ACTION_ITEMS -> R.string.ask_action_items
     AskPreset.OPEN_QUESTIONS -> R.string.ask_open_questions
     AskPreset.TRANSLATE -> R.string.ask_translate
@@ -192,13 +189,14 @@ internal fun AskComposer(
             val language = stringResource(AppLanguage.effective(LocalConfiguration.current.locales[0]).labelRes())
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Space.s)) {
                 presets.forEach { preset ->
-                    // An action, not a choice: a tap asks.
-                    BlueprintChip(
+                    // An action, not a choice: a tap asks. At the status badge's size, as a time button is (2026-11-04).
+                    BlueprintButton(
                         if (preset == AskPreset.TRANSLATE) stringResource(preset.presetLabel(), language) else stringResource(preset.presetLabel()),
-                        selected = false,
                         onClick = { onAsk(preset, null) },
-                        role = Role.Button,
                         modifier = Modifier.testTag("ask-${preset.name.lowercase()}"),
+                        tone = ButtonTone.QUIET,
+                        compact = true,
+                        tight = true,
                     )
                 }
             }

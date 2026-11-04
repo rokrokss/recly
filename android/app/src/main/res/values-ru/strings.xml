@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">Вход отменён. Закройте окно и вернитесь в Recly.</string>
     <string name="chatgpt_page_done">Этот вход уже обработан. Можете закрыть окно.</string>
     <string name="citation_play_from">Воспроизвести с %1$s</string>
-    <string name="ask_follow_up_email">Письмо по итогам</string>
     <string name="ask_action_items">Задачи</string>
     <string name="ask_open_questions">Открытые вопросы</string>
     <string name="ask_translate">Перевести: %1$s</string>

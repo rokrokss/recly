@@ -513,6 +513,7 @@ public struct BlueprintChip: View {
     private let label: String
     private let selected: Bool
     private let fill: Bool
+    private let compact: Bool
     private let action: () -> Void
 
     /// The glyph a chosen chip wears. Not an SF Symbol: it sits in the label's own line of text, at
@@ -521,10 +522,14 @@ public struct BlueprintChip: View {
 
     /// - Parameter fill: take the width and height the row gives it — [ChoiceRow] on the phone —
     ///   rather than only the label's own.
-    public init(_ label: String, selected: Bool, fill: Bool = false, action: @escaping () -> Void) {
+    /// - Parameter compact: docs/09 "Component measurements" — Chip (2026-11-04): drawn at the status badge's size and
+    ///   corner, label 12, in a target the touch minimum wide that takes only the box's height in the layout and
+    ///   reaches the minimum past it ([TouchTarget]'s `tight`).
+    public init(_ label: String, selected: Bool, fill: Bool = false, compact: Bool = false, action: @escaping () -> Void) {
         self.label = label
         self.selected = selected
         self.fill = fill
+        self.compact = compact
         self.action = action
     }
 
@@ -536,8 +541,8 @@ public struct BlueprintChip: View {
                 Text(verbatim: "\(Self.selectionMark) \(label)").hidden()
                 Text(verbatim: selected ? "\(Self.selectionMark) \(label)" : label)
             }
-                // …a label of 14.
-                .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
+                // …a label of 14; a compact one's the status badge's 12.
+                .font(blueprint.fonts.sans(compact ? TypeSize.small : TypeSize.bodySmall, weight: .medium))
                 .foregroundStyle(ink)
                 .lineLimit(1)
                 .padding(.horizontal, Space.s)
@@ -545,20 +550,21 @@ public struct BlueprintChip: View {
                 // docs/09 "Accessibility": in *both* directions. A height alone left a two-letter chip —
                 // "ko", "2" — a target barely half as wide as it is tall.
                 .frame(
-                    minWidth: minTouch,
+                    minWidth: compact ? nil : minTouch,
                     maxWidth: fill ? .infinity : nil,
-                    minHeight: minTouch,
+                    minHeight: compact ? nil : minTouch,
                     maxHeight: fill ? .infinity : nil
                 )
                 .overlay {
-                    RoundedRectangle(cornerRadius: Radius.node)
+                    RoundedRectangle(cornerRadius: radius)
                         .strokeBorder(edge, style: StrokeStyle(
                             lineWidth: selected ? blueprint.palette.selectedLine : blueprint.line,
                             dash: isEnabled ? [] : BlueprintButton.dash
                         ))
                 }
                 .contentShape(Rectangle())
-                .blueprintFocusRing()
+                .blueprintFocusRing(radius: radius)
+                .modifier(TouchTarget(active: compact, tight: true))
         }
         .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
@@ -566,6 +572,9 @@ public struct BlueprintChip: View {
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
+
+    /// docs/09 "Shape": a compact chip is drawn at the status badge's size, so it takes the badge's corner.
+    private var radius: CGFloat { compact ? Radius.badge : Radius.node }
 
     /// docs/09 "Disabled, focus and structure" (2026-10-15): off, a chip draws in `disabled`, words and dashed edge, as a
     /// disabled button does.

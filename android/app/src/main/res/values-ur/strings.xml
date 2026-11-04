@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">سائن ان منسوخ ہو گیا۔ یہ ونڈو بند کریں اور Recly پر واپس جائیں۔</string>
     <string name="chatgpt_page_done">یہ سائن ان پہلے ہی مکمل ہو چکا ہے۔ آپ یہ ونڈو بند کر سکتے ہیں۔</string>
     <string name="citation_play_from">%1$s سے چلائیں</string>
-    <string name="ask_follow_up_email">فالو اپ ای میل</string>
     <string name="ask_action_items">کرنے کے کام</string>
     <string name="ask_open_questions">کھلے سوالات</string>
     <string name="ask_translate">%1$s میں ترجمہ</string>

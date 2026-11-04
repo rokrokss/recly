@@ -56,13 +56,13 @@ class SummariesTest {
     fun `a question goes to the plan as text only, and its answer is shown until it is closed`() = runBlocking {
         val f = Fixture()
         f.ready()
-        f.h.server.reply(stream("Subject: Friday"), headers = SSE)
+        f.h.server.reply(stream("Mina: ship on Friday"), headers = SSE)
 
-        val state = f.summaries.ask(ID, AskPreset.FOLLOW_UP_EMAIL, null)
+        val state = f.summaries.ask(ID, AskPreset.ACTION_ITEMS, null)
 
         val answer = (state as AskState.Ready).answer
-        assertEquals("Subject: Friday", answer.text)
-        assertEquals(AskPreset.FOLLOW_UP_EMAIL, answer.preset)
+        assertEquals("Mina: ship on Friday", answer.text)
+        assertEquals(AskPreset.ACTION_ITEMS, answer.preset)
         assertEquals("gpt-a", answer.model)
         assertEquals("GPT A", answer.modelName, "the plan's name, kept for when the footer is read signed out")
         assertEquals(state, f.summaries.observeAsk(ID).first())
@@ -77,7 +77,7 @@ class SummariesTest {
         assertTrue("You answer a question about a recording's transcript." in instructions)
         assertTrue("Mina: We ship on Friday." in input)
         assertFalse("Weekly sync" in input, "the transcript's text only — not the title")
-        assertTrue(input.endsWith("${Summaries.QUESTION_HEADING}\n${Summaries.presetQuestion(AskPreset.FOLLOW_UP_EMAIL)}\n"))
+        assertTrue(input.endsWith("${Summaries.QUESTION_HEADING}\n${Summaries.presetQuestion(AskPreset.ACTION_ITEMS)}\n"))
         assertTrue("summary.ask.done" in f.h.logger.events)
 
         f.summaries.clearAsk(ID)
@@ -211,7 +211,7 @@ class SummariesTest {
     @Test
     fun `Translate is offered for another language, and feedback only when the transcript knows who the user is`() = runBlocking {
         val english = Fixture(locale = "en")
-        assertEquals(listOf(AskPreset.FOLLOW_UP_EMAIL, AskPreset.ACTION_ITEMS, AskPreset.OPEN_QUESTIONS), english.summaries.askPresets(ID))
+        assertEquals(listOf(AskPreset.ACTION_ITEMS, AskPreset.OPEN_QUESTIONS), english.summaries.askPresets(ID))
         val korean = Fixture(transcript = TRANSCRIPT.copy(speakers = listOf(TranscriptSpeaker("S1", me = true))), locale = "ko")
         assertEquals(AskPreset.entries.toList(), korean.summaries.askPresets(ID))
         assertFalse(AskPreset.TRANSLATE in Fixture(transcript = TRANSCRIPT.copy(language = "ko-en"), locale = "ja").summaries.askPresets(ID), "a mix is already in the app's language")

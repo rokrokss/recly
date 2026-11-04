@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">การลงชื่อเข้าใช้ถูกยกเลิก ปิดหน้าต่างนี้แล้วกลับไปที่ Recly</string>
     <string name="chatgpt_page_done">การลงชื่อเข้าใช้นี้ได้รับการดำเนินการแล้ว คุณปิดหน้าต่างนี้ได้</string>
     <string name="citation_play_from">เล่นจาก %1$s</string>
-    <string name="ask_follow_up_email">อีเมลติดตามผล</string>
     <string name="ask_action_items">สิ่งที่ต้องทำ</string>
     <string name="ask_open_questions">คำถามที่ยังค้าง</string>
     <string name="ask_translate">แปลเป็น%1$s</string>

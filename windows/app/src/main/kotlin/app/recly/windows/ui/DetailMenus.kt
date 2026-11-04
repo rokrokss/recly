@@ -348,7 +348,7 @@ internal fun speakerName(speaker: TranscriptSpeaker?, strings: Strings): String?
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, reason: String? = null, onClick: () -> Unit) {
     val palette = blueprint
-    val shape = RoundedCornerShape(Radius.node)
+    val shape = RoundedCornerShape(Radius.badge)
     // The compact time button's box beside it (2026-10-09, 2026-10-28): the status badge's size in the same corner and
     // edge, and the same 12 type (docs/09 "Component measurements" — Time and speaker button), so the two share one
     // height, one centre and one baseline; the target around it is still the touch minimum.

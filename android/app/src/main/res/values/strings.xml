@@ -530,7 +530,6 @@
     <string name="chatgpt_page_declined">The sign-in was cancelled. Close this window and go back to Recly.</string>
     <string name="chatgpt_page_done">This sign-in has already been handled. You can close this window.</string>
     <string name="citation_play_from">Play from %1$s</string>
-    <string name="ask_follow_up_email">Follow-up email</string>
     <string name="ask_action_items">Action items</string>
     <string name="ask_open_questions">Open questions</string>
     <string name="ask_translate">Translate to %1$s</string>

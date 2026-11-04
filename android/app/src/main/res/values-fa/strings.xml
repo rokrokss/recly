@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">ورود لغو شد. این پنجره را ببندید و به Recly برگردید.</string>
     <string name="chatgpt_page_done">این ورود قبلاً انجام شده است. می‌توانید این پنجره را ببندید.</string>
     <string name="citation_play_from">پخش از %1$s</string>
-    <string name="ask_follow_up_email">ایمیل پیگیری</string>
     <string name="ask_action_items">کارها</string>
     <string name="ask_open_questions">پرسش‌های باز</string>
     <string name="ask_translate">ترجمه به %1$s</string>

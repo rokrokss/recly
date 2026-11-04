@@ -210,7 +210,7 @@ class ChatGptReasonsTest {
         assertEquals("Translate to English", askPresetLabel(AskPreset.TRANSLATE, base))
         assertEquals("한국어로 번역", askPresetLabel(AskPreset.TRANSLATE, StringTable.of(StringTable.KOREAN)).plain())
         assertEquals("Feedback on how I spoke", askPresetLabel(AskPreset.MY_SPEAKING, base))
-        assertEquals("Follow-up email", askPresetLabel(AskPreset.FOLLOW_UP_EMAIL, base))
+        assertEquals("Action items", askPresetLabel(AskPreset.ACTION_ITEMS, base))
     }
 
     @Test

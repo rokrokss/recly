@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">L’accesso è stato annullato. Chiudi questa finestra e torna a Recly.</string>
     <string name="chatgpt_page_done">Questo accesso è già stato gestito. Puoi chiudere questa finestra.</string>
     <string name="citation_play_from">Riproduci da %1$s</string>
-    <string name="ask_follow_up_email">Email di follow-up</string>
     <string name="ask_action_items">Azioni</string>
     <string name="ask_open_questions">Domande aperte</string>
     <string name="ask_translate">Traduci in %1$s</string>

@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">Se canceló el inicio de sesión. Cierra esta ventana y vuelve a Recly.</string>
     <string name="chatgpt_page_done">Este inicio de sesión ya se ha procesado. Puedes cerrar la ventana.</string>
     <string name="citation_play_from">Reproducir desde %1$s</string>
-    <string name="ask_follow_up_email">Correo de seguimiento</string>
     <string name="ask_action_items">Tareas</string>
     <string name="ask_open_questions">Preguntas abiertas</string>
     <string name="ask_translate">Traducir al %1$s</string>

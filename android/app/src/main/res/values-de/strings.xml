@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">Die Anmeldung wurde abgebrochen. Schließen Sie dieses Fenster und kehren Sie zu Recly zurück.</string>
     <string name="chatgpt_page_done">Diese Anmeldung wurde bereits verarbeitet. Sie können das Fenster schließen.</string>
     <string name="citation_play_from">Ab %1$s abspielen</string>
-    <string name="ask_follow_up_email">Follow-up-E-Mail</string>
     <string name="ask_action_items">Aufgaben</string>
     <string name="ask_open_questions">Offene Fragen</string>
     <string name="ask_translate">Übersetzen: %1$s</string>

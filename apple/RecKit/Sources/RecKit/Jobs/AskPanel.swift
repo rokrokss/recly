@@ -23,7 +23,8 @@ struct AskComposer: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Space.s) {
                         ForEach(presets, id: \.self) { preset in
-                            BlueprintChip(ChatGptText.presetLabel(preset), selected: false) { ask(preset, nil) }
+                            // An action, not a choice: at the status badge's size, as a time button is (2026-11-04).
+                            BlueprintButton(ChatGptText.presetLabel(preset), tone: .quiet, compact: true, tight: true) { ask(preset, nil) }
                                 .accessibilityIdentifier("ask-preset-\(preset.name.lowercased())")
                         }
                     }

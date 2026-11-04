@@ -76,9 +76,9 @@ internal fun NotesChips(view: DetailView, notes: Boolean, memo: Boolean, onView:
         Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        BlueprintChip(strings[Str.EXPORT_TRANSCRIPT], selected = view == DetailView.TRANSCRIPT, onClick = { onView(DetailView.TRANSCRIPT) })
-        if (notes) BlueprintChip(strings[Str.NOTES_TAB], selected = view == DetailView.NOTES, onClick = { onView(DetailView.NOTES) })
-        if (memo) BlueprintChip(strings[Str.MEMO_TITLE], selected = view == DetailView.MEMO, onClick = { onView(DetailView.MEMO) })
+        BlueprintChip(strings[Str.EXPORT_TRANSCRIPT], selected = view == DetailView.TRANSCRIPT, onClick = { onView(DetailView.TRANSCRIPT) }, compact = true)
+        if (notes) BlueprintChip(strings[Str.NOTES_TAB], selected = view == DetailView.NOTES, onClick = { onView(DetailView.NOTES) }, compact = true)
+        if (memo) BlueprintChip(strings[Str.MEMO_TITLE], selected = view == DetailView.MEMO, onClick = { onView(DetailView.MEMO) }, compact = true)
     }
     HairLine()
 }

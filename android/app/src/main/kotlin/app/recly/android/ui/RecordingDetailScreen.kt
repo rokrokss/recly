@@ -573,10 +573,10 @@ fun RecordingDetailScreen(
                 // transcript leaves the editor.
                 BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT,
                     { if (notesDraft != null) leaveNotesEditor(DetailView.TRANSCRIPT) else view = DetailView.TRANSCRIPT },
-                    modifier = Modifier.testTag("view-transcript"))
+                    modifier = Modifier.testTag("view-transcript"), compact = true)
                 if (notesChip) {
                     BlueprintChip(stringResource(R.string.notes_title), view == DetailView.NOTES, { view = DetailView.NOTES },
-                        modifier = Modifier.testTag("view-notes"))
+                        modifier = Modifier.testTag("view-notes"), compact = true)
                 }
                 if (memoChip) {
                     BlueprintChip(stringResource(R.string.memo_title), view == DetailView.MEMO,
@@ -584,7 +584,7 @@ fun RecordingDetailScreen(
                             memoFocus = false
                             if (notesDraft != null) leaveNotesEditor(DetailView.MEMO) else view = DetailView.MEMO
                         },
-                        modifier = Modifier.testTag("view-memo"))
+                        modifier = Modifier.testTag("view-memo"), compact = true)
                 }
             }
         }

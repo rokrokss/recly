@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">La connexion a été annulée. Fermez cette fenêtre et revenez à Recly.</string>
     <string name="chatgpt_page_done">Cette connexion a déjà été traitée. Vous pouvez fermer la fenêtre.</string>
     <string name="citation_play_from">Lire à partir de %1$s</string>
-    <string name="ask_follow_up_email">E-mail de suivi</string>
     <string name="ask_action_items">Actions à mener</string>
     <string name="ask_open_questions">Questions ouvertes</string>
     <string name="ask_translate">Traduire en %1$s</string>

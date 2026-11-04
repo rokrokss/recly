@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">Logowanie zostało anulowane. Zamknij to okno i wróć do Recly.</string>
     <string name="chatgpt_page_done">To logowanie zostało już obsłużone. Możesz zamknąć to okno.</string>
     <string name="citation_play_from">Odtwórz od %1$s</string>
-    <string name="ask_follow_up_email">E-mail podsumowujący</string>
     <string name="ask_action_items">Zadania</string>
     <string name="ask_open_questions">Otwarte pytania</string>
     <string name="ask_translate">Przetłumacz: %1$s</string>

@@ -1375,14 +1375,14 @@ public struct RecordingDetailView: View {
             // Transcript and Memo ask before they drop changes.
             if !model.loading, draft == nil, notesChip || memoChip, !chipsYieldToKeyboard {
                 HStack(spacing: Space.s) {
-                    BlueprintChip(loc("Transcript"), selected: pane == .transcript, action: showTranscript)
+                    BlueprintChip(loc("Transcript"), selected: pane == .transcript, compact: true, action: showTranscript)
                         .accessibilityIdentifier("detail-transcript-tab")
                     if notesChip {
-                        BlueprintChip(loc("Summary"), selected: pane == .notes) { pane = .notes }
+                        BlueprintChip(loc("Summary"), selected: pane == .notes, compact: true) { pane = .notes }
                             .accessibilityIdentifier("detail-notes-tab")
                     }
                     if memoChip {
-                        BlueprintChip(loc("Notes"), selected: pane == .memo) { showMemo() }
+                        BlueprintChip(loc("Notes"), selected: pane == .memo, compact: true) { showMemo() }
                             .accessibilityIdentifier("detail-memo-tab")
                     }
                 }

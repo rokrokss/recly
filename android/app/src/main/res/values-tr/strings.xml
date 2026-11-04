@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">Oturum açma iptal edildi. Bu pencereyi kapatıp Recly\'ye dönün.</string>
     <string name="chatgpt_page_done">Bu oturum açma işlemi zaten tamamlandı. Bu pencereyi kapatabilirsiniz.</string>
     <string name="citation_play_from">%1$s konumundan oynat</string>
-    <string name="ask_follow_up_email">Takip e-postası</string>
     <string name="ask_action_items">Yapılacaklar</string>
     <string name="ask_open_questions">Açık sorular</string>
     <string name="ask_translate">Çevir: %1$s</string>

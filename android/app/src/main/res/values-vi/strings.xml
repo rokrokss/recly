@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">Đã hủy đăng nhập. Hãy đóng cửa sổ này và quay lại Recly.</string>
     <string name="chatgpt_page_done">Lần đăng nhập này đã được xử lý. Bạn có thể đóng cửa sổ này.</string>
     <string name="citation_play_from">Phát từ %1$s</string>
-    <string name="ask_follow_up_email">Email theo dõi</string>
     <string name="ask_action_items">Việc cần làm</string>
     <string name="ask_open_questions">Câu hỏi còn mở</string>
     <string name="ask_translate">Dịch sang %1$s</string>

@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">Kinansela ang pag-sign in. Isara ang window na ito at bumalik sa Recly.</string>
     <string name="chatgpt_page_done">Naproseso na ang pag-sign in na ito. Maaari mo nang isara ang window na ito.</string>
     <string name="citation_play_from">I-play mula %1$s</string>
-    <string name="ask_follow_up_email">Follow-up na email</string>
     <string name="ask_action_items">Mga gagawin</string>
     <string name="ask_open_questions">Mga tanong na bukas pa</string>
     <string name="ask_translate">Isalin sa %1$s</string>

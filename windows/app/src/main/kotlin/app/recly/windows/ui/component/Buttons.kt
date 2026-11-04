@@ -117,7 +117,9 @@ fun BlueprintButton(
         else -> palette.inputBorder
     }
     val fill = if (enabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
-    val shape = RoundedCornerShape(Radius.node)
+    // docs/09 "Shape": a compact box is drawn at the status badge's size, so it takes the badge's corner, as on the phones.
+    val radius = if (compact) Radius.badge else Radius.node
+    val shape = RoundedCornerShape(radius)
     val face = Modifier
         .background(fill, shape)
         // docs/09 "High-contrast mode" promotes `grid` and `textMuted` to the body colour, which left a
@@ -127,7 +129,7 @@ fun BlueprintButton(
             if (enabled) {
                 Modifier.border(palette.line, edge, shape)
             } else {
-                Modifier.dashedBorder(palette.line, edge, Radius.node)
+                Modifier.dashedBorder(palette.line, edge, radius)
             },
         )
     // On the accent fill an accent ring would vanish, so a filled button's ring is the ink on it.
@@ -187,7 +189,8 @@ fun BlueprintButton(
  * [MinTouch] each way, centred on it. The target takes the click and the room in the row, so a row is no shorter than
  * it was — unless [tight], when it takes only the box's height and a touch is left to find it at the minimum; the box
  * drawn in it wears the hover, the press and the focus ring, so they stay on what is seen. [modifier] is the target's:
- * what a reader hears is said there.
+ * what a reader hears is said there. A compact chip passes [selected] and its [role], so the target is announced as a
+ * choice and whether it is chosen.
  */
 @Composable
 internal fun CompactControl(
@@ -198,6 +201,8 @@ internal fun CompactControl(
     enabled: Boolean = true,
     ring: Color? = null,
     tight: Boolean = false,
+    selected: Boolean? = null,
+    role: Role = Role.Button,
     content: @Composable RowScope.() -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -205,7 +210,13 @@ internal fun CompactControl(
         modifier
             .defaultMinSize(minWidth = MinTouch, minHeight = if (tight) Dp.Unspecified else MinTouch)
             .pressCursor(enabled)
-            .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
+            .then(
+                if (selected == null) {
+                    Modifier.clickable(interaction, indication = null, enabled = enabled, role = role, onClick = onClick)
+                } else {
+                    Modifier.selectable(selected, interaction, indication = null, enabled = enabled, role = role, onClick = onClick)
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Row(
@@ -385,6 +396,12 @@ fun BlueprintChip(
     // RadioButton for an exclusive choice (language, theme, secret); Checkbox for a multi-select
     // row (sources, tracks) so the announced role matches what a click does.
     role: Role = Role.RadioButton,
+    /**
+     * docs/09 "Component measurements" — Chip (2026-11-04): drawn at the status badge's size and corner, label 12, in a
+     * [CompactControl] [MinTouch] wide that takes only the box's height in the layout — the detail's Transcript · Summary
+     * · Notes.
+     */
+    compact: Boolean = false,
 ) {
     val palette = blueprint
     val ink = when {
@@ -394,35 +411,27 @@ fun BlueprintChip(
     }
     // docs/09 "Component measurements": an unchosen chip's edge is the input border.
     val edge = if (enabled && !selected) palette.inputBorder else ink
-    val shape = RoundedCornerShape(Radius.node)
-    Row(
-        modifier = modifier
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            // Disabled, the edge is dashed as a disabled button's is: the muted ink alone is an unchosen chip's.
-            .then(
-                if (enabled) {
-                    Modifier.border(
-                        width = if (selected) palette.selectedLine else palette.line,
-                        color = edge,
-                        shape = shape,
-                    )
-                } else {
-                    Modifier.dashedBorder(palette.line, edge, Radius.node)
-                },
-            )
-            .focusRing(shape)
-            // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
-            // border is not something a screen reader can read. `selectable` puts the same fact in
-            // the semantics — one node, in place of the plain click, so it is announced as a choice
-            // rather than as a button whose state nobody mentioned.
-            .pressCursor(enabled)
-            .selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
-            .padding(horizontal = Space.s, vertical = Space.xs),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // docs/09 "Component measurements": label 14, sans or mono.
-        val style = if (monospace) mono.bodySmall else MaterialTheme.typography.labelLarge
+    // docs/09 "Shape": a compact chip is drawn at the status badge's size, so it takes the badge's corner.
+    val radius = if (compact) Radius.badge else Radius.node
+    val shape = RoundedCornerShape(radius)
+    val face = if (enabled) {
+        Modifier.border(
+            width = if (selected) palette.selectedLine else palette.line,
+            color = edge,
+            shape = shape,
+        )
+    } else {
+        // Disabled, the edge is dashed as a disabled button's is: the muted ink alone is an unchosen chip's.
+        Modifier.dashedBorder(palette.line, edge, radius)
+    }
+    val content: @Composable RowScope.() -> Unit = {
+        // docs/09 "Component measurements": label 14, sans or mono; a compact one's the status badge's 12.
+        val style = when {
+            compact && monospace -> mono.small
+            compact -> MaterialTheme.typography.labelMedium
+            monospace -> mono.bodySmall
+            else -> MaterialTheme.typography.labelLarge
+        }
         // The chip is as wide as it is with its mark either way, so choosing one moves nothing beside it: the marked
         // label is laid out unseen under the one drawn (the phone's chip, `android/.../component/Buttons.kt`).
         Box(contentAlignment = Alignment.Center) {
@@ -445,6 +454,26 @@ fun BlueprintChip(
             )
         }
     }
+    if (compact) {
+        CompactControl(onClick, modifier, face, shape, enabled = enabled, tight = true, selected = selected, role = role, content = content)
+        return
+    }
+    Row(
+        modifier = modifier
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .then(face)
+            .focusRing(shape)
+            // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
+            // border is not something a screen reader can read. `selectable` puts the same fact in
+            // the semantics — one node, in place of the plain click, so it is announced as a choice
+            // rather than as a button whose state nobody mentioned.
+            .pressCursor(enabled)
+            .selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
+            .padding(horizontal = Space.s, vertical = Space.xs),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+    )
 }
 
 /**

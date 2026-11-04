@@ -2414,10 +2414,9 @@ nothing rewrites it, and it is never shown inside the notes.
 The user asks ChatGPT about one recording, or asks for a change to it, in their own words — and one request can change the transcript
 and the summary together (§8 "AI requests"). `summaries.ask(recordingId, preset, question)` takes one of the two:
 
-- **A preset**, a plain question answered in the notes' language: `FOLLOW_UP_EMAIL` (a draft with a subject line and placeholders for
-  names the transcript does not give), `ACTION_ITEMS`, `OPEN_QUESTIONS`, `TRANSLATE` (the whole transcript, line by line, into the app's
+- **A preset**, a plain question answered in the notes' language: `ACTION_ITEMS`, `OPEN_QUESTIONS`, `TRANSLATE` (the whole transcript, line by line, into the app's
   language — offered only when the transcript is in one other known language) and `MY_SPEAKING` (feedback for `Me` — offered only when
-  the transcript has one). `askPresets(recordingId)` says which apply. It sends the transcript's lines with the speakers' names, About
+  the transcript has one); the follow-up email draft is gone (2026-11-04, user decision). `askPresets(recordingId)` says which apply. It sends the transcript's lines with the speakers' names, About
   you and `Me`, the recording's memo (§8 "Memo"), then `Question:` and the preset's question, and changes nothing.
 - **The user's own words** — a question, or a change: what to fix, rename, add, remove or rewrite, with anything pasted under it that
   helps (names and terms, background, or another transcript of the same conversation made where the sound was clearer) — at most
@@ -2655,13 +2654,13 @@ The principle in one line: **intent, not decoration**.
   | Screen header | 16 above, 12 below, 16 at the sides |
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
-  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge; in a notes row the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31) |
+  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, and the Ask presets (2026-11-04); in a notes row and among the presets the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31) |
   | State node | padding 12 × 8, label up to two lines from the start edge; the three one height; stacked, joined by the same connectors turned downwards |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
   | Ledger row | 12 top and bottom; the time column as wide as the longest time in that shell's mono font (62 Android and Apple, 68 Windows) |
   | Text field | inset 12 × 8, height at least the touch minimum; its label in the label face (12 medium, tracked); focus: accent at `selectedLine` |
-  | Chip | label 14; room for its `✓` kept while unselected, so selecting moves nothing; edge `inputBorder`; chosen and disabled, a dashed `disabled` edge at `selectedLine` |
+  | Chip | label 14; room for its `✓` kept while unselected, so selecting moves nothing; edge `inputBorder`; chosen and disabled, a dashed `disabled` edge at `selectedLine`. A compact chip (2026-11-04, user decision: the detail's `Transcript` · `Summary` · `Notes`) is drawn at the status badge's size and corner, label 12, its target the touch minimum wide and only the box's height in the layout, reaching the minimum past it as a notes row's time does |
   | Switch | thumb radius 2; disabled: a dashed track in `disabled` |
   | Dialog | title 20; body 14 in every tone — the tone is the colour only; card edge `inputBorder` over a scrim — on a sheet of its own (iPhone, Mac) the sheet is the card and no second edge is drawn inside it, the text 16 from its edges; an option row 8 above and below inside the touch minimum, its mark on the label's first line |
   | Bottom sheet, scrim | phones (2026-10-31): the page and its dot grid, top corners 24; under a sheet or a dialog a dim of black at 20 %, the iPhone's |
@@ -3146,7 +3145,7 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   with the core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on
   iPhone the ChatGPT permission is asked first, as for `Summarize`.
 - **The chips.** Once a recording has notes, or `Summarize` was asked, two chips under the header — at their own width, on the page under the
-  header's line (2026-10-31: Android's filled band gave way to the iPhone's row) — switch the body between `Transcript`
+  header's line (2026-10-31: Android's filled band gave way to the iPhone's row), compact (2026-11-04, "Component measurements") — switch the body between `Transcript`
   and `Summary`, and a third, `Notes`, follows once it has a memo (2026-10-30, "Memo" below); a memo alone gives `Transcript` · `Notes` (the detail opens on `Transcript`; no chips while the transcript is edited, and while notes or the memo are edited they step aside only for the keyboard). The `Summary` body is §9 "Notes view": while the recording is
   organized here, the square loader and `Summarizing…` over the notes there are; a failure of `Summarize` (`RecordingNotes.failure`): a
   centred notice — the `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage`
@@ -3185,8 +3184,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   - **The composer.** One field, a line that grows to six and then scrolls, the placeholder `Ask, or say what to change`, no more than
     `AskRequest.MAX` characters, and a primary `Send` at its end, enabled while the field says something. On the desktops Return sends
     and Shift+Return adds a line; on the phones the keyboard's Send sends, and a paste keeps its lines (another transcript is pasted
-    whole). While the field has the cursor and is empty and nothing it came to is over it, the preset chips are over it (`Follow-up
-    email`, `Action items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows); a tap asks.
+    whole). While the field has the cursor and is empty and nothing it came to is over it, the preset chips are over it, drawn as time buttons are ("Component measurements", 2026-11-04) (`Action
+    items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows); a tap asks.
     Sending empties the field. The chips go while an answer is up, so the bar stays low (2026-11-04); its ✕ brings them back.
     While nothing can be asked the field is off and says why in its placeholder: `Still recording`, `No transcript yet`, the reason of
     an unsettled job (`Transcribing…`), `Sign in to ChatGPT in Settings`. On iPhone the ChatGPT permission is asked first, as for

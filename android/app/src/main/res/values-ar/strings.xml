@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">أُلغي تسجيل الدخول. أغلق النافذة وعُد إلى Recly.</string>
     <string name="chatgpt_page_done">تمت معالجة تسجيل الدخول هذا. يمكنك إغلاق النافذة.</string>
     <string name="citation_play_from">تشغيل من %1$s</string>
-    <string name="ask_follow_up_email">رسالة متابعة</string>
     <string name="ask_action_items">المهام</string>
     <string name="ask_open_questions">أسئلة معلّقة</string>
     <string name="ask_translate">الترجمة إلى %1$s</string>

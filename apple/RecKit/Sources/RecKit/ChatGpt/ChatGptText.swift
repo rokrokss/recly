@@ -46,7 +46,6 @@ public enum ChatGptText {
     /// docs/09 "Ask": a preset's chip. Translate names the app's language as the App language list does.
     public static func presetLabel(_ preset: AskPreset) -> String {
         switch preset {
-        case .followUpEmail: return RecKitStrings.localized("Follow-up email")
         case .actionItems: return RecKitStrings.localized("Action items")
         case .openQuestions: return RecKitStrings.localized("Open questions")
         case .translate:

@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">ログインがキャンセルされました。このウィンドウを閉じてReclyに戻ってください。</string>
     <string name="chatgpt_page_done">このログインは処理済みです。ウィンドウを閉じてください。</string>
     <string name="citation_play_from">%1$sから再生</string>
-    <string name="ask_follow_up_email">フォローアップメール</string>
     <string name="ask_action_items">アクションアイテム</string>
     <string name="ask_open_questions">未解決の質問</string>
     <string name="ask_translate">%1$sに翻訳</string>

@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">登入已取消。請關閉此視窗並返回Recly。</string>
     <string name="chatgpt_page_done">此次登入已處理，您可以關閉此視窗。</string>
     <string name="citation_play_from">從 %1$s 開始播放</string>
-    <string name="ask_follow_up_email">後續郵件</string>
     <string name="ask_action_items">待辦事項</string>
     <string name="ask_open_questions">待解決的問題</string>
     <string name="ask_translate">翻譯成%1$s</string>

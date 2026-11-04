@@ -720,7 +720,6 @@ internal fun chatGptModelLabel(model: String, modelName: String?, connection: Ch
 
 /** docs/08 "Ask": a preset's chip. Translate names the app's language the way the language list does. */
 internal fun askPresetLabel(preset: AskPreset, strings: Strings): String = when (preset) {
-    AskPreset.FOLLOW_UP_EMAIL -> strings[Str.ASK_FOLLOW_UP_EMAIL]
     AskPreset.ACTION_ITEMS -> strings[Str.ASK_ACTION_ITEMS]
     AskPreset.OPEN_QUESTIONS -> strings[Str.ASK_OPEN_QUESTIONS]
     AskPreset.TRANSLATE -> strings[

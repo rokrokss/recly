@@ -438,7 +438,6 @@
     <string name="chatgpt_page_declined">সাইন-ইন বাতিল করা হয়েছে। এই উইন্ডো বন্ধ করে Recly-তে ফিরে যান।</string>
     <string name="chatgpt_page_done">এই সাইন-ইন আগেই সম্পন্ন হয়েছে। আপনি এই উইন্ডো বন্ধ করতে পারেন।</string>
     <string name="citation_play_from">%1$s থেকে চালান</string>
-    <string name="ask_follow_up_email">ফলো-আপ ইমেইল</string>
     <string name="ask_action_items">করণীয়</string>
     <string name="ask_open_questions">অমীমাংসিত প্রশ্ন</string>
     <string name="ask_translate">%1$s-তে অনুবাদ</string>
