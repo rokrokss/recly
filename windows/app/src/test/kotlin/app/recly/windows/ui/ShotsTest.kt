@@ -38,9 +38,12 @@ import app.recly.windows.ui.theme.blueprint
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import okio.Path.Companion.toPath
@@ -471,7 +474,7 @@ class ShotsTest {
     )
 
     /** Renders [content] at twice its size, after [clicks] (in dp) and [typed], and waits for what they start. */
-    private fun shot(
+    private suspend fun shot(
         name: String,
         width: Int,
         height: Int,
@@ -485,8 +488,12 @@ class ShotsTest {
         rtl: Boolean = false,
 
         content: @Composable () -> Unit,
-    ) {
-        val scene = ImageComposeScene(width * SCALE, height * SCALE, Density(SCALE.toFloat())) {
+    ): Unit = withContext(Dispatchers.Swing) {
+        // On the event dispatch thread, where the app's windows run, and so is everything the scene starts. With the
+        // default context (`Dispatchers.Unconfined`) its recomposition and effects ran on whichever thread woke them
+        // while the test sent clicks from its own, and a click could set its state and never be recomposed: the menu it
+        // opened was never drawn, and the shot failed as a stale click point (2026-11-04, while another app launched).
+        val scene = ImageComposeScene(width * SCALE, height * SCALE, Density(SCALE.toFloat()), coroutineContext = Dispatchers.Swing) {
             ReclyDesktopTheme(dark = dark, highContrast = false, tracked = !ko) {
                 CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
             }
@@ -523,10 +530,11 @@ class ShotsTest {
         }
     }
 
-    private fun settle(scene: ImageComposeScene) {
+    /** Suspends between frames rather than sleeping: the thread is the scene's, and runs what each frame started. */
+    private suspend fun settle(scene: ImageComposeScene) {
         repeat(FRAMES) {
             scene.render(System.nanoTime())
-            Thread.sleep(FRAME_MS)
+            delay(FRAME_MS)
         }
     }
 
