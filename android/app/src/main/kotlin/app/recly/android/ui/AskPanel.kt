@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.settings.AppLanguage
@@ -144,6 +145,7 @@ internal fun AskBar(
     onAsk: (AskPreset?, String?) -> Unit,
     onUndo: () -> Unit,
     onClose: () -> Unit,
+    answerHeight: Dp,
 ) {
     HairLine()
     Column(
@@ -152,7 +154,8 @@ internal fun AskBar(
     ) {
         if (state !is AskState.None) {
             AskResult(state, models, undoing, canSeek, onSeek, onUndo,
-                onRetry = { (state as? AskState.Failed)?.let { onAsk(it.preset, it.question) } }, onClose = onClose)
+                onRetry = { (state as? AskState.Failed)?.let { onAsk(it.preset, it.question) } }, onClose = onClose,
+                answerHeight = answerHeight)
         }
         AskComposer(question, onQuestion, presets, reason, running = state is AskState.Running, focused, onFocus, onAsk)
     }
@@ -161,7 +164,8 @@ internal fun AskBar(
 /**
  * docs/09 "Ask": one field for a question about the recording or a change to its transcript and summary, a line that grows
  * to six and then scrolls, and `Send` at its end. The keyboard's Send sends, and so does a new line typed into the field;
- * a paste keeps its lines. While it has the cursor and is empty the presets are chips over it, a tap asking. While nothing
+ * a paste keeps its lines. While it has the cursor and is empty the presets are chips over it, a tap asking (the page gives
+ * none while an answer is over it). While nothing
  * can be asked ([reason]) the field is off and its placeholder says why. Sending empties it.
  */
 @Composable
@@ -222,7 +226,7 @@ internal fun AskComposer(
 
 /**
  * docs/09 "Ask": what the last request came to, over the composer — `Working…` while it runs; the answer, its citations
- * playing from their time ([canSeek], [onSeek] — the transcript's own seek), scrolling in its place past [ANSWER_HEIGHT],
+ * playing from their time ([canSeek], [onSeek] — the transcript's own seek), scrolling in its place past [answerHeight],
  * with `ChatGPT · <model>` and Copy all; what it changed, with `Undo` (`Undoing…` while [undoing]); that it changed
  * nothing; or why it failed, with Retry asking the same again. The ✕ at its end closes it, except while it runs. Nothing
  * here is saved: the core keeps it in this process (docs/08 "Ask").
@@ -237,6 +241,7 @@ internal fun AskResult(
     onUndo: () -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit,
+    answerHeight: Dp,
 ) {
     val palette = blueprint
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Top) {
@@ -250,7 +255,7 @@ internal fun AskResult(
                 is AskState.Ready -> {
                     val answer = state.answer
                     if (answer.text.isNotEmpty()) {
-                        Box(Modifier.fillMaxWidth().heightIn(max = ANSWER_HEIGHT).verticalScroll(rememberScrollState())) {
+                        Box(Modifier.fillMaxWidth().heightIn(max = answerHeight).verticalScroll(rememberScrollState())) {
                             SelectionContainer(Modifier.fillMaxWidth()) {
                                 CitedText(answer.text, canSeek, onSeek, Modifier.testTag("ask-answer"), padding = 0.dp)
                             }
@@ -293,5 +298,10 @@ internal fun AskResult(
 /** The field grows to six lines, then scrolls. */
 private const val FIELD_LINES = 6
 
-/** An answer taller than this scrolls in its place, so the page above keeps some of its height. */
+/**
+ * An answer taller than a third of the [page] scrolls in its place, so the page above keeps most of its height — and never
+ * taller than 240 (the desktops' is 320), however tall the page.
+ */
+internal fun answerHeight(page: Dp): Dp = if (page > 0.dp) minOf(ANSWER_HEIGHT, page / 3) else ANSWER_HEIGHT
+
 private val ANSWER_HEIGHT = 240.dp

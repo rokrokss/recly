@@ -3185,13 +3185,15 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   - **The composer.** One field, a line that grows to six and then scrolls, the placeholder `Ask, or say what to change`, no more than
     `AskRequest.MAX` characters, and a primary `Send` at its end, enabled while the field says something. On the desktops Return sends
     and Shift+Return adds a line; on the phones the keyboard's Send sends, and a paste keeps its lines (another transcript is pasted
-    whole). While the field has the cursor and is empty, the preset chips are over it (`Follow-up email`, `Action items`, `Open
-    questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows); a tap asks. Sending empties the field.
+    whole). While the field has the cursor and is empty and nothing it came to is over it, the preset chips are over it (`Follow-up
+    email`, `Action items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows); a tap asks.
+    Sending empties the field. The chips go while an answer is up, so the bar stays low (2026-11-04); its ✕ brings them back.
     While nothing can be asked the field is off and says why in its placeholder: `Still recording`, `No transcript yet`, the reason of
     an unsettled job (`Transcribing…`), `Sign in to ChatGPT in Settings`. On iPhone the ChatGPT permission is asked first, as for
     `Summarize`.
   - **What it came to**, over the composer with a ✕ at its end that closes it (none while it runs): `Working…` with the square loader;
-    the answer as selectable plain text with its line breaks, scrolling in its place past 240 on the phones and 320 on the desktops, then
+    the answer as selectable plain text with its line breaks, scrolling in its place past a third of the page's height, and never past
+    240 on the phones and 320 on the desktops (2026-11-04: a short window keeps most of its transcript), then
     `ChatGPT · <model>` (secondary, 12) and the notes' copy icon; what it changed — `Changed: Transcript 2 · Summary 1` (secondary, only
     the documents it changed; a transcript's count is its lines and names, a summary's its items, those removed and the overview) with a
     quiet `Undo` at its end (`Undoing…` while it runs; refused, `Could not undo` under the header for a few seconds, as refused starts

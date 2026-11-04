@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
@@ -118,6 +119,8 @@ internal fun AskBar(
     onField: (TextFieldValue) -> Unit,
     canPlay: Boolean,
     onPlay: (Double) -> Unit,
+    /** How tall an answer is before it scrolls in its place ([answerHeight]). */
+    answerHeight: Dp,
     strings: Strings,
 ) {
     val presets by produceState(emptyList<AskPreset>(), detail.recordingId, detail.transcript?.createdAt) {
@@ -144,17 +147,20 @@ internal fun AskBar(
                     onPlay = onPlay,
                     strings = strings,
                     seekableDurationSec = detail.audio.totalSec,
+                    answerHeight = answerHeight,
                 )
             }
-            AskComposer(field, onField, presets, reason?.let { strings[it] }, detail.ask is AskState.Running, ask, strings)
+            // The chips only while nothing is over the field, so the bar stays low under an answer.
+            AskComposer(field, onField, presets.takeIf { detail.ask == AskState.None }.orEmpty(), reason?.let { strings[it] },
+                detail.ask is AskState.Running, ask, strings)
         }
     }
 }
 
 /**
  * docs/09 "Ask": one field for a question about the recording or a change to its transcript and summary, from one line
- * up to six, with Send. The presets are chips over it while it has the cursor, is empty and Ask can run; a chip asks
- * at once. Enter sends and Shift+Enter starts a new line where the cursor is (2026-10-10); sending empties the field.
+ * up to six, with Send. The presets are chips over it while it has the cursor, is empty and Ask can run (the bar gives
+ * none while an answer is over it); a chip asks at once. Enter sends and Shift+Enter starts a new line where the cursor is (2026-10-10); sending empties the field.
  * While Ask cannot run the field says why in its place ([reason]) and takes nothing; while a request runs it waits.
  */
 @Composable
@@ -237,6 +243,8 @@ internal fun AskResult(
     onPlay: (Double) -> Unit,
     strings: Strings,
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
+    /** Taller than this, the answer scrolls in its place ([answerHeight]). */
+    answerHeight: Dp = ANSWER_HEIGHT,
 ) {
     val palette = blueprint
     val small = MaterialTheme.typography.bodySmall
@@ -248,8 +256,7 @@ internal fun AskResult(
                 is AskState.Ready -> {
                     val answer = state.answer
                     if (answer.text.isNotEmpty()) {
-                        // Taller than this, it scrolls in its place, so the page above keeps some of its height.
-                        Box(Modifier.fillMaxWidth().heightIn(max = ANSWER_HEIGHT).verticalScroll(rememberScrollState())) {
+                        Box(Modifier.fillMaxWidth().heightIn(max = answerHeight).verticalScroll(rememberScrollState())) {
                             CitedText(answer.text, canPlay, onPlay, strings, seekableDurationSec)
                         }
                         ChatGptFooter(strings[Str.SUMMARY_MODEL, modelLabel(answer.model, answer.modelName)], answer.recordingId, strings) {
@@ -293,5 +300,10 @@ private fun AskChangedLine(changes: AskChanges, undoing: Boolean, onUndo: () -> 
 /** From one line of request up to six before the field scrolls. */
 private const val FIELD_LINES = 6
 
-/** An answer taller than this scrolls in its place (the phone's is 240). */
+/**
+ * An answer taller than a third of the detail ([page]) scrolls in its place, so the page above keeps most of its height —
+ * and never taller than 320 (the phone's is 240), however tall the window.
+ */
+internal fun answerHeight(page: Dp): Dp = if (page > 0.dp) minOf(ANSWER_HEIGHT, page / 3) else ANSWER_HEIGHT
+
 private val ANSWER_HEIGHT = 320.dp

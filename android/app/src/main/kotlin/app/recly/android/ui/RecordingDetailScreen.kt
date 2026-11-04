@@ -27,6 +27,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -428,6 +429,8 @@ fun RecordingDetailScreen(
     // and the changes line's Undo running. What the answer changed is tinted where it is, until it is undone or closed.
     var question by remember(detail.recordingId) { mutableStateOf("") }
     var askFocused by remember(detail.recordingId) { mutableStateOf(false) }
+    // The page's height, of which an answer takes at most a third (docs/09 "Ask").
+    var pageHeight by remember { mutableIntStateOf(0) }
     var undoingAsk by remember(detail.recordingId) { mutableStateOf(false) }
     val askChanges = (detail.ask as? AskState.Ready)?.answer?.changes
     val undoAsk = {
@@ -487,7 +490,7 @@ fun RecordingDetailScreen(
 
     // docs/09 "Typography": every time on this page takes its format from the recording's own length.
     val scale = recordingScale(detail)
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().onSizeChanged { pageHeight = it.height }) {
         // The title alone: the recording's id is the ledger's key, not something the user reads by.
         if (!keyboardVisible) {
             if (draft != null) {
@@ -696,7 +699,8 @@ fun RecordingDetailScreen(
             val presets by produceState(emptyList<AskPreset>(), detail.recordingId, transcript?.createdAt) { value = actions.askPresets() }
             AskBar(
                 state = detail.ask,
-                presets = presets,
+                // The chips only while nothing is over the field, so the bar stays low under an answer.
+                presets = if (detail.ask is AskState.None) presets else emptyList(),
                 reason = composerReason(detail.writing, transcript != null, detail.transcribing, detail.busyReason, actions.chatGpt),
                 models = models,
                 question = question,
@@ -709,6 +713,7 @@ fun RecordingDetailScreen(
                 onAsk = actions.onAsk,
                 onUndo = undoAsk,
                 onClose = actions.onClearAsk,
+                answerHeight = answerHeight(with(LocalDensity.current) { pageHeight.toDp() }),
             )
         }
         // A take still being written to has nothing whole to play yet, and nothing to say about it.

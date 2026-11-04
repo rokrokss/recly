@@ -259,11 +259,13 @@ class ShotsTest {
                     androidx.compose.ui.Modifier.fillMaxSize().border(1.dp, blueprint.grid).background(blueprint.surface).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // As [AskBar] has them in the 680 of the recordings window: a third of it for the answer, no chips under one.
                     if (state != AskState.None) {
                         AskResult(state, { _, _ -> "GPT-5.4" }, undoing = false, onUndo = {}, onAsk = { _, _ -> }, onClose = {}, onManageUsage = {},
-                            canPlay = true, onPlay = {}, strings = strings)
+                            canPlay = true, onPlay = {}, strings = strings, answerHeight = answerHeight(680.dp))
                     }
-                    AskComposer(TextFieldValue(typed), {}, presets, null, state is AskState.Running, { _, _ -> }, strings)
+                    AskComposer(TextFieldValue(typed), {}, presets.takeIf { state == AskState.None }.orEmpty(), null, state is AskState.Running,
+                        { _, _ -> }, strings)
                 }
             }
             val recordingId = model.detail!!.recordingId

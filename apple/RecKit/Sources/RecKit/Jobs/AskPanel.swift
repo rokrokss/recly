@@ -3,8 +3,8 @@ import ReclyCore
 import SwiftUI
 
 /// docs/09 "Ask": the composer at the foot of the detail — one field for a question about the recording or a change to its
-/// transcript and summary, and the presets as chips over it while it is empty and has the cursor. While Ask cannot run, the
-/// field says why and takes nothing.
+/// transcript and summary, and the presets as chips over it while it is empty and has the cursor (the page gives none while
+/// an answer is over it). While Ask cannot run, the field says why and takes nothing.
 struct AskComposer: View {
     @Binding var question: String
     let presets: [AskPreset]
@@ -104,6 +104,8 @@ struct AskResult: View {
     /// How far the recording here can be played, and the seek a citation makes (see [CitedText]).
     let seekableSec: Double
     let onSeek: ((Double) -> Void)?
+    /// How tall the answer is before it scrolls in its place: see [answerHeight(page:)].
+    let answerHeight: CGFloat
     @State private var copied = false
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
@@ -142,7 +144,7 @@ struct AskResult: View {
                             .accessibilityIdentifier("ask-answer")
                     }
                     .scrollBounceBehavior(.basedOnSize)
-                    .frame(maxHeight: Self.answerHeight)
+                    .frame(maxHeight: answerHeight)
                     .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: Space.s) {
                         // The plan's name for the model when the answer was written, as a summary's footer has it.
@@ -194,13 +196,15 @@ struct AskResult: View {
         }
     }
 
-    /// An answer taller than this scrolls in its place, so the page above keeps some of its height.
-    private static var answerHeight: CGFloat {
+    /// An answer taller than a third of the page scrolls in its place, so the page above keeps most of its height —
+    /// and never taller than 240 on the phone and 320 on the Mac, however tall the page.
+    static func answerHeight(page: CGFloat) -> CGFloat {
         #if os(iOS)
-        240
+        let most: CGFloat = 240
         #else
-        320
+        let most: CGFloat = 320
         #endif
+        return page > 0 ? min(most, page / 3) : most
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }

@@ -1,5 +1,6 @@
 package app.recly.android.ui
 
+import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -89,6 +90,14 @@ class AskComposerTest {
         assertFalse(showsPresets(focused = true, text = "", running = true, reason = null, presets = presets))
         assertFalse(showsPresets(focused = true, text = "", running = false, reason = R.string.detail_no_transcript, presets = presets))
         assertFalse(showsPresets(focused = true, text = "", running = false, reason = null, presets = emptyList()))
+    }
+
+    @Test
+    fun `an answer scrolls past a third of the page, and never past 240`() {
+        assertEquals(200.dp, answerHeight(600.dp))
+        assertEquals(240.dp, answerHeight(900.dp))
+        // Before the page has been measured.
+        assertEquals(240.dp, answerHeight(0.dp))
     }
 
     @Test

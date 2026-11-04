@@ -3,6 +3,7 @@ package app.recly.windows.ui
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.plain
@@ -40,6 +41,14 @@ class AskComposerTest {
         assertFalse(showsAsk(signedIn, loading = false, editing = true, memoShown = false, hasTranscript = true))
         assertFalse(showsAsk(signedIn, loading = false, editing = false, memoShown = true, hasTranscript = true))
         assertFalse(showsAsk(signedIn, loading = false, editing = false, memoShown = false, hasTranscript = false))
+    }
+
+    @Test
+    fun `an answer scrolls past a third of the detail, and never past 320`() {
+        assertEquals(240.dp, answerHeight(720.dp))
+        assertEquals(320.dp, answerHeight(1200.dp))
+        // Before the detail has been measured.
+        assertEquals(320.dp, answerHeight(0.dp))
     }
 
     @Test

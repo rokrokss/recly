@@ -1223,6 +1223,8 @@ public struct RecordingDetailView: View {
     /// docs/09 "Ask": what the composer holds, and whether it has the cursor.
     @State private var question = ""
     @FocusState private var askFocused: Bool
+    /// The page's height, of which an answer takes at most a third (docs/09 "Ask").
+    @State private var pageHeight: CGFloat = 0
     /// docs/09 "Transcript reader" — "Version history": its sheet (dialog on the Mac) is up, the versions once read, the
     /// one being brought back, and why the last restore did not happen.
     @State private var versionsOpen = false
@@ -1483,6 +1485,7 @@ public struct RecordingDetailView: View {
             }
         }
         #endif
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pageHeight = $0 }
         .dotGridBackground()
         // Drawn in the page rather than presented over it, because the page itself is already a
         // sheet on the phone and a view may host only one (see `blueprintDialogOverlay`). The Mac
@@ -2017,12 +2020,14 @@ public struct RecordingDetailView: View {
                             copy: model.copyAnswer,
                             close: model.closeAsk,
                             seekableSec: model.totalSec,
-                            onSeek: citationSeek
+                            onSeek: citationSeek,
+                            answerHeight: AskResult.answerHeight(page: pageHeight)
                         )
                     }
                     AskComposer(
                         question: $question,
-                        presets: model.askPresets,
+                        // The chips only while nothing is over the field, so the bar stays low under an answer.
+                        presets: model.ask is AskState.None ? model.askPresets : [],
                         reason: model.askReason,
                         running: model.ask is AskState.Running,
                         ask: { preset, typed in Task { await model.ask(preset: preset, question: typed) } },

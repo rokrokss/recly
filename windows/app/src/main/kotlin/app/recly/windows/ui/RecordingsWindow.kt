@@ -96,6 +96,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import app.recly.windows.i18n.message
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
@@ -250,7 +252,9 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
         )
         VerticalHairLine(Modifier.fillMaxHeight())
         Box(Modifier.weight(1f).fillMaxHeight()) {
-            Column(Modifier.fillMaxSize()) {
+            // The detail's height, of which an answer takes at most a third (docs/09 "Ask").
+            var pageHeight by remember { mutableIntStateOf(0) }
+            Column(Modifier.fillMaxSize().onSizeChanged { pageHeight = it.height }) {
                 val detail = model.detail
                 if (detail == null) {
                     // With no recordings at all there is nothing to pick, and the pane says nothing (2026-10-10): the list
@@ -273,6 +277,7 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                         findOpen = findOpen,
                         onFindOpen = { findOpen = it },
                         findRequest = findRequest,
+                        pageHeight = with(LocalDensity.current) { pageHeight.toDp() },
                         theme = theme,
                         strings = strings,
                     )
@@ -527,6 +532,8 @@ private fun ColumnScope.Detail(
     onFindOpen: (Boolean) -> Unit,
     /** Ctrl+F's count: each press puts the cursor back in the find field. */
     findRequest: Int,
+    /** The detail's height: an answer takes at most a third of it ([answerHeight]). */
+    pageHeight: Dp,
     theme: @Composable (@Composable () -> Unit) -> Unit,
     strings: Strings,
 ) {
@@ -847,7 +854,7 @@ private fun ColumnScope.Detail(
     // docs/09 "Ask": the last thing in the detail column, under the transcript or the summary.
     val connection = model.chatGpt?.connection
     if (connection != null && showsAsk(connection, detail.loading, editing = draft != null || notesDraft != null, memoShown, detail.hasTranscript)) {
-        AskBar(model, detail, connection, askField, { askField = it }, canSeek, onPlay, strings)
+        AskBar(model, detail, connection, askField, { askField = it }, canSeek, onPlay, answerHeight(pageHeight), strings)
     }
     naming?.let { (initial, save) ->
         SpeakerNameDialog(initial, strings, theme, onCancel = { naming = null }, onSave = { name ->

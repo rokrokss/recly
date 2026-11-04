@@ -15,6 +15,11 @@ struct GrowingTextEditor: View {
     /// the new line then. Nil keeps Return a new line.
     var onReturn: (() -> Void)?
     @Environment(\.blueprint) private var blueprint
+    /// The box's height, and the text's own with no limit: the text view keeps a scroller only while the second is
+    /// the taller — past [lines]'s upper bound. A text view keeps its scroller otherwise, and its knob stays as a dot at
+    /// the trailing edge of a box that has nothing to scroll.
+    @State private var boxHeight: CGFloat = 0
+    @State private var fullHeight: CGFloat = 0
 
     var body: some View {
         // The text laid out as the view would lay it, unseen, is what sets the height; the text view is laid over it.
@@ -26,6 +31,15 @@ struct GrowingTextEditor: View {
             .padding(.horizontal, Self.inset)
             .frame(maxWidth: .infinity, alignment: .leading)
             .hidden()
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { boxHeight = $0 }
+            .background(alignment: .top) {
+                Text(verbatim: sizing)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, Self.inset)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .hidden()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { fullHeight = $0 }
+            }
             .overlay {
                 if let focused { editor.focused(focused) } else { editor }
             }
@@ -43,6 +57,7 @@ struct GrowingTextEditor: View {
     private var editor: some View {
         TextEditor(text: $text)
             .scrollContentBackground(.hidden)
+            .scrollIndicators(fullHeight > boxHeight + 0.5 ? .automatic : .never)
             .onKeyPress(keys: [.return]) { press in
                 guard let onReturn, !press.modifiers.contains(.shift) else { return .ignored }
                 onReturn()
