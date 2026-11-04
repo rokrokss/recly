@@ -58,6 +58,22 @@ final class StopLineTests: XCTestCase {
         )
     }
 
+    /// docs/09 "The line below the record node": where a record node and a timer stand beside the line — the phones and,
+    /// since 2026-11-04, the Mac popover — it carries news only.
+    func testTheLineBesideARecordNodeCarriesNewsOnly() {
+        XCTAssertEqual(RecorderStatusLine.news(state: .idle, note: "Opening"), "")
+        XCTAssertEqual(RecorderStatusLine.news(state: .idle, note: "Waiting"), "")
+        XCTAssertEqual(RecorderStatusLine.news(state: .starting, note: "Waiting"), "")
+        XCTAssertEqual(RecorderStatusLine.news(state: .recording(recordingId: "rec"), note: "Waiting"), "")
+        XCTAssertEqual(RecorderStatusLine.news(state: .stopping, note: "Waiting"), "")
+        XCTAssertEqual(RecorderStatusLine.news(state: .idle, note: "The recording failed"), "The recording failed")
+        XCTAssertEqual(
+            RecorderStatusLine.news(state: .idle, note: "Waiting", message: StopLine.message(EnqueueResultSkippedShort(jobId: "job"))),
+            "Too short — skipped",
+            "a message is news even over the quiet note"
+        )
+    }
+
     /// docs/08 "Polling · status": a job waiting out a backoff comes back by itself — a wait, in the warning tone,
     /// not a failure in red.
     func testARetryThePendingQueueWillMakeIsWarningTonedNotRed() {

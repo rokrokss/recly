@@ -448,10 +448,11 @@ final class MenuModel: ObservableObject {
     /// and a stop that arrives then anyway (an intent, `⌘Q`) is still parked by the session and served.
     var canStop: Bool { isRecording }
 
-    /// The menu's first line. The state has the say whenever a recording is in flight; [note] is
-    /// what is left to show when there is none.
+    /// The line at the ledger's end: news only, as on the phones (2026-11-04, user decision) — the record node and
+    /// the timer say what the recorder is doing, so `Waiting`, `Starting`, `Recording` and `Saving` are not written.
+    /// Empty when there is nothing to say, and the popover leaves the line out.
     var status: String {
-        RecorderStatusLine.text(state: state, note: note, message: message)
+        RecorderStatusLine.news(state: state, note: note, message: message)
     }
 
     /// 2026-10-10 (2.10): the line is what stands in the way of a disconnect or a sign-in, which is said in the

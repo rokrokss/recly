@@ -520,12 +520,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// is the State node's and the timer's to say, so a working or waiting recorder leaves it empty
     /// (2026-09-29).
     var status: String {
-        guard state == .idle, statusMessage != nil || !Self.quietNotes.contains(note) else { return "" }
-        return RecorderStatusLine.text(state: state, note: note, message: statusMessage)
+        RecorderStatusLine.news(state: state, note: note, message: statusMessage)
     }
-
-    /// The notes that only say the recorder is there — not news.
-    private static let quietNotes: Set<String> = ["Opening", "Waiting"]
 
     // MARK: - Start and stop
 

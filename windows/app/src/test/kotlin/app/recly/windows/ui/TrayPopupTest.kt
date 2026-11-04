@@ -208,8 +208,20 @@ class TrayPopupTest {
         val drive = listOf(JobAlert(AlertReason.NEEDS_AUTH, 2))
         assertFalse(statusLineShown(Str.STATUS_SIGN_IN_NEEDED.message(), drive))
         assertTrue(statusLineShown(Str.STATUS_SIGN_IN_NEEDED.message(), emptyList()))
-        assertTrue(statusLineShown(Str.STATUS_RECORDING.message(), drive))
+        assertTrue(statusLineShown(Str.RECORDING_FAILED.message(), drive))
         assertTrue(statusLineShown(UiMessage.Text("a diagnostic"), drive))
+    }
+
+    /**
+     * 2026-11-04 (user decision): news only, as on the phones — the record node and the timer say what the recorder is
+     * doing, so the line that would only say so is left out.
+     */
+    @Test
+    fun `the status line says news, not what the record node and the timer say`() {
+        listOf(Str.STATUS_OPENING, Str.STATUS_WAITING, Str.STATUS_RECORDING, Str.STATUS_SAVING).forEach {
+            assertFalse(statusLineShown(it.message(), emptyList()), "$it")
+        }
+        assertTrue(statusLineShown(Str.RECORDING_FAILED.message(), emptyList()))
     }
 
     /** Every node of the scene's merged tree — one per thing a screen reader stops on. */

@@ -262,15 +262,19 @@ struct MenuPopover: View {
                     .foregroundStyle(blueprint.palette.textMuted)
                     .padding(Space.l)
             }
-            Text(verbatim: model.status)
-                .font(blueprint.fonts.sans(TypeSize.small))
-                .foregroundStyle(model.statusIsBlocker ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.textMuted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, Space.m)
-                .padding(.vertical, Space.s)
-                // docs/09 "Disabled, focus and structure": the popover's status line is announced when it changes.
-                .announcesChanges(of: model.status)
+            // News only (docs/09 "The line below the record node"), and left out when there is none.
+            if !model.status.isEmpty {
+                Text(verbatim: model.status)
+                    .font(blueprint.fonts.sans(TypeSize.small))
+                    .foregroundStyle(model.statusIsBlocker ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Space.m)
+                    .padding(.vertical, Space.s)
+            }
         }
+        // docs/09 "Disabled, focus and structure": the popover's status line is announced when it changes — from the
+        // ledger, which is always there, since a line that appears with its news has no change of its own to report.
+        .announcesChanges(of: model.status)
     }
 
     /// docs/09 screen principle 2 (2026-10-28): the row is the recording, as the Details list's is — time, title with the

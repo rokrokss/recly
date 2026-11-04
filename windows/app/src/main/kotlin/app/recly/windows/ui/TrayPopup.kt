@@ -171,13 +171,21 @@ private fun DeviceLine(text: String?) {
 }
 
 /**
- * Whether the ledger's last line says the status (2026-10-10): not while a line above says the same — the wait for
- * Drive that the banner counts.
+ * Whether the ledger's last line says the status: news only, as on the phones (2026-11-04, user decision) — the record
+ * node and the timer say what the recorder is doing, so [QUIET_STATUS] leaves the line out — and not while a line
+ * above says the same, the wait for Drive that the banner counts (2026-10-10).
  */
-internal fun statusLineShown(status: UiMessage, alerts: List<JobAlert>): Boolean = when {
-    (status as? UiMessage.Res)?.key == Str.STATUS_SIGN_IN_NEEDED -> alerts.none { it.reason == AlertReason.NEEDS_AUTH }
-    else -> true
+internal fun statusLineShown(status: UiMessage, alerts: List<JobAlert>): Boolean {
+    val key = (status as? UiMessage.Res)?.key
+    return when {
+        key != null && key in QUIET_STATUS -> false
+        key == Str.STATUS_SIGN_IN_NEEDED -> alerts.none { it.reason == AlertReason.NEEDS_AUTH }
+        else -> true
+    }
 }
+
+/** What only says the recorder is there or at work — not news (docs/09 "The line below the record node"). */
+private val QUIET_STATUS = setOf(Str.STATUS_OPENING, Str.STATUS_WAITING, Str.STATUS_RECORDING, Str.STATUS_SAVING)
 
 /**
  * docs/09 "Typography": `12:34`, or `01:02:03` from the hour (2026-10-08), counted from the moment the recorder

@@ -2721,8 +2721,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    - The **line below the record node** (phone, 2026-09-29) is used only when there is something to say: in the idle state, only the message left by the start or stop just
      made (recording failed, finishing the save failed, too short so not uploaded, and so on). `Waiting` · `Opening` · `Recording` · `Saving` are not written there, because the timer
      and the record node already say them. The line keeps its height even when empty, so the node does not move, and it is cleared when the user goes to another tab and
-     comes back — it is news of that moment, not a message to leave on the tab. This decision applies only to the two phones; the desktop menu's and the watch's
-     lines are unchanged.
+     comes back — it is news of that moment, not a message to leave on the tab. The Mac popover and the Windows tray took the same rule on
+     2026-11-04 (user decision), once their headers had the phones' node and timer: their line, at the ledger's end, says news only and is left
+     out when there is none — `Waiting` was most of what it said, and it meant nothing the `00:00` above did not. The watches' lines are unchanged.
    - **What a start or a stop says** (2026-10-15, every shell and both watches, in the line each one has): a recording that ends without the
      user stopping it (the capture failed or the helper stopped) says `The recording failed`, is queued untitled and asks for no title; a start
      that fails says the same. After `Save` the line says what the queue did with the recording when that is not the usual —

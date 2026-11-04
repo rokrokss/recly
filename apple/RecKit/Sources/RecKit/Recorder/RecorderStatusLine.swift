@@ -31,4 +31,15 @@ public enum RecorderStatusLine {
         case .stopping: return RecKitStrings.localized("Saving")
         }
     }
+
+    /// docs/09 "The line below the record node": the line where a timer and a record node already say what the
+    /// recorder is doing — the phones (2026-09-29) and the Mac popover (2026-11-04) — carries news only. Empty while a
+    /// recording is in flight, and while idle when the note only says the recorder is there.
+    public static func news(state: RecorderState, note: String, message: UiMessage? = nil) -> String {
+        guard state == .idle, message != nil || !quietNotes.contains(note) else { return "" }
+        return text(state: state, note: note, message: message)
+    }
+
+    /// The notes that only say the recorder is there — not news.
+    static let quietNotes: Set<String> = ["Opening", "Waiting"]
 }
