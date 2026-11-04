@@ -202,8 +202,8 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // At the status badge's size, as Restore is (2026-11-04).
-        BlueprintButton(strings[Str.TRAY_SETTINGS], { model.settingsOpen = true }, tone = ButtonTone.QUIET, compact = true)
+        // At the status badge's size, as Restore is, and the band around them as low as the boxes (2026-11-04).
+        BlueprintButton(strings[Str.TRAY_SETTINGS], { model.settingsOpen = true }, tone = ButtonTone.QUIET, compact = true, tight = true)
         Box(Modifier.weight(1f))
         // Never disabled while a capture is in flight: the quit waits for the stop to finalize and
         // queue the recording ([ShellModel.shutdown]), and the label is what says so.
@@ -212,6 +212,7 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
             onClick = onQuit,
             tone = ButtonTone.QUIET,
             compact = true,
+            tight = true,
         )
     }
 }

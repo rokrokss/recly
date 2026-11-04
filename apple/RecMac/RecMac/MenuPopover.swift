@@ -40,6 +40,9 @@ struct MenuPopover: View {
                 ledger
             }
         } footer: {
+            // The footer's targets reach 12 past their boxes, 4 more than the band's 8 over them: this room under the
+            // ledger takes it, so a click on the last row never lands on Settings or Quit.
+            Color.clear.frame(height: 4)
             HairLine()
             footer
         }
@@ -211,8 +214,9 @@ struct MenuPopover: View {
             BlueprintButton(
                 showingSettings ? loc("Hide settings") : loc("Settings"),
                 tone: .quiet,
-                // At the status badge's size, as Restore is (2026-11-04).
-                compact: true
+                // At the status badge's size, as Restore is, and the band around them as low as the boxes (2026-11-04).
+                compact: true,
+                tight: true
             ) {
                 showingSettings.toggle()
             }
@@ -224,7 +228,8 @@ struct MenuPopover: View {
             BlueprintButton(
                 loc(model.isIdle ? "Quit" : "Save the recording and quit"),
                 tone: .quiet,
-                compact: true
+                compact: true,
+                tight: true
             ) {
                 NSApplication.shared.terminate(nil)
             }
@@ -232,10 +237,9 @@ struct MenuPopover: View {
             .accessibilityIdentifier("menu-quit")
         }
         .padding(.horizontal, Space.m)
-        .padding(.top, Space.s)
-        // The popover rounds its own bottom corners over the content, so the last row of buttons
-        // is given the room that costs — the next step up from the top's.
-        .padding(.bottom, Space.m)
+        // 40 in all, as the Windows tray's footer (2026-11-04): the popover's corners round at 10, inside the 16 at the
+        // sides, so the boxes need no more room below than above.
+        .padding(.vertical, Space.s)
         .background(.ultraThinMaterial)
     }
 
