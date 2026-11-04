@@ -54,7 +54,7 @@ private struct StatusColumn<Content: View>: View {
         StatusColumnLayout(capped: capped) {
             StatusBadge(measuring: "TRANSCRIBING").hidden()
             ForEach(LedgerStatus.ledgerStatuses.indices, id: \.self) { index in
-                StatusBadge(LedgerStatus.ledgerStatuses[index]).hidden()
+                StatusBadge(measuring: LedgerStatus.ledgerStatuses[index]).hidden()
             }
             content
         }

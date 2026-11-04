@@ -210,7 +210,9 @@ struct MenuPopover: View {
         HStack(spacing: Space.s) {
             BlueprintButton(
                 showingSettings ? loc("Hide settings") : loc("Settings"),
-                tone: .quiet
+                tone: .quiet,
+                // At the status badge's size, as Restore is (2026-11-04).
+                compact: true
             ) {
                 showingSettings.toggle()
             }
@@ -222,7 +224,7 @@ struct MenuPopover: View {
             BlueprintButton(
                 loc(model.isIdle ? "Quit" : "Save the recording and quit"),
                 tone: .quiet,
-                minWidth: minTouch
+                compact: true
             ) {
                 NSApplication.shared.terminate(nil)
             }

@@ -159,7 +159,8 @@ internal fun AskBar(
  * docs/09 "Ask": one field for a question about the recording or a change to its transcript and summary, from one line
  * up to six, with Send. The presets are chips over it while it has the cursor, is empty and Ask can run (the bar gives
  * none while an answer is over it); a chip asks at once. Enter sends and Shift+Enter starts a new line where the cursor is (2026-10-10); sending empties the field.
- * While Ask cannot run the field says why in its place ([reason]) and takes nothing; while a request runs it waits.
+ * While Ask cannot run the field says why in its place ([reason]) and takes nothing; while a request runs it takes the
+ * next one and only Send waits (2026-11-04).
  */
 @Composable
 internal fun AskComposer(
@@ -212,7 +213,8 @@ internal fun AskComposer(
                 },
                 singleLine = false,
                 maxLines = FIELD_LINES,
-                enabled = !running && reason == null,
+                // While a request runs the next one can be typed; only Send waits (2026-11-04).
+                enabled = reason == null,
                 placeholder = placeholder,
                 labelShown = false,
             )

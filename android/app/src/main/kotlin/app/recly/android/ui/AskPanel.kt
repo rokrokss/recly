@@ -163,7 +163,8 @@ internal fun AskBar(
  * to six and then scrolls, and `Send` at its end. The keyboard's Send sends, and so does a new line typed into the field;
  * a paste keeps its lines. While it has the cursor and is empty the presets are chips over it, a tap asking (the page gives
  * none while an answer is over it). While nothing
- * can be asked ([reason]) the field is off and its placeholder says why. Sending empties it.
+ * can be asked ([reason]) the field is off and its placeholder says why; while a request runs it takes the next one and
+ * only Send waits. Sending empties it.
  */
 @Composable
 internal fun AskComposer(
@@ -214,7 +215,8 @@ internal fun AskComposer(
                 keyboardActions = KeyboardActions(onSend = { send() }),
                 fieldModifier = Modifier.onFocusChanged { onFocus(it.isFocused) }.semantics { contentDescription = placeholder }.testTag("ask-field"),
                 maxLines = FIELD_LINES,
-                enabled = !running && reason == null,
+                // While a request runs the next one can be typed; only Send waits (2026-11-04).
+                enabled = reason == null,
             )
             BlueprintButton(stringResource(R.string.ask_send), send, tone = ButtonTone.PRIMARY,
                 enabled = canSend(running, reason, question), modifier = Modifier.testTag("ask-send"))

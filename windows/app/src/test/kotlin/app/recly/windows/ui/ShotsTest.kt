@@ -275,6 +275,8 @@ class ShotsTest {
             shot("ask-presets-$lang", 460, 180, ko, clicks = listOf(ASK_FIELD)) { bar(AskState.None, "") }
             shot("ask-typed-$lang", 460, 160, ko) { bar(AskState.None, ASK_REQUEST) }
             shot("ask-running-$lang", 460, 200, ko) { bar(AskState.Running(null, ASK_REQUEST), "") }
+            // The next request typed while one runs: the field takes it, Send waits (2026-11-04).
+            shot("ask-running-typed-$lang", 460, 200, ko) { bar(AskState.Running(null, ASK_REQUEST), ASK_REQUEST) }
             shot("ask-ready-$lang", 460, 360, ko) {
                 bar(AskState.Ready(AskAnswer(recordingId, null, ASK_REQUEST, ANSWER, "gpt-5.4", changes = changes)), "")
             }

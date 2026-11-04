@@ -7,26 +7,35 @@ import SwiftUI
 /// docs/09 "Motion": motion is a state signal. Straight edges, no rounding and no fade — the square is
 /// the same shape everything else on the screen is. With reduce motion on it is not drawn: the words
 /// beside it are the whole message either way.
+///
+/// The turn is a keyframe animator over the rotation alone. It was `withAnimation(.repeatForever)` in `onAppear`, and
+/// a loader appearing in the same update as a layout change — the Mac's list after its window was resized — lent its
+/// endless animation to every frame that moved with it: the list shook until the app quit (2026-11-04).
 struct BlueprintLoader: View {
     /// One full turn, slow enough to read as "still working" rather than "hurry".
     private static let turn: Double = 1.2
 
     @Environment(\.blueprint) private var blueprint
-    @State private var angle: Double = 0
     let color: Color
+    /// False for a loader that is only measured — a hidden badge setting the status column's width: the same square,
+    /// standing still.
+    var turning = true
 
     var body: some View {
         if !blueprint.reduceMotion {
-            Rectangle()
+            let square = Rectangle()
                 .strokeBorder(color, lineWidth: blueprint.line)
                 .frame(width: 8, height: 8)
-                .rotationEffect(.degrees(angle))
-                .onAppear {
-                    withAnimation(.linear(duration: Self.turn).repeatForever(autoreverses: false)) {
-                        angle = 360
-                    }
-                }
                 .accessibilityHidden(true)
+            if turning {
+                square.keyframeAnimator(initialValue: 0.0, repeating: true) { content, angle in
+                    content.rotationEffect(.degrees(angle))
+                } keyframes: { _ in
+                    LinearKeyframe(360.0, duration: Self.turn)
+                }
+            } else {
+                square
+            }
         }
     }
 }

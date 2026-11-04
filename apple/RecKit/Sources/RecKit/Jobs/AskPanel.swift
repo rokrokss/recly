@@ -4,7 +4,8 @@ import SwiftUI
 
 /// docs/09 "Ask": the composer at the foot of the detail — one field for a question about the recording or a change to its
 /// transcript and summary, and the presets as chips over it while it is empty and has the cursor (the page gives none while
-/// an answer is over it). While Ask cannot run, the field says why and takes nothing.
+/// an answer is over it). While Ask cannot run, the field says why and takes nothing; while a request runs it takes the next
+/// one and only Send waits.
 struct AskComposer: View {
     @Binding var question: String
     let presets: [AskPreset]
@@ -39,7 +40,8 @@ struct AskComposer: View {
                     .contentDirection(question)
                     .frame(minHeight: minTouch)
                     .fieldBox(focused: focused.wrappedValue, inset: EdgeInsets())
-                    .disabled(running || reason != nil)
+                    // While a request runs the next one can be typed; only Send waits (2026-11-04).
+                    .disabled(reason != nil)
                     .accessibilityLabel(Text(verbatim: reason ?? loc("Ask, or say what to change")))
                     .accessibilityIdentifier("ask-question")
                 BlueprintButton(loc("Send"), tone: .primary, action: send)

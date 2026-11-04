@@ -153,6 +153,8 @@ public struct StatusBadge: View {
     private let wraps: Bool
     /// The text in place of the status's word — only the ledger's measure of its cap uses it.
     private let verbatim: String?
+    /// Only measured, hidden: its loader stands still (see [BlueprintLoader]'s `turning`).
+    private let measured: Bool
 
     /// - Parameter wraps: take the width the ledger's status column gives it and wrap the word onto
     ///   further lines, centred, when the word is wider than that (2026-10-08 badge column rule).
@@ -161,6 +163,7 @@ public struct StatusBadge: View {
         self.status = status
         self.wraps = wraps
         verbatim = nil
+        measured = false
     }
 
     /// A badge-sized piece of text, for measuring: the ledger's status column is capped at what the
@@ -169,6 +172,16 @@ public struct StatusBadge: View {
         status = LedgerStatus(code: text, tone: .neutral)
         wraps = false
         verbatim = text
+        measured = true
+    }
+
+    /// The badge a status would wear, for measuring only: as wide as the real one, its loader standing still — the
+    /// ledger's status column draws one of these, hidden, for every status in every row.
+    init(measuring status: LedgerStatus) {
+        self.status = status
+        wraps = false
+        verbatim = nil
+        measured = true
     }
 
     public var body: some View {
@@ -177,7 +190,7 @@ public struct StatusBadge: View {
             // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink. So are a fill
             // and the notes being organized (docs/09 screen principle 2).
             if status.code == "IMPORTING" || status.code == LedgerStatus.filling.code || status.code == LedgerStatus.organizing.code {
-                BlueprintLoader(color: status.tone.ink(blueprint.palette))
+                BlueprintLoader(color: status.tone.ink(blueprint.palette), turning: !measured)
             }
             // 2026-10-11 (N2): a word wider than the column breaks at a hyphen, never between two letters.
             // Only the badge that wraps pays for it; the column's measures are one line each.

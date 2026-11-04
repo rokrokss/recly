@@ -54,7 +54,6 @@ import app.recly.windows.ui.component.StateNodeRow
 import app.recly.windows.ui.component.statusColumnWidth
 import app.recly.windows.ui.component.textColumnWidth
 import app.recly.windows.ui.theme.BlueprintColors
-import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.dotGrid
@@ -203,7 +202,8 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BlueprintButton(strings[Str.TRAY_SETTINGS], { model.settingsOpen = true }, tone = ButtonTone.QUIET)
+        // At the status badge's size, as Restore is (2026-11-04).
+        BlueprintButton(strings[Str.TRAY_SETTINGS], { model.settingsOpen = true }, tone = ButtonTone.QUIET, compact = true)
         Box(Modifier.weight(1f))
         // Never disabled while a capture is in flight: the quit waits for the stop to finalize and
         // queue the recording ([ShellModel.shutdown]), and the label is what says so.
@@ -211,7 +211,7 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
             label = strings[if (model.recording) Str.TRAY_QUIT_SAVING else Str.TRAY_QUIT],
             onClick = onQuit,
             tone = ButtonTone.QUIET,
-            minWidth = MinTouch,
+            compact = true,
         )
     }
 }

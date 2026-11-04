@@ -2655,7 +2655,7 @@ The principle in one line: **intent, not decoration**.
   | Screen header | 16 above, 12 below, 16 at the sides |
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
-  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, the Ask presets and Version history's `Restore` (2026-11-04); in a notes row and among the presets the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31) |
+  | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, the Ask presets, Version history's `Restore` and the popover's and tray's `Settings` and `Quit` (2026-11-04); in a notes row and among the presets the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31) |
   | State node | padding 12 × 8, label up to two lines from the start edge; the three one height; stacked, joined by the same connectors turned downwards |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
@@ -2742,7 +2742,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      2026-09-29). There are only two loaders: this one, and the **waveform loader**, used only in the waveform's place
      (the detail screen in screen principle 2). The waveform loader does not rise and fall or flow like playback and recording waveforms, and does not leave the places it has passed filled —
      flowing waves, bouncing bars, breathing and filling from the left are playback or recording indicators on the various platforms, so they are not used (2026-09-26 research)) — with `reduce
-     motion`, the code only. While recording, `REC` takes precedence. The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`)
+     motion`, the code only. The square's turn moves nothing but the square, and a badge drawn only to measure the status column keeps it
+     still (2026-11-04: on Apple a turn started as the loader appeared once lent its endlessness to a resized list, which shook until the app
+     quit). While recording, `REC` takes precedence. The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`)
      (Apple · Android · Windows 2026-09-03; Windows reads Settings → Accessibility → Visual effects → Animation effects,
      `SPI_GETCLIENTAREAANIMATION`, 2026-10-15).
      Windows also uses the shell states `OPENING` (before the helper starts) · `NO_HELPER` · `NAMING` (a title is being entered), written `Opening` ·
@@ -3188,7 +3190,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
     whole). While the field has the cursor and is empty and nothing it came to is over it, the preset chips are over it, drawn as time buttons are ("Component measurements", 2026-11-04) (`Action
     items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows); a tap asks.
     Sending empties the field. The chips go while an answer is up, so the bar stays low (2026-11-04); its ✕ brings them back.
-    While nothing can be asked the field is off and says why in its placeholder: `Still recording`, `No transcript yet`, the reason of
+    While a request runs the field stays on, so the next one can be typed, and only `Send` (and Return) waits for it (2026-11-04,
+    user decision); the chips stay away until it is done. While nothing can be asked the field is off and says why in its placeholder: `Still recording`, `No transcript yet`, the reason of
     an unsettled job (`Transcribing…`), `Sign in to ChatGPT in Settings`. On iPhone the ChatGPT permission is asked first, as for
     `Summarize`.
   - **What it came to**, over the composer with a ✕ at its end that closes it (none while it runs): `Working…` with the square loader;
@@ -3984,7 +3987,8 @@ With the built-in speakers the microphone's input node runs with voice processin
 - **Menu bar** popover: 3 state nodes + the recent ledger (infinite scroll, 20 rows at a time; time · title with the transcript's first words
   under it · length · state, and a click opens the recording in the Details window, §9 principle 2) + actions, with a notice banner at the top.
 - **Mac popover size**: the height is limited so the popover fits inside the current screen minus the menu bar and the Dock. Only settings and the ledger scroll, and
-  Settings/Hide settings and Quit at the bottom are always shown. While settings are open, the button reads `Hide settings`.
+  Settings/Hide settings and Quit at the bottom are always shown, at the status badge's size (2026-11-04, user decision; the Windows tray's
+  too). While settings are open, the button reads `Hide settings`.
   Hiding settings shrinks it to the ledger's size, and when the screen layout changes, the position and height are fitted again.
 - **The popover holds these items**: start · stop, the recent ledger, settings, sign-in (the workflow editing window was retired 2026-09-24). The AWT menu on Windows is
   a reduced fallback (macOS uses a `.window` MenuBarExtra, so there is no NSMenu).
