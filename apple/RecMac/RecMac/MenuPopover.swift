@@ -83,8 +83,9 @@ struct MenuPopover: View {
             ScreenHeader(title: "Recly")
             // docs/09 screen principle 1 (2026-11-04): the phone's square record node, with the timer beside it —
             // `00:00` while idle, so a start and a stop happen in the one place and nothing below them moves.
-            HStack(alignment: .center, spacing: Space.m) {
-                RecordNode(recording: model.isRecording, working: model.state == .starting || model.state == .stopping) {
+            // Both at the panel's scale, not the phone's: a 44 node and a 20 timer, 12 apart.
+            HStack(alignment: .center, spacing: Space.sm) {
+                RecordNode(recording: model.isRecording, working: model.state == .starting || model.state == .stopping, compact: true) {
                     if model.canStop { model.stop() } else { model.start() }
                 }
                 // ⌘R to start and ⌘. to stop, the popover's own — not a global hot key (2026-10-10 took those out).
@@ -97,7 +98,8 @@ struct MenuPopover: View {
                     // 2026-10-08 §4: the recording's length stays up while it is saved; `00:00` once idle.
                     MonoTimer(
                         model.state == .idle || model.elapsed.isEmpty ? LedgerFormat.elapsed(0) : model.elapsed,
-                        color: model.isRecording ? blueprint.palette.danger : nil
+                        color: model.isRecording ? blueprint.palette.danger : nil,
+                        size: TypeSize.title
                     )
                     .accessibilityIdentifier("elapsed")
                     ForEach(inputLines, id: \.self) { line in

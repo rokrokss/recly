@@ -4,7 +4,9 @@ import SwiftUI
 /// docs/09 "Shape": the round record button is replaced by a square node with a thick border —
 /// 72pt, outlined while idle and filled while recording, with the stop square in the page
 /// colour. The iPhone's Record screen and the Mac's popover draw this one, so a start and a stop
-/// look alike on every device (the desktops' text button gave way to it, 2026-11-04).
+/// look alike on every device (the desktops' text button gave way to it, 2026-11-04). [compact]
+/// is the popover's: 44, a 2 border and a 14 stop square — the phone's 72 is the screen there,
+/// and in a menu bar panel it outweighed the ledger (2026-11-04, "Component measurements").
 ///
 /// It names no action of its own: the caller gives it its accessibility label and identifier,
 /// and adds `.disabled` for whatever else keeps a start out (a core that is not open yet).
@@ -12,6 +14,7 @@ public struct RecordNode: View {
     @Environment(\.blueprint) private var blueprint
     private let recording: Bool
     private let working: Bool
+    private let compact: Bool
     private let action: () -> Void
     /// What the node draws, which outlives the recorder's own state by [holdBusy]'s window.
     @State private var busy = false
@@ -19,9 +22,10 @@ public struct RecordNode: View {
     @State private var busyStartedAt: Date?
 
     /// [working]: the recorder is between two states — Starting or Saving.
-    public init(recording: Bool, working: Bool, action: @escaping () -> Void) {
+    public init(recording: Bool, working: Bool, compact: Bool = false, action: @escaping () -> Void) {
         self.recording = recording
         self.working = working
+        self.compact = compact
         self.action = action
     }
 
@@ -31,7 +35,7 @@ public struct RecordNode: View {
                 RoundedRectangle(cornerRadius: Radius.node)
                     .fill(recording ? blueprint.palette.danger : blueprint.palette.surface)
                 RoundedRectangle(cornerRadius: Radius.node)
-                    .strokeBorder(blueprint.palette.danger, lineWidth: 3)
+                    .strokeBorder(blueprint.palette.danger, lineWidth: compact ? 2 : 3)
                 if busy {
                     Text(verbatim: "…")
                         .font(blueprint.fonts.monoTitle)
@@ -39,10 +43,10 @@ public struct RecordNode: View {
                 } else {
                     RoundedRectangle(cornerRadius: Radius.badge)
                         .fill(recording ? blueprint.palette.background : blueprint.palette.danger)
-                        .frame(width: 22, height: 22)
+                        .frame(width: compact ? 14 : 22, height: compact ? 14 : 22)
                 }
             }
-            .frame(width: 72, height: 72)
+            .frame(width: compact ? 44 : 72, height: compact ? 44 : 72)
             .contentShape(Rectangle())
             .blueprintFocusRing()
         }

@@ -27,9 +27,11 @@ import app.recly.windows.ui.theme.processingHoldMs
 import kotlinx.coroutines.delay
 
 /**
- * docs/09 "Shape": the phones' square record node — 72dp, outlined while idle and filled while recording, with
- * the stop square in the page colour — in the tray's popup in place of the Start and Stop buttons (2026-11-04),
- * so a start and a stop look alike on every device. Android's `RecordingScreen.RecordNode` is the same node.
+ * docs/09 "Shape": the phones' square record node — outlined while idle and filled while recording, with the
+ * stop square in the page colour — in the tray's popup in place of the Start and Stop buttons (2026-11-04), so a
+ * start and a stop look alike on every device. Android's `RecordingScreen.RecordNode` is the same node at the
+ * phone's 72; this is the desktops' 44 with a 2 border and a 14 stop square, the Mac popover's, since the phone's
+ * size outweighed the ledger in a panel this small ("Component measurements").
  *
  * [working]: the recorder is between two states — Starting or Saving. What the node shows then stays up for the
  * processing hold after the recorder has moved on ([processingHoldMs]): a start answered in 40 ms would otherwise
@@ -63,9 +65,9 @@ fun RecordNode(
     val on = enabled && !working && !busy
     Box(
         modifier = modifier
-            .size(72.dp)
+            .size(44.dp)
             .focusRing(shape)
-            .border(3.dp, palette.danger, shape)
+            .border(2.dp, palette.danger, shape)
             .background(if (recording) palette.danger else palette.surface, shape)
             .pressCursor(on)
             .clickable(enabled = on, role = Role.Button, onClick = onClick)
@@ -78,7 +80,7 @@ fun RecordNode(
         } else {
             Box(
                 Modifier
-                    .size(22.dp)
+                    .size(14.dp)
                     .background(if (recording) palette.background else palette.danger, RoundedCornerShape(Radius.badge)),
             )
         }

@@ -106,9 +106,10 @@ private fun Header(model: ShellModel, strings: Strings) {
         }
         // docs/09 screen principle 1 (2026-11-04): the phones' square record node, with the timer beside it —
         // `00:00` while idle, so a start and a stop happen in the one place and nothing below them moves.
+        // Both at the popup's scale, not the phone's: a 44 node and a 20 timer, 12 apart.
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, top = Space.s),
-            horizontalArrangement = Arrangement.spacedBy(Space.m),
+            horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Off while a capture is coming up or being saved (STARTING, STOPPING), as Start was.
@@ -183,6 +184,8 @@ private fun Elapsed(since: Long?, until: Long?) {
     MonoTimer(
         text = since?.let { rememberClock(it, until) } ?: LedgerFormat.clock(0),
         color = if (since != null) blueprint.danger else null,
+        // The title size with the timer's tracking.
+        style = mono.title.copy(letterSpacing = mono.timer.letterSpacing),
     )
 }
 

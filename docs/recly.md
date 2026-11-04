@@ -2616,7 +2616,7 @@ The principle in one line: **intent, not decoration**.
 - **Typography**: UI body = the platform system sans-serif (Roboto / SF Pro / Segoe UI — no bundled local fonts; Korean glyphs
   are guaranteed). **Data = monospace** (Android `FontFamily.Monospace`/Roboto Mono, Apple SF Mono, Windows
   Cascadia/Consolas): timer `12:34`, part `p001`, file names, bytes, status words (`Waiting for Drive`), device ID. Scale:
-  12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation. Nothing is smaller than 12, watches included — on Wear at its 227dp
+  12 / 14 / 16 (body) / 20 / 28 / 44 (timer; 20 in the popover and the tray, beside their record node, 2026-11-04) — fluid interpolation. Nothing is smaller than 12, watches included — on Wear at its 227dp
   layout basis, which a smaller face scales as a whole (touch targets excepted: they stay 48 on every face). The timer is mono at regular
   weight with 1 of tracking on every shell; a button's label is 14 whether it is sans or mono (2026-10-15). A dialog's or sheet's body
   — a question, a consent or disclosure notice, the ChatGPT welcome — and a banner are 14 in every tone, the size of the rest of the app's
@@ -2656,7 +2656,7 @@ The principle in one line: **intent, not decoration**.
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
   | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, the Ask presets, Version history's `Restore` and the popover's and tray's `Settings` and `Quit` (2026-11-04); in a notes row, among the presets and in the popover's and tray's footer the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31), so the footer is as low as its boxes: 8 above and below them, 40 in all on both desktops (2026-11-04) |
-  | Record node | 72 square, a 3 border in the recording colour, the 22 stop square inside; in the popover and the tray the timer beside it, 16 apart (2026-11-04) |
+  | Record node | 72 square, a 3 border in the recording colour, the 22 stop square inside; in the popover and the tray (2026-11-04) 44, a 2 border and the 14 stop square, the timer beside it at 20, 12 apart — the phone's size outweighed the ledger in a panel that small |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
   | Ledger row | 12 top and bottom; the time column as wide as the longest time in that shell's mono font (62 Android and Apple, 68 Windows) |

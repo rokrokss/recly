@@ -70,8 +70,6 @@ public struct BlueprintFonts: Equatable, Sendable {
     public var monoBodySmall: Font { mono(TypeSize.bodySmall) }
     public var monoBody: Font { mono(TypeSize.body) }
     public var monoTitle: Font { mono(TypeSize.title) }
-    /// docs/09 "Typography" (2026-10-15): regular weight on every shell; [MonoTimer] adds the 1 of tracking.
-    public var monoTimer: Font { mono(TypeSize.timer) }
 
     /// The section headers and node kickers of the mockup: small, tracked out, never shouted.
     public var label: Font { sans(TypeSize.small, weight: .medium) }
