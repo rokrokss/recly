@@ -33,6 +33,8 @@ final class MenuBarPanel {
     private var iconChanges: AnyCancellable?
     private var screenChanges: AnyCancellable?
     private var activationChanges: AnyCancellable?
+    /// Re-reads the devices a start would take while the popover is up ([MenuModel.refreshNextInput]).
+    private var nextInputTimer: Timer?
 
     init(model: MenuModel, language: AppLanguage, theme: AppTheme) {
         self.model = model
@@ -111,6 +113,7 @@ final class MenuBarPanel {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.item.button?.image = self.model.icon
+                self.showElapsed()
             }
         screenChanges = NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .receive(on: RunLoop.main)
@@ -147,12 +150,57 @@ final class MenuBarPanel {
     }
 
     private func show() {
+        model.refreshNextInput()
         fit()
         panel.makeKeyAndOrderFront(nil)
+        followNextInput()
         // docs/03: the popover coming up is when this Mac last looked, so it asks Drive what the
         // other devices have uploaded since. Beside the ledger and never in front of it — the rows
         // a pull adopts arrive on the model's own recordings observation.
         Task { await model.pullRemoteRecordings() }
+    }
+
+    /// docs/12 "Menu bar" (2026-11-04): the microphone and the output a start would take change under an open popover
+    /// (headphones plugged in, AirPods connecting), so they are read again every two seconds for as long as it is up —
+    /// and not at all while it is closed. Escape and a row's click order the panel out without [hide], so the timer
+    /// looks for itself.
+    private func followNextInput() {
+        nextInputTimer?.invalidate()
+        let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                guard self.panel.isVisible else {
+                    self.nextInputTimer?.invalidate()
+                    self.nextInputTimer = nil
+                    return
+                }
+                self.model.refreshNextInput()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        nextInputTimer = timer
+    }
+
+    /// docs/12 "Menu bar" (2026-11-04): while a recording runs, its length beside the icon. A recording is mostly made
+    /// with the popover closed, and a red icon says that one runs, not for how long. Nothing beside it otherwise, so
+    /// the item keeps the one square it had.
+    private func showElapsed() {
+        guard let button = item.button else { return }
+        let text = model.isRecording ? model.elapsed : ""
+        if text.isEmpty {
+            guard !button.title.isEmpty else { return }
+            button.title = ""
+            button.imagePosition = .imageOnly
+            item.length = NSStatusItem.squareLength
+            return
+        }
+        if button.title.isEmpty {
+            item.length = NSStatusItem.variableLength
+            button.imagePosition = .imageLeading
+            // Digits of one width, so the item does not jitter as the seconds turn.
+            button.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .regular)
+        }
+        if button.title != text { button.title = text }
     }
 
     /// One fit per turn of the run loop, however many invalidations a single update makes.
@@ -198,6 +246,8 @@ final class MenuBarPanel {
     }
 
     private func hide() {
+        nextInputTimer?.invalidate()
+        nextInputTimer = nil
         guard panel.isVisible else { return }
         panel.orderOut(nil)
     }

@@ -67,9 +67,7 @@ import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.DialogTone
 import app.recly.android.ui.component.LiveWaveform
 import app.recly.android.ui.component.MonoTimer
-import app.recly.android.ui.component.NodeSpec
 import app.recly.android.ui.component.ScreenHeader
-import app.recly.android.ui.component.StateNodeRow
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
@@ -85,17 +83,13 @@ import app.recly.android.ui.component.focusRing
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 
-/** docs/09 screen principle 1: the recording screen is a dashboard — three state nodes, a monospace timer
- * and one square node that starts and stops it. Everything slower than a tap — the service, the
+/** docs/09 screen principle 1: the recording screen is a dashboard — a monospace timer and one square node
+ * that starts and stops it. Everything slower than a tap — the service, the
  * core, the disk — is behind [RecordingViewModel]. */
 @Composable
 fun RecordingSection(
     state: RecordingUiState,
     recorder: RecorderState,
-    /** [ledgerCode]: what the state node says while nothing is recording, or null for nothing. */
-    ledger: String? = null,
-    /** The transcription node's tap: the processing settings, where what it says is changed. */
-    onOpenProcessing: () -> Unit,
     /** The record node's tap: the consent question first (D4). */
     onStart: () -> Unit,
     /** The permission prompts are done and the microphone is there: the recorder starts. */
@@ -149,9 +143,6 @@ fun RecordingSection(
 
     val elapsed = elapsedSeconds(recorder)
     val recording = recorder is RecorderState.Recording
-    // docs/09 screen principle 1: what the ledger has to say, but only while the recorder has nothing of
-    // its own — `REC` and the rest are about the recorder, so they win.
-    val borrowed = if (recorder is RecorderState.Idle) ledger else null
     val busy = rememberBusyHold(recorder is RecorderState.Starting || recorder is RecorderState.Stopping)
     // docs/08 "Memo": the recording whose memo is being written; the editor goes with the recording it was opened on.
     var memoOpen by rememberSaveable { mutableStateOf<String?>(null) }
@@ -163,46 +154,6 @@ fun RecordingSection(
         // where it is the point, and nothing takes the line it had here.
         ScreenHeader(title = stringResource(R.string.app_name))
         prompt()
-        Box(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
-            // docs/09 screen principle 1: the transcription node is the only one on this screen that takes
-            // a tap — it opens the processing settings. The device and the state are readouts.
-            val canPick = recorder is RecorderState.Idle
-            val pickLabel = stringResource(R.string.processing_title)
-            StateNodeRow(
-                nodes = listOf(
-                    NodeSpec(
-                        label = stringResource(R.string.node_device),
-                        // What this device is, in a word of the app's language (UX decisions of
-                        // 2026-10-08) — the `phone` code stays in the document, not on the screen.
-                        value = stringResource(R.string.node_device_phone),
-                    ),
-                    NodeSpec(
-                        label = stringResource(R.string.processing_transcription),
-                        value = if (state.processing.mode == recly.core.processing.TranscriptionMode.EXTERNAL) state.processing.external?.provider?.let(recly.core.transcribe.SttProviders::displayName).orEmpty()
-                            else stringResource(state.processing.mode.label()),
-                        onClick = if (canPick) onOpenProcessing else null,
-                        onClickLabel = pickLabel,
-                    ),
-                    NodeSpec(
-                        label = stringResource(R.string.node_state),
-                        // docs/09 screen principle 1: with nothing to record, the node borrows the ledger's
-                        // own `UPLOADING` — or its `RECEIVING`, a recording coming in from the
-                        // watch (docs/03) — because that is the only thing happening and this
-                        // screen is where the user is ([ledgerCode]). The code is said as its word.
-                        value = stringResource(borrowed?.let(::nodeWord) ?: recorder.word()),
-                        valueColor = when {
-                            recording -> palette.danger
-                            borrowed != null -> palette.accent
-                            else -> palette.textMuted
-                        },
-                        active = recording || borrowed != null,
-                        busy = borrowed != null,
-                    ),
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-        }
 
         Column(
             modifier = Modifier.fillMaxWidth().then(if (scrollDashboard) Modifier.heightIn(min = 160.dp) else Modifier.weight(1f)),
@@ -433,47 +384,6 @@ private fun rememberBusyHold(working: Boolean): Boolean {
         busy = false
     }
     return busy
-}
-
-/**
- * docs/09 screen principle 1: the ledger's own `UPLOADING` — a job that is running right now. The rows are
- * already live through `jobs.observe()`, so the node follows a pass that starts and ends while the
- * recording screen is the one on top, without asking the core anything of its own.
- *
- * A transcription on this device is not an upload, and its row says `TRANSCRIBING` — the iPhone's
- * node does not borrow it either (`Recents.uploading`).
- */
-fun uploading(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RUNNING && !it.localPending }
-
-/** docs/03 "Watch → phone transfer contract": the watch is handing a recording over to this phone right now. */
-fun receiving(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RECEIVING }
-
-/**
- * docs/09 screen principle 1: the code the state node borrows from the ledger while nothing is recording,
- * or null when the ledger has nothing to say and the node is the recorder's own code. A pass of
- * this phone's own wins: it is the one thing on this device the user could be waiting for.
- */
-fun ledgerCode(items: List<JobItem>): String? = when {
-    uploading(items) -> "UPLOADING"
-    receiving(items) -> "RECEIVING"
-    else -> null
-}
-
-/**
- * docs/09: state is a word in monospace, never colour alone — the recorder's `IDLE`, `STARTING`, `REC`
- * and `STOPPING` said in the app's language (UX decisions of 2026-10-08).
- */
-private fun RecorderState.word(): Int = when (this) {
-    RecorderState.Idle -> R.string.node_state_ready
-    RecorderState.Starting -> R.string.node_state_starting
-    is RecorderState.Recording -> R.string.job_state_recording
-    RecorderState.Stopping -> R.string.node_state_saving
-}
-
-/** The word for a code the node borrows from the ledger ([ledgerCode]). */
-private fun nodeWord(code: String): Int = when (code) {
-    "RECEIVING" -> R.string.badge_receiving
-    else -> R.string.job_state_running
 }
 
 private fun RecorderState.actionLabel(): Int = when (this) {

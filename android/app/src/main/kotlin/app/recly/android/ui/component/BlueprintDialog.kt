@@ -58,8 +58,8 @@ import app.recly.android.ui.theme.blueprint
  * docs/09 screen principle 5 ("title + one-line description + at most 2 buttons"), drawn the way
  * the rest of the app is drawn: a square-cornered node on the grid, not Material's tonal card.
  * `AlertDialog` is a container with its own shape, its own elevation tint and its own 28dp corners,
- * and none of those are in docs/09 — so this is `Dialog` plus the same surface, 1dp border and 4dp
- * radius as [StateNode].
+ * and none of those are in docs/09 — so this is `Dialog` plus the surface, a 1dp border and the 4dp
+ * radius.
  *
  * There is no motion to reduce: a `Dialog` window is not animated, so the system's own reduce-motion
  * setting has nothing to switch off here. Dark arrives through the palette.

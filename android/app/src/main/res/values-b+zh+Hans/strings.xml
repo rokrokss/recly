@@ -122,8 +122,6 @@
     <string name="widget_description">轻点即可开始和停止录音。</string>
     <string name="shortcut_start_short">开始录音</string>
     <string name="shortcut_start_long">开始Recly录音</string>
-    <string name="node_device">设备</string>
-    <string name="node_state">状态</string>
     <string name="jobs_column_time">时间</string>
     <string name="jobs_column_title">标题</string>
     <string name="jobs_column_length">时长</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">等待文件夹</string>
     <string name="badge_filling">正在填写</string>
     <string name="badge_organizing">正在生成摘要</string>
-    <string name="node_state_ready">就绪</string>
-    <string name="node_state_starting">正在启动</string>
-    <string name="node_state_saving">正在保存</string>
-    <string name="node_device_phone">手机</string>
     <string name="detail_waiting_drive">等待Drive。连接Drive后即可上传并转录。</string>
     <string name="processing_folder_monthly">按月文件夹</string>
     <string name="processing_folder_single">单个文件夹</string>

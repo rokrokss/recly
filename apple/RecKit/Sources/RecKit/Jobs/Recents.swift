@@ -438,27 +438,6 @@ public enum Recents {
     private static let failing: Set<String> =
         ["Failed", "No space in Drive", "No space in iCloud", "Too short"]
 
-    /// Whether a job is running right now, off the same `"Uploading"` key the ledger badge reads —
-    /// and an iCloud upload the system is still doing counts as one, as its badge does (docs/03
-    /// "Storage location").
-    ///
-    /// The ledger is the newest five recordings, so a job still running on one older than those is
-    /// not seen here — the same scope the ledger itself has, and the dashboard says no more than
-    /// the rows under it do.
-    public static func uploading(_ items: [RecentItem]) -> Bool {
-        items.contains { $0.state == "Uploading" || $0.state == "Uploading to iCloud" }
-    }
-
-    /// docs/03 "Watch → phone transfer contract" · docs/09 screen principle 1: whether this phone is taking a recording off
-    /// its watch right now, read off the ledger the way [uploading] reads a running job — the row
-    /// is the only place the transfer is visible, and the State node above the list would otherwise
-    /// say `IDLE` while the phone is busy.
-    ///
-    /// The desktop never asks: nothing is ever received on a Mac.
-    public static func receiving(_ items: [RecentItem]) -> Bool {
-        items.contains { $0.state == "Receiving from the watch" }
-    }
-
     /// The language of the local step a `NEEDS_MODEL` job is parked on, as the core names it — the
     /// one `ReclyCore.prepareLocalEngine` has to download for this job to resume.
     static func localLanguage(job: ReclyCore.Job, steps: [StepRun]) -> String? {

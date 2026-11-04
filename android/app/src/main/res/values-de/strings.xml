@@ -122,8 +122,6 @@
     <string name="widget_description">Aufnahme mit einem Tippen starten und stoppen.</string>
     <string name="shortcut_start_short">Aufnahme starten</string>
     <string name="shortcut_start_long">Recly-Aufnahme starten</string>
-    <string name="node_device">Gerät</string>
-    <string name="node_state">Zustand</string>
     <string name="jobs_column_time">Zeit</string>
     <string name="jobs_column_title">Titel</string>
     <string name="jobs_column_length">Dauer</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">Wartet auf Ordner</string>
     <string name="badge_filling">Wird ergänzt</string>
     <string name="badge_organizing">Wird zusammengefasst</string>
-    <string name="node_state_ready">Bereit</string>
-    <string name="node_state_starting">Wird gestartet</string>
-    <string name="node_state_saving">Wird gespeichert</string>
-    <string name="node_device_phone">Telefon</string>
     <string name="detail_waiting_drive">Wartet auf Drive. Verbinden Sie Drive, um hochzuladen und zu transkribieren.</string>
     <string name="processing_folder_monthly">Monatsordner</string>
     <string name="processing_folder_single">Ein Ordner</string>

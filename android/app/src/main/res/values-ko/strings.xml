@@ -139,8 +139,6 @@
     <string name="shortcut_start_long">Recly 녹음 시작</string>
 
     <!-- docs/09 screen principle 1: the recording dashboard's three state nodes. -->
-    <string name="node_device">기기</string>
-    <string name="node_state">상태</string>
 
     <!-- docs/09 screen principle 2: the ledger's columns and what an expanded row offers. -->
     <string name="jobs_column_time">시각</string>
@@ -396,10 +394,6 @@
     <string name="badge_waiting_folder">폴더 대기</string>
     <string name="badge_filling">채우는 중</string>
     <string name="badge_organizing">요약하는 중</string>
-    <string name="node_state_ready">준비</string>
-    <string name="node_state_starting">시작 중</string>
-    <string name="node_state_saving">저장 중</string>
-    <string name="node_device_phone">폰</string>
     <string name="detail_waiting_drive">Drive 연결 대기 중입니다. Drive를 연결하면 업로드하고 전사합니다.</string>
     <string name="processing_folder_monthly">월별 폴더</string>
     <string name="processing_folder_single">폴더 하나</string>

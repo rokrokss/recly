@@ -61,7 +61,7 @@ import app.recly.windows.ui.theme.blueprint
  * docs/09 screen principle 5 ("title + description + at most 2 buttons"), drawn the way the rest of this shell is drawn: a
  * square-cornered node on the grid, not Material's tonal card. `AlertDialog` is a container with its
  * own shape, its own elevation tint and its own 28dp corners, and none of those are in docs/09 — so
- * this is a `DialogWindow` carrying the same surface, hairline border and 4dp radius as [StateNode].
+ * this is a `DialogWindow` carrying the surface, a hairline border and the 4dp radius.
  *
  * The window is `undecorated` and `transparent`: a title bar would be a second title above the one
  * in the card, and a translucent window is one AWT draws no shadow behind (docs/09 trend 7 keeps

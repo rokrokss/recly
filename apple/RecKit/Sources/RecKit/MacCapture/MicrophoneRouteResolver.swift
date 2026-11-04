@@ -25,6 +25,12 @@ public struct MicrophoneDevice: Identifiable, Equatable, Sendable {
             return MicrophoneDevice(id: uid, name: name, audioID: device)
         }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
+
+    /// docs/12 "Menu bar" (2026-11-04): the microphone a start made now would take — the recorder's own first
+    /// choice ([MicrophoneRouteResolver.resolve(initial:)]), named without opening anything.
+    public static func next() -> MicrophoneDevice? {
+        MicrophoneRouteResolver().resolve(initial: true)
+    }
 }
 
 /// Selection and hysteresis are independent of Core Audio so disconnects, mute transitions and

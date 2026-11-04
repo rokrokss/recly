@@ -281,8 +281,7 @@ class MainActivity : ComponentActivity() {
                     val content = Modifier.fillMaxSize().padding(insets)
                     when (tab) {
                         Tab.RECORD -> RecordTab(
-                            recording, recorder, jobs, recordingModel, content,
-                            onOpenProcessing = { goTo(Tab.SETTINGS) },
+                            recording, recorder, recordingModel, content,
                             // A new recording is where the list's last message stops being news, as
                             // on the iPhone.
                             onStart = { quick ->
@@ -423,20 +422,14 @@ class MainActivity : ComponentActivity() {
 private fun RecordTab(
     state: RecordingUiState,
     recorder: RecorderState,
-    jobs: JobsUiState,
     model: RecordingViewModel,
     modifier: Modifier,
-    onOpenProcessing: () -> Unit,
     /** True for a tile's, widget's or shortcut's start, which never asks about organizing (docs/08 "Organizing"). */
     onStart: (quick: Boolean) -> Unit,
 ) {
     RecordingSection(
         state = state,
         recorder = recorder,
-        // docs/09 screen principle 1: the state node borrows the ledger while the recorder is idle, and the
-        // ledger is the same live list the jobs tab draws.
-        ledger = ledgerCode(jobs.items),
-        onOpenProcessing = onOpenProcessing,
         onStart = { onStart(false) },
         onQuickStart = { onStart(true) },
         onPermitted = model::permitted,

@@ -120,25 +120,6 @@ final class UxDecisionsTests: XCTestCase {
         XCTAssertEqual(Recents.summary([item("Done")]), "1", "its counts are the row's state")
     }
 
-    // MARK: - §1b·§1c: the dashboard's nodes
-
-    func testTheStateAndDeviceNodesSayWords() {
-        AppLanguage.current = .en
-        XCTAssertEqual(
-            [RecorderState.idle, .starting, .recording(recordingId: "r"), .stopping].map(StateNodeWords.recorder),
-            ["Ready", "Starting", "Recording", "Saving"]
-        )
-        XCTAssertEqual([StateNodeWords.uploading, StateNodeWords.receiving], ["Uploading", "Receiving"])
-        XCTAssertEqual([StateNodeWords.device(.phone), StateNodeWords.device(.desktop)], ["Phone", "Desktop"])
-        AppLanguage.current = .ko
-        XCTAssertEqual(
-            [RecorderState.idle, .starting, .recording(recordingId: "r"), .stopping].map(StateNodeWords.recorder),
-            ["준비", "시작 중", "녹음 중", "저장 중"]
-        )
-        XCTAssertEqual([StateNodeWords.uploading, StateNodeWords.receiving], ["업로드 중", "받는 중"])
-        XCTAssertEqual([StateNodeWords.device(.phone), StateNodeWords.device(.desktop)], ["폰", "데스크톱"])
-    }
-
     // MARK: - §7: a job held up only by Drive
 
     func testAWaitForDriveIsNeverTheRedOfAFailure() {

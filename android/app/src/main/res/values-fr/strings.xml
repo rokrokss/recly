@@ -122,8 +122,6 @@
     <string name="widget_description">Démarrez et arrêtez un enregistrement d’un toucher.</string>
     <string name="shortcut_start_short">Démarrer l’enregistrement</string>
     <string name="shortcut_start_long">Démarrer un enregistrement Recly</string>
-    <string name="node_device">Appareil</string>
-    <string name="node_state">État</string>
     <string name="jobs_column_time">Heure</string>
     <string name="jobs_column_title">Titre</string>
     <string name="jobs_column_length">Durée</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">En attente du dossier</string>
     <string name="badge_filling">Complétion</string>
     <string name="badge_organizing">Résumé en cours</string>
-    <string name="node_state_ready">Prêt</string>
-    <string name="node_state_starting">Démarrage</string>
-    <string name="node_state_saving">Enregistrement en cours</string>
-    <string name="node_device_phone">Téléphone</string>
     <string name="detail_waiting_drive">En attente de Drive. Connectez Drive pour envoyer et transcrire.</string>
     <string name="processing_folder_monthly">Dossiers mensuels</string>
     <string name="processing_folder_single">Un seul dossier</string>

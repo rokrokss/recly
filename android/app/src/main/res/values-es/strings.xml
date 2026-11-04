@@ -122,8 +122,6 @@
     <string name="widget_description">Inicia y detén una grabación con un toque.</string>
     <string name="shortcut_start_short">Iniciar grabación</string>
     <string name="shortcut_start_long">Iniciar una grabación de Recly</string>
-    <string name="node_device">Dispositivo</string>
-    <string name="node_state">Estado</string>
     <string name="jobs_column_time">Hora</string>
     <string name="jobs_column_title">Título</string>
     <string name="jobs_column_length">Duración</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">Esperando la carpeta</string>
     <string name="badge_filling">Completando</string>
     <string name="badge_organizing">Resumiendo</string>
-    <string name="node_state_ready">Listo</string>
-    <string name="node_state_starting">Iniciando</string>
-    <string name="node_state_saving">Guardando</string>
-    <string name="node_device_phone">Teléfono</string>
     <string name="detail_waiting_drive">Esperando a Drive. Conecta Drive para subir y transcribir.</string>
     <string name="processing_folder_monthly">Carpetas mensuales</string>
     <string name="processing_folder_single">Una carpeta</string>

@@ -8,6 +8,7 @@
 
 pub mod capture;
 pub mod detect;
+pub mod devices;
 pub mod encode;
 pub mod network;
 pub mod pipeline;

@@ -245,8 +245,7 @@ class LedgerStatusTest {
 
     /**
      * docs/05 "Fixed processing settings": a transcription on this device is waited for whatever the job's
-     * status says while it runs — it does not hold back Delete, and it is not an upload, so it does
-     * not lend the Record screen `UPLOADING` (the iPhone's `RecentItem.canDelete`, `Recents.uploading`).
+     * status says while it runs — it does not hold back Delete (the iPhone's `RecentItem.canDelete`).
      */
     @Test
     fun `a transcription on this device is waited for and can be deleted`() {
@@ -255,7 +254,6 @@ class LedgerStatusTest {
             assertTrue(local.waiting(), "$state")
             assertFalse(local.inFlight(), "$state")
         }
-        assertFalse(uploading(listOf(item(ItemState.RUNNING, localPending = true))))
         assertFalse(item(ItemState.RUNNING).inFlight(), "an upload is stopped, not waited for")
         assertFalse(item(ItemState.RUNNING).waiting())
     }

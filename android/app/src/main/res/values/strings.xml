@@ -172,8 +172,6 @@
     <string name="shortcut_start_long">Start a Recly recording</string>
 
     <!-- docs/09 screen principle 1: the recording dashboard's three state nodes. -->
-    <string name="node_device">Device</string>
-    <string name="node_state">State</string>
 
     <!-- docs/09 screen principle 2: the ledger's columns and what an expanded row offers. -->
     <string name="jobs_column_time">Time</string>
@@ -451,10 +449,6 @@
     <string name="badge_waiting_folder">Waiting for folder</string>
     <string name="badge_filling">Filling in</string>
     <string name="badge_organizing">Summarizing</string>
-    <string name="node_state_ready">Ready</string>
-    <string name="node_state_starting">Starting</string>
-    <string name="node_state_saving">Saving</string>
-    <string name="node_device_phone">Phone</string>
     <!-- The detail of a recording whose upload waits for Drive: the fix is here, not in the list. -->
     <string name="detail_waiting_drive">Waiting for Drive. Connect Drive to upload and transcribe.</string>
     <!-- docs/05: the Drive folder template as two choices. -->

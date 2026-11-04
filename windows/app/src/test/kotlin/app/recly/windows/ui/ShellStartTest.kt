@@ -12,7 +12,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,8 +77,8 @@ class ShellStartTest {
         withTimeout(TIMEOUT_MS) {
             while (model.transition != null || failures.isEmpty()) delay(POLL_MS)
         }
-        assertNull(model.transition, "the node was left saying STARTING over a capture that never opened")
-        assertEquals("IDLE", model.stateCode(), "the state node never came back")
+        assertNull(model.transition, "the shell was left starting a capture that never opened")
+        assertNull(model.titlePrompt, "the shell never came back to idle")
         assertFalse(model.recording)
         assertFalse(model.playbackBlocked, "playback stayed blocked for a capture that is not running")
         // And it really was the throw and not a refusal: the start died on the directory, which is
@@ -99,7 +101,7 @@ class ShellStartTest {
         withTimeout(TIMEOUT_MS) {
             while (model.transition != null) delay(POLL_MS)
         }
-        assertEquals("NO_HELPER", model.stateCode())
+        assertTrue(model.helperMissing)
         assertFalse(model.playbackBlocked, "playback stayed blocked for a capture that is not running")
         assertEquals(emptyList(), failures.toList(), "a refused start is not a failure")
 
@@ -130,7 +132,7 @@ class ShellStartTest {
         assertNull(model.recordingSince, "the timer outlived the save")
         assertNull(model.recordingEndedAt)
         // docs/03: the take now waits for its name.
-        assertEquals("NAMING", model.stateCode())
+        assertNotNull(model.titlePrompt)
 
         model.shutdown()
     }

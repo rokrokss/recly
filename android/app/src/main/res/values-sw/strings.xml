@@ -122,8 +122,6 @@
     <string name="widget_description">Anza na usimamishe kurekodi kwa kugusa mara moja.</string>
     <string name="shortcut_start_short">Anza kurekodi</string>
     <string name="shortcut_start_long">Anza rekodi ya Recly</string>
-    <string name="node_device">Kifaa</string>
-    <string name="node_state">Hali ya sasa</string>
     <string name="jobs_column_time">Wakati</string>
     <string name="jobs_column_title">Kichwa</string>
     <string name="jobs_column_length">Muda</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">Inasubiri folda</string>
     <string name="badge_filling">Inajaza</string>
     <string name="badge_organizing">Inafupisha</string>
-    <string name="node_state_ready">Tayari</string>
-    <string name="node_state_starting">Inaanzishwa</string>
-    <string name="node_state_saving">Inahifadhi</string>
-    <string name="node_device_phone">Simu</string>
     <string name="detail_waiting_drive">Inasubiri Drive. Unganisha Drive ili kupakia na kunukuu.</string>
     <string name="processing_folder_monthly">Folda za kila mwezi</string>
     <string name="processing_folder_single">Folda moja</string>

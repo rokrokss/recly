@@ -39,7 +39,6 @@ final class LocalFolderStorageTests: XCTestCase {
         XCTAssertTrue(waiting.canRetry)
         XCTAssertTrue(waiting.canDelete)
         XCTAssertEqual(Recents.summary([waiting]), "1 · 1 waiting")
-        XCTAssertFalse(Recents.uploading([waiting]))
     }
 
     /// A wait and not a failure the user is called about: no banner line, no notification — the

@@ -122,8 +122,6 @@
     <string name="widget_description">Rozpoczynaj i zatrzymuj nagrywanie jednym dotknięciem.</string>
     <string name="shortcut_start_short">Rozpocznij nagrywanie</string>
     <string name="shortcut_start_long">Rozpocznij nagrywanie w Recly</string>
-    <string name="node_device">Urządzenie</string>
-    <string name="node_state">Stan</string>
     <string name="jobs_column_time">Czas</string>
     <string name="jobs_column_title">Tytuł</string>
     <string name="jobs_column_length">Długość</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">Oczekiwanie na folder</string>
     <string name="badge_filling">Uzupełnianie</string>
     <string name="badge_organizing">Podsumowywanie</string>
-    <string name="node_state_ready">Gotowe</string>
-    <string name="node_state_starting">Trwa uruchamianie</string>
-    <string name="node_state_saving">Zapisywanie</string>
-    <string name="node_device_phone">Telefon</string>
     <string name="detail_waiting_drive">Oczekiwanie na Drive. Połącz z Drive, aby przesłać i transkrybować.</string>
     <string name="processing_folder_monthly">Foldery miesięczne</string>
     <string name="processing_folder_single">Jeden folder</string>

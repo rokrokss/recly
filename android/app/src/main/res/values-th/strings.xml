@@ -122,8 +122,6 @@
     <string name="widget_description">เริ่มและหยุดบันทึกเสียงได้ในแตะเดียว</string>
     <string name="shortcut_start_short">เริ่มบันทึกเสียง</string>
     <string name="shortcut_start_long">เริ่มบันทึกเสียงด้วย Recly</string>
-    <string name="node_device">อุปกรณ์</string>
-    <string name="node_state">สถานะ</string>
     <string name="jobs_column_time">เวลา</string>
     <string name="jobs_column_title">ชื่อ</string>
     <string name="jobs_column_length">ความยาว</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">กำลังรอโฟลเดอร์</string>
     <string name="badge_filling">กำลังเติม</string>
     <string name="badge_organizing">กำลังสรุป</string>
-    <string name="node_state_ready">พร้อม</string>
-    <string name="node_state_starting">กำลังเริ่ม</string>
-    <string name="node_state_saving">กำลังบันทึก</string>
-    <string name="node_device_phone">โทรศัพท์</string>
     <string name="detail_waiting_drive">กำลังรอ Drive เชื่อมต่อ Drive เพื่ออัปโหลดและถอดเสียง</string>
     <string name="processing_folder_monthly">โฟลเดอร์รายเดือน</string>
     <string name="processing_folder_single">โฟลเดอร์เดียว</string>

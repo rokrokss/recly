@@ -2,9 +2,8 @@ import ReclyCore
 import RecKit
 import SwiftUI
 
-/// docs/09 screen principle 1: the recording screen is a dashboard — three state nodes at the top, a
-/// monospace timer under them, and one square node that starts and stops the recording
-/// (docs/13 I2).
+/// docs/09 screen principle 1: the recording screen is a dashboard — a monospace timer, and one square
+/// node under it that starts and stops the recording (docs/13 I2).
 ///
 /// The accessibility identifiers are not decoration: `RecPhoneUITests` drives this screen to make
 /// the recording the lane's simulator smoke asks for.
@@ -21,10 +20,6 @@ struct RecordingView: View {
     /// docs/09 "Accessibility": at the accessibility sizes the dashboard is taller than the phone, and the
     /// record node is the part that falls off the bottom of it.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    /// What the record node draws, which outlives the recorder's own state by [holdBusy]'s window.
-    @State private var busy = false
-    /// When the recorder went to work, so the window can be measured from it. Nil while it is not.
-    @State private var busyStartedAt: Date?
     /// How tall the live notes' rows are, which their scroll view grows to and no further. Nil until measured.
     @State private var notesHeight: CGFloat?
     /// docs/08 "Memo": the memo's editor is up over the screen.
@@ -107,13 +102,11 @@ struct RecordingView: View {
         }
     }
 
-    /// Everything under the header: the three nodes, the timer, and the record control with the
+    /// Everything under the header: the timer, and the record control with the
     /// status line and the permission recovery under it. [inScroll]: the whole of it scrolls (large text, a short
     /// screen), so the notes do not scroll on their own.
     private func dashboard(inScroll: Bool) -> some View {
         VStack(spacing: 0) {
-            nodes.padding(.horizontal, Space.m)
-
             VStack(spacing: Space.sm) {
                 // 2026-10-08 §4: the recording's length stays up while it is saved; `00:00` once idle.
                 MonoTimer(model.state == .idle || model.elapsed.isEmpty ? LedgerFormat.elapsed(0) : model.elapsed)
@@ -189,7 +182,7 @@ struct RecordingView: View {
         if inScroll {
             block
         } else {
-            // A scroll view takes all the height it is offered, which pushed the timer up against the nodes: no taller
+            // A scroll view takes all the height it is offered, which pushed the timer up against the header: no taller
             // than its rows, it leaves the timer centred while they fit, as on Android, and scrolls once they do not.
             ScrollView {
                 block.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { notesHeight = $0 }
@@ -199,133 +192,16 @@ struct RecordingView: View {
         }
     }
 
-    // MARK: - The three nodes
-
-    private var nodes: some View {
-        StateNodeRow(specs)
-    }
-
-    /// docs/09 screen principle 1: the transcription node is the only one that takes a tap — it opens the recording
-    /// processing settings while nothing is being recorded. The device and the state are readouts, as on Android.
-    private var specs: [NodeSpec] {
-        var openSettings: (@MainActor @Sendable () -> Void)?
-        if !model.isRecording {
-            let model = model
-            openSettings = { model.tab = .settings }
-        }
-        return [
-            NodeSpec(label: loc("Device"), value: StateNodeWords.device(.phone)),
-            NodeSpec(
-                label: RecKitStrings.localized("Transcription"),
-                value: model.processingSummary,
-                onClick: openSettings,
-                onClickLabel: RecKitStrings.localized("Recording processing")
-            ),
-            stateNode,
-        ]
-    }
-
-    /// The recorder's own state comes first; `Recording` is never displaced. While it is idle and the
-    /// ledger has work in it, the node says what that work is with a turning loader instead of
-    /// `Ready` — otherwise nothing above the list says the app is doing anything at all.
-    private var stateNode: NodeSpec {
-        if model.state == .idle, let busyWord {
-            return NodeSpec(
-                label: loc("State"),
-                value: busyWord,
-                valueColor: blueprint.palette.accent,
-                active: true,
-                busy: true
-            )
-        }
-        return NodeSpec(
-            label: loc("State"),
-            value: StateNodeWords.recorder(model.state),
-            valueColor: model.isRecording ? blueprint.palette.danger : blueprint.palette.textMuted,
-            active: model.isRecording
-        )
-    }
-
-    /// What the app is doing while the recorder is idle, or nil while it is doing nothing.
-    ///
-    /// A job of this phone's own comes first: docs/09 screen principle 1 wants the node to say what the app
-    /// is *doing*, and an upload it is running is more that than a transfer it is being handed.
-    /// docs/03 "Watch → phone transfer contract": the transfer is worth saying at all because the ledger row is
-    /// otherwise the only sign of it.
-    ///
-    /// 2026-10-08 §1b: a word, in monospace, and never colour alone.
-    private var busyWord: String? {
-        if Recents.uploading(model.recents) { return StateNodeWords.uploading }
-        if Recents.receiving(model.recents) { return StateNodeWords.receiving }
-        return nil
-    }
-
     // MARK: - The record node
 
-    /// docs/09 "Shape": the round record button is replaced by a square node with a thick border —
-    /// 72pt, outlined while idle and filled while recording, with the stop square in the page
-    /// colour.
+    /// docs/09 "Shape": the square record node (`RecordNode`), shared with the Mac's popover.
     private var recordNode: some View {
-        Button {
+        RecordNode(recording: model.isRecording, working: model.state == .starting || model.state == .stopping) {
             if model.canStop { model.stop() } else { model.start() }
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: Radius.node)
-                    .fill(model.isRecording ? blueprint.palette.danger : blueprint.palette.surface)
-                RoundedRectangle(cornerRadius: Radius.node)
-                    .strokeBorder(blueprint.palette.danger, lineWidth: 3)
-                if busy {
-                    Text(verbatim: "…")
-                        .font(blueprint.fonts.monoTitle)
-                        .foregroundStyle(blueprint.palette.danger)
-                } else {
-                    RoundedRectangle(cornerRadius: Radius.badge)
-                        .fill(model.isRecording ? blueprint.palette.background : blueprint.palette.danger)
-                        .frame(width: 22, height: 22)
-                }
-            }
-            .frame(width: 72, height: 72)
-            .contentShape(Rectangle())
-            .blueprintFocusRing()
         }
-        .buttonStyle(.plain)
-        .focusEffectDisabled()
-        // Off while the recorder is between two states — Starting and Saving, as on every shell — and
-        // through the tail of the hold too: the node reads "…" there, and a tap the user cannot see the
-        // effect of would start a second recording.
-        .disabled(!model.isReady || working || busy)
+        .disabled(!model.isReady)
         .accessibilityIdentifier(model.canStop ? "stop" : "start")
         .accessibilityLabel(model.canStop ? Text("Stop") : Text("Start recording"))
-        .task(id: working) { await holdBusy() }
-    }
-
-    /// Whether the recorder itself is between two states.
-    private var working: Bool { model.state == .starting || model.state == .stopping }
-
-    /// docs/09 trend 2 · "Motion": start and stop are two of the rare high-risk actions, so what the
-    /// node shows while the recorder is working stays up for [Processing.hold] after the recorder
-    /// has already moved on — the same window `ProcessingButton` holds for a button, and the one
-    /// Android holds here (`RecordingScreen.rememberBusyHold`). A start the recorder answered in
-    /// 40 ms would otherwise flash a state nobody can read, and the tap would look like it did
-    /// nothing at all.
-    ///
-    /// Reduce motion does not shorten it: the hold is the text state, and the text state is what
-    /// docs/09 keeps when it takes the animations away.
-    private func holdBusy() async {
-        if working {
-            busyStartedAt = Date()
-            busy = true
-            return
-        }
-        guard let started = busyStartedAt else { return }
-        busyStartedAt = nil
-        let hold = Processing.hold(workSec: Date().timeIntervalSince(started))
-        if hold > 0 {
-            // A cancellation here is the recorder going back to work — the next pass owns the
-            // state, and clearing it on the way out would blink the node in between.
-            do { try await Task.sleep(nanoseconds: UInt64(hold * 1_000_000_000)) } catch { return }
-        }
-        busy = false
     }
 
     // MARK: - Naming

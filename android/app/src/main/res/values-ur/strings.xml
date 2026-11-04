@@ -122,8 +122,6 @@
     <string name="widget_description">ایک بار تھپتھپا کر ریکارڈنگ شروع کریں اور روکیں۔</string>
     <string name="shortcut_start_short">ریکارڈنگ شروع کریں</string>
     <string name="shortcut_start_long">Recly ریکارڈنگ شروع کریں</string>
-    <string name="node_device">آلہ</string>
-    <string name="node_state">حالت</string>
     <string name="jobs_column_time">وقت</string>
     <string name="jobs_column_title">عنوان</string>
     <string name="jobs_column_length">دورانیہ</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">فولڈر کا انتظار</string>
     <string name="badge_filling">بھرا جا رہا ہے</string>
     <string name="badge_organizing">خلاصہ بن رہا ہے</string>
-    <string name="node_state_ready">تیار</string>
-    <string name="node_state_starting">شروع ہو رہا ہے</string>
-    <string name="node_state_saving">محفوظ ہو رہا ہے</string>
-    <string name="node_device_phone">فون</string>
     <string name="detail_waiting_drive">Drive کا انتظار۔ اپ لوڈ اور ٹرانسکرائب کرنے کے لیے Drive منسلک کریں۔</string>
     <string name="processing_folder_monthly">ماہانہ فولڈرز</string>
     <string name="processing_folder_single">ایک فولڈر</string>

@@ -122,8 +122,6 @@
     <string name="widget_description">এক ট্যাপে রেকর্ডিং শুরু করুন ও থামান।</string>
     <string name="shortcut_start_short">রেকর্ডিং শুরু করুন</string>
     <string name="shortcut_start_long">Recly রেকর্ডিং শুরু করুন</string>
-    <string name="node_device">ডিভাইস</string>
-    <string name="node_state">অবস্থা</string>
     <string name="jobs_column_time">সময়</string>
     <string name="jobs_column_title">শিরোনাম</string>
     <string name="jobs_column_length">দৈর্ঘ্য</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">ফোল্ডারের অপেক্ষায়</string>
     <string name="badge_filling">পূরণ হচ্ছে</string>
     <string name="badge_organizing">সারাংশ তৈরি হচ্ছে</string>
-    <string name="node_state_ready">প্রস্তুত</string>
-    <string name="node_state_starting">শুরু হচ্ছে</string>
-    <string name="node_state_saving">সেভ হচ্ছে</string>
-    <string name="node_device_phone">ফোন</string>
     <string name="detail_waiting_drive">Drive-এর অপেক্ষায়। আপলোড ও ট্রান্সক্রাইব করতে Drive কানেক্ট করুন।</string>
     <string name="processing_folder_monthly">মাসিক ফোল্ডার</string>
     <string name="processing_folder_single">একটি ফোল্ডার</string>

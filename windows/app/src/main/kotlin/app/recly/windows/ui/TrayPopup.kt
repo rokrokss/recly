@@ -1,13 +1,11 @@
-@file:OptIn(ExperimentalLayoutApi::class)
-
 package app.recly.windows.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,10 +45,10 @@ import app.recly.windows.ui.component.LedgerHeader
 import app.recly.windows.ui.component.LedgerRow
 import app.recly.windows.ui.component.LiveWaveform
 import app.recly.windows.ui.component.MonoTimer
-import app.recly.windows.ui.component.NodeSpec
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
-import app.recly.windows.ui.component.StateNodeRow
+import app.recly.windows.ui.theme.forWord
+import app.recly.windows.ui.component.RecordNode
 import app.recly.windows.ui.component.statusColumnWidth
 import app.recly.windows.ui.component.textColumnWidth
 import app.recly.windows.ui.theme.BlueprintColors
@@ -98,69 +96,72 @@ private fun Header(model: ShellModel, strings: Strings) {
         // The header is the app's name alone (2026-10-08): the device id is in Settings → About,
         // and nothing takes the line it used to have.
         ScreenHeader(title = APP_NAME)
-        StateNodeRow(
-            nodes = listOf(
-                NodeSpec(strings[Str.NODE_DEVICE], strings[Str.NODE_DESKTOP]),
-                NodeSpec(
-                    label = strings[Str.PROCESSING_TRANSCRIPTION],
-                    value = model.processing?.summary?.let { if (it.mode == recly.core.processing.TranscriptionMode.EXTERNAL) it.external?.provider?.let(recly.core.transcribe.SttProviders::displayName).orEmpty() else strings[it.mode.label()] } ?: strings[Str.PROCESSING_LOCAL],
-                ),
-                model.stateNode(strings, palette),
-            ),
-            modifier = Modifier.padding(horizontal = Space.m),
-        )
-        // docs/09 screen principle 1: while it is running, the timer *is* the dashboard — and while it saves,
-        // the recording's final length stays on it until the recorder is idle (2026-10-08).
-        model.recordingSince?.let { Elapsed(it, model.recordingEndedAt) }
-        // docs/09 screen principle 6: and under it the track being written, so the capture is visible as
+        // docs/12 "Menu bar" (2026-11-04): the devices a start would take, read again while the popup is up — the
+        // defaults change under it — and not at all while it is closed, when this effect is gone with it.
+        LaunchedEffect(Unit) {
+            while (true) {
+                model.refreshNextDevices()
+                delay(DEVICES_MS)
+            }
+        }
+        // docs/09 screen principle 1 (2026-11-04): the phones' square record node, with the timer beside it —
+        // `00:00` while idle, so a start and a stop happen in the one place and nothing below them moves.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, top = Space.s),
+            horizontalArrangement = Arrangement.spacedBy(Space.m),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Off while a capture is coming up or being saved (STARTING, STOPPING), as Start was.
+            val startable = model.ready && !model.helperMissing && model.titlePrompt == null && model.transition == null
+            RecordNode(
+                recording = model.recording,
+                working = model.transition != null,
+                enabled = model.recording || startable,
+                label = strings[if (model.recording) Str.TRAY_STOP else Str.TRAY_START],
+                busyText = strings[Str.ACTION_PROCESSING],
+                onClick = { if (model.recording) model.stop() else model.start() },
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+                // While it saves, the recording's final length stays on it until the recorder is idle (2026-10-08).
+                Elapsed(model.recordingSince, model.recordingEndedAt)
+                // What a start made now would capture. Only before a start: the helper names the defaults, and
+                // what a running capture follows is its own (docs/09 screen principle 1).
+                if (!model.recording && model.transition == null) {
+                    model.nextDevices.microphone?.let { DeviceLine(strings[Str.TRAY_MICROPHONE, it]) }
+                    model.nextDevices.output?.let { DeviceLine(strings[Str.TRAY_SYSTEM_AUDIO, it]) }
+                }
+            }
+        }
+        // docs/09 screen principle 6: and under them the track being written, so the capture is visible as
         // well as counted. The levels are the helper's own write path (`HelperEvent.Level`).
         if (model.recording) {
             LiveWaveform(
                 peaks = model::livePeaks,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Space.m)
+                    .padding(start = Space.m, end = Space.m, top = Space.sm)
                     .testTag("live-waveform"),
             )
         }
-
-        // docs/09 §Fluid typography · i18n: four buttons of Korean labels are wider than a 520dp popup, so
-        // the row wraps rather than pushing the last of them off the window.
-        FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.sm),
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalArrangement = Arrangement.spacedBy(Space.s),
-        ) {
-            if (model.recording) {
-                // docs/09 trend 2: starting and stopping a recording are the high-risk actions this
-                // window has, and both go through the helper — so both show that they happened.
-                ProcessingButton(
-                    label = strings[Str.TRAY_STOP],
-                    state = model.action,
-                    strings = strings,
-                    onClick = model::stop,
-                    tone = ButtonTone.DANGER,
-                )
-            } else {
-                ProcessingButton(
-                    label = strings[Str.TRAY_START],
-                    state = model.action,
-                    strings = strings,
-                    onClick = model::start,
-                    tone = ButtonTone.PRIMARY,
-                    // Off while a capture is coming up or being saved (STARTING, STOPPING) as well.
-                    enabled = model.ready && !model.helperMissing && model.titlePrompt == null && model.transition == null,
-                )
-                // docs/14 "Detection": an AWT balloon has no buttons (`TrayNotifier`), so the offer it
-                // made stands here for as long as it stands at all.
-                if (model.meetingOffer == MeetingDetectionRule.Prompt.START) {
-                    BlueprintButton(strings[Str.TRAY_START_DETECTED], model::startDetected)
-                }
-            }
+        // docs/14 "Detection": an AWT balloon has no buttons (`TrayNotifier`), so the offer it
+        // made stands here for as long as it stands at all.
+        if (!model.recording && model.meetingOffer == MeetingDetectionRule.Prompt.START) {
+            BlueprintButton(
+                strings[Str.TRAY_START_DETECTED],
+                model::startDetected,
+                modifier = Modifier.padding(start = Space.m, end = Space.m, top = Space.sm),
+            )
         }
         // docs/08 "Memo": the take being recorded has its row under Stop, empty or not — it is where the memo is written.
         if (model.recording) model.liveRecordingId?.let { TrayMemo(model, it, strings) }
+        Spacer(Modifier.height(Space.sm))
     }
+}
+
+/** A device a start would capture, in the status lines' muted mono (Hangul, Kana and Han in the sans). */
+@Composable
+private fun DeviceLine(text: String) {
+    Text(text, style = mono.small.forWord(text), color = blueprint.textMuted)
 }
 
 /**
@@ -174,10 +175,23 @@ internal fun statusLineShown(status: UiMessage, alerts: List<JobAlert>): Boolean
 
 /**
  * docs/09 "Typography": `12:34`, or `01:02:03` from the hour (2026-10-08), counted from the moment the recorder
- * said it had started — and stopped at [until], the moment it ended, while the stop saves.
+ * said it had started — and stopped at [until], the moment it ended, while the stop saves. `00:00` with no
+ * recording ([since] null), as on the phones.
  */
 @Composable
-private fun Elapsed(since: Long, until: Long?) {
+private fun Elapsed(since: Long?, until: Long?) {
+    MonoTimer(
+        text = since?.let { rememberClock(it, until) } ?: LedgerFormat.clock(0),
+        color = if (since != null) blueprint.danger else null,
+    )
+}
+
+/**
+ * The recording's length as the timer says it, ticking once a second until [until] — shared by the popup's timer
+ * and the tray icon's tooltip, so the two never say different lengths.
+ */
+@Composable
+internal fun rememberClock(since: Long, until: Long?): String {
     var now by remember(since) { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(since, until) {
         while (until == null) {
@@ -185,11 +199,7 @@ private fun Elapsed(since: Long, until: Long?) {
             delay(TICK_MS)
         }
     }
-    MonoTimer(
-        text = LedgerFormat.clock((until ?: now) - since),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
-        color = blueprint.danger,
-    )
+    return LedgerFormat.clock((until ?: now) - since)
 }
 
 @Composable
@@ -384,60 +394,10 @@ private fun RecentRow(
     )
 }
 
-/**
- * docs/09: state is a code, in monospace, and never colour alone. The code is the state's internal name; the
- * node says its word ([stateWord], 2026-10-08).
- *
- * docs/09 screen principle 1 names four — `IDLE`·`STARTING`·`REC`·`STOPPING` — and the transitions come
- * first, because a capture that is coming up or closing is doing something the state it is between
- * does not say ([ShellModel.transition]). `OPENING`, `NO_HELPER` and `NAMING` are this shell's own,
- * for the states a Windows tray has and a Mac's menu bar does not.
- */
-internal fun ShellModel.stateCode(): String = when {
-    transition == Transition.STOPPING -> "STOPPING"
-    recording -> "REC"
-    transition == Transition.STARTING -> "STARTING"
-    !ready -> "OPENING"
-    helperMissing -> "NO_HELPER"
-    titlePrompt != null -> "NAMING"
-    else -> IDLE
-}
-
-/**
- * docs/09 screen principle 1: the State node. The recorder has the say — `REC` while it runs, and the codes
- * for a shell that cannot record are what the node is for — and only when the recorder is idle does
- * the executor get to speak: a pass running on one of the ledger's rows is `UPLOADING` in the accent
- * colour, with the loader turning beside it (`NodeSpec.busy`).
- */
-private fun ShellModel.stateNode(strings: Strings, palette: BlueprintColors): NodeSpec {
-    val label = strings[Str.NODE_STATE]
-    val code = stateCode()
-    if (code == IDLE && Recents.uploading(recents)) {
-        return NodeSpec(label, strings[Str.STATE_UPLOADING], valueColor = palette.accent, active = true, busy = true)
-    }
-    return NodeSpec(
-        label = label,
-        value = strings[stateWord(code)],
-        valueColor = if (recording) palette.danger else palette.textMuted,
-        active = recording,
-    )
-}
-
-/** What the State node says for a [stateCode], in the app's language (the UX decisions of 2026-10-08). */
-internal fun stateWord(code: String): Str = when (code) {
-    "STOPPING" -> Str.STATUS_SAVING
-    "REC" -> Str.STATUS_RECORDING
-    "STARTING" -> Str.NODE_STARTING
-    "OPENING" -> Str.STATUS_OPENING
-    "NO_HELPER" -> Str.NODE_CANNOT_RECORD
-    "NAMING" -> Str.NODE_NAMING
-    else -> Str.NODE_READY
-}
-
-/** Nothing in flight here — which is what lets the node say what the executor is doing instead. */
-private const val IDLE = "IDLE"
-
 private const val TICK_MS = 1_000L
+
+/** How often the popup reads the default devices again while it is up. */
+private const val DEVICES_MS = 3_000L
 
 /**
  * The job states a retry can do anything about. A job on its way is on its way, and a recording with

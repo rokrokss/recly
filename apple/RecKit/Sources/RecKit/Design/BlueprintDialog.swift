@@ -3,8 +3,8 @@ import SwiftUI
 /// docs/09 screen principle 5 ("title + one-line description + at most 2 buttons"), drawn the way
 /// the rest of the app is drawn: a square-cornered node on the grid, not the platform's own alert.
 /// `alert` and `confirmationDialog` are containers with their own shape, their own material and
-/// their own corner radius, and none of those is in docs/09 — so this is the same surface,
-/// [Blueprint.line] border and [Radius.node] corner as `StateNode`, with no shadow.
+/// their own corner radius, and none of those is in docs/09 — so this is the surface, a
+/// [Blueprint.line] border and the [Radius.node] corner, with no shadow.
 ///
 /// The Android shell's `BlueprintDialog` is the same component, and this mirrors it line for line:
 /// the body scrolls on its own so a long one (the disconnect warnings) never pushes the answers off

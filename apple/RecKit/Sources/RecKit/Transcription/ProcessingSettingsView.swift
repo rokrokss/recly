@@ -17,8 +17,6 @@ public final class ProcessingSettingsModel: ObservableObject {
     @Published public private(set) var saveState: ProcessingState = .idle
     @Published public private(set) var localLanguages: [Language] = []
     @Published public private(set) var local: LocalEngineInfo?
-    @Published public private(set) var summaryKey = "On device"
-    @Published public private(set) var providerSummary: String?
     @Published public private(set) var secretNames: [String] = []
     @Published public private(set) var providers: [String] = []
     /// docs/15: the destinations a save is waiting on the user's permission for. Asked here, when the
@@ -50,10 +48,8 @@ public final class ProcessingSettingsModel: ObservableObject {
             let state = try await core.initializeProcessing()
             stored = state
             secretNames = try await core.secrets.names()
-            let draft = ProcessingDraft.companion.from(settings: state.document.settings)
-            self.draft = draft
+            draft = ProcessingDraft.companion.from(settings: state.document.settings)
             dirty = false; importing = false
-            updateSummary(draft)
             await refreshLocal()
         } catch { failed(error) }
     }
@@ -185,10 +181,6 @@ public final class ProcessingSettingsModel: ObservableObject {
             if self.draft?.language == language { local = info }
         }
         catch { failed(error) }
-    }
-    private func updateSummary(_ draft: ProcessingDraft) {
-        summaryKey = draft.mode == .local ? "On device" : "Off"
-        providerSummary = draft.mode == .external ? SttProviders.shared.displayName(name: draft.provider) : nil
     }
     // The reason goes in the sentence, as on Android and Windows: `UiMessage.text` shows a core
     // code's sentence only, so a reason passed as its detail left "Failed:" with nothing after it.

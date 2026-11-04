@@ -50,6 +50,7 @@ import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
+import app.recly.windows.ui.rememberClock
 import app.recly.windows.ui.Consent
 import app.recly.windows.ui.DeleteDialog
 import app.recly.windows.ui.DevFlags
@@ -146,9 +147,12 @@ fun main(args: Array<String>) {
         // Read once: the taskbar's theme is a per-machine setting, and a tray icon that re-read
         // the registry on every recompose would be paying for a value that does not change.
         val lightTaskbar = remember { taskbarIsLight() }
+        // docs/12 "Menu bar" (2026-11-04): while a recording runs, its length beside the status — a tray icon takes no
+        // text of its own, so the tooltip is where the Mac's menu bar time has its place here.
+        val clock = model.recordingSince?.takeIf { model.recording }?.let { rememberClock(it, null) }
         Tray(
             icon = StatusIcon(model.recording, model.alerts.isNotEmpty(), lightTaskbar),
-            tooltip = strings[Str.TRAY_TOOLTIP, model.status.text(strings)],
+            tooltip = strings[Str.TRAY_TOOLTIP, listOfNotNull(model.status.text(strings), clock).joinToString(" · ")],
             // A click on the tray icon opens the window; the menu is what is left when it cannot.
             onAction = { model.popupOpen = true },
             menu = { TrayMenu(model, strings, quit) },

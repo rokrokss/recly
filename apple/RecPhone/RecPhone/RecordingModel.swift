@@ -55,12 +55,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published var modelPromptDismissed: Bool = Defaults.modelPromptDismissed {
         didSet { Defaults.modelPromptDismissed = modelPromptDismissed }
     }
-    private var capturedProcessingKey: String?
-    private var capturedProcessingProvider: String?
-    var processingSummary: String {
-        if isRecording { return capturedProcessingProvider ?? RecKitStrings.localized(capturedProcessingKey ?? "On device") }
-        return processing?.providerSummary ?? RecKitStrings.localized(processing?.summaryKey ?? "On device")
-    }
     @Published private(set) var elapsed = ""
     /// False until the core is open: there is nothing to record against before that.
     @Published private(set) var isReady = false
@@ -982,8 +976,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         modelDownload?.capturing = next != .idle
         waveforms?.capturing = next != .idle
         if isRecording, !wasRecording {
-            capturedProcessingKey = processing?.summaryKey
-            capturedProcessingProvider = processing?.providerSummary
             startTicking()
         }
         if !isRecording, wasRecording {

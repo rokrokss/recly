@@ -89,15 +89,16 @@ enum class Str {
     TRAY_STOP,
     TRAY_START_DETECTED,
     TRAY_START,
+    /** docs/12 "Menu bar" (2026-11-04): the microphone and the output a start would capture, named before it. */
+    TRAY_MICROPHONE,
+    TRAY_SYSTEM_AUDIO,
     TRAY_OPEN,
     TRAY_SETTINGS,
     TRAY_QUIT,
     /** docs/12: a quit under a running capture finalizes it first, and the label says so. */
     TRAY_QUIT_SAVING,
 
-    // The tray popup (docs/09 screen principle 6): three state nodes, a ledger, a footer.
-    NODE_DEVICE,
-    NODE_STATE,
+    // The tray popup (docs/09 screen principle 6): the record control, a ledger, a footer.
     /** ADR-016: nothing is chosen on this PC yet, so a start would run nothing. */
     LEDGER_TIME,
     LEDGER_TITLE,
@@ -464,11 +465,6 @@ enum class Str {
     BADGE_FILLING,
     BADGE_ORGANIZING,
     BADGE_UNKNOWN,
-    NODE_READY,
-    NODE_STARTING,
-    NODE_CANNOT_RECORD,
-    NODE_NAMING,
-    NODE_DESKTOP,
     /** docs/03 "Titles": the naming sheet's second button, which deletes the take that just ended. */
     RECORDING_DISCARD,
     /** The detail of a recording whose upload waits for the Drive connection (2026-10-08). */

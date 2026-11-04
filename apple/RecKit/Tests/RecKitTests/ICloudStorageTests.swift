@@ -32,7 +32,6 @@ final class ICloudStorageTests: XCTestCase {
         XCTAssertFalse(item(state: state).canRetry)
         XCTAssertTrue(item(state: state).canDelete)
         XCTAssertEqual(Recents.summary([item(state: state)]), "1")
-        XCTAssertTrue(Recents.uploading([item(state: state)]))
     }
 
     /// iCloud cannot be used from here: a wait, and asking again is worth offering once the user

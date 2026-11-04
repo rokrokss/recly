@@ -15,6 +15,7 @@ use std::time::{Duration, Instant};
 
 use recly_capture_helper::capture::{self, Buffer, Capture, Delivery, Source};
 use recly_capture_helper::detect::{MicWatcher, POLL_SEC};
+use recly_capture_helper::devices;
 use recly_capture_helper::encode::{self, Kind};
 use recly_capture_helper::network;
 use recly_capture_helper::pipeline::drift::{DriftCompensator, INTERVAL_SEC};
@@ -59,6 +60,13 @@ fn main() {
         let _ = std::io::stdout().flush();
         return;
     }
+    if options.devices {
+        // The tray asks this while it is open and nothing is recording: the microphone and the output a start
+        // would take, named before it starts.
+        print!("{}", devices::current().lines());
+        let _ = std::io::stdout().flush();
+        return;
+    }
     if options.network_cost {
         // The app asks this before it downloads the speech model: `metered` is a question for the
         // user, `unmetered` and `unknown` are not.
@@ -85,6 +93,8 @@ struct Options {
     version: bool,
     /// Print whether the connection is metered and exit — asked before a model download.
     network_cost: bool,
+    /// Print the default microphone's and output's names and exit — the tray's line before a start.
+    devices: bool,
     /// Overrides the `segmentSec` of the `start` command, and takes a fraction of a second — a test
     /// cannot wait five minutes for a boundary.
     segment_sec: Option<f64>,
@@ -112,6 +122,7 @@ impl Options {
             self_test: false,
             version: false,
             network_cost: false,
+            devices: false,
             segment_sec: None,
             linger_sec: None,
             parts: None,
@@ -130,6 +141,7 @@ impl Options {
                 "--self-test" => options.self_test = true,
                 "--version" => options.version = true,
                 "--network-cost" => options.network_cost = true,
+                "--devices" => options.devices = true,
                 "--fake-source" => {
                     // The shape `sine` is the only one there is; it is named so the flag reads as a
                     // choice rather than a switch, as the lane writes it.

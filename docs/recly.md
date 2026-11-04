@@ -2586,7 +2586,7 @@ The principle in one line: **intent, not decoration**.
 |---|---|---|
 | 1 | AI collaboration (a supporting layer, never forced) | Transcription is **chosen in settings: local, external API, or OFF**. New installs use local (OFF in builds without a local engine), and the external API runs with the user's key. The UI rule is "supporting layer": the original (parts · timer · status) is always the main content, the transcript is a separate layer beside or below it, and the result never covers or replaces the display of the original. Only recordings with a result get an entry point in their list row, and it opens in the transcript tab of the detail screen. There is no persuasion UI such as automatic suggestions, automatic runs or "Improve with AI" |
 | 2 | **Purposeful motion** (status signals, deliberate micro-delays) | For **rare, high-stakes actions** such as starting/stopping a recording, uploading and signing in, a visible processing state of 0.3–0.8 seconds (the button changes to "Saving…" and shows "✓" when done). No decorative animation. All motion respects `reduce motion` |
-| 3 | **Raw aesthetics** (monospace · grid · wireframe) | **The center of Recly's visual language.** Timers, part numbers, file names, sizes, sha and status words are monospace (the words are translated since 2026-10-08; codes such as `NEEDS_AUTH` stay in logs and files). Screens are square nodes on a visible grid; the recording screen shows the device, transcription and status nodes, and the processing settings are offered as the existing sectioned table. No filler illustrations, no gradient overlays |
+| 3 | **Raw aesthetics** (monospace · grid · wireframe) | **The center of Recly's visual language.** Timers, part numbers, file names, sizes, sha and status words are monospace (the words are translated since 2026-10-08; codes such as `NEEDS_AUTH` stay in logs and files). Screens are square nodes on a visible grid; the recording screen is the mono timer and the square record node (the device, transcription and status nodes were removed 2026-11-04), and the processing settings are offered as the existing sectioned table. No filler illustrations, no gradient overlays |
 | 4 | Inclusive visuals (control) | **Reduce motion and high contrast follow the system settings as they are** — the app does not repeat the same toggles inside itself (duplicate controls are not control). WCAG AA (text 4.5:1, graphics 3:1). Swipe hints have a static alternative |
 | 5 | **Fluid typography** | A continuous scale instead of breakpoints: Compose `sp` + interpolation based on window size, SwiftUI Dynamic Type + `ScaledMetric`, clamp interpolation by window width on Windows. The user's font size setting is respected |
 | 6 | Authorship (Crafted, not prompted) | **No icon mascot.** Instead, **honest system indicators**: version · build · device ID · open-source notices in monospace at the bottom of settings. No "Handmade" marketing copy (product honesty) |
@@ -2656,7 +2656,7 @@ The principle in one line: **intent, not decoration**.
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
   | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
   | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, the Ask presets, Version history's `Restore` and the popover's and tray's `Settings` and `Quit` (2026-11-04); in a notes row, among the presets and in the popover's and tray's footer the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31), so the footer is as low as its boxes: 8 above and below them, 40 in all on both desktops (2026-11-04) |
-  | State node | padding 12 × 8, label up to two lines from the start edge; the three one height; stacked, joined by the same connectors turned downwards |
+  | Record node | 72 square, a 3 border in the recording colour, the 22 stop square inside; in the popover and the tray the timer beside it, 16 apart (2026-11-04) |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
   | Section header | 8 below |
   | Ledger row | 12 top and bottom; the time column as wide as the longest time in that shell's mono font (62 Android and Apple, 68 Windows) |
@@ -2707,12 +2707,17 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
 
 ### Screen principles
 
-1. **Recording screen = instrument panel**: at the top, three nodes — device, workflow, status (connected by straight lines); in the middle, a mono timer; at the bottom, the square record
-   node. While recording, only the elapsed time, as a mono timer (2026-09-03: part numbers, segment boundaries and track metrics were removed —
-   they are data that is not shown to the user). These three form the screen's boundary.
+1. **Recording screen = instrument panel**: a mono timer and the square record node — on the phones the timer in the middle and the node
+   at the bottom; in the Mac popover and the Windows tray the node at the start with the timer beside it, `00:00` while idle, so a start and a
+   stop happen in one place and nothing below them moves (2026-11-04, user decision: the desktops' `Start recording` and `Stop recording`
+   buttons gave way to the phones' node, so a start looks alike on every device). The three state nodes that stood above them — device,
+   transcription, state, joined by straight lines — were removed from all four shells the same day (user decision): the device said nothing
+   the user does not know, the transcription provider is in Settings, and what the state said, the timer, the record node (`…` while starting
+   or saving) and the ledger's badges already say. While recording, only the elapsed time, as a mono timer (2026-09-03: part numbers, segment
+   boundaries and track metrics were removed — they are data that is not shown to the user). These two form the screen's boundary.
    - The **line below the record node** (phone, 2026-09-29) is used only when there is something to say: in the idle state, only the message left by the start or stop just
-     made (recording failed, finishing the save failed, too short so not uploaded, and so on). `Waiting` · `Opening` · `Recording` · `Saving` are not written there, because the status
-     node and the timer already say them. The line keeps its height even when empty, so the node does not move, and it is cleared when the user goes to another tab and
+     made (recording failed, finishing the save failed, too short so not uploaded, and so on). `Waiting` · `Opening` · `Recording` · `Saving` are not written there, because the timer
+     and the record node already say them. The line keeps its height even when empty, so the node does not move, and it is cleared when the user goes to another tab and
      comes back — it is news of that moment, not a message to leave on the tab. This decision applies only to the two phones; the desktop menu's and the watch's
      lines are unchanged.
    - **What a start or a stop says** (2026-10-15, every shell and both watches, in the line each one has): a recording that ends without the
@@ -2722,9 +2727,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      refused it says `Could not create the job`, and a title that arrived after the upload took the folder name says `Too late to save the title —
      the upload has started`. The record control is disabled while `Starting` and while `Saving` — there is no Stop during a start. With the
      microphone off, a start is refused with `The microphone permission is required.` and the platform's settings button.
-   - The **device node value** is the source's name in the app language — `Phone` / `Desktop` (ko `폰` / `데스크톱`); until 2026-10-08 it was the
-     source code `phone` / `desktop`. The record screen's header is the app name only: the meta line `<source> · <first 8 characters of the device ID>`
-     was removed from all four shells (2026-10-08, user decision — the device ID is in Settings → About).
+   - The record screen's header is the app name only: the meta line `<source> · <first 8 characters of the device ID>`
+     was removed from all four shells (2026-10-08, user decision — the device ID is in Settings → About). The device node, removed with the
+     other two on 2026-11-04, said the source's name in the app language — `Phone` / `Desktop`.
    - **Display of the workflow in use** (ADR-016) — **retired (2026-09-24)**: there is no workflow to choose, so the picker and the
      `Choose a workflow` prompt are gone. What follows is a record. The workflow node in all four shells shows **only its name**. The picker lists only workflow
      names, and the selected one is a filled chip (✓) — "selected" is not written out. A single-selection control shows its selection
@@ -2733,25 +2738,21 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      `Use`. **When there is no selection, or the workflow the pointer pointed to is gone**, both the node and the picker show, in all four shells, the single line
      `Choose a workflow` — in the same place, it says that just starting runs nothing and
      how to fix that.
-   - The **status node** is the recorder state as a translated word (2026-10-08, user decision; codes before): `Ready` · `Starting` · `Recording` ·
-     `Saving` (ko `준비` · `시작 중` · `녹음 중` · `저장 중`), and `Uploading` · `Receiving` as below — the code names in this paragraph are the states,
-     not what is written. While saving, the timer keeps the recording's final length and goes back to `00:00` only when the recorder is idle
-     (2026-10-08, every shell and both watches). When a job is running in the idle state
-     (when the ledger has a row in `UPLOADING`), it shows `UPLOADING` (accent) with a rotating 8pt square loader to its left (the loader used next to the text of work that runs without
-     progress — `Downloading model…` uses the same one. No system spinner is used — only the list's pull-to-refresh is allowed as an exception (§3 "Recordings from other devices",
-     2026-09-29). There are only two loaders: this one, and the **waveform loader**, used only in the waveform's place
-     (the detail screen in screen principle 2). The waveform loader does not rise and fall or flow like playback and recording waveforms, and does not leave the places it has passed filled —
-     flowing waves, bouncing bars, breathing and filling from the left are playback or recording indicators on the various platforms, so they are not used (2026-09-26 research)) — with `reduce
-     motion`, the code only. The square's turn moves nothing but the square, and a badge drawn only to measure the status column keeps it
+   - The **status node** (removed 2026-11-04 with the other two; a record) said the recorder state as a word — `Ready` · `Starting` ·
+     `Recording` · `Saving` — and, while the recorder was idle, `Uploading` (a job of this device running) or, on the phones, `Receiving` (a
+     recording coming in from the watch) with the loader beside it, `REC` beating both. The timer and the record node say the first four, and
+     the ledger's badges the other two. While saving, the timer keeps the recording's final length and goes back to `00:00` only when the
+     recorder is idle (2026-10-08, every shell and both watches).
+   - The **loader** is a rotating 8pt square, used next to the text of work that runs without progress — the badges `Importing`,
+     `Filling in` and `Summarizing`, and `Downloading model…`. No system spinner is used — only the list's
+     pull-to-refresh is allowed as an exception (§3 "Recordings from other devices", 2026-09-29). There are only two loaders: this one, and the
+     **waveform loader**, used only in the waveform's place (the detail screen in screen principle 2). The waveform loader does not rise and fall
+     or flow like playback and recording waveforms, and does not leave the places it has passed filled — flowing waves, bouncing bars, breathing
+     and filling from the left are playback or recording indicators on the various platforms, so they are not used (2026-09-26 research) — with
+     `reduce motion`, the word only. The square's turn moves nothing but the square, and a badge drawn only to measure the status column keeps it
      still (2026-11-04: on Apple a turn started as the loader appeared once lent its endlessness to a resized list, which shook until the app
-     quit). While recording, `REC` takes precedence. The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`)
-     (Apple · Android · Windows 2026-09-03; Windows reads Settings → Accessibility → Visual effects → Animation effects,
-     `SPI_GETCLIENTAREAANIMATION`, 2026-10-15).
-     Windows also uses the shell states `OPENING` (before the helper starts) · `NO_HELPER` · `NAMING` (a title is being entered), written `Opening` ·
-     `Helper missing` · `Naming`.
-     **Phones (Android · iPhone) borrow one more**: when idle and there is a row being received from the watch, it shows `RECEIVING` (accent, the same
-     loader) (2026-09-04). If a job on this device is running, `UPLOADING` wins, and while recording, `REC` beats both.
-     Desktop has nothing to receive, so it is unchanged.
+     quit). The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`) (Apple · Android · Windows
+     2026-09-03; Windows reads Settings → Accessibility → Visual effects → Animation effects, `SPI_GETCLIENTAREAANIMATION`, 2026-10-15).
    - **Quick start** (iPhone, 2026-10-07): a Home Screen widget (small: the square record node; while recording, the mono timer and a stop node) and Lock
      Screen widgets (circular: the record icon or the timer; rectangular: `Recly` + `Record` or the timer) run the existing start and stop App Intents,
      opening the app where iOS requires it, like the Control. Gallery name `Record`, description `Start or stop a recording.`
@@ -2763,9 +2764,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `채우는 중` · `요약하는 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
    `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. On phones and in the desktop Details lists the status column is capped at the width the code
    `TRANSCRIBING` needed, and a longer word wraps inside its badge onto a second line (centred, never cut), so the title column is never narrower
-   than it was with codes. A word too long for its line breaks only at the language's own hyphenation points, with a hyphen (2026-10-11 — badges,
-   state nodes and banner lines; Compose Desktop has no hyphenation, so Windows only wraps between words there); a state node takes two lines
-   rather than truncate, the three nodes keep one height, and on a narrow phone with large text they stack. Status words written in Hangul, Kana or
+   than it was with codes. A word too long for its line breaks only at the language's own hyphenation points, with a hyphen (2026-10-11 — badges
+   and banner lines; Compose Desktop has no hyphenation, so Windows only wraps between words there). Status words written in Hangul, Kana or
    Han characters are set in the sans face, not the mono one — mono has no such glyphs and leaves full-width gaps (`업로드  중`); Latin words, times and
    counts stay mono (Apple sets a whole string with such characters in sans, counts included). The notice banner says `Waiting for Drive: 3` for uploads that wait for Drive (on a window narrower than 600 pt/dp every
    banner line gives its sentence the full width, with its badge and button together, end-aligned, under it — 2026-10-11, both phones), and the banner of a failed job whose reason
@@ -2788,8 +2788,7 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    and shells that measure the badge column width measure these words, in the current language. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Waiting for Drive`, 2026-10-08) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
    The spoken states are `Receiving from the watch` · `Uploading on another device` · `Transcribing on another device` (§7).
    **A recording being filled in** (2026-10-15, user decision; §8 "Titles and speaker names") — in the core's `observeFills()`, whether a
-   publication or the detail asked — shows `Filling in` (accent, with the 8 pt square loader to its left, as the status node shows
-   `Uploading`) on every list: the phones, the popover and tray ledgers, and the desktop Details lists. It is read after `REC` and
+   publication or the detail asked — shows `Filling in` (accent, with the 8 pt square loader to its left) on every list: the phones, the popover and tray ledgers, and the desktop Details lists. It is read after `REC` and
    `RECEIVING` and ahead of everything else — the other things happening elsewhere and the job state mapping — and the row goes back to
    what its job says when the run ends. The header count and the row's actions still go by the job state. The row's spoken sentence says
    `Filling in` too, so a screen reader hears what the badge shows.
@@ -2972,7 +2971,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    The item in use has delete disabled, and the list does not add a notice telling the user to choose another workflow
    first. Edit follows the existing unsaved-changes protection procedure.
    iPhone supports portrait and left/right landscape, and at low heights and with accessibility text sizes the recording screen scrolls.
-   On Android, narrow headers and large text separate the title from the action row, tab names show up to two lines, and the status nodes are laid out vertically.
+   On Android, narrow headers and large text separate the title from the action row, and tab names show up to two lines.
    On short landscape screens, the tab icon row is omitted and the waveform and the playback clock are placed side by side. When the keyboard opens, the editing header that
    duplicates the tab bar collapses to make room for the save area. Long Apple button labels reflow to at most three lines within the screen width.
    Apple Watch scrolls its main screen and wraps status text, and Wear also allows multiple lines for long workflow names and transfer status.
@@ -3048,8 +3047,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    do — over a dim, rising in the standard 200ms (at once with reduce motion). A question is closed by its answers only: no
    swipe, no tap on the dim. `Share`, a list with no answers, also closes with a tap on the dim (2026-10-29, user decision:
    iOS 26 floats a shorter system sheet as a card inset from both sides and the bottom).
-6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
-   popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
+6. **macOS menu bar**: a popover (glass allowed) with the record node and the timer (screen principle 1) + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
+   popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) runs under the record node and the timer — the iPhone
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
    sends peaks of 0.1-second windows as `level {peaks[]}` events (2026-09-03). The Android recording screen has the same band under the timer —
    it reads `MediaRecorder.getMaxAmplitude()` every 0.1 seconds (2026-09-03).
@@ -3243,8 +3242,7 @@ says provisional or edited: the notes simply change when a pass lands.
   sections after `Questions` — sit under the live waveform and are hidden while empty;
   times are plain monospace labels by elapsed time (`MM:SS`, `HH:MM:SS` past an hour); a row opens the same way, on the lines transcribed
   while recording; swipe deletes. Idle shows nothing. The Mac popover, the Windows tray popup and both watches show no notes (the memo row aside, §9 "AI view").
-- **Lists.** A job with only its notes left (`StepReport.notesOnly`) reads `Done`: no reason line, no retry or countdown, it does not make
-  the state node say `Uploading`, and it does not disable the detail's transcript edits or fills. A notes step's error is never shown on a row.
+- **Lists.** A job with only its notes left (`StepReport.notesOnly`) reads `Done`: no reason line, no retry or countdown, and it does not disable the detail's transcript edits or fills. A notes step's error is never shown on a row.
 - **Consent.** A Blueprint dialog `Recly summarizes while you record` / `While you're signed in to ChatGPT, Recly sends each recording's
   transcript text and your notes for it to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing
   title and the speakers' names. Audio is never sent. This counts toward your plan.` (the title and names since 2026-10-29, the memo since 2026-10-30), `Sign out`
@@ -3984,13 +3982,23 @@ With the built-in speakers the microphone's input node runs with voice processin
 ### Menu bar app
 
 - **Status icon**: idle / recording (red) / uploading / error. The error state is also spoken through the accessibility description.
-- **Menu bar** popover: 3 state nodes + the recent ledger (infinite scroll, 20 rows at a time; time · title with the transcript's first words
+  While a recording runs, its elapsed time stands beside the icon in digits of one width (`12:34`), and the item is the icon's square
+  again once it stops (2026-11-04): a recording is mostly made with the popover closed, and a red icon says that one runs, not for how
+  long. A Windows tray icon takes no text, so the tray's tooltip carries it there (`Recly — Recording · 12:34`, §14 "App").
+- **Menu bar** popover: the record node with the timer and the input lines beside it (§9 screen principle 1) + the recent ledger (infinite scroll, 20 rows at a time; time · title with the transcript's first words
   under it · length · state, and a click opens the recording in the Details window, §9 principle 2) + actions, with a notice banner at the top.
 - **Mac popover size**: the height is limited so the popover fits inside the current screen minus the menu bar and the Dock. Only settings and the ledger scroll, and
   Settings/Hide settings and Quit at the bottom are always shown, at the status badge's size (2026-11-04, user decision; the Windows tray's
   too). While settings are open, the button reads `Hide settings`.
   Hiding settings shrinks it to the ledger's size, and when the screen layout changes, the position and height are fitted again.
-- **The popover holds these items**: start · stop, the recent ledger, settings, sign-in (the workflow editing window was retired 2026-09-24). The AWT menu on Windows is
+- **Input lines** (2026-11-04): beside the timer, what is being recorded from — `Microphone: <name>` and `System audio: <name>` — while
+  a recording runs (the Mac since M4-L3) and, while idle, what a start made now would record from: the microphone the recorder would take
+  first and the default output its tap would follow. A microphone that is not the one meant (the AirPods case, 2026-09-04) shows before
+  the recording rather than after it. The Mac reads them when the popover opens and every 2 s while it is up; the Windows tray asks the
+  capture helper's `--devices` (§14 "App") every 3 s while its popup is up, and names them only before a start — the helper reports no
+  device during a capture. Nothing while saving. The phones have no such line: an iPhone's audio session reports its input only once it
+  is active, Android chooses the microphone as the recording starts, and both record the device the system has routed to them.
+- **The popover holds these items**: start · stop (the record node), the recent ledger, settings, sign-in (the workflow editing window was retired 2026-09-24). The AWT menu on Windows is
   a reduced fallback (macOS uses a `.window` MenuBarExtra, so there is no NSMenu).
 - **The popover stays open when this app's windows take focus** — opening a details or settings window or the delete dialog from the popover
   and clicking inside it does not close it. Only a click in another app, a click on the status icon, or Esc closes it (on the Mac, `MenuBarPanel`'s
@@ -4288,8 +4296,12 @@ signal, so nothing the helper prints may panic on a closed pipe.
 
 ### App
 
-- Tray: status icon, start/stop, recent (ledger, infinite scroll 20 rows at a time), settings, notice banner (the editing window was retired 2026-09-24). Launch at login is
-  `HKCU\…\Run` (the counterpart of the Mac's `SMAppService`).
+- Tray: status icon, start/stop (the record node, §9 screen principle 1), recent (ledger, infinite scroll 20 rows at a time), settings, notice banner (the editing window was retired 2026-09-24). Launch at login is
+  `HKCU\…\Run` (the counterpart of the Mac's `SMAppService`). While a recording runs, the icon's tooltip adds its elapsed time to the
+  status (`Recly — Recording · 12:34`, 2026-11-04 — the Mac's menu bar time, §12 "Menu bar app").
+- `--devices` (2026-11-04): the capture helper prints the friendly names of the default capture and render endpoints the capture opens
+  (`eConsole`), `microphone=<name>` and `output=<name>` a line, and exits; the popup's input lines (§12 "Menu bar app") are read from it. It
+  reads the local device list only and makes no network request.
 - Auth: the Windows part of §6 (Ktor CIO 127.0.0.1 server + system browser + PKCE). The refresh token is in Credential Manager (JNA).
 - **Runner**: right after a Job is created + 5-minute timer + network return + `nextRunAt` follow-up.
 - Packaging: `jpackage` MSI. The helper and ffmpeg (LGPL shared build) go into `app/resources/windows-x64/`, and the installed app

@@ -52,18 +52,16 @@ final class MenuModel: ObservableObject {
     @Published var modelPromptDismissed: Bool = Defaults.modelPromptDismissed {
         didSet { Defaults.modelPromptDismissed = modelPromptDismissed }
     }
-    private var capturedProcessingKey: String?
-    private var capturedProcessingProvider: String?
-    var processingSummary: String {
-        if isRecording { return capturedProcessingProvider ?? RecKitStrings.localized(capturedProcessingKey ?? "On device") }
-        return processing?.providerSummary ?? RecKitStrings.localized(processing?.summaryKey ?? "On device")
-    }
     @Published private(set) var elapsed = ""
     /// False until the core is open: there is nothing to start a recording against before that.
     @Published private(set) var isReady = false
     /// The output device the tap is on, while a meeting is being recorded (docs/12 deliverable 5).
     @Published private(set) var capturedOutputDevice: String?
     @Published private(set) var capturedInputDevice: String?
+    /// docs/12 "Menu bar" (2026-11-04): what a start made now would record from — the microphone the recorder
+    /// would take and the output its tap would follow — read while the popover is up ([refreshNextInput]).
+    @Published private(set) var nextInputDevice: String?
+    @Published private(set) var nextOutputDevice: String?
     @Published private(set) var microphoneRecovering = false
     @Published private(set) var captureHealth: CaptureHealth = .healthy
     /// docs/12 "Menu bar": the newest recordings, refreshed after every executor pass — a page of
@@ -682,8 +680,6 @@ final class MenuModel: ObservableObject {
         modelDownload?.capturing = next != .idle
         waveforms?.capturing = next != .idle
         if isRecording, !wasRecording {
-            capturedProcessingKey = processing?.summaryKey
-            capturedProcessingProvider = processing?.providerSummary
             memoRecordingId = recordingId
             liveMemo = ""
             startTicking()
@@ -1369,6 +1365,17 @@ final class MenuModel: ObservableObject {
     private func stopTicking() {
         ticker?.invalidate()
         ticker = nil
+    }
+
+    /// Asked by the popover while it is up: the default devices change under it (headphones plugged in, AirPods
+    /// connecting), and the line naming them is only worth anything if it is the device a start would take now.
+    /// An unchanged name is not published again — every change of this model redraws the status item.
+    func refreshNextInput() {
+        guard isIdle else { return }
+        let input = MicrophoneDevice.next()?.name
+        let output = SystemAudioDevice.defaultOutput()?.name
+        if nextInputDevice != input { nextInputDevice = input }
+        if nextOutputDevice != output { nextOutputDevice = output }
     }
 
     private func tick() {

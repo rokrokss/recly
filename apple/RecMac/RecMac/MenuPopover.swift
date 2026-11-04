@@ -3,7 +3,7 @@ import ReclyCore
 import RecKit
 import SwiftUI
 
-/// docs/09 screen principle 6: the menu-bar popover — three state nodes, the last five recordings as a
+/// docs/09 screen principle 6: the menu-bar popover — the record control, the last five recordings as a
 /// ledger, and the actions. docs/09 trend 7 puts glass on the *chrome* and nowhere else: the header
 /// and the footer are `.ultraThinMaterial`, the ledger between them is the opaque surface, because
 /// a list of data read through a blur is the thing that trend is against.
@@ -81,65 +81,45 @@ struct MenuPopover: View {
         VStack(spacing: 0) {
             // 2026-10-08 §2: the app's name and nothing under it — the device id is in Settings → About.
             ScreenHeader(title: "Recly")
-            StateNodeRow(specs).padding(.horizontal, Space.m)
-            // 2026-10-08 §12: a capture finding its way back is a wait, not a failure — the warning
-            // tone; red stays for deletion and for the recording state.
-            // 2026-10-11 (N3): these status lines are words — Hangul, Kana and Han take the sans.
-            if model.isRecording, model.microphoneRecovering {
-                Text(verbatim: loc("Reconnecting microphone…"))
-                    .font(blueprint.fonts.mono(TypeSize.small, words: loc("Reconnecting microphone…")))
-                    .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.m)
-                    .padding(.top, Space.s)
-            } else if model.isRecording, let device = model.capturedInputDevice {
-                Text(AppStrings.localized("Microphone: %@", device))
-                    .font(blueprint.fonts.mono(TypeSize.small, words: AppStrings.localized("Microphone: %@", device)))
-                    .foregroundStyle(blueprint.palette.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.m)
-                    .padding(.top, Space.s)
-            }
-            if model.isRecording, model.captureHealth != .healthy {
-                let line = loc(model.captureHealth == .failed
-                    ? "System audio unavailable. Microphone recording continues."
-                    : "Reconnecting system audio…")
-                Text(verbatim: line)
-                    .font(blueprint.fonts.mono(TypeSize.small, words: line))
-                    .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.m)
-                    .padding(.top, Space.s)
-            }
-            // docs/12 M4-L3 "Menu bar": which output device the system audio is being taken from,
-            // while it is being taken. Nothing to say in microphone mode, so nothing is said.
-            if model.isRecording, let device = model.capturedOutputDevice {
-                Text(AppStrings.localized("System audio: %@", device))
-                    .font(blueprint.fonts.mono(TypeSize.small, words: AppStrings.localized("System audio: %@", device)))
-                    .foregroundStyle(blueprint.palette.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.m)
-                    .padding(.top, Space.s)
-            }
-            // docs/09 screen principle 1: while it is running, the timer *is* the dashboard — the same
-            // full-width mono clock Windows and the iPhone draw, not a readout tucked in beside
-            // the buttons. docs/09 screen principle 6 puts the track being written directly under it: the
-            // answer to "is it hearing me" that a clock alone cannot give.
-            // 2026-10-08 §4: and while the recording is being saved, at its final length — the
-            // waveform goes with the capture.
-            if model.isRecording || (model.state == .stopping && !model.elapsed.isEmpty) {
-                VStack(spacing: Space.s) {
-                    MonoTimer(model.elapsed, color: model.isRecording ? blueprint.palette.danger : nil)
-                        .frame(maxWidth: .infinity)
-                        .accessibilityIdentifier("elapsed")
-                    if model.isRecording {
-                        LiveWaveformView(peaks: model.livePeaks)
-                            .frame(maxWidth: .infinity)
-                            .accessibilityIdentifier("live-waveform")
+            // docs/09 screen principle 1 (2026-11-04): the phone's square record node, with the timer beside it —
+            // `00:00` while idle, so a start and a stop happen in the one place and nothing below them moves.
+            HStack(alignment: .center, spacing: Space.m) {
+                RecordNode(recording: model.isRecording, working: model.state == .starting || model.state == .stopping) {
+                    if model.canStop { model.stop() } else { model.start() }
+                }
+                // ⌘R to start and ⌘. to stop, the popover's own — not a global hot key (2026-10-10 took those out).
+                .keyboardShortcut(model.canStop ? "." : "r")
+                // Off until the core is open; the node keeps itself off while the recorder is Starting or Saving.
+                .disabled(!model.isReady || !(model.canStop || model.isIdle))
+                .accessibilityIdentifier(model.canStop ? "stop" : "start")
+                .accessibilityLabel(Text(verbatim: model.canStop ? loc("Stop recording") : loc("Start recording")))
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    // 2026-10-08 §4: the recording's length stays up while it is saved; `00:00` once idle.
+                    MonoTimer(
+                        model.state == .idle || model.elapsed.isEmpty ? LedgerFormat.elapsed(0) : model.elapsed,
+                        color: model.isRecording ? blueprint.palette.danger : nil
+                    )
+                    .accessibilityIdentifier("elapsed")
+                    ForEach(inputLines, id: \.self) { line in
+                        // 2026-10-11 (N3): these status lines are words — Hangul, Kana and Han take the sans.
+                        Text(verbatim: line.text)
+                            .font(blueprint.fonts.mono(TypeSize.small, words: line.text))
+                            .foregroundStyle(line.warning ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(.horizontal, Space.m)
-                .padding(.top, Space.s)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.s)
+            // docs/09 screen principle 6: the track being written, under the node and the timer — the answer to "is it
+            // hearing me" that a clock alone cannot give.
+            if model.isRecording {
+                LiveWaveformView(peaks: model.livePeaks)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("live-waveform")
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.sm)
             }
             // docs/08 "Memo": under the waveform while recording, empty or not; a click opens the field in its place,
             // and Done folds it back. The field saves as it goes, so a popover closed by Escape loses nothing.
@@ -159,54 +139,46 @@ struct MenuPopover: View {
                 .padding(.horizontal, Space.m)
                 .padding(.top, Space.s)
             }
-            HStack(spacing: Space.s) {
-                if model.canStop {
-                    BlueprintButton(loc("Stop recording"), tone: .danger) { model.stop() }
-                        .keyboardShortcut(".")
-                } else {
-                    // ⌘R, the popover's own as ⌘. is Stop's — not a global hot key (2026-10-10 took those out).
-                    // Off while the recorder is Starting or Saving: there is nothing to start until it is idle.
-                    BlueprintButton(loc("Start recording"), tone: .primary) { model.start() }
-                        .keyboardShortcut("r")
-                        .disabled(!model.isReady || !model.isIdle)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, Space.m)
-            .padding(.top, Space.sm)
-            .padding(.bottom, Space.sm)
+            Color.clear.frame(height: Space.sm)
         }
         .background(.ultraThinMaterial)
     }
 
-    private var specs: [NodeSpec] {
-        [
-            NodeSpec(label: loc("Device"), value: StateNodeWords.device(.desktop)),
-            NodeSpec(label: RecKitStrings.localized("Transcription"), value: model.processingSummary),
-            stateNode,
-        ]
+    /// docs/12 M4-L3 "Menu bar": what is being recorded from, while it is — and, since 2026-11-04, what a start made now
+    /// would record from (the microphone the recorder would take and the output its tap would follow), so a
+    /// microphone that is not the one meant shows before the recording rather than after it. Nothing while it saves.
+    /// 2026-10-08 §12: a capture finding its way back is a wait, not a failure — the warning tone; red stays for
+    /// deletion and for the recording state.
+    private var inputLines: [InputLine] {
+        var lines: [InputLine] = []
+        if model.isRecording {
+            if model.microphoneRecovering {
+                lines.append(InputLine(text: loc("Reconnecting microphone…"), warning: true))
+            } else if let device = model.capturedInputDevice {
+                lines.append(InputLine(text: AppStrings.localized("Microphone: %@", device), warning: false))
+            }
+            if model.captureHealth != .healthy {
+                lines.append(InputLine(text: loc(model.captureHealth == .failed
+                    ? "System audio unavailable. Microphone recording continues."
+                    : "Reconnecting system audio…"), warning: true))
+            }
+            if let device = model.capturedOutputDevice {
+                lines.append(InputLine(text: AppStrings.localized("System audio: %@", device), warning: false))
+            }
+        } else if model.isIdle {
+            if let device = model.nextInputDevice {
+                lines.append(InputLine(text: AppStrings.localized("Microphone: %@", device), warning: false))
+            }
+            if let device = model.nextOutputDevice {
+                lines.append(InputLine(text: AppStrings.localized("System audio: %@", device), warning: false))
+            }
+        }
+        return lines
     }
 
-    /// The recorder's own state comes first; `Recording` is never displaced. While it is idle and a job
-    /// in the ledger is running, the node says `Uploading` with a turning loader instead of `Ready` —
-    /// otherwise nothing above the list says the app is doing anything at all.
-    private var stateNode: NodeSpec {
-        if model.state == .idle, Recents.uploading(model.recents) {
-            return NodeSpec(
-                label: loc("State"),
-                value: StateNodeWords.uploading,
-                valueColor: blueprint.palette.accent,
-                active: true,
-                busy: true
-            )
-        }
-        // 2026-10-08 §1b: a word, in monospace, and never colour alone.
-        return NodeSpec(
-            label: loc("State"),
-            value: StateNodeWords.recorder(model.state),
-            valueColor: model.isRecording ? blueprint.palette.danger : blueprint.palette.textMuted,
-            active: model.isRecording
-        )
+    private struct InputLine: Hashable {
+        let text: String
+        let warning: Bool
     }
 
     private var footer: some View {

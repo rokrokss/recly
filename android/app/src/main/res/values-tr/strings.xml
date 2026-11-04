@@ -122,8 +122,6 @@
     <string name="widget_description">Tek dokunuşla kaydı başlatın ve durdurun.</string>
     <string name="shortcut_start_short">Kaydı başlat</string>
     <string name="shortcut_start_long">Recly kaydı başlat</string>
-    <string name="node_device">Cihaz</string>
-    <string name="node_state">Durum</string>
     <string name="jobs_column_time">Zaman</string>
     <string name="jobs_column_title">Başlık</string>
     <string name="jobs_column_length">Süre</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">Klasör bekleniyor</string>
     <string name="badge_filling">Dolduruluyor</string>
     <string name="badge_organizing">Özetleniyor</string>
-    <string name="node_state_ready">Hazır</string>
-    <string name="node_state_starting">Başlatılıyor</string>
-    <string name="node_state_saving">Kaydediliyor</string>
-    <string name="node_device_phone">Telefon</string>
     <string name="detail_waiting_drive">Drive bekleniyor. Yüklemek ve metne dönüştürmek için Drive\'ı bağlayın.</string>
     <string name="processing_folder_monthly">Aylık klasörler</string>
     <string name="processing_folder_single">Tek klasör</string>

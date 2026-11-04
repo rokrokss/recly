@@ -122,8 +122,6 @@
     <string name="widget_description">एक टैप से रिकॉर्डिंग शुरू और बंद करें।</string>
     <string name="shortcut_start_short">रिकॉर्डिंग शुरू करें</string>
     <string name="shortcut_start_long">Recly रिकॉर्डिंग शुरू करें</string>
-    <string name="node_device">डिवाइस</string>
-    <string name="node_state">स्थिति</string>
     <string name="jobs_column_time">समय</string>
     <string name="jobs_column_title">शीर्षक</string>
     <string name="jobs_column_length">अवधि</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">फ़ोल्डर की प्रतीक्षा</string>
     <string name="badge_filling">भरा जा रहा है</string>
     <string name="badge_organizing">सारांश बन रहा है</string>
-    <string name="node_state_ready">तैयार</string>
-    <string name="node_state_starting">शुरू हो रहा है</string>
-    <string name="node_state_saving">सहेजा जा रहा है</string>
-    <string name="node_device_phone">फ़ोन</string>
     <string name="detail_waiting_drive">Drive की प्रतीक्षा। अपलोड और ट्रांसक्राइब करने के लिए Drive कनेक्ट करें।</string>
     <string name="processing_folder_monthly">मासिक फ़ोल्डर</string>
     <string name="processing_folder_single">एक फ़ोल्डर</string>

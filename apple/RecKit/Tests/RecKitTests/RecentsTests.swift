@@ -220,38 +220,6 @@ final class RecentsRemoteTests: XCTestCase {
     }
 }
 
-/// What the dashboard's State node reads off the ledger: whether anything is running right now.
-final class RecentsUploadingTests: XCTestCase {
-
-    /// `RUNNING` is the one state [Recents.stateLabel] writes as `"Uploading"`, and one row of it
-    /// among finished ones is enough.
-    func testARunningJobAnywhereInTheLedgerIsUploading() {
-        XCTAssertTrue(Recents.uploading([item(state: "Done"), item(state: "Uploading")]))
-    }
-
-    /// Nothing to say when there is nothing there yet.
-    func testAnEmptyLedgerIsNotUploading() {
-        XCTAssertFalse(Recents.uploading([]))
-    }
-
-    /// A queued job has not started and a finished one has stopped: neither is work in flight.
-    func testQueuedAndFinishedRowsAreNotUploading() {
-        XCTAssertFalse(Recents.uploading([item(state: "Waiting"), item(state: "Done")]))
-    }
-
-    private func item(state: String) -> RecentItem {
-        RecentItem(
-            id: "01J9REC0000000000000000000",
-            jobId: "01J9JOB0000000000000000000",
-            title: "",
-            startedAt: "2026-02-09T12:04:05.000Z",
-            state: state,
-            link: nil,
-            lastError: nil
-        )
-    }
-}
-
 /// docs/08 "Polling · status": a job waiting out a backoff says *when* it comes back — "Retry pending" on
 /// its own reads like "stuck". The rule is Android's (`JobsScreen.remaining`) down to its
 /// truncation, because the two ledgers are one ledger seen on two devices.
@@ -611,18 +579,6 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         ].map(item(state:))
 
         XCTAssertEqual(Recents.summary(items), "4 · 2 waiting")
-    }
-
-    /// docs/09 screen principle 1: what the iPhone's State node reads off the ledger. A job of this phone's
-    /// own still wins — the view asks [Recents.uploading] first — so a ledger with both says both.
-    func testAReceivingRowIsWhatTheStateNodeReads() {
-        XCTAssertTrue(Recents.receiving([item(state: "Done"), item(state: "Receiving from the watch")]))
-        XCTAssertFalse(Recents.receiving([item(state: "Done"), item(state: "Uploading")]))
-        XCTAssertFalse(Recents.receiving([]))
-
-        let both = [item(state: "Uploading"), item(state: "Receiving from the watch")]
-        XCTAssertTrue(Recents.uploading(both))
-        XCTAssertTrue(Recents.receiving(both))
     }
 
     // MARK: - Pieces

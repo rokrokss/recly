@@ -32,6 +32,8 @@ features = [
     "Networking_Connectivity",
     # docs/01 "Long recordings — watchdog": the tray balloon raised when the app dies under a recording.
     "Win32_UI_Shell",
+    # `--devices`: the default endpoints' friendly names, read from their property stores.
+    "Win32_UI_Shell_PropertiesSystem",
     "Win32_UI_WindowsAndMessaging",
     "Win32_Graphics_Gdi",
     "Win32_System_LibraryLoader",

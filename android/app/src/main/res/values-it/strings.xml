@@ -122,8 +122,6 @@
     <string name="widget_description">Avvia e interrompi una registrazione con un tocco.</string>
     <string name="shortcut_start_short">Avvia registrazione</string>
     <string name="shortcut_start_long">Avvia una registrazione Recly</string>
-    <string name="node_device">Dispositivo</string>
-    <string name="node_state">Stato</string>
     <string name="jobs_column_time">Ora</string>
     <string name="jobs_column_title">Titolo</string>
     <string name="jobs_column_length">Durata</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">In attesa della cartella</string>
     <string name="badge_filling">Completamento</string>
     <string name="badge_organizing">Riepilogo in corso</string>
-    <string name="node_state_ready">Pronto</string>
-    <string name="node_state_starting">Avvio in corso</string>
-    <string name="node_state_saving">Salvataggio</string>
-    <string name="node_device_phone">Telefono</string>
     <string name="detail_waiting_drive">In attesa di Drive. Collega Drive per caricare e trascrivere.</string>
     <string name="processing_folder_monthly">Cartelle mensili</string>
     <string name="processing_folder_single">Una cartella</string>

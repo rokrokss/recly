@@ -122,8 +122,6 @@
     <string name="widget_description">شروع و توقف ضبط با یک ضربه.</string>
     <string name="shortcut_start_short">شروع ضبط</string>
     <string name="shortcut_start_long">شروع ضبط Recly</string>
-    <string name="node_device">دستگاه</string>
-    <string name="node_state">حالت</string>
     <string name="jobs_column_time">زمان</string>
     <string name="jobs_column_title">عنوان</string>
     <string name="jobs_column_length">مدت</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">در انتظار پوشه</string>
     <string name="badge_filling">در حال تکمیل</string>
     <string name="badge_organizing">در حال خلاصه‌سازی</string>
-    <string name="node_state_ready">آماده</string>
-    <string name="node_state_starting">در حال راه‌اندازی</string>
-    <string name="node_state_saving">در حال ذخیره</string>
-    <string name="node_device_phone">تلفن</string>
     <string name="detail_waiting_drive">در انتظار Drive. برای بارگذاری و رونویسی، Drive را متصل کنید.</string>
     <string name="processing_folder_monthly">پوشه‌های ماهانه</string>
     <string name="processing_folder_single">یک پوشه</string>

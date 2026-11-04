@@ -122,8 +122,6 @@
     <string name="widget_description">Bắt đầu và dừng ghi âm chỉ bằng một lần chạm.</string>
     <string name="shortcut_start_short">Bắt đầu ghi âm</string>
     <string name="shortcut_start_long">Bắt đầu ghi âm bằng Recly</string>
-    <string name="node_device">Thiết bị</string>
-    <string name="node_state">Tình trạng</string>
     <string name="jobs_column_time">Thời gian</string>
     <string name="jobs_column_title">Tiêu đề</string>
     <string name="jobs_column_length">Thời lượng</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">Đang chờ thư mục</string>
     <string name="badge_filling">Đang điền</string>
     <string name="badge_organizing">Đang tóm tắt</string>
-    <string name="node_state_ready">Sẵn sàng</string>
-    <string name="node_state_starting">Đang khởi động</string>
-    <string name="node_state_saving">Đang lưu</string>
-    <string name="node_device_phone">Điện thoại</string>
     <string name="detail_waiting_drive">Đang chờ Drive. Kết nối Drive để tải lên và chép lời.</string>
     <string name="processing_folder_monthly">Thư mục theo tháng</string>
     <string name="processing_folder_single">Một thư mục</string>

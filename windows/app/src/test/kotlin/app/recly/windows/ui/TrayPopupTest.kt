@@ -19,7 +19,6 @@ import app.recly.windows.i18n.message
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.text
-import app.recly.windows.plain
 import app.recly.windows.ui.theme.ReclyDesktopTheme
 import java.io.File
 import java.nio.file.Files
@@ -198,30 +197,6 @@ class TrayPopupTest {
             scope.coroutineContext[Job]?.cancelAndJoin()
             directory.deleteRecursively()
         }
-    }
-
-    /** The UX decisions of 2026-10-08: the State and Device nodes say words in the app's language, not codes. */
-    @Test
-    fun `the State node says words, not codes`() {
-        val en = StringTable.of(StringTable.BASE)
-        val ko = StringTable.of(StringTable.KOREAN)
-        val words = mapOf(
-            "IDLE" to ("Ready" to "준비"),
-            "STARTING" to ("Starting" to "시작 중"),
-            "REC" to ("Recording" to "녹음 중"),
-            "STOPPING" to ("Saving" to "저장 중"),
-            "OPENING" to ("Opening" to "여는 중"),
-            "NO_HELPER" to ("Can’t record" to "녹음 불가"),
-            "NAMING" to ("Naming" to "제목 입력"),
-        )
-        words.forEach { (code, word) ->
-            assertEquals(word.first, en[stateWord(code)], code)
-            assertEquals(word.second, ko[stateWord(code)].plain(), code)
-        }
-        assertEquals("Uploading", en[Str.STATE_UPLOADING])
-        assertEquals("업로드 중", ko[Str.STATE_UPLOADING].plain())
-        assertEquals("Desktop", en[Str.NODE_DESKTOP])
-        assertEquals("데스크톱", ko[Str.NODE_DESKTOP].plain())
     }
 
     /**

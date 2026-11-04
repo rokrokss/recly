@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import app.recly.windows.FakeSettings
 import app.recly.windows.TitleSheet
+import app.recly.windows.helper.CaptureDevices
 import app.recly.windows.helper.FakeHelperCommand
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
@@ -128,6 +129,10 @@ class ShotsTest {
             until { model.detail?.transcript != null && model.detail?.find == null }
             shot("settings-$lang", 640, SETTINGS_HEIGHT, ko) { SettingsWindow(model, strings) }
             shot("popup-$lang", 520, 560, ko) { TrayPopup(model, strings) {} }
+            // 2026-11-04: the microphone and the output a start would capture, named before it.
+            model.readDevices = { CaptureDevices("Microphone Array (Realtek(R) Audio)", "Speakers (Realtek(R) Audio)") }
+            shot("popup-devices-$lang", 520, 560, ko) { TrayPopup(model, strings) {} }
+            model.readDevices = { CaptureDevices.NONE }
         }
 
         // Right to left (Arabic), as `Main.Themed` lays it out: the Details window, Settings and the tray.

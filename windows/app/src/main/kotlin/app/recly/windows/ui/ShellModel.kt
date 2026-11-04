@@ -20,6 +20,7 @@ import app.recly.windows.detect.MicrophoneAccess
 import app.recly.windows.detect.UnknownMicrophoneAccess
 import app.recly.windows.detect.NoDetection
 import app.recly.windows.detect.RunningApps
+import app.recly.windows.helper.CaptureDevices
 import app.recly.windows.helper.CaptureHelper
 import app.recly.windows.helper.HelperClient
 import app.recly.windows.helper.HelperNotice
@@ -777,6 +778,25 @@ class ShellModel(
     private var recorder: WindowsRecorder? = null
     private var detector: MeetingDetector? = null
     private var helperCommand: List<String>? = null
+
+    /**
+     * docs/12 "Menu bar" (2026-11-04): the microphone and the output a start made now would capture, read while the
+     * popup is up and nothing records ([refreshNextDevices]) — so a microphone that is not the one meant shows
+     * before the recording rather than after it.
+     */
+    var nextDevices: CaptureDevices by mutableStateOf(CaptureDevices.NONE)
+        private set
+
+    /** Asked by the popup while it is up: the defaults change under it (a headset plugged in, a dock unplugged). */
+    suspend fun refreshNextDevices() {
+        val command = helperCommand ?: return
+        if (recording || transition != null) return
+        val next = withContext(Dispatchers.IO) { readDevices(command) }
+        if (next != nextDevices) nextDevices = next
+    }
+
+    /** The helper's `--devices`; the shots give names of their own, as the fake helper has no endpoints to name. */
+    internal var readDevices: (List<String>) -> CaptureDevices = CaptureHelper::devices
     private var balloon: AlertBalloon? = null
     private var recordingBalloon: RecordingBalloon? = null
     private lateinit var launcher: LaunchAtLogin

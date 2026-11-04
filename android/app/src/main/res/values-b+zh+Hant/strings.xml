@@ -122,8 +122,6 @@
     <string name="widget_description">點一下即可開始和停止錄音。</string>
     <string name="shortcut_start_short">開始錄音</string>
     <string name="shortcut_start_long">開始Recly錄音</string>
-    <string name="node_device">裝置</string>
-    <string name="node_state">狀態</string>
     <string name="jobs_column_time">時間</string>
     <string name="jobs_column_title">標題</string>
     <string name="jobs_column_length">時長</string>
@@ -364,10 +362,6 @@
     <string name="badge_waiting_folder">等待資料夾</string>
     <string name="badge_filling">正在填寫</string>
     <string name="badge_organizing">正在產生摘要</string>
-    <string name="node_state_ready">就緒</string>
-    <string name="node_state_starting">正在啟動</string>
-    <string name="node_state_saving">儲存中</string>
-    <string name="node_device_phone">手機</string>
     <string name="detail_waiting_drive">等待Drive。連接Drive後即可上傳並轉錄。</string>
     <string name="processing_folder_monthly">按月資料夾</string>
     <string name="processing_folder_single">單一資料夾</string>

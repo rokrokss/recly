@@ -451,7 +451,6 @@ final class RecordingNotesTests: XCTestCase {
         XCTAssertNil(row.alert)
         XCTAssertNil(row.nextRunAt)
         XCTAssertFalse(row.canRetry)
-        XCTAssertFalse(Recents.uploading(rows), "the State node does not read the notes as an upload")
         XCTAssertEqual(Recents.summary(rows), "1")
     }
 

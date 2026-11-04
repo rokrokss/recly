@@ -233,6 +233,22 @@ object CaptureHelper {
         NetworkCost.parse(text)
     }.getOrDefault(NetworkCost.UNKNOWN)
 
+    /**
+     * `--devices` (2026-11-04): the microphone and the output a start made now would capture, named for the tray
+     * before it starts. A helper that would not run, an older one that does not know the flag, or one that took
+     * too long names nothing ([CaptureDevices.NONE]), and the tray says nothing about them.
+     */
+    fun devices(command: List<String>, timeoutMs: Long = VERSION_TIMEOUT_MS): CaptureDevices = runCatching {
+        val process = ProcessBuilder(command + "--devices").redirectErrorStream(true).start()
+        process.outputStream.close()
+        val text = process.inputStream.bufferedReader().use { it.readText() }
+        if (!process.waitFor(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            process.destroyForcibly()
+            return CaptureDevices.NONE
+        }
+        CaptureDevices.parse(text)
+    }.getOrDefault(CaptureDevices.NONE)
+
     private const val VERSION_TIMEOUT_MS = 2_000L
 
 
@@ -252,6 +268,25 @@ object CaptureHelper {
 }
 
 /** The helper's answer to `--network-cost`: one word, `metered`, `unmetered` or `unknown`. */
+/** `--devices`: the default microphone's and output's names, each null when the helper named none. */
+data class CaptureDevices(val microphone: String?, val output: String?) {
+    companion object {
+        val NONE = CaptureDevices(null, null)
+
+        /** `microphone=<name>` and `output=<name>`, one a line; any other line — an older helper's complaint on
+         * stderr about the flag — names nothing. */
+        fun parse(output: String?): CaptureDevices {
+            val names = output.orEmpty().lineSequence()
+                .mapNotNull { line -> line.trim().split('=', limit = 2).takeIf { it.size == 2 } }
+                .associate { (key, value) -> key to value.trim() }
+            return CaptureDevices(
+                microphone = names["microphone"]?.takeIf { it.isNotEmpty() },
+                output = names["output"]?.takeIf { it.isNotEmpty() },
+            )
+        }
+    }
+}
+
 enum class NetworkCost {
     METERED,
     UNMETERED,
