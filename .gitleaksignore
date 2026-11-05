@@ -1,0 +1,11 @@
+# Test fixtures gitleaks flags in the history (.github/workflows/secrets.yml): the Standard Webhooks
+# spec's published example secret and message id, and fake ya29.* tokens in AppleTokenProviderTests.
+f28ecc503b8fc1b11b0e48cba9717e3654376f4e:events/internal/mcpserver/handler_test.go:generic-api-key:91
+f28ecc503b8fc1b11b0e48cba9717e3654376f4e:events/internal/webhook/hub_test.go:generic-api-key:26
+f28ecc503b8fc1b11b0e48cba9717e3654376f4e:events/internal/webhook/hub_test.go:generic-api-key:40
+21be5ecdda9b2a1c9519203022449e7bab2f2046:apple/RecKit/Tests/RecKitTests/AppleTokenProviderTests.swift:generic-api-key:47
+21be5ecdda9b2a1c9519203022449e7bab2f2046:scripts/webhook-receiver.test.mjs:generic-api-key:11
+88cb647dec6b53bf2a7aa0d8f11ae37a0041f222:apple/RecKit/Tests/RecKitTests/AppleTokenProviderTests.swift:generic-api-key:47
+88cb647dec6b53bf2a7aa0d8f11ae37a0041f222:scripts/webhook-receiver.test.mjs:generic-api-key:11
+b6ecfb138c6f693515076b09f732c60e38c5f44c:scripts/webhook-receiver.test.mjs:generic-api-key:11
+264c563dc543694ed43bd30c6afdb3688bbee2a6:apple/RecKit/Tests/RecKitTests/AppleTokenProviderTests.swift:generic-api-key:43

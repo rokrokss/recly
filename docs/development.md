@@ -30,8 +30,9 @@ SDK on a Mac, and keeps them when they are already set. Set both where yours dif
 
 "Untested" means the Makefile does not tie the target to a host, but neither the development Mac
 nor CI runs it there. CI runs the Windows shell tests, the capture helper and the MSI build on
-Windows for each `v*` tag, and the recly-events tests on all three systems for each change to
-`events/`.
+Windows for each `v*` tag, the recly-events tests on all three systems for each change to
+`events/`, and a secrets scan (`secrets.yml`: no client files or keystores, gitleaks over the
+history) on every push to `main` and every pull request.
 
 ## Build · test
 

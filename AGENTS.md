@@ -91,7 +91,8 @@ Breaking one of these breaks something outside the file you are editing.
   which data leaves the device; a change that adds a network call must amend it in the same commit.
 - **Never commit OAuth client files or keys** — `google-services.json`, `GoogleService-Info.plist`,
   `client_secret*.json`, `apple/Config/Local.xcconfig`, keystores. They are gitignored; keep it
-  that way.
+  that way. CI (`.github/workflows/secrets.yml`) fails on them and on any key gitleaks finds in the
+  history; a test fixture it flags goes into `.gitleaksignore` by fingerprint.
 - **`spec/*.json` is the machine-readable contract.** After touching a schema or an example, run
   `make spec`, and update the clients that read it.
 

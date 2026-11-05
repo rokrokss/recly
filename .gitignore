@@ -40,6 +40,7 @@ apple/Config/Local.xcconfig
 **/*.keystore
 **/*.jks
 **/*.p12
+**/update-signing.key
 .env
 .env.*
 
