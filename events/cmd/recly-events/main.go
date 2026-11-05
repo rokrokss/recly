@@ -558,7 +558,13 @@ type statusReport struct {
 	SubscriptionsEnded bool            `json:"subscriptionsEnded"`
 	Pending            int             `json:"pending"`
 	LastDelivery       *deliveryReport `json:"lastDelivery,omitempty"`
+	// AgentCalls is when the agent last called each of agentTools; a tool it never called is absent.
+	AgentCalls map[string]time.Time `json:"agentCalls"`
 }
+
+// agentTools are the tools whose last call status shows: whether the agent, after a delivery,
+// looked at the inbox, read a transcript and acknowledged.
+var agentTools = []string{"get_pending_events", "get_transcript", "acknowledge_events"}
 
 type driveReport struct {
 	PollSeconds   int        `json:"pollSeconds"`
@@ -607,7 +613,13 @@ func cmdStatus(home app.Home, args []string) error {
 		r := statusReport{
 			Home: home.Dir, TunnelID: cfg.TunnelID, TunnelKey: keyErr == nil, GoogleSignedIn: tokenErr == nil,
 			Server: rt, Subscriptions: len(st.Subscriptions), SubscriptionsEnded: ended, Pending: pending,
-			Drive: driveReport{PollSeconds: cfg.PollInterval(), LastError: st.Drive.LastError, Announced: len(st.Drive.Seen)},
+			Drive:      driveReport{PollSeconds: cfg.PollInterval(), LastError: st.Drive.LastError, Announced: len(st.Drive.Seen)},
+			AgentCalls: map[string]time.Time{},
+		}
+		for _, tool := range agentTools {
+			if at, ok := st.AgentCalls[tool]; ok {
+				r.AgentCalls[tool] = at
+			}
 		}
 		if !st.Drive.LastPollAt.IsZero() {
 			r.Drive.LastPollAt = &st.Drive.LastPollAt
@@ -668,6 +680,11 @@ func cmdStatus(home app.Home, args []string) error {
 		}
 		fmt.Printf("Last delivery:  %s %s → %s\n", ago(l.At), l.EventID, res)
 	}
+	var calls []string
+	for _, tool := range agentTools {
+		calls = append(calls, tool+" "+ago(st.AgentCalls[tool]))
+	}
+	fmt.Println("Agent called:  ", strings.Join(calls, ", "))
 	return nil
 }
 

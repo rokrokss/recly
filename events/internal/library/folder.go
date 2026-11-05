@@ -125,7 +125,7 @@ func loadRec(root, dir string, base Base) (folderRec, bool) {
 }
 
 // Recordings lists recordings newest first; the cursor is the base name of the last one returned.
-func (f *Folder) Recordings(ctx context.Context, limit int, cursor string) ([]Recording, string, error) {
+func (f *Folder) Recordings(ctx context.Context, limit int, cursor string, span Span) ([]Recording, string, error) {
 	if cursor != "" {
 		if _, ok := ParseBase(cursor); !ok {
 			return nil, "", &ToolError{Message: "cursor is not one list_recordings returned"}
@@ -138,7 +138,7 @@ func (f *Folder) Recordings(ctx context.Context, limit int, cursor string) ([]Re
 	out := []Recording{}
 	next := ""
 	for _, r := range recs {
-		if cursor != "" && r.base.Name >= cursor {
+		if cursor != "" && r.base.Name >= cursor || !span.Contains(r.base.StartedAt) {
 			continue
 		}
 		if len(out) == limit {
@@ -204,6 +204,42 @@ func (r folderRec) transcript() (*Transcript, error) {
 	return nil, ErrNoTranscript
 }
 
+// Summary reads a recording's summary and the user's notes. The apps write them into an iCloud
+// folder; a local folder keeps them on the device (docs/recly.md §8 "Organizing"), so there they are
+// absent unless copied in.
+func (f *Folder) Summary(ctx context.Context, id string) (*SummaryFiles, error) {
+	r, err := f.find(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	out := &SummaryFiles{RecordingID: r.recordingID, Title: r.title, StartedAt: StartedAtOf(r.base)}
+	if out.Notes, err = r.optional(NotesName(r.base.Name)); err != nil {
+		return nil, err
+	}
+	if out.Memo, err = r.optional(MemoName(r.base.Name)); err != nil {
+		return nil, err
+	}
+	if r.hasJSON && NeedsSpeakers(out.Notes) {
+		b, err := r.read(TranscriptJSONName(r.base.Name), MaxTranscriptBytes)
+		if err == nil {
+			out.Speakers = SpeakersOf(b)
+		}
+	}
+	return out, nil
+}
+
+// optional reads a summary or memo file: nil when it is not there, an error when it is too large.
+func (r folderRec) optional(name string) ([]byte, error) {
+	b, err := r.read(name, MaxNotesBytes)
+	if errors.Is(err, ErrTooLarge) {
+		return nil, err
+	}
+	if err != nil {
+		return nil, nil
+	}
+	return b, nil
+}
+
 // RecordingIDOf is the first candidate that is a recording ID, else the last candidate (the base
 // name).
 func RecordingIDOf(candidates ...string) string {
@@ -215,17 +251,23 @@ func RecordingIDOf(candidates ...string) string {
 	return candidates[len(candidates)-1]
 }
 
-// SearchHit is one recording search_recordings found.
+// SearchHit is one recording search_recordings found, with up to three matches from each place.
 type SearchHit struct {
 	Recording  Recording
 	TitleMatch bool
 	Lines      []Line
+	Summary    []summaryText
+	Notes      []string
 }
 
-// Search finds recordings whose title or transcript contains query, ignoring case, newest first,
-// with up to three matching lines each.
+// searchEach is how many matches search_recordings gives from each of a recording's places.
+const searchEach = 3
+
+// Search finds recordings whose title, transcript, summary or user's notes contain query, ignoring
+// case, newest first.
 func (f *Folder) Search(ctx context.Context, query string, limit int) ([]SearchHit, error) {
 	q := []rune(strings.ToLower(query))
+	has := func(s string) bool { return indexFold([]rune(s), q) >= 0 }
 	recs, err := f.scan(ctx)
 	if err != nil {
 		return nil, err
@@ -239,20 +281,29 @@ func (f *Folder) Search(ctx context.Context, query string, limit int) ([]SearchH
 			return nil, err
 		}
 		h := SearchHit{Recording: r.recording()}
-		if r.title != nil && indexFold([]rune(*r.title), q) >= 0 {
-			h.TitleMatch = true
-		}
+		h.TitleMatch = r.title != nil && has(*r.title)
 		if t, err := r.transcript(); err == nil {
 			for _, l := range t.Lines {
-				if len(h.Lines) == 3 {
-					break
-				}
-				if indexFold([]rune(l.Text), q) >= 0 {
+				if len(h.Lines) < searchEach && has(l.Text) {
 					h.Lines = append(h.Lines, l)
 				}
 			}
 		}
-		if h.TitleMatch || len(h.Lines) > 0 {
+		if b, err := r.optional(NotesName(r.base.Name)); err == nil {
+			for _, t := range summaryTexts(b) {
+				if len(h.Summary) < searchEach && has(t.Text) {
+					h.Summary = append(h.Summary, t)
+				}
+			}
+		}
+		if b, err := r.optional(MemoName(r.base.Name)); err == nil {
+			for _, l := range memoLines(b) {
+				if len(h.Notes) < searchEach && has(l) {
+					h.Notes = append(h.Notes, l)
+				}
+			}
+		}
+		if h.TitleMatch || len(h.Lines) > 0 || len(h.Summary) > 0 || len(h.Notes) > 0 {
 			hits = append(hits, h)
 		}
 	}

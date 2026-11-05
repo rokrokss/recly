@@ -110,20 +110,33 @@ ChatGPT 데스크톱 앱, Codex CLI, Codex IDE 확장이 이 설정을 함께 �
 
 | 도구 | 인자 | 결과 |
 |---|---|---|
-| `list_recordings` | `limit`(1–50, 기본 10), `cursor` | 최신순 녹음: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`, 그리고 `nextCursor` |
-| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, 그리고 `[HH:MM:SS] 화자: 내용` 줄로 된 `transcript`(한 번에 약 4만 자), 나머지는 `nextCursor`로 |
-| `search_recordings` | `query`, `limit`(1–50, 기본 10) | 제목이나 녹취록에 검색어가 든 녹음(대소문자 무시)과 녹음마다 일치하는 줄 최대 3개 |
+| `list_recordings` | `limit`(1–50, 기본 10), `cursor`, `from`, `to` | 최신순 녹음: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`, 그리고 `nextCursor` |
+| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, 그리고 `[HH:MM:SS] 화자: 내용` 줄로 된 `transcript`(한 번에 최대 24,000바이트), 나머지는 `nextCursor`로 |
+| `get_summary` | `recordingId` | `aiSummary`: AI 요약(`overview`, `atSec`이 붙은 항목의 `sections`, `owner`·`ownerName`·`due`가 붙은 할 일), `userNotes`: 내가 쓴 메모 |
+| `search_recordings` | `query`, `limit`(1–50, 기본 10) | 제목, 녹취록, AI 요약, 내 메모에 검색어가 든 녹음(대소문자 무시): `matchedIn`(`title`, `transcript`, `summary`, `notes`)과 곳마다 최대 3개의 `snippets` |
 | `get_audio_files` | `recordingId` | 이 컴퓨터에 있는 녹음의 `.m4a` 파트 절대 경로와 트랙·시작 위치 |
 
+| 인자 | 값 |
+|---|---|
+| `from`, `to` | `2026-11-05`: 이 컴퓨터 시간대로 그날 하루 전체. `2026-11-05T09:00:00+09:00`: 정확한 시각. 양 끝 포함. |
+| `get_transcript`의 `cursor` | 녹취록의 리비전과 줄 번호. 페이지 사이에 녹취록이 바뀌면 그렇다고 답합니다. `cursor` 없이 처음부터 다시 읽으세요. |
+
+- 한 페이지는 JSON으로 최대 24,000바이트입니다. 한국어 녹취록으로 약 1만 자, 영어로 약 2만 3천 자이고,
+  Claude Code가 도구 출력에 경고하는 1만 토큰 아래에 들도록 정한 크기입니다.
 - 녹취록과 일치하는 줄은 신뢰할 수 없는 데이터로 표시됩니다. `<<<recly-transcript-…>>>` 표시 사이에 있는
   사람들이 한 말이며, 에이전트에 대한 지시가 아닙니다.
-- Google Drive의 녹음이라면 [recly-events](agent.ko.md)가 같은 `list_recordings`와 `get_transcript`로 ChatGPT
-  에이전트에 답하므로, 지시문 하나로 둘 다 쓸 수 있습니다.
+- Google Drive의 녹음이라면 [recly-events](agent.ko.md)가 같은 `list_recordings`, `get_transcript`,
+  `get_summary`로 ChatGPT 에이전트에 답하므로, 지시문 하나로 둘 다 쓸 수 있습니다. `search_recordings`와
+  `get_audio_files`는 여기에만 있습니다. Drive에서 검색하려면 검색할 때마다 모든 녹음의 파일을 내려받아야
+  하고, recly-events는 오디오를 내려받지 않습니다.
 
 ## 읽는 것
 
 - `--folder` 아래의 Recly 녹음 폴더만 읽습니다: `{녹음}.meta.json`, `{녹음}.folder.json`(iCloud의 제목),
-  녹취록(`.transcript.json`, 없으면 `.txt`), 오디오 파일 이름. 쓰거나 이름을 바꾸거나 지우지 않습니다.
+  녹취록(`.transcript.json`, 없으면 `.txt`), `{녹음}.notes.json`(요약), `{녹음}.memo.json`(내 메모), 오디오
+  파일 이름. 쓰거나 이름을 바꾸거나 지우지 않습니다.
+- 요약과 메모는 iCloud에만 있습니다. 로컬 폴더라면 Recly가 기기에만 두므로 `get_summary`에는 둘 다 없고,
+  검색은 제목과 녹취록에서 찾습니다.
 - 네트워크 연결도 로그인도 없습니다. 읽은 내용은 서버를 실행한 에이전트에만 가고, 그 에이전트가 자기 업체의
   약관에 따라 처리합니다.
 - 아직 쓰는 중인 파일이나 iCloud가 이 Mac에 아직 내려받지 않은 파일은, 다 올 때까지 없는 것으로 봅니다.
@@ -137,3 +150,4 @@ ChatGPT 데스크톱 앱, Codex CLI, Codex IDE 확장이 이 설정을 함께 �
 | `hasTranscript`가 false이거나 녹음이 빠짐 | 아직 전사되지 않았거나, iCloud가 이 Mac에 내려받지 않았습니다. Finder에서 Recly 폴더에 **지금 다운로드**를 고르세요. |
 | Claude Desktop에 `recly`가 없음 | Claude Desktop을 종료했다가 다시 여세요. 로그는 Mac에서 `~/Library/Logs/Claude/mcp-server-recly.log`, Windows에서 `%APPDATA%\Claude\logs` 아래에 있습니다. |
 | 오래된 recly-events가 `Usage`를 출력 | `mcp`가 없는 버전입니다. 최신 [`events-v…` 릴리스](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true)를 설치하세요. |
+| 업그레이드 뒤 에이전트가 새 도구를 모름 | 에이전트를 다시 시작하세요. Claude Desktop은 종료했다가 다시 열고, Claude Code나 Codex는 새 세션을 시작합니다. |

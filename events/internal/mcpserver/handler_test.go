@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -38,6 +40,8 @@ func newHandler(t *testing.T) *Handler {
 	for name, body := range map[string]string{
 		base + ".meta.json":       `{"recordingId":"` + recID + `","title":"Weekly sync"}`,
 		base + ".transcript.json": `{"recordingId":"` + recID + `","language":"en","speakers":[{"id":"S1","name":"Kim"}],"segments":[{"start":1,"end":2,"speaker":"S1","text":"Ship it on Friday."}]}`,
+		base + ".notes.json":      `{"recordingId":"` + recID + `","stage":"final","items":[{"kind":"todo","text":"Ship it.","owner":"S1","evidence":{"atSec":1,"quote":"Ship it"}}]}`,
+		base + ".memo.json":       `{"recordingId":"` + recID + `","text":"Bring the numbers","updatedAt":"2026-10-01T06:40:00Z"}`,
 	} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
 			t.Fatal(err)
@@ -55,12 +59,24 @@ func callTool(t *testing.T, h *Handler, name string, args any) (map[string]any, 
 	if got["isError"] == true {
 		return map[string]any{"text": got["content"].([]any)[0].(map[string]any)["text"]}, true
 	}
-	text := got["content"].([]any)[0].(map[string]any)["text"].(string)
+	return resultJSON(t, name, got), false
+}
+
+// resultJSON is a tool result's JSON, which it carries once: as its one text content.
+func resultJSON(t *testing.T, name string, got map[string]any) map[string]any {
+	t.Helper()
+	if _, ok := got["structuredContent"]; ok {
+		t.Fatalf("%s: the JSON is there twice", name)
+	}
+	content := got["content"].([]any)
+	if len(content) != 1 {
+		t.Fatalf("%s: content = %v", name, content)
+	}
 	var fromText map[string]any
-	if err := json.Unmarshal([]byte(text), &fromText); err != nil {
+	if err := json.Unmarshal([]byte(content[0].(map[string]any)["text"].(string)), &fromText); err != nil {
 		t.Fatalf("%s: text content is not the JSON: %v", name, err)
 	}
-	return got["structuredContent"].(map[string]any), false
+	return fromText
 }
 
 func call(t *testing.T, h *Handler, method string, params any) map[string]any {
@@ -94,7 +110,7 @@ func TestDiscoverAdvertisesEventsAndTools(t *testing.T) {
 	for _, tool := range call(t, h, "tools/list", map[string]any{})["tools"].([]any) {
 		names = append(names, tool.(map[string]any)["name"].(string))
 	}
-	if strings.Join(names, ",") != "get_pending_events,get_transcript,acknowledge_events,list_recordings" {
+	if strings.Join(names, ",") != "get_pending_events,get_transcript,acknowledge_events,list_recordings,get_summary" {
 		t.Fatalf("tools = %v", names)
 	}
 	ev := call(t, h, "events/list", map[string]any{})["events"].([]any)[0].(map[string]any)
@@ -165,7 +181,7 @@ func TestReadToolErrorsAreToolErrors(t *testing.T) {
 		{map[string]any{"eventId": "evt_gone"}, "no event evt_gone"},
 		{map[string]any{"recordingId": "01ZZZZZZP5NF6ZM7X1QDFERRWT"}, "was found"},
 		{map[string]any{"recordingId": "drop table"}, "not a Recly recording ID"},
-		{map[string]any{"recordingId": recID, "cursor": "7"}, "past the end"},
+		{map[string]any{"recordingId": recID, "cursor": "7"}, "not one get_transcript returned"},
 	} {
 		got, isErr := callTool(t, h, "get_transcript", c.args)
 		if !isErr || !strings.Contains(got["text"].(string), c.want) {
@@ -182,18 +198,63 @@ func TestInboxToolsRoundTrip(t *testing.T) {
 	if _, err := h.Hub.Emit("evt_1", map[string]string{"recording": "r1"}); err != nil {
 		t.Fatal(err)
 	}
-	got := call(t, h, "tools/call", map[string]any{"name": "get_pending_events", "arguments": map[string]any{}})
-	events := got["structuredContent"].(map[string]any)["events"].([]any)
+	pending, _ := callTool(t, h, "get_pending_events", map[string]any{})
+	events := pending["events"].([]any)
 	if len(events) != 1 || events[0].(map[string]any)["eventId"] != "evt_1" || events[0].(map[string]any)["recordingId"] != "r1" {
 		t.Fatalf("pending = %v", events)
 	}
-	ack := call(t, h, "tools/call", map[string]any{"name": "acknowledge_events", "arguments": map[string]any{"eventIds": []string{"evt_1"}}})
-	if sc := ack["structuredContent"].(map[string]any); sc["acknowledged"] != float64(1) || sc["pending"] != float64(0) {
-		t.Fatalf("ack = %v", sc)
+	ack, _ := callTool(t, h, "acknowledge_events", map[string]any{"eventIds": []string{"evt_1"}})
+	if ack["acknowledged"] != float64(1) || ack["pending"] != float64(0) {
+		t.Fatalf("ack = %v", ack)
 	}
-	empty := call(t, h, "tools/call", map[string]any{"name": "get_pending_events", "arguments": map[string]any{}})
-	if n := len(empty["structuredContent"].(map[string]any)["events"].([]any)); n != 0 {
+	empty, _ := callTool(t, h, "get_pending_events", map[string]any{})
+	if n := len(empty["events"].([]any)); n != 0 {
 		t.Fatalf("still pending: %d", n)
+	}
+}
+
+// status tells a delivery ChatGPT accepted from an agent that read something by the times the
+// agent last called the inbox tools.
+func TestAgentCallsAreKeptForStatus(t *testing.T) {
+	h := newHandler(t)
+	now := time.Date(2026, 11, 5, 9, 0, 0, 0, time.UTC)
+	h.Hub.Now = func() time.Time { return now }
+	calls := func() map[string]time.Time {
+		var out map[string]time.Time
+		h.Hub.Store.View(func(s *state.State) { out = maps.Clone(s.AgentCalls) })
+		return out
+	}
+	if got := calls(); len(got) != 0 {
+		t.Fatalf("before any call: %v", got)
+	}
+	callTool(t, h, "get_pending_events", map[string]any{})
+	now = now.Add(time.Minute)
+	callTool(t, h, "get_transcript", map[string]any{"recordingId": recID})
+	callTool(t, h, "list_recordings", map[string]any{})
+	callTool(t, h, "get_summary", map[string]any{"recordingId": recID})
+	got := calls()
+	if len(got) != 2 || !got["get_pending_events"].Equal(now.Add(-time.Minute)) || !got["get_transcript"].Equal(now) {
+		t.Fatalf("calls = %v", got)
+	}
+	callTool(t, h, "acknowledge_events", map[string]any{"eventIds": []string{"evt_none"}})
+	if got := calls(); !got["acknowledge_events"].Equal(now) {
+		t.Fatalf("calls = %v", got)
+	}
+}
+
+func TestSummaryThroughTheTunnelHandler(t *testing.T) {
+	h := newHandler(t)
+	got, isErr := callTool(t, h, "get_summary", map[string]any{"recordingId": recID})
+	if isErr || got["recordingId"] != recID || got["title"] != "Weekly sync" {
+		t.Fatalf("get_summary = %v", got)
+	}
+	ai := got["aiSummary"].(map[string]any)
+	item := ai["sections"].([]any)[0].(map[string]any)["items"].([]any)[0].(map[string]any)
+	if item["text"] != "Ship it." || item["ownerName"] != "Kim" || got["userNotes"].(map[string]any)["text"] != "Bring the numbers" {
+		t.Fatalf("get_summary = %v", got)
+	}
+	if got, isErr := callTool(t, h, "get_summary", map[string]any{"recordingId": "nope"}); !isErr || !strings.Contains(got["text"].(string), "not a Recly recording ID") {
+		t.Fatalf("bad id = %v", got)
 	}
 }
 
@@ -234,7 +295,7 @@ func TestServeOverInMemoryTransport(t *testing.T) {
 		t.Fatalf("server info = %+v", info)
 	}
 	tools, err := session.ListTools(ctx, nil)
-	if err != nil || len(tools.Tools) != 4 {
+	if err != nil || len(tools.Tools) != 5 {
 		t.Fatalf("tools = %+v %v", tools, err)
 	}
 }

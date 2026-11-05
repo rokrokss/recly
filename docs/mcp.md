@@ -110,21 +110,34 @@ the decisions, and the action items with owners.
 
 | Tool | Arguments | Returns |
 |---|---|---|
-| `list_recordings` | `limit` (1–50, default 10), `cursor` | Recordings, newest first: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`; `nextCursor` |
-| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, and `transcript` as `[HH:MM:SS] Speaker: text` lines, about 40,000 characters per answer; `nextCursor` for the rest |
-| `search_recordings` | `query`, `limit` (1–50, default 10) | Recordings whose title or transcript contains the query, ignoring case, with up to 3 matching lines each |
+| `list_recordings` | `limit` (1–50, default 10), `cursor`, `from`, `to` | Recordings, newest first: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`; `nextCursor` |
+| `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, and `transcript` as `[HH:MM:SS] Speaker: text` lines, at most 24,000 bytes per answer; `nextCursor` for the rest |
+| `get_summary` | `recordingId` | `aiSummary`: the AI summary (`overview`, `sections` of items with `atSec`, to-dos with `owner`, `ownerName`, `due`); `userNotes`: the notes you wrote |
+| `search_recordings` | `query`, `limit` (1–50, default 10) | Recordings whose title, transcript, AI summary or your notes contain the query, ignoring case: `matchedIn` (`title`, `transcript`, `summary`, `notes`) and up to 3 `snippets` from each place |
 | `get_audio_files` | `recordingId` | The absolute paths of the recording's `.m4a` parts on this computer, with track and offset |
 
+| Argument | Value |
+|---|---|
+| `from`, `to` | `2026-11-05`: that whole day in this computer's time zone. `2026-11-05T09:00:00+09:00`: an exact time. Both ends included. |
+| `cursor` of `get_transcript` | The transcript's revision and a line. If the transcript changed between pages, the call says so: start again without `cursor`. |
+
+- A page is at most 24,000 bytes of JSON: about 10,000 characters of a Korean transcript or 23,000 of
+  English, sized to stay under the 10,000 tokens at which Claude Code warns about a tool's output.
 - The transcript and the matching lines are marked as untrusted: what people said, between
   `<<<recly-transcript-…>>>` markers, never instructions for the agent.
-- The same `list_recordings` and `get_transcript` answer your ChatGPT agent through
+- The same `list_recordings`, `get_transcript` and `get_summary` answer your ChatGPT agent through
   [recly-events](agent.md) for recordings in Google Drive, so one instruction works for both.
+  `search_recordings` and `get_audio_files` are only here: on Drive, a search would download every
+  recording's files for each query, and recly-events never downloads audio.
 
 ## What it reads
 
 - Only Recly's recording folders under `--folder`: `{recording}.meta.json`,
-  `{recording}.folder.json` (iCloud's title), the transcript (`.transcript.json`, else `.txt`) and
-  the audio files' names. It never writes, renames or deletes.
+  `{recording}.folder.json` (iCloud's title), the transcript (`.transcript.json`, else `.txt`),
+  `{recording}.notes.json` (the summary), `{recording}.memo.json` (your notes) and the audio files'
+  names. It never writes, renames or deletes.
+- Summaries and notes are in iCloud only. With a local folder Recly keeps them on the device, so
+  `get_summary` has neither and search finds titles and transcripts.
 - No network connection and no sign-in. What it reads goes to the agent that started it, which
   sends it on under its own provider's terms.
 - A file still being written, or one iCloud has not brought down to this Mac yet, counts as not
@@ -139,3 +152,4 @@ the decisions, and the action items with owners.
 | `hasTranscript` is false, or a recording is missing | The recording has no transcript yet, or iCloud has not brought it down to this Mac: in Finder, choose **Download Now** on the Recly folder. |
 | Claude Desktop does not list `recly` | Quit and reopen Claude Desktop. Its log is `~/Library/Logs/Claude/mcp-server-recly.log` on a Mac, under `%APPDATA%\Claude\logs` on Windows. |
 | An older recly-events says `Usage` | It predates `mcp`. Install the newest [`events-v…` release](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true). |
+| After an upgrade the agent misses a new tool | Restart the agent: quit and reopen Claude Desktop, start a new Claude Code or Codex session. |

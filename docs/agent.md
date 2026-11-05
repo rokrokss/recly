@@ -52,6 +52,7 @@ Follow [Running recly-events yourself](recly-events.md):
 
 recly-events finds new transcripts in your Drive by their names, IDs and links. The event tells your
 agent the recording's name, title and Drive links, never what was said. The transcript goes to your
-agent only when it asks with `get_transcript`, through your own tunnel. Nothing goes to the Recly
+agent only when it asks with `get_transcript`, and the summary and your notes only with
+`get_summary`, through your own tunnel. Nothing goes to the Recly
 developer. The full list is in the
 [privacy policy](https://recly.dev/policy/privacy-policy).

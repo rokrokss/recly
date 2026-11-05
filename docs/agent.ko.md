@@ -46,6 +46,6 @@ Work 채팅)가 보통 1분 안에 알아서 회의록을 쓰기 시작합니다
 ## 컴퓨터 밖으로 나가는 것
 
 recly-events는 Drive에 새로 생긴 녹취록을 이름, ID, 링크로 찾습니다. 이벤트는 에이전트에게 녹음 이름, 제목,
-Drive 링크만 알리고 대화 내용은 담지 않습니다. 녹취록은 에이전트가 `get_transcript`로 요청할 때만 내 터널로
-갑니다. Recly 개발자에게 가는 것은 없습니다. 전체 목록은
+Drive 링크만 알리고 대화 내용은 담지 않습니다. 녹취록은 에이전트가 `get_transcript`로, 요약과 내 메모는 `get_summary`로
+요청할 때만 내 터널로 갑니다. Recly 개발자에게 가는 것은 없습니다. 전체 목록은
 [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)에 있습니다.
