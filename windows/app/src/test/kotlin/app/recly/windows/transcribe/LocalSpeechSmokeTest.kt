@@ -1,5 +1,6 @@
 package app.recly.windows.transcribe
 
+import app.recly.windows.core.JvmLogger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -43,7 +44,7 @@ class LocalSpeechSmokeTest {
         val audio = requireNotNull(prop("$GATE.audio")) { "provide a short local speech fixture" }
         val dataDir = requireNotNull(prop("$GATE.dataDir")) { "provide a directory for the model" }.toPath()
         val language = prop("$GATE.language") ?: "ko"
-        val engine = QwenSpeechEngine.make(dataDir, KtorTransport(), FileSystem.SYSTEM, Dispatchers.IO)
+        val engine = QwenSpeechEngine.make(dataDir, KtorTransport(), FileSystem.SYSTEM, Dispatchers.IO, JvmLogger())
         assertTrue(engine is QwenSpeechEngine, "this machine should qualify for the engine")
 
         val initial = engine.status(language).status

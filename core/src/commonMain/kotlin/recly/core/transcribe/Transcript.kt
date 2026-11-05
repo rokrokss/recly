@@ -111,12 +111,15 @@ object TranscriptNormalizer {
      * `[HH:MM:SS] S1: text`, one line per speaker turn — but never longer than [LINE_SEC] of
      * speech, so a monologue is still readable and an LLM sees timestamps throughout (docs/08). A
      * speaker the user named is written by that name instead of the id (`[00:00:01] Minsu: text`).
+     * Segments that run on in one line are joined by a space, or by nothing between Han, Kana and
+     * full-width punctuation (docs/08 "Result files", [WritingSystem.separator]).
      */
     fun text(transcript: Transcript): String = buildString {
         val labels = labels(transcript)
         var lineSpeaker: String? = null
         var lineStart = 0.0
         transcript.segments.forEach { segment ->
+            val text = segment.text.trim()
             val newLine = segment.speaker != lineSpeaker || segment.end - lineStart > LINE_SEC
             if (newLine) {
                 if (lineSpeaker != null) append('\n')
@@ -125,9 +128,9 @@ object TranscriptNormalizer {
                 append("[${clock(segment.start)}] ")
                 if (segment.speaker.isNotEmpty()) append("${labels[segment.speaker] ?: segment.speaker}: ")
             } else {
-                append(' ')
+                append(WritingSystem.separator(this, text))
             }
-            append(segment.text.trim())
+            append(text)
         }
         if (isNotEmpty()) append('\n')
     }
@@ -157,8 +160,9 @@ object TranscriptNormalizer {
 
     /**
      * SubRip subtitles for the share sheet (docs/08 "Exports"): one cue per segment, the speaker's name or
-     * id in front when speakers were identified. A segment longer than [CUE_SEC] or [CUE_CHARS] is cut
-     * at its word timings when it has them, and stays one cue when it does not.
+     * id in front when speakers were identified. A segment longer than [CUE_SEC] or its writing system's
+     * cue length ([WritingSystem.cueLimit]) is cut at its word timings when it has them, and stays one cue
+     * when it does not.
      */
     fun srt(transcript: Transcript): String = buildString {
         cues(transcript).forEachIndexed { index, cue ->
@@ -199,11 +203,15 @@ object TranscriptNormalizer {
         }
     }
 
-    /** One segment as cue-sized pieces, cut between words where it has word timings. */
+    /**
+     * One segment as cue-sized pieces, cut between words where it has word timings. Length is counted in
+     * half-width units against the limit of the segment's writing system (docs/08 "Exports", [WritingSystem]).
+     */
     private fun pieces(segment: TranscriptSegment): List<Triple<Double, Double, String>> {
         val text = segment.text.trim()
         val words = segment.words?.filter { it.text.isNotBlank() }.orEmpty()
-        if (words.isEmpty() || (segment.end - segment.start <= CUE_SEC && text.length <= CUE_CHARS)) {
+        val limit = WritingSystem.cueLimit(text)
+        if (words.isEmpty() || (segment.end - segment.start <= CUE_SEC && WritingSystem.cueWidth(text) <= limit)) {
             return listOf(Triple(segment.start, segment.end, text))
         }
         // A segment written without spaces (Japanese, Chinese) is joined back the same way.
@@ -212,16 +220,23 @@ object TranscriptNormalizer {
         var start = words.first().start
         var end = start
         val line = StringBuilder()
+        var width = 0
         for (word in words) {
             val next = word.text.trim()
-            val longer = line.length + separator.length + next.length > CUE_CHARS || word.end - start > CUE_SEC
+            val nextWidth = WritingSystem.cueWidth(next)
+            val longer = width + separator.length + nextWidth > limit || word.end - start > CUE_SEC
             if (line.isNotEmpty() && longer) {
                 pieces += Triple(start, end, line.toString())
                 line.clear()
+                width = 0
                 start = word.start
             }
-            if (line.isNotEmpty()) line.append(separator)
+            if (line.isNotEmpty()) {
+                line.append(separator)
+                width += separator.length
+            }
             line.append(next)
+            width += nextWidth
             end = word.end
         }
         if (line.isNotEmpty()) pieces += Triple(start, end, line.toString())
@@ -269,7 +284,6 @@ object TranscriptNormalizer {
     private const val FIRST_SPEAKER = "S1"
     private const val LINE_SEC = 60.0
 
-    /** The longest cue the subtitle exports make out of a segment with word timings. */
+    /** The longest cue, in seconds, the subtitle exports make out of a segment with word timings; its text is [WritingSystem.cueLimit]. */
     private const val CUE_SEC = 7.0
-    private const val CUE_CHARS = 84
 }

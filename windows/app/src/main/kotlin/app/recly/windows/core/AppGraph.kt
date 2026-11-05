@@ -60,7 +60,7 @@ object AppModule {
         val transport = KtorTransport()
         val endpoint = TokenEndpoint(transport)
         val tokens = JvmTokenProvider(secureStore, clock, endpoint, logger)
-        val speech = QwenSpeechEngine.make(dataDir, transport, fileSystem, io)
+        val speech = QwenSpeechEngine.make(dataDir, transport, fileSystem, io, logger)
 
         val deps = CoreDeps(
             clock = clock,
