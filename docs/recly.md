@@ -666,9 +666,10 @@ Where a platform cannot follow the rule exactly:
 
 Not verified on a device: none of this has run against a really full disk. That includes what `MediaRecorder` and the helper's ffmpeg do
 when it fills, what `volumeAvailableCapacityForImportantUsage` and `volumeAvailableCapacity` report on a device, and `FileStore` on an NTFS
-volume (only APFS on the development host). Unit tests cover the rule (`StorageFloorTest`), a refused start and a boundary stop with an
-injected figure (Android `NotEnoughStorageTest`, RecKit `SegmentedRecorderTests`, Windows `WindowsRecorderTest`), the helper dying on a full
-disk (Windows), the Apple error codes, and the notices (`RecordingNoticesTests`).
+volume (only APFS on the development host). Unit tests cover the rule (`StorageFloorTest`), a refused start with an injected figure
+(Android `NotEnoughStorageTest`, RecKit `SegmentedRecorderTests`, Windows `WindowsRecorderTest`), a boundary stop (RecKit, Windows; not
+Android, whose boundary and `onError` paths have no test), the helper dying on a full disk (Windows), the Apple error codes, and the notices
+(`RecordingNoticesTests`).
 
 ### Retention · deletion
 

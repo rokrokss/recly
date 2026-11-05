@@ -139,13 +139,14 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
 
         case .storageLow:
             // The recorder has logged it. The stop that asks nothing, then the notice that says why — posted once
-            // the recording is no longer capturing, as the battery's is.
-            guard let recording else { return }
+            // the recording is no longer capturing, as the battery's is. Also with no recording here yet: the first
+            // buffers can fail to write before [.started] arrives, the recorder does not say it twice, and the
+            // session holds a stop that comes while the microphone is still opening until it can serve it.
             onStop?()
             post(notice(
                 Self.storageId,
                 title: RecKitStrings.localized("Recording stopped: storage full"),
-                recordingId: recording.id,
+                recordingId: recording?.id ?? "",
                 sound: Self.idleSound
             ))
 

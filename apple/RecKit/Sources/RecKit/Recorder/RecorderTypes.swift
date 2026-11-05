@@ -41,8 +41,8 @@ public enum RecorderEvent: Equatable, Sendable {
     case resumed
 
     /// docs/03 "Free storage on the device": under 50 MB at a boundary, or a write that failed that low (the core's
-    /// `StorageFloor`, already logged). Once per recording; [RecordingNotices] stops it the battery stop's way and
-    /// says why.
+    /// `StorageFloor`, already logged). Once per recording, and ahead of [started] when the first buffers fail;
+    /// [RecordingNotices] stops it the battery stop's way and says why.
     case storageLow
 
     /// The stop took the recording — the user's, an intent's, or the one a fatal error asks for.

@@ -44,6 +44,7 @@ final class FakeAudioInput: AudioInput {
     private var _stops = 0
     private var _onBuffer: ((AVAudioPCMBuffer) -> Void)?
     private var _beforeStart: (() -> Void)?
+    private var _afterStart: (() -> Void)?
     private var _configurationID: String?
     private var _prepareFailures = 0
     private var _prepares = 0
@@ -67,6 +68,12 @@ final class FakeAudioInput: AudioInput {
         lock.withLock { _beforeStart = gate }
     }
 
+    /// Runs inside the next `start` once the tap is installed, on the recorder's control queue, and only once:
+    /// buffers it delivers are the first a tap hands over before the recorder's start has returned.
+    func afterNextStart(_ work: @escaping () -> Void) {
+        lock.withLock { _afterStart = work }
+    }
+
     func authorize() async throws {}
 
     func failNextPreparations(_ count: Int) { lock.withLock { _prepareFailures = count } }
@@ -88,10 +95,14 @@ final class FakeAudioInput: AudioInput {
             return taken
         }
         gate?()
-        lock.withLock {
+        let after: (() -> Void)? = lock.withLock {
             _starts += 1
             _onBuffer = onBuffer
+            let taken = _afterStart
+            _afterStart = nil
+            return taken
         }
+        after?()
     }
 
     func stop() {

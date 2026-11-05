@@ -689,12 +689,144 @@ final class SegmentedRecorderTests: XCTestCase {
         XCTAssertTrue(FreeStorage.isOutOfSpace(NSError(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)))
         XCTAssertTrue(FreeStorage.isOutOfSpace(NSError(domain: NSOSStatusErrorDomain, code: -34)))
         let wrapped = NSError(
-            domain: "com.apple.coreaudio.avfaudio", code: 1,
+            domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError,
             userInfo: [NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(ENOSPC))]
         )
         XCTAssertTrue(FreeStorage.isOutOfSpace(wrapped))
         XCTAssertFalse(FreeStorage.isOutOfSpace(NSError(domain: NSPOSIXErrorDomain, code: Int(EIO))))
         XCTAssertFalse(FreeStorage.isOutOfSpace(nil))
+    }
+
+    /// `AVAudioFile`'s own shape: its domain, the `OSStatus` as the code, and no underlying error. `dskFulErr` is
+    /// the storage stop's; `kAudioFilePositionError`, which is what a full disk gives on macOS 27, says nothing
+    /// about space by itself and is left to the space free right now.
+    func testAnAVAudioFileErrorIsReadByItsOwnCode() {
+        let domain = "com.apple.coreaudio.avfaudio"
+        XCTAssertEqual(FreeStorage.avfAudioErrorDomain, domain)
+        XCTAssertTrue(FreeStorage.isOutOfSpace(NSError(domain: domain, code: -34)))
+        XCTAssertTrue(FreeStorage.isOutOfSpace(NSError(domain: domain, code: Int(ENOSPC))))
+        XCTAssertFalse(FreeStorage.isOutOfSpace(NSError(domain: domain, code: -40)))
+        XCTAssertFalse(FreeStorage.isOutOfSpace(NSError(domain: domain, code: 2_003_334_207)), "kAudioFileUnspecifiedError")
+    }
+
+    /// A write that failed is judged by the space free right now: the figure the start and the boundary read can
+    /// still count gigabytes of purgeable space while the disk refuses the write. Under 50 MB free now, the
+    /// failure is the storage stop and not "the recording failed".
+    func testAFailedWriteIsJudgedByTheSpaceFreeNow() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let important = FakeDisk(free: 2_000_000_000)
+        let now = FakeDisk(free: 10_000_000)
+        let fault = WriteFault()
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, input: input,
+            freeBytes: important.read, freeNowBytes: now.read
+        ) { failures.record($0) }
+        recorder.onEvent = { events.record($0) }
+        recorder.writeFault = fault.next
+        _ = try await recorder.start(title: nil)
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+        XCTAssertEqual(now.asked.count, 0, "nothing failed, nothing read")
+
+        fault.set(NSError(domain: FreeStorage.avfAudioErrorDomain, code: -40))
+        XCTAssertTrue(input.push(frames: 8_192) { Self.sample($0) })
+        await waitUntil { events.all.contains(.storageLow) }
+        XCTAssertEqual(events.all.filter { $0 == .storageLow }.count, 1)
+        XCTAssertEqual(now.asked.count, 1)
+        XCTAssertTrue(now.asked.allSatisfy { $0.path.contains("/recordings/") }, "the recording's own volume")
+        XCTAssertEqual(important.asked.count, 1, "the start's reading only")
+
+        fault.set(nil)
+        let result = await recorder.stop(title: nil)
+        guard case .finalized = result else {
+            return XCTFail("expected a finalized stop, got \(result) (errors: \(failures.all))")
+        }
+        XCTAssertEqual(failures.all.count, 0, "a storage stop is not a failure: \(failures.all)")
+    }
+
+    /// A failure that is not about space comes back with every buffer until the shell stops. The space is read at
+    /// the first of them only, and again only once a write has gone through.
+    func testARunOfFailedWritesReadsTheSpaceOnce() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let now = FakeDisk(free: 2_000_000_000)
+        let fault = WriteFault()
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, input: input,
+            freeBytes: FakeDisk(free: 2_000_000_000).read, freeNowBytes: now.read
+        ) { failures.record($0) }
+        recorder.onEvent = { events.record($0) }
+        recorder.writeFault = fault.next
+        _ = try await recorder.start(title: nil)
+
+        fault.set(NSError(domain: FreeStorage.avfAudioErrorDomain, code: -40))
+        XCTAssertTrue(input.push(frames: 10 * 4096) { Self.sample($0) })
+        XCTAssertEqual(now.asked.count, 1, "ten failed buffers, one reading")
+
+        fault.set(nil)
+        XCTAssertTrue(input.push(frames: 4096) { Self.sample($0) })
+        fault.set(NSError(domain: FreeStorage.avfAudioErrorDomain, code: -40))
+        XCTAssertTrue(input.push(frames: 3 * 4096) { Self.sample($0) })
+        XCTAssertEqual(now.asked.count, 2, "a new run after a write that went through")
+
+        await waitUntil { failures.all.count == 13 }
+        XCTAssertEqual(failures.fatal.count, 13, "each one is still the failure it was")
+        XCTAssertFalse(events.all.contains(.storageLow))
+        fault.set(nil)
+        _ = await recorder.stop(title: nil)
+    }
+
+    /// A write that fails for space on the very first buffers, before the start has returned, is a storage stop
+    /// that reaches the notices ahead of `.started`. The recording is stopped all the same — through the session,
+    /// which holds a stop that comes while the microphone is still opening — and the notice is posted.
+    @MainActor
+    func testAStorageStopOnTheFirstBuffersStopsTheRecording() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let fault = WriteFault()
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, input: input,
+            freeBytes: FakeDisk(free: 2_000_000_000).read, freeNowBytes: FakeDisk(free: 10_000_000).read
+        ) { failures.record($0) }
+        let session = RecorderSession(capture: recorder, recover: { 0 }, onState: { _ in })
+        let center = FakeAlertCenter()
+        let notices = RecordingNotices(stopKey: "Stop", logger: OSLogLogger(), center: center)
+        var stopping: Task<StopResult, Never>?
+        notices.onStop = { stopping = Task { await session.stop(title: nil) } }
+        recorder.onEvent = { event in
+            events.record(event)
+            notices.apply(event)
+        }
+        recorder.writeFault = fault.next
+        input.afterNextStart {
+            _ = input.push(frames: 4096) { Self.sample($0) }
+            fault.set(NSError(domain: FreeStorage.avfAudioErrorDomain, code: -40))
+            _ = input.push(frames: 4096) { Self.sample($0) }
+            fault.set(nil)
+        }
+
+        _ = try await session.start()
+        for _ in 0 ..< 100 where stopping == nil {
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTAssertEqual(events.all.first, .storageLow, "ahead of .started")
+        let stopped = await stopping?.value
+        guard case .finalized = stopped else {
+            return XCTFail("the storage stop was dropped: \(String(describing: stopped)) (errors: \(failures.all))")
+        }
+        XCTAssertFalse(recorder.isRecording)
+        XCTAssertFalse(input.tapped, "the microphone was given back")
+        let current = await session.current
+        XCTAssertEqual(current, .idle)
+        await notices.settled()
+        XCTAssertTrue(center.posted.contains(RecordingNotices.storageId))
+        XCTAssertEqual(failures.all.count, 0, "\(failures.all)")
     }
 
     /// The platform's own figure for a directory that exists; −1, which refuses and stops nothing, for one the
@@ -703,6 +835,8 @@ final class SegmentedRecorderTests: XCTestCase {
         try FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
         XCTAssertGreaterThan(FreeStorage.bytes(at: dataDirectory), 0)
         XCTAssertEqual(FreeStorage.bytes(at: dataDirectory.appendingPathComponent("missing/deeper")), -1)
+        XCTAssertGreaterThan(FreeStorage.freeNow(at: dataDirectory), 0)
+        XCTAssertEqual(FreeStorage.freeNow(at: dataDirectory.appendingPathComponent("missing/deeper")), -1)
         XCTAssertFalse(StorageFloor.shared.tooLow(freeBytes: -1, recording: false))
     }
 
@@ -806,6 +940,20 @@ final class FakeDisk {
     }
 
     var asked: [URL] { lock.withLock { reads } }
+}
+
+/// The error the recorder's next writes throw, set from the test and read on the audio thread.
+final class WriteFault {
+    private let lock = NSLock()
+    private var error: Error?
+
+    func set(_ error: Error?) {
+        lock.withLock { self.error = error }
+    }
+
+    func next() -> Error? {
+        lock.withLock { error }
+    }
 }
 
 /// What the recorder reported through `onEvent`, in order.

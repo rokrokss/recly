@@ -68,6 +68,9 @@ public final class SegmentedRecorder {
         /// docs/03 "Free storage on the device": [RecorderEvent.storageLow] has gone out — the stop is on its
         /// way, and nothing is said twice.
         var storageLow = false
+        /// A write has failed since the last one that went through, and the space free was read for the first of
+        /// them: the ones after it, about ten a second until the shell stops, do not read it again.
+        var writeFailing = false
 
         init(
             recordingId: String,
@@ -101,8 +104,10 @@ public final class SegmentedRecorder {
     /// Scales the waits between reattach attempts; 1 in the app.
     private let retryPace: Double
     /// docs/03 "Free storage on the device": the free bytes on the volume that holds a URL ([FreeStorage]), −1 when
-    /// unreadable. A test fakes it.
+    /// unreadable — the start's and the boundary's figure. A test fakes it.
     private let freeBytes: (URL) -> Int64
+    /// The space free right now ([FreeStorage.freeNow]), for a write that has failed. A test fakes it.
+    private let freeNowBytes: (URL) -> Int64
     private let onError: (RecorderError) -> Void
 
     private let lock = NSLock()
@@ -141,6 +146,10 @@ public final class SegmentedRecorder {
     /// `nil` in the app: it exists because "the container came back unreadable" is the one state no
     /// fake input can produce from outside — that file is written by the real AAC encoder.
     var afterSegmentClosed: ((URL) -> Void)?
+
+    /// An error to throw in place of the next write, read on the audio thread under [lock]. `nil` in the app, for
+    /// the same reason as [afterSegmentClosed]: a disk that refuses a write is a state no fake input can produce.
+    var writeFault: (() -> Error?)?
 
     /// The recording's progress, on the main queue, for the notifications that watch over it
     /// ([RecordingNotices]). Set once, before the first start.
@@ -208,6 +217,7 @@ public final class SegmentedRecorder {
         awaitsResume: Bool = SegmentedRecorder.awaitsResumeOnThisPlatform,
         retryPace: Double = 1,
         freeBytes: @escaping (URL) -> Int64 = FreeStorage.bytes(at:),
+        freeNowBytes: @escaping (URL) -> Int64 = FreeStorage.freeNow(at:),
         onError: @escaping (RecorderError) -> Void
     ) {
         self.core = core
@@ -223,6 +233,7 @@ public final class SegmentedRecorder {
         self.awaitsResume = awaitsResume
         self.retryPace = retryPace
         self.freeBytes = freeBytes
+        self.freeNowBytes = freeNowBytes
         self.onError = onError
         input.onConfigurationChange = { [weak self] reason in self?.requestRestart(reason: reason) }
         // docs/03 `silenced`: the microphone taken away and given back. Not a restart — the input
@@ -485,6 +496,7 @@ public final class SegmentedRecorder {
         do {
             guard let converted = try convert(buffer, with: activeConverter, to: session.format) else { return }
             try write(converted, into: session)
+            session.writeFailing = false
             // After the write, so the queue's depth is read at the one phase where it means "how far
             // out of step are the two streams" rather than "how much has piled up since the last
             // microphone buffer" (docs/12 "estimate the rate difference every 60 seconds").
@@ -563,6 +575,7 @@ public final class SegmentedRecorder {
     /// from it and from the frames the drift compensator has waiting, chunk by chunk, so that all
     /// three cross the boundary at the same frame.
     private func write(_ buffer: AVAudioPCMBuffer, into session: Session) throws {
+        if let fault = writeFault?() { throw fault }
         for chunk in session.splitter.split(frames: buffer.frameLength) {
             guard let piece = Self.slice(buffer, offset: chunk.offset, count: chunk.count) else { return }
             // No open file means a rollover could not open the next one, which was reported as
@@ -687,16 +700,23 @@ public final class SegmentedRecorder {
     }
 
     /// Under [lock], from the write path: a write that failed is one for lack of space when the platform says so
-    /// ([FreeStorage.isOutOfSpace]) or the device is under 50 MB. True when the recording is being stopped for it —
-    /// now or already — and the failure is not to be reported as one. A recording a stop has already taken is not
-    /// stopped twice.
+    /// ([FreeStorage.isOutOfSpace]) or the space free right now is under 50 MB — not the boundary's figure, which
+    /// counts purgeable space the disk has just refused to write into. True when the recording is being stopped
+    /// for it — now or already — and the failure is not to be reported as one. A recording a stop has already
+    /// taken is not stopped twice.
+    ///
+    /// The space is read once per run of failures, at the first: a failure that is not about space repeats with
+    /// every buffer until the shell stops, and this is the audio thread, holding the lock the shells read the
+    /// clock and the strip under.
     private func failedForSpace(_ open: Session, _ error: Error) -> Bool {
         guard session === open else { return false }
         if open.storageLow { return true }
-        let free = freeBytes(open.directory)
-        guard FreeStorage.isOutOfSpace(error) || StorageFloor.shared.tooLow(freeBytes: free, recording: true) else {
-            return false
-        }
+        let first = !open.writeFailing
+        open.writeFailing = true
+        let outOfSpace = FreeStorage.isOutOfSpace(error)
+        guard outOfSpace || first else { return false }
+        let free = freeNowBytes(open.directory)
+        guard outOfSpace || StorageFloor.shared.tooLow(freeBytes: free, recording: true) else { return false }
         open.storageLow = true
         storageStop(recordingId: open.recordingId, freeBytes: free, cause: "write", error: error)
         return true

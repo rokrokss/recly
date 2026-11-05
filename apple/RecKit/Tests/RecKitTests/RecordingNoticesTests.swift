@@ -132,11 +132,6 @@ final class RecordingNoticesTests: XCTestCase {
         var stops = 0
         notices.onStop = { stops += 1 }
 
-        notices.apply(.storageLow)
-        await notices.settled()
-        XCTAssertEqual(stops, 0, "no recording, nothing to stop")
-        XCTAssertTrue(center.posted.isEmpty)
-
         notices.apply(.started(recordingId: "r1", segmentSec: 900))
         notices.apply(.storageLow)
         await notices.settled()
@@ -149,6 +144,26 @@ final class RecordingNoticesTests: XCTestCase {
 
         notices.apply(.ended)
         await notices.settled()
+        XCTAssertFalse(center.withdrawn.joined().contains(RecordingNotices.storageId))
+    }
+
+    /// The first buffers can fail to write before `.started` has arrived, and the recorder says it once: the stop
+    /// is asked for all the same — the session holds it until the start has settled — and the notice is posted.
+    func testAStorageStopBeforeTheStartArrivesStillStops() async throws {
+        let center = FakeAlertCenter()
+        let notices = RecordingNotices(stopKey: "Stop", logger: OSLogLogger(), center: center)
+        var stops = 0
+        notices.onStop = { stops += 1 }
+
+        notices.apply(.storageLow)
+        notices.apply(.started(recordingId: "r1", segmentSec: 900))
+        await notices.settled()
+        XCTAssertEqual(stops, 1)
+        XCTAssertEqual(center.posted, [RecordingNotices.storageId, RecordingNotices.deadManId])
+
+        notices.apply(.ended)
+        await notices.settled()
+        XCTAssertTrue(center.withdrawn.last?.contains(RecordingNotices.deadManId) == true, "the stop takes it down")
         XCTAssertFalse(center.withdrawn.joined().contains(RecordingNotices.storageId))
     }
 
