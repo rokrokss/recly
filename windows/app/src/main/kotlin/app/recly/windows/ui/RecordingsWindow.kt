@@ -8,6 +8,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.pressCursor
 import kotlinx.coroutines.launch
@@ -32,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -439,30 +441,37 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
             }
         },
     ) {
-        // The transcript's first words, under the title (2026-10-08): one quiet line, and nothing at all — no
-        // reserved space — for a recording with no transcript here. Read after the title, as the row's label is.
-        model.previews[item.id]?.let { preview ->
-            Text(
-                preview,
-                // The transcript's words, in the direction they take (2026-10-10).
-                style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content),
-                color = palette.textMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        val status = item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id }, organizing = item.id in model.organizing)
+        if (status.shown) {
+            // docs/09 screen principle 2 (2026-11-04): the badge under the title, at its own width and in the first words'
+            // place, and only on a row that is not `Done` — a `Done` on every finished row said nothing; the rows with
+            // something going on or to fix are the ones that say so. Heard after the stamp, below.
+            FadingStatusBadge(status, Modifier.clearAndSetSemantics {})
+        } else {
+            // The transcript's first words, under the title (2026-10-08): one quiet line, and nothing at all — no
+            // reserved space — for a recording with no transcript here. Read after the title, as the row's label is.
+            model.previews[item.id]?.let { preview ->
+                Text(
+                    preview,
+                    // The transcript's words, in the direction they take (2026-10-10).
+                    style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content),
+                    color = palette.textMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // The time, and the length the tray's rows have in a column of their own (D11) — one stamp, left to right.
-            Text(
-                "${LedgerFormat.date(item.startedAt)} ${LedgerFormat.time(item.startedAt)} · ${LedgerFormat.length(item.durationSec)}",
-                style = mono.small.copy(textDirection = TextDirection.Ltr),
-                color = palette.textMuted,
-            )
-            FadingStatusBadge(item.ledgerStatus(strings, filling = model.fills.any { it.recordingId == item.id }, organizing = item.id in model.organizing))
-        }
+        // The time, and the length the tray's rows have in a column of their own (D11) — one stamp, left to right. A screen
+        // reader hears the state after it on every row, `Done` included, where the badge at its end used to be heard.
+        val stamp = "${LedgerFormat.date(item.startedAt)} ${LedgerFormat.time(item.startedAt)} · ${LedgerFormat.length(item.durationSec)}"
+        Text(
+            stamp,
+            modifier = Modifier.clearAndSetSemantics {
+                this[SemanticsProperties.Text] = listOf(AnnotatedString(stamp), AnnotatedString(status.label))
+            },
+            style = mono.small.copy(textDirection = TextDirection.Ltr),
+            color = palette.textMuted,
+        )
         // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line ([FailureReason]).
         if (selected) FailureReason(item, strings)
     }

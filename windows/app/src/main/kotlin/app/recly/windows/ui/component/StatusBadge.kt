@@ -16,14 +16,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.Motion
@@ -39,7 +35,7 @@ import app.recly.windows.ui.theme.mono
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
 
 /**
- * The code and its tone — what [LedgerRow] shows in its last column. [busy] turns the loader in front of the code.
+ * The code and its tone — what [LedgerRow] shows under a row's title. [busy] turns the loader in front of the code.
  * The code stays internal (logs, tests); what the badge says is [label] — the translated [word] once a
  * language is applied (the UX decisions of 2026-10-08: words instead of codes).
  */
@@ -49,7 +45,13 @@ data class LedgerStatus(
     val label: String = code,
     val busy: Boolean = false,
     val word: Str? = null,
-)
+) {
+    /**
+     * docs/09 screen principle 2 (2026-11-04): whether a row wears its badge — every state but `DONE`. A `Done` on every
+     * finished row said nothing; the rows with something going on or to fix are the ones that say so.
+     */
+    val shown: Boolean get() = code != "DONE"
+}
 
 /**
  * A square badge: 1dp of the tone (2dp in high contrast), the word in monospace — or in the sans face for
@@ -68,8 +70,8 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (status.busy) BlueprintLoader(status.tone.ink())
-        // docs/09 "Component measurements": words wider than the column ([statusColumnWidth]'s cap) wrap inside the
-        // badge, between words and centred — no word is ever cut short. Korean words carry their joiners
+        // docs/09 "Component measurements": words wider than the room the badge has (a ledger row's title column) wrap
+        // inside the badge, between words and centred — no word is ever cut short. Korean words carry their joiners
         // (`joinKoreanWords`), so they break between words as well.
         Text(
             text = status.label,
@@ -104,49 +106,6 @@ fun FadingStatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
 
 /** The badge's own inset either side of its code (docs/09 "Component measurements": 8 × 4). */
 private val BADGE_PAD: Dp = Space.s
-
-/**
- * The cap on the status column (UX decisions of 2026-10-08, the phones' rule): as wide as the old code `TRANSCRIBING`
- * in the badge's font, so the title column is never narrower than it was when the badges said codes. A word wider than
- * that wraps in its badge instead of widening the column.
- */
-private const val STATUS_CAP_SAMPLE = "TRANSCRIBING"
-
-/**
- * The ledger's status column, measured rather than guessed: the widest of every [labels] the ledger
- * can show, in the badge's own type — so the fluid scale and the language come with it, and no badge
- * is ever cut to fit (`NEEDS_MODEL` was, at a fixed 92dp) — up to the cap of [STATUS_CAP_SAMPLE].
- * Android's `statusColumnWidth` is the same rule.
- */
-@Composable
-fun statusColumnWidth(labels: List<String>): Dp {
-    // Each word measured in the face it is drawn in ([forWord]): a Korean word is not as wide in sans as in mono.
-    val style = mono.small
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val widest = remember(labels, style, density) {
-        val px = labels.maxOfOrNull { sample ->
-            // The spaces in front of a busy badge's word stand in for its loader ([ledgerBadgeLabels]), so they
-            // stay the mono face's width whatever face the word takes.
-            val word = sample.trimStart()
-            val text = buildAnnotatedString {
-                withStyle(SpanStyle(fontFamily = style.fontFamily)) { append(sample.substring(0, sample.length - word.length)) }
-                append(word)
-            }
-            measurer.measure(text, style.forWord(word), maxLines = 1).size.width
-        } ?: 0
-        // A dp of slack: a word measured to the pixel must not wrap on the pixel the layout rounds away.
-        with(density) { px.toDp() } + 1.dp
-    }
-    val cap = textColumnWidth(listOf(STATUS_CAP_SAMPLE), style) + 1.dp
-    return statusColumn(widest, blueprint.line, cap)
-}
-
-/**
- * The widest code up to [cap], plus the badge's padding and border on each side. Up to the cap no word wraps; past it
- * the badge takes a second line.
- */
-internal fun statusColumn(widest: Dp, line: Dp, cap: Dp = Dp.Infinity): Dp = minOf(widest, cap) + (BADGE_PAD + line) * 2
 
 /** The widest of [samples] on one line, in [style]. */
 @Composable

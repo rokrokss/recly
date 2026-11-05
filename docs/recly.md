@@ -2654,7 +2654,7 @@ The principle in one line: **intent, not decoration**.
   |---|---|
   | Screen header | 16 above, 12 below, 16 at the sides |
   | Button | padding 8 × 4, height — and for a data button in mono, width — at least the touch minimum, label 14 |
-  | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes |
+  | Status badge | padding 8 × 4, radius 2, centered, wrapping between words rather than cutting one; fades 150 ms when its state changes; in a ledger row, under the title at its own width (2026-11-04) |
   | Time and speaker button | drawn at the status badge's size and corner — padding 8 × 4, radius 2, label 12 (mono for a time or a speaker id) — inside a target of at least the touch minimum each way (2026-10-28): the transcript's and the notes' time buttons and the speaker badge, the Ask presets, Version history's `Restore` and the popover's and tray's `Settings` and `Quit` (2026-11-04); in a notes row, among the presets and in the popover's and tray's footer the target takes only the box's height in the layout and reaches the minimum past it (2026-10-31), so the footer is as low as its boxes: 8 above and below them, 40 in all on both desktops (2026-11-04) |
   | Record node | 72 square, a 3 border in the recording colour, the 22 stop square inside; in the popover and the tray (2026-11-04) 44, a 2 border and the 14 stop square, the timer beside it at 20, 12 apart — the phone's size outweighed the ledger in a panel that small — and in the 44 row with the timer the track, 12 from it to the edge; the input lines under them, 4 apart |
   | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum; a disabled switch row's words in `disabled`; the switch track at the end of its touch box |
@@ -2753,22 +2753,24 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      **waveform loader**, used only in the waveform's place (the detail screen in screen principle 2). The waveform loader does not rise and fall
      or flow like playback and recording waveforms, and does not leave the places it has passed filled — flowing waves, bouncing bars, breathing
      and filling from the left are playback or recording indicators on the various platforms, so they are not used (2026-09-26 research) — with
-     `reduce motion`, the word only. The square's turn moves nothing but the square, and a badge drawn only to measure the status column keeps it
-     still (2026-11-04: on Apple a turn started as the loader appeared once lent its endlessness to a resized list, which shook until the app
-     quit). The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`) (Apple · Android · Windows
+     `reduce motion`, the word only. The square's turn moves nothing but the square (2026-11-04: on Apple a turn started as the loader appeared once lent its endlessness
+     to a resized list, which shook until the app quit; the hidden badges that measured the status column, kept still for that, went with the
+     column the same day). The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`) (Apple · Android · Windows
      2026-09-03; Windows reads Settings → Accessibility → Visual effects → Animation effects, `SPI_GETCLIENTAREAANIMATION`, 2026-10-15).
    - **Quick start** (iPhone, 2026-10-07): a Home Screen widget (small: the square record node; while recording, the mono timer and a stop node) and Lock
      Screen widgets (circular: the record icon or the timer; rectangular: `Recly` + `Record` or the timer) run the existing start and stop App Intents,
      opening the app where iOS requires it, like the Control. Gallery name `Record`, description `Start or stop a recording.`
-2. **List = ledger**: row = `time (mono) · title (and its preview line) · length · status word · progress`. In all four shells, regardless of language, the time column is
+2. **List = ledger**: row = `time (mono) · title (and its preview line, or its status badge) · length`. In all four shells, regardless of language, the time column is
    **`MM-dd` over `HH:mm`** (month first; a fixed-width pattern, not locale formatting — only the spoken sentence uses locale formatting).
    The status is a text badge (both color and text), and the failure reason is a translated message key. The badge says a translated word, not the
    code (2026-10-08, user decision): `Done` · `Failed` · `Retrying` · `Waiting` · `Uploading` · `Receiving` · `Transcribing` · `Filling in` · `Summarizing` · `Importing` · `Recording` ·
    `Waiting for Drive` (`NEEDS_AUTH`) · `Needs permission` · `Waiting for model` · `Storage full` · `Too short` · `Waiting for iCloud` · `Waiting for folder` ·
    `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `채우는 중` · `요약하는 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
-   `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. On phones and in the desktop Details lists the status column is capped at the width the code
-   `TRANSCRIBING` needed, and a longer word wraps inside its badge onto a second line (centred, never cut), so the title column is never narrower
-   than it was with codes. A word too long for its line breaks only at the language's own hyphenation points, with a hyphen (2026-10-11 — badges
+   `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. **A done row wears no badge** (2026-11-04, user decision — a `Done` on every finished
+   row said nothing): the ledger has no status column — its header reads `Time` · `Title` · `Length` on every list — and a row in any other
+   state wears its badge under its title, in the preview line's place, at its own width; once the row is done the badge goes and the preview
+   comes back. The row's spoken sentence still says its state, `Done` included. A word wider than the title column wraps inside its badge
+   onto a second line (centred, never cut). A word too long for its line breaks only at the language's own hyphenation points, with a hyphen (2026-10-11 — badges
    and banner lines; Compose Desktop has no hyphenation, so Windows only wraps between words there). Status words written in Hangul, Kana or
    Han characters are set in the sans face, not the mono one — mono has no such glyphs and leaves full-width gaps (`업로드  중`); Latin words, times and
    counts stay mono (Apple sets a whole string with such characters in sans, counts included). The notice banner says `Waiting for Drive: 3` for uploads that wait for Drive (on a window narrower than 600 pt/dp every
@@ -2777,7 +2779,7 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    recording has a transcript on this device shows its first words on one secondary line (`core.previews`; phones and the desktop Details lists
    2026-10-08, the popover and tray ledgers too since 2026-10-28, so the short list and the Details list read alike). In the desktop Details lists only the open row carries its reason, its diagnostic line and its
    actions (`Download model`, `Retry` by the ledger's rule, `Check the key`, `Open Drive storage` on a full Drive) — the other rows are title,
-   preview, time and badge only (2026-10-11). The open row's band appears only when it has something to say or fix: `Delete` moved to the
+   preview or badge, time and length only (2026-10-11). The open row's band appears only when it has something to say or fix: `Delete` moved to the
    detail's More menu (2026-10-15, user decision — a finished row's band held Delete alone, a wide empty strip that read as an accordion to
    collapse). The Details list is a selection, not an accordion: clicking the open row again — or a search hit or a tray or popover row
    for it — changes nothing, with no reload and no flicker.
@@ -2788,8 +2790,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    `transcribe`). All three are accent. `RECEIVING` offers **nothing but its page** (its `Delete` disabled with the reason, no retry or Drive link — the
    transfer is still writing it; 2026-10-08: this sentence follows the shells, which all open the detail). Another device's `UPLOADING` has no retry or Drive link, but offers Delete (2026-10-08, four shells): the adopted-row dialog,
    which deletes the folder from Drive (§3 "Retention · deletion"). `TRANSCRIBING` is like an adopted `DONE`
-   row (details · delete). The length column keeps the placeholder used when there is no `durationSec` (it does not make up `0:00`),
-   and shells that measure the badge column width measure these words, in the current language. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Waiting for Drive`, 2026-10-08) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
+   row (details · delete). The length column keeps the placeholder used when there is no `durationSec` (it does not make up `0:00`).
+   In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Waiting for Drive`, 2026-10-08) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
    The spoken states are `Receiving from the watch` · `Uploading on another device` · `Transcribing on another device` (§7).
    **A recording being filled in** (2026-10-15, user decision; §8 "Titles and speaker names") — in the core's `observeFills()`, whether a
    publication or the detail asked — shows `Filling in` (accent, with the 8 pt square loader to its left) on every list: the phones, the popover and tray ledgers, and the desktop Details lists. It is read after `REC` and
@@ -2868,7 +2870,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    The detail additions of 2026-10-07 (§3 "Metadata", §8 "Editing" · "Exports", §10 "Re-transcription" · "Search" · "Shared rules for the shells") keep
    the rule above: the original stays the main content, the transcript a layer beside it, and nothing is offered on the user's behalf.
    - **The same list on every surface** (2026-10-15, flow-parity pass): the desktop Details windows' headers count like the phones' list
-     header — `12 · 2 waiting · 1 failed` — and their rows are time · title · length · status; the popover and tray ledgers say `Loading…`
+     header — `12 · 2 waiting · 1 failed` — and their rows are time · title (with its preview or its badge) · length; the popover and tray ledgers say `Loading…`
      before their first read, as the lists do. The fixes of a job waiting on the provider draw `Waiting for the transcription result —
      12 min elapsed` on every shell (the phones' page, the Details windows' open row), and a `Retry pending` reason is in the warning tone, not red.
      `Retry` on a recording waiting for Drive (`NEEDS_AUTH`) runs the Drive fix — the sign-in — instead of queuing a retry that cannot pass, and the
@@ -3991,7 +3993,7 @@ With the built-in speakers the microphone's input node runs with voice processin
   again once it stops (2026-11-04): a recording is mostly made with the popover closed, and a red icon says that one runs, not for how
   long. A Windows tray icon takes no text, so the tray's tooltip carries it there (`Recly — Recording · 12:34`, §14 "App").
 - **Menu bar** popover: the record node with the timer, the track and the input lines beside it (§9 screen principle 1) + the recent ledger (infinite scroll, 20 rows at a time; time · title with the transcript's first words
-  under it · length · state, and a click opens the recording in the Details window, §9 principle 2) + actions, with a notice banner at the top.
+  under it, or its badge while it is not done · length, and a click opens the recording in the Details window, §9 principle 2) + actions, with a notice banner at the top.
 - **Mac popover size**: one height, 620 (the idle header over a 420 ledger), limited so the popover fits inside the current screen minus the
   menu bar and the Dock. Only settings and the ledger scroll, and they give and take what the header's changes need — a recording's memo
   row, its field opening and folding — so the window never resizes under the pointer (2026-11-04, user: Done on the memo flashed; the

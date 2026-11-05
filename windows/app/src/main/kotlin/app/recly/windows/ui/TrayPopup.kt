@@ -28,7 +28,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import app.recly.windows.APP_NAME
 import app.recly.windows.detect.MeetingDetectionRule
 import app.recly.windows.i18n.Str
@@ -50,8 +49,6 @@ import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.theme.forWord
 import app.recly.windows.ui.component.RecordNode
-import app.recly.windows.ui.component.statusColumnWidth
-import app.recly.windows.ui.component.textColumnWidth
 import app.recly.windows.ui.theme.BlueprintColors
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -258,11 +255,6 @@ private fun Ledger(
     modifier: Modifier,
 ) {
     val palette = blueprint
-    // docs/09 screen principle 2: the status column is as wide as the widest badge this ledger can wear.
-    val statusWidth = maxOf(
-        statusColumnWidth(ledgerBadgeLabels(strings)),
-        textColumnWidth(listOf(strings[Str.LEDGER_STATUS]), MaterialTheme.typography.labelSmall),
-    )
     LazyColumn(modifier) {
         // The first-run offer of the speech model, at the top while the model is really missing.
         if (model.modelCardShown) item { ModelCard(model, strings) }
@@ -272,8 +264,6 @@ private fun Ledger(
                 time = strings[Str.LEDGER_TIME],
                 title = strings[Str.LEDGER_TITLE],
                 length = strings[Str.LEDGER_LENGTH],
-                status = strings[Str.LEDGER_STATUS],
-                statusWidth = statusWidth,
             )
         }
         items(model.recents, key = { it.id }) { item ->
@@ -281,7 +271,7 @@ private fun Ledger(
             if (item.id == model.recents.last().id) {
                 LaunchedEffect(item.id) { model.loadMoreRecents() }
             }
-            RecentRow(item, model, strings, statusWidth)
+            RecentRow(item, model, strings)
         }
         if (model.recents.isEmpty()) {
             // Before the first read the list is not empty, it is not read yet (D15).
@@ -372,15 +362,15 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
 
 /**
  * docs/09 screen principle 2 (2026-10-28): the row is the recording, as the Details list's row is — time, title with the
- * transcript's first words under it, length, state — and a click opens it in the Details window. What can be done about
- * it is there: the fixes under its open row, and Open in Drive, Open the folder and Delete in its More menu.
+ * transcript's first words under it (or, 2026-11-04, its state while it is not `Done`), length — and a click opens it in
+ * the Details window. What can be done about it is there: the fixes under its open row, and Open in Drive, Open the
+ * folder and Delete in its More menu.
  */
 @Composable
 private fun RecentRow(
     item: RecentItem,
     model: ShellModel,
     strings: Strings,
-    statusWidth: Dp,
 ) {
     val locale = Locale.forLanguageTag(strings.language)
     val title = item.title.text(strings)
@@ -396,7 +386,6 @@ private fun RecentRow(
         subtitle = preview.orEmpty(),
         length = length,
         status = status,
-        statusWidth = statusWidth,
         announce = strings[
             Str.LEDGER_ANNOUNCE,
             // Heard after the title, as the Details row reads them, with the sentence's own separator.

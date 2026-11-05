@@ -238,12 +238,7 @@ struct MenuPopover: View {
             // is the way to the screen that fixes it. It replaces the sign-in-only banner:
             // `NEEDS_AUTH` is one of the seven.
             AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
-            LedgerHeader(
-                time: loc("Time"),
-                title: loc("Title"),
-                length: loc("Length"),
-                status: loc("Status")
-            )
+            LedgerHeader(time: loc("Time"), title: loc("Title"), length: loc("Length"))
             ForEach(model.recents) { item in
                 row(item)
             }

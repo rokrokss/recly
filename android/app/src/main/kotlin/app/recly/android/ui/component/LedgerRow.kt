@@ -40,11 +40,12 @@ private val TIME_COLUMN = 62.dp
 private val COLUMN_GAP = Space.s
 
 /**
- * The two columns of the ledger that hold data rather than prose, and so are measured rather than
- * fixed. Both used to be a constant and both lost letters at a font scale of 1.3: `NEEDS_AUTH` in a
- * 76dp column, and `00:09` in a 44dp one, which came out as `00:0`.
+ * The column of the ledger that holds data rather than prose, and so is measured rather than fixed.
+ * It used to be a constant and lost letters at a font scale of 1.3: `00:09` in a 44dp column came out
+ * as `00:0`. The state had a measured column of its own until docs/09 screen principle 2 (2026-11-04)
+ * moved its badge under the title.
  */
-data class LedgerColumns(val length: Dp, val status: Dp)
+data class LedgerColumns(val length: Dp)
 
 
 /**
@@ -55,41 +56,39 @@ val LedgerTitleMin: Dp = 96.dp
 
 /** What shape the ledger takes at the width it was given. */
 enum class LedgerLayout {
-    /** when · what · how long · state, on one line. */
+    /** when · what · how long, on one line. */
     COLUMNS,
 
-    /** when · what, then how long and the state under them. */
+    /** when · what, then how long under them. */
     STACKED,
 }
 
 /**
- * Four columns, or two lines? The two data columns are measured (see [ledgerColumns]), so on a
- * narrow screen at a large font size they and the fixed time column can take everything: at 320dp
- * and a font scale of 1.3 the title was left some 34dp, and at larger scales nothing at all — at
- * which point the measured columns are squeezed too and the clipping this design measured its way
- * out of comes back. Whenever what is left for the title falls under [titleMin] the row gives up
- * being a table and becomes two lines instead, where the title has the whole width.
+ * Three columns, or two lines? The length column is measured (see [ledgerColumns]), so on a narrow
+ * window at a large font size it and the fixed time column can take everything — at which point the
+ * measured column is squeezed too and the clipping this design measured its way out of comes back.
+ * Whenever what is left for the title falls under [titleMin] the row gives up being a table and
+ * becomes two lines instead, where the title has the whole width.
  */
 fun ledgerLayout(
     available: Dp,
     columns: LedgerColumns,
     titleMin: Dp = LedgerTitleMin,
 ): LedgerLayout {
-    // Everything the title does not get: the row's own padding, the time column, the two measured
-    // columns, and the three gaps between the four of them.
-    val taken = Space.m * 2 + TIME_COLUMN + columns.length + columns.status + COLUMN_GAP * 3
+    // Everything the title does not get: the row's own padding, the time column, the measured
+    // column, and the two gaps between the three of them.
+    val taken = Space.m * 2 + TIME_COLUMN + columns.length + COLUMN_GAP * 2
     return if (available - taken < titleMin) LedgerLayout.STACKED else LedgerLayout.COLUMNS
 }
 
 /**
- * [LedgerColumns] for the [lengths] and status [codes] this ledger can show, measured in the style
- * they are drawn in — so the widths carry the fluid scale and the user's own font size, and neither
- * column changes from row to row.
+ * [LedgerColumns] for the [lengths] this ledger can show, measured in the style they are drawn in —
+ * so the width carries the fluid scale and the user's own font size, and the column does not change
+ * from row to row.
  */
 @Composable
-fun ledgerColumns(lengths: List<String>, codes: List<String>): LedgerColumns = LedgerColumns(
+fun ledgerColumns(lengths: List<String>): LedgerColumns = LedgerColumns(
     length = textColumnWidth(lengths, mono.small),
-    status = statusColumnWidth(codes),
 )
 
 /** A 1dp rule — the only divider this design has. */
@@ -106,7 +105,7 @@ fun HairLine(modifier: Modifier = Modifier) {
 
 /**
  * The column headings above the ledger. A stacked ledger ([LedgerLayout.STACKED]) heads two lines
- * rather than four columns, in the same widths its rows use, so each heading still sits over what
+ * rather than three columns, in the same widths its rows use, so each heading still sits over what
  * it names.
  */
 @Composable
@@ -114,7 +113,6 @@ fun LedgerHeader(
     time: String,
     title: String,
     length: String,
-    status: String,
     columns: LedgerColumns,
     modifier: Modifier = Modifier,
     layout: LedgerLayout = LedgerLayout.COLUMNS,
@@ -129,7 +127,6 @@ fun LedgerHeader(
                 Heading(time, Modifier.width(TIME_COLUMN))
                 Heading(title, Modifier.weight(1f))
                 Heading(length, Modifier.width(columns.length), TextAlign.End)
-                Heading(status, Modifier.width(columns.status), TextAlign.Center)
             }
 
             LedgerLayout.STACKED -> Column(head, Arrangement.spacedBy(Space.xs)) {
@@ -139,7 +136,6 @@ fun LedgerHeader(
                 }
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(COLUMN_GAP, Alignment.End)) {
                     Heading(length, Modifier.width(columns.length), TextAlign.End)
-                    Heading(status, Modifier.width(columns.status), TextAlign.Center)
                 }
             }
         }
@@ -160,10 +156,11 @@ private fun Heading(text: String, modifier: Modifier = Modifier, align: TextAlig
 }
 
 /**
- * One recording, as a row of the ledger: when (monospace), what, how long, and the state as a code
- * (docs/09 screen principle 2). The whole row is one accessibility node — four separate announcements of
- * `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the caller hands in the
- * sentence, with the state in words rather than as a code. A tap opens the recording's detail (2026-10-28).
+ * One recording, as a row of the ledger: when (monospace), what, and how long, with the state's badge
+ * under the title while the row is not done (docs/09 screen principle 2). The whole row is one
+ * accessibility node — separate announcements of `08-29`, a title, `42:10` and `DONE` are worse than
+ * one sentence — so the caller hands in the sentence, with the state in words rather than as a code,
+ * `Done` included. A tap opens the recording's detail (2026-10-28).
  */
 @Composable
 fun LedgerRow(
@@ -200,13 +197,13 @@ fun LedgerRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TimeCell(date, time)
-                TitleCell(title, subtitle, Modifier.weight(1f))
+                TitleCell(title, subtitle, status, Modifier.weight(1f))
                 LengthCell(length, Modifier.width(columns.length))
-                StatusCell(status, Modifier.width(columns.status))
             }
 
-            // The title has the width to itself; how long and what state go under it, right-aligned
-            // in the widths the header uses so the two lines still read as a table.
+            // The title has the width to itself, the badge under it as in a row of columns; how long
+            // goes under them, right-aligned in the width the header uses so the two lines still read
+            // as a table.
             LedgerLayout.STACKED -> Column(body, Arrangement.spacedBy(Space.xs)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -214,7 +211,7 @@ fun LedgerRow(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TimeCell(date, time)
-                    TitleCell(title, subtitle, Modifier.weight(1f))
+                    TitleCell(title, subtitle, status, Modifier.weight(1f))
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -222,7 +219,6 @@ fun LedgerRow(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     LengthCell(length, Modifier.width(columns.length))
-                    StatusCell(status, Modifier.width(columns.status))
                 }
             }
         }
@@ -239,9 +235,30 @@ private fun TimeCell(date: String, time: String) {
     }
 }
 
+/**
+ * What a row draws under its title. docs/09 screen principle 2 (2026-11-04): the state's badge while the
+ * row is not done, in place of the preview — a badge on every Done row said nothing, so only a row with
+ * something going on or to fix wears one. A done row has the transcript's first words, or nothing.
+ */
+internal sealed interface UnderTitle {
+    data class Badge(val status: LedgerStatus) : UnderTitle
+    data class Preview(val text: String) : UnderTitle
+}
+
+/** [UnderTitle] for a row in [status] whose transcript begins with [preview] (empty for none). */
+internal fun underTitle(status: LedgerStatus, preview: String): UnderTitle? = when {
+    status.code != DONE_CODE -> UnderTitle.Badge(status)
+    preview.isNotEmpty() -> UnderTitle.Preview(preview)
+    else -> null
+}
+
+/** The one state whose badge the ledger leaves off. */
+private const val DONE_CODE = "DONE"
+
 @Composable
-private fun TitleCell(title: String, subtitle: String, modifier: Modifier = Modifier) {
+private fun TitleCell(title: String, subtitle: String, status: LedgerStatus, modifier: Modifier = Modifier) {
     val palette = blueprint
+    val reduce = LocalReduceMotion.current
     Column(
         modifier = modifier.clearAndSetSemantics {},
         // The iPhone's 2 between the title and its preview line.
@@ -254,14 +271,28 @@ private fun TitleCell(title: String, subtitle: String, modifier: Modifier = Modi
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        if (subtitle.isNotEmpty()) {
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        // docs/09 "Motion" · "Component measurements": a badge whose state changes fades to the new one — or,
+        // once the row is done, to its preview — in 150 ms; with reduce motion it is swapped at once, and the
+        // word itself is the state either way. The badge keeps its own width, leading; a word wider than the
+        // title wraps inside it rather than being cut.
+        if (underTitle(status, subtitle) != null) {
+            Crossfade(
+                targetState = status,
+                animationSpec = if (reduce) snap() else tween(Motion.BADGE_FADE_MS, easing = Motion.Standard),
+                label = "badge",
+            ) { shown ->
+                when (val line = underTitle(shown, subtitle)) {
+                    is UnderTitle.Badge -> StatusBadge(line.status)
+                    is UnderTitle.Preview -> Text(
+                        line.text,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = palette.textMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    null -> Unit
+                }
+            }
         }
     }
 }
@@ -276,23 +307,4 @@ private fun LengthCell(length: String, modifier: Modifier = Modifier) {
         textAlign = TextAlign.End,
         maxLines = 1,
     )
-}
-
-/**
- * docs/09 "Motion" · "Component measurements": a badge whose state changes fades to the new one in 150 ms — with
- * reduce motion it is swapped at once, and the word itself is the state either way.
- */
-@Composable
-private fun StatusCell(status: LedgerStatus, modifier: Modifier = Modifier) {
-    val reduce = LocalReduceMotion.current
-    Crossfade(
-        targetState = status,
-        modifier = modifier.clearAndSetSemantics {},
-        animationSpec = if (reduce) snap() else tween(Motion.BADGE_FADE_MS, easing = Motion.Standard),
-        label = "badge",
-    ) { shown ->
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            StatusBadge(shown)
-        }
-    }
 }

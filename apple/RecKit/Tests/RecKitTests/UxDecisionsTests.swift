@@ -48,12 +48,14 @@ final class UxDecisionsTests: XCTestCase {
         }
     }
 
-    /// The status column is measured over what the ledger can show — both `WAITING` words included.
-    func testTheStatusColumnMeasuresEveryWord() {
-        let measured = Set(LedgerStatus.ledgerStatuses.map(\.label))
-        for (status, _, _) in Self.badges where status.code != "NEEDS_SPACE" {
-            XCTAssertTrue(measured.contains(status.label), "\(status.label) is not measured")
+    /// docs/09 screen principle 2 (2026-11-04): a done row wears no badge; every other state does, in its first words' place.
+    func testOnlyARowThatIsNotDoneWearsItsBadge() {
+        XCTAssertFalse(LedgerStatus.forRecent(state: "Done").shown)
+        for (status, _, _) in Self.badges where status.code != "DONE" {
+            XCTAssertTrue(status.shown, status.code)
         }
+        XCTAssertTrue(LedgerStatus.organizing.shown)
+        XCTAssertTrue(LedgerStatus.filling.shown)
     }
 
     /// A row waiting for Drive says the same word to VoiceOver as its badge does.

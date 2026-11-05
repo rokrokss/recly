@@ -31,11 +31,15 @@ public enum BadgeTone: Sendable {
     public func edge(_ palette: BlueprintPalette) -> Color { palette.color(edgeToken) }
 }
 
-/// The state and its tone — what [LedgerRow] shows in its last column. The code is the core's and the
+/// The state and its tone — what [LedgerRow] shows under a row's title. The code is the core's and the
 /// logs' word and never shown; the badge draws [label], the code as a translated word (2026-10-08 §1a).
 public struct LedgerStatus: Equatable, Sendable {
     public let code: String
     public let tone: BadgeTone
+
+    /// docs/09 screen principle 2 (2026-11-04): whether a row wears its badge — every state but `DONE`. A `Done` on
+    /// every finished row said nothing; the rows with something going on or to fix are the ones that say so.
+    public var shown: Bool { code != "DONE" }
     /// The catalog key of the word, where one code is more than one word (`WAITING`: iCloud or the
     /// local folder). Nil reads the word off the code.
     private let word: String?
@@ -84,16 +88,6 @@ public struct LedgerStatus: Equatable, Sendable {
         "LOCAL_DIARIZATION_UNAVAILABLE": "Failed",
     ]
 
-    /// Every badge [forRecent] and [RecentItem.badge] can mint — what the ledger's status column is
-    /// measured against, in the language on screen, so the widest of the words fits at full size.
-    public static let ledgerStatuses: [LedgerStatus] = [
-        "IMPORTING", "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "FILLING", "ORGANIZING", "REC", "RETRY", "DONE", "FAILED",
-        "NEEDS_CONSENT", "NEEDS_MODEL", "NEEDS_AUTH", "NO_SPACE", "SKIPPED", "UNKNOWN", "WAITING",
-    ].map { LedgerStatus(code: $0, tone: .neutral) } + [waitingForFolder]
-
-    /// The codes of [ledgerStatuses].
-    public static var ledgerCodes: [String] { ledgerStatuses.map(\.code) }
-
     /// docs/09 screen principle 2 · docs/08 "Titles and speaker names": ChatGPT is filling in the recording's title or
     /// speaker names — work in flight, so accent, with the loader.
     public static let filling = LedgerStatus(code: "FILLING", tone: .accent)
@@ -101,10 +95,6 @@ public struct LedgerStatus: Equatable, Sendable {
     /// docs/09 screen principle 2 · docs/08 "Organizing": a recording that is done, its notes being organized now — the
     /// detail's `Organizing…` on its row. Accent, with the loader, as a fill is.
     public static let organizing = LedgerStatus(code: "ORGANIZING", tone: .accent)
-
-    /// docs/03 "Storage location": a local folder that cannot be reached waits the way iCloud does — the
-    /// same code, its own word.
-    static let waitingForFolder = LedgerStatus(code: "WAITING", tone: .neutral, word: "Waiting for folder")
 
     /// docs/09 screen principle 2: the badge is the state in one word, minted from the code the core and
     /// the logs use. What it *means* is [RecentItem.stateLabel], which is what VoiceOver hears.
@@ -151,49 +141,24 @@ public struct StatusBadge: View {
     @Environment(\.blueprint) private var blueprint
     private let status: LedgerStatus
     private let wraps: Bool
-    /// The text in place of the status's word — only the ledger's measure of its cap uses it.
-    private let verbatim: String?
-    /// Only measured, hidden: its loader stands still (see [BlueprintLoader]'s `turning`).
-    private let measured: Bool
 
-    /// - Parameter wraps: take the width the ledger's status column gives it and wrap the word onto
-    ///   further lines, centred, when the word is wider than that (2026-10-08 badge column rule).
+    /// - Parameter wraps: its own width on one line while the word fits the width it is given, and the word wrapped
+    ///   onto further lines, centred, when it is wider than that — the ledger row's badge under a narrow title column.
     ///   Elsewhere the badge is its own width on one line.
     public init(_ status: LedgerStatus, wraps: Bool = false) {
         self.status = status
         self.wraps = wraps
-        verbatim = nil
-        measured = false
-    }
-
-    /// A badge-sized piece of text, for measuring: the ledger's status column is capped at what the
-    /// old code `TRANSCRIBING` took.
-    init(measuring text: String) {
-        status = LedgerStatus(code: text, tone: .neutral)
-        wraps = false
-        verbatim = text
-        measured = true
-    }
-
-    /// The badge a status would wear, for measuring only: as wide as the real one, its loader standing still — the
-    /// ledger's status column draws one of these, hidden, for every status in every row.
-    init(measuring status: LedgerStatus) {
-        self.status = status
-        wraps = false
-        verbatim = nil
-        measured = true
     }
 
     public var body: some View {
-        let label = verbatim ?? status.label
+        let label = status.label
         let words = HStack(spacing: Space.xs) {
             // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink. So are a fill
             // and the notes being organized (docs/09 screen principle 2).
             if status.code == "IMPORTING" || status.code == LedgerStatus.filling.code || status.code == LedgerStatus.organizing.code {
-                BlueprintLoader(color: status.tone.ink(blueprint.palette), turning: !measured)
+                BlueprintLoader(color: status.tone.ink(blueprint.palette))
             }
-            // 2026-10-11 (N2): a word wider than the column breaks at a hyphen, never between two letters.
-            // Only the badge that wraps pays for it; the column's measures are one line each.
+            // 2026-10-11 (N2): a word wider than the width it has breaks at a hyphen, never between two letters.
             if wraps { WrappingText(label) } else { Text(verbatim: label) }
         }
             // 2026-10-11 (N3): Hangul, Kana and Han in the sans.

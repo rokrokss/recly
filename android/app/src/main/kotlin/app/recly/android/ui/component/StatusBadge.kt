@@ -31,7 +31,8 @@ import app.recly.android.ui.theme.monoWords
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
 
 /**
- * The code and its tone — what [LedgerRow] shows in its last column. [busy] turns the square loader
+ * The code and its tone — what [LedgerRow] shows under the title of a row that is not done
+ * (docs/09 screen principle 2, 2026-11-04). [busy] turns the square loader
  * beside the code, for work running with no percentage to show (`IMPORTING`).
  */
 data class LedgerStatus(val code: String, val tone: BadgeTone, val busy: Boolean = false)
@@ -52,9 +53,9 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (status.busy) BlueprintLoader(status.tone.ink())
-        // UX decisions of 2026-10-08: a word wider than the column ([statusColumnWidth]'s cap) takes a
+        // UX decisions of 2026-10-08: a word wider than its room (a ledger row's title, [statusColumnWidth]'s cap) takes a
         // second line inside its badge, centred and never ellipsized — between words, and inside one
-        // only when that one word alone is wider than the column, and then at a hyphen in the language's
+        // only when that one word alone is wider than its room, and then at a hyphen in the language's
         // own places (N2, 2026-10-11). Phrase breaking keeps a Korean word whole, where the default would
         // break between any two syllables; the Korean word itself is in the sans ([monoWords]).
         Text(
@@ -84,7 +85,8 @@ private val BADGE_LINE_BREAK = LineBreak(
 private const val STATUS_CAP_SAMPLE = "TRANSCRIBING"
 
 /**
- * How wide the ledger's status column is: the widest word the ledger can show *in the current
+ * How wide a column of badges is — the room [AlertLine] keeps for its code, now the ledger has no status
+ * column (docs/09 screen principle 2, 2026-11-04): the widest word of [codes] *in the current
  * language* — what each code is drawn as — measured in the style the badge draws, up to the cap of
  * [STATUS_CAP_SAMPLE], plus what the badge adds around it. No state is ever ellipsized, in any language,
  * at any scale: a word past the cap wraps inside its badge.

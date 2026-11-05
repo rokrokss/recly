@@ -30,8 +30,9 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 
 /**
- * docs/09 screen principle 2: the ledger's four columns — `Time · Title · Length · Status`, as on the Mac. The time column
- * is as wide as the longest time in this shell's mono font (docs/09 "Component measurements": 68 on Windows).
+ * docs/09 screen principle 2: the ledger's three columns — `Time · Title · Length`, as on the Mac; the state is under the
+ * title, on the rows that have one to show (2026-11-04, [LedgerRow]). The time column is as wide as the longest time in
+ * this shell's mono font (docs/09 "Component measurements": 68 on Windows).
  */
 private val TIME_COLUMN = 68.dp
 
@@ -74,9 +75,6 @@ fun LedgerHeader(
     time: String,
     title: String,
     length: String,
-    status: String,
-    /** The measured status column ([statusColumnWidth]), shared with every row under it. */
-    statusWidth: Dp,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier) {
@@ -90,7 +88,6 @@ fun LedgerHeader(
             Heading(time, Modifier.width(TIME_COLUMN))
             Heading(title, Modifier.weight(1f))
             Heading(length, Modifier.width(lengthColumnWidth()), TextAlign.End)
-            Heading(status, Modifier.width(statusWidth), TextAlign.Center)
         }
         HairLine()
     }
@@ -109,10 +106,10 @@ private fun Heading(text: String, modifier: Modifier = Modifier, align: TextAlig
 }
 
 /**
- * One recording, as a row of the ledger: when (monospace), what, how long, and the state as a code
- * (docs/09 screen principle 2). The whole row is one accessibility node — four separate announcements of
- * `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the caller hands in the
- * sentence, with the state in words rather than as a code.
+ * One recording, as a row of the ledger: when (monospace), what, how long, and under the title the state as a badge
+ * while the row has something going on or to fix (docs/09 screen principle 2). The whole row is one accessibility
+ * node — four separate announcements of `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the
+ * caller hands in the sentence, with the state in words rather than as a code.
  */
 @Composable
 fun LedgerRow(
@@ -122,8 +119,6 @@ fun LedgerRow(
     subtitle: String,
     length: String,
     status: LedgerStatus,
-    /** The measured status column ([statusColumnWidth]). */
-    statusWidth: Dp,
     announce: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -162,7 +157,12 @@ fun LedgerRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (subtitle.isNotEmpty()) {
+                // docs/09 screen principle 2 (2026-11-04): the badge, at its own width, in the first words' place — and only on
+                // a row that is not `Done`. A `Done` on every finished row said nothing; the rows with something going on or
+                // to fix are the ones that say so. Heard in the row's sentence either way.
+                if (status.shown) {
+                    FadingStatusBadge(status)
+                } else if (subtitle.isNotEmpty()) {
                     Text(
                         subtitle,
                         // The transcript's first words, in the direction they take, as the Details list's row draws them.
@@ -183,9 +183,6 @@ fun LedgerRow(
                 textAlign = TextAlign.End,
                 maxLines = 1,
             )
-            Box(Modifier.width(statusWidth).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-                FadingStatusBadge(status)
-            }
         }
         HairLine()
     }

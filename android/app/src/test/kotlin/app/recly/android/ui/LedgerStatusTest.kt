@@ -90,7 +90,7 @@ class LedgerStatusTest {
         assertEquals(filling, row.copy(state = ItemState.RUNNING, localPending = true, localRunning = true).badge(filling = true))
         assertEquals(ItemState.RECORDING.badge(), row.copy(state = ItemState.RECORDING).badge(filling = true))
         assertEquals(ItemState.RECEIVING.badge(), row.copy(state = ItemState.RECEIVING).badge(filling = true))
-        // Measured with the other codes, and drawn as a word.
+        // Listed with the other codes, and drawn as a word.
         assertTrue("FILLING" in BADGE_CODES)
         assertEquals(app.recly.android.R.string.badge_filling, app.recly.android.ui.component.badgeWord("FILLING"))
     }
@@ -187,9 +187,9 @@ class LedgerStatusTest {
         assertEquals(BadgeTone.NEUTRAL, ItemState.DONE.reasonTone())
     }
 
-    /** The status column is measured with every code the ledger can show, so none is clipped. */
+    /** Every code a row's badge can show is listed, so each is held to having a word. */
     @Test
-    fun `the status column is measured with every code`() {
+    fun `every code a row can show is listed`() {
         assertTrue("NEEDS_MODEL" in BADGE_CODES)
         ItemState.entries.forEach { assertTrue(it.badge().code in BADGE_CODES, "$it") }
     }

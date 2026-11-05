@@ -17,25 +17,18 @@ struct BlueprintLoader: View {
 
     @Environment(\.blueprint) private var blueprint
     let color: Color
-    /// False for a loader that is only measured — a hidden badge setting the status column's width: the same square,
-    /// standing still.
-    var turning = true
 
     var body: some View {
         if !blueprint.reduceMotion {
-            let square = Rectangle()
+            Rectangle()
                 .strokeBorder(color, lineWidth: blueprint.line)
                 .frame(width: 8, height: 8)
                 .accessibilityHidden(true)
-            if turning {
-                square.keyframeAnimator(initialValue: 0.0, repeating: true) { content, angle in
+                .keyframeAnimator(initialValue: 0.0, repeating: true) { content, angle in
                     content.rotationEffect(.degrees(angle))
                 } keyframes: { _ in
                     LinearKeyframe(360.0, duration: Self.turn)
                 }
-            } else {
-                square
-            }
         }
     }
 }

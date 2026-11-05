@@ -120,12 +120,7 @@ struct RecordingsView: View {
 
     private var ledger: some View {
         VStack(spacing: 0) {
-            LedgerHeader(
-                time: loc("Time"),
-                title: loc("Title"),
-                length: loc("Length"),
-                status: loc("Status")
-            )
+            LedgerHeader(time: loc("Time"), title: loc("Title"), length: loc("Length"))
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(model.recents) { item in
@@ -151,9 +146,6 @@ struct RecordingsView: View {
             .scrollDismissesKeyboard(.immediately)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // 2026-10-08 badge column rule: the status column no wider than the old codes took, so a
-        // phone's title column keeps its width; a longer word wraps inside its badge.
-        .environment(\.ledgerStatusCapped, true)
         .dotGridBackground()
         .task { await model.refreshRecents() }
         // docs/03: and beside it, never in front of it — the list is drawn from what is already

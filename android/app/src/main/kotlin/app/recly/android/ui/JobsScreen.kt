@@ -204,19 +204,18 @@ fun JobsScreen(
             return@Column
         }
 
-        // docs/09 screen principle 2: every length and every code the ledger can show, measured — so
-        // `NEEDS_AUTH` and `00:09` both fit at a font scale of 1.3, and neither column moves from
-        // row to row as the list is scrolled. The headings are measured with them, in the wider of
-        // the two styles, because a heading that no longer fits is the same bug.
+        // docs/09 screen principle 2: every length the ledger can show, measured — so `00:09` fits at a
+        // font scale of 1.3, and the column does not move from row to row as the list is scrolled. The
+        // heading is measured with them, in the wider of the two styles, because a heading that no
+        // longer fits is the same bug.
         val columns = ledgerColumns(
             lengths = listOf(
                 stringResource(R.string.jobs_column_length),
                 EMPTY_LENGTH,
             ) + state.items.mapNotNull { item -> item.durationSec?.let { duration(it) } },
-            codes = BADGE_CODES,
         )
 
-        // Measured columns cost the title what they take, and on a narrow screen at a large font
+        // A measured column costs the title what it takes, and on a narrow window at a large font
         // size that is everything: the shape is decided once here, from the width the ledger
         // actually has, and the header and every row take it together.
         BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
@@ -226,7 +225,6 @@ fun JobsScreen(
                     time = stringResource(R.string.jobs_column_time),
                     title = stringResource(R.string.jobs_column_title),
                     length = stringResource(R.string.jobs_column_length),
-                    status = stringResource(R.string.jobs_column_status),
                     columns = columns,
                     layout = layout,
                 )
@@ -247,7 +245,8 @@ fun JobsScreen(
                             val organizing = item.recordingId in state.organizing
                             val title = item.title ?: stringResource(R.string.jobs_untitled)
                             // UX decisions of 2026-10-08: the transcript's first words under the title,
-                            // and nothing — no line, no space — for a row without one here.
+                            // and nothing — no line, no space — for a row without one here. A row that
+                            // is not done has its badge there instead (docs/09 screen principle 2, 2026-11-04).
                             val preview = state.previews[item.recordingId].orEmpty()
                             LedgerRow(
                                 modifier = Modifier.testTag("recording-${item.recordingId}"),
@@ -533,10 +532,10 @@ internal fun ItemState.reasonTone(): BadgeTone = when (badge().tone) {
 }
 
 /**
- * Every code the ledger's last column can hold, so the column can be as wide as the widest of them
- * rather than as wide as whatever happens to be on screen — the width must not change as rows
- * arrive. Derived from [badge] itself, so a state added later is measured without anyone
- * remembering to come back here.
+ * Every code a row's badge can hold, each of which must have a word ([app.recly.android.ui.component.badgeWord]).
+ * It sized the ledger's status column until docs/09 screen principle 2 (2026-11-04) moved the badge under the
+ * title; now it is the list the tests hold to that. Derived from [badge] itself, so a state added later is
+ * covered without anyone remembering to come back here.
  */
 internal val BADGE_CODES: List<String> =
     ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code + FOLDER_BADGE.code + FILLING_BADGE.code + ORGANIZING_BADGE.code

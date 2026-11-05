@@ -366,26 +366,6 @@ final class WaitToneTests: XCTestCase {
     }
 }
 
-/// The ledger's status column is measured against every code it can show, so none is shrunk.
-final class LedgerCodeTests: XCTestCase {
-
-    func testEveryCodeARowCanShowIsMeasured() {
-        let states = [
-            "Receiving from the watch", "Uploading on another device", "Transcription pending", "Waiting for the device to cool down",
-            "Transcribing on another device", "Transcribing on this device", "Recording", "Waiting",
-            "Uploading", "Retry pending", "Done", "Failed", "Transfer permission needed",
-            "Waiting for speech model", "Sign-in needed", "No space in Drive", "Too short", "not a state",
-        ]
-        for state in states {
-            let code = LedgerStatus.forRecent(state: state).code
-            XCTAssertTrue(LedgerStatus.ledgerCodes.contains(code), "\(state) mints \(code), which the column does not measure")
-        }
-        // A provider transcribing is its own code on a WAITING row (RecentItem.badge).
-        XCTAssertTrue(LedgerStatus.ledgerCodes.contains("TRANSCRIBING"))
-        XCTAssertTrue(LedgerStatus.ledgerCodes.contains("NEEDS_MODEL"))
-    }
-}
-
 /// English counts without "(s)": the number stands after a colon, and Korean keeps its own sentence.
 final class CountWordingTests: XCTestCase {
 

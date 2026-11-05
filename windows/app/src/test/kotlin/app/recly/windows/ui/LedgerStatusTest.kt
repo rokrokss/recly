@@ -4,8 +4,6 @@ package app.recly.windows.ui
 
 import app.recly.windows.job
 import app.recly.windows.plain
-import androidx.compose.ui.unit.dp
-import app.recly.windows.ui.component.statusColumn
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.UiMessage
@@ -115,17 +113,11 @@ class LedgerStatusTest {
         assertEquals("RECEIVING", row.copy(state = Str.STATE_RECEIVING.message()).ledgerStatus(en, filling = true, organizing = false).code)
         // Its counts are the job's: a filling row that is done is not one more waiting.
         assertEquals("1", ledgerCounts(listOf(row), { "$it waiting" }, { "$it failed" }))
-        for (strings in listOf(en, ko)) {
-            val labels = ledgerBadgeLabels(strings)
-            assertTrue(strings[Str.BADGE_FILLING] in labels)
-            assertTrue("  ${strings[Str.BADGE_FILLING]}" in labels, "the loader's room is not measured")
-        }
     }
 
     /**
      * docs/08 "Organizing": a done recording whose notes are being organized — the final pass or Organize again — says
-     * `Organizing`, with the loader, until the pass ends; any other state, and a fill, stay as they are. The column is
-     * measured for it.
+     * `Organizing`, with the loader, until the pass ends; any other state, and a fill, stay as they are.
      */
     @Test
     fun `a done recording being organized says so until the pass ends`() {
@@ -145,31 +137,18 @@ class LedgerStatusTest {
             assertEquals(key.message().ledgerStatus(en), other.ledgerStatus(en, filling = false, organizing = true), key.name)
         }
         assertEquals("FILLING", row.ledgerStatus(en, filling = true, organizing = true).code)
-        for (strings in listOf(en, ko)) {
-            assertTrue("  ${strings[Str.BADGE_ORGANIZING]}" in ledgerBadgeLabels(strings), "the loader's room is not measured")
-        }
     }
 
     /**
-     * docs/09 screen principle 2: the status column is measured against every label a badge can wear, so
-     * `NEEDS_MODEL` — cut to "NEEDS_MODE" at the old fixed width — and the rest always fit whole.
+     * docs/09 screen principle 2 (2026-11-04): a row wears its badge under its title unless it is done — a `Done` on every
+     * finished row said nothing — so every other state, a fill and an organizing pass among them, is shown.
      */
     @Test
-    fun `the status column is measured against every badge the ledger can wear`() {
-        for (language in listOf(StringTable.BASE, StringTable.KOREAN)) {
-            val strings = StringTable.of(language)
-            val labels = ledgerBadgeLabels(strings)
-            assertTrue(strings[Str.BADGE_NEEDS_MODEL] in labels)
-            assertTrue(strings[Str.DRIVE_PENDING] in labels, "NEEDS_AUTH is drawn in words")
-            assertTrue(strings[Str.BADGE_UNKNOWN] in labels)
-            LedgerStates.forEach { (key, badge) ->
-                assertTrue(key.message().ledgerStatus(strings).label in labels, "${badge.code} is not measured")
-            }
-        }
-        // The widest label, plus the badge's padding and border either side (docs/09 "Component measurements": 8 × 4)…
-        assertEquals(104.dp, statusColumn(widest = 86.dp, line = 1.dp))
-        // …up to the cap, past which a word wraps in its badge rather than widening the column.
-        assertEquals(98.dp, statusColumn(widest = 120.dp, line = 1.dp, cap = 80.dp))
+    fun `only a done row wears no badge`() {
+        LedgerStates.values.forEach { badge -> assertEquals(badge.code != "DONE", badge.shown, badge.code) }
+        assertTrue(FillingStatus.shown)
+        assertTrue(OrganizingStatus.shown)
+        assertTrue(UiMessage.Text("a state nobody mapped").ledgerStatus().shown, "Unknown is not shown")
     }
 
     /**

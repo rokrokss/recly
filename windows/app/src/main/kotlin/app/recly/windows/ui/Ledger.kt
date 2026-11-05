@@ -9,7 +9,6 @@ import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.coreMessageDetail
-import app.recly.windows.i18n.message
 import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.ui.component.BadgeTone
@@ -83,17 +82,6 @@ val FillingStatus: LedgerStatus = LedgerStatus("FILLING", BadgeTone.ACCENT, busy
  * — wears `Organizing`, accent, with the loader turning: the detail's `Organizing…` on its row.
  */
 val OrganizingStatus: LedgerStatus = LedgerStatus("ORGANIZING", BadgeTone.ACCENT, busy = true, word = Str.BADGE_ORGANIZING)
-
-/**
- * docs/09 screen principle 2: every label a ledger badge can wear in [strings]' language — each state's word,
- * `Filling in`, `Organizing` and `Unknown` — which is what the status column is measured against, so none of them is
- * ever cut to fit.
- */
-fun ledgerBadgeLabels(strings: Strings): List<String> =
-    (LedgerStates.keys.map { it.message().ledgerStatus(strings) } + FillingStatus.worded(strings) + OrganizingStatus.worded(strings)).flatMap { status ->
-        // Two spaces stand in for the loader a busy badge turns in front of its code — about its 12dp.
-        listOfNotNull(status.label, "  ${status.label}".takeIf { status.busy })
-    } + strings[Str.BADGE_UNKNOWN]
 
 /**
  * The state as a badge, its word in [strings]' language (or its code, with none). Anything the map
