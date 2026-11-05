@@ -108,6 +108,18 @@ cargo build --release                            # the real capture binary, on W
 cd spec && npm ci && npm run validate            # validate the examples against the JSON Schemas
 ```
 
+**Notes extraction bench** (Python, standard library) — scores the decisions, to-dos and open
+questions ChatGPT draws from three synthetic meetings, sent as the app's own code builds them
+(`scripts/notes-eval/README.md`). `make test` compiles its renderer and never runs it; nothing is
+sent without `--send`:
+
+```bash
+python3 -I scripts/notes-eval/test_notes_eval.py              # scorer unit tests
+python3 -I scripts/notes-eval/notes_eval.py render            # the requests, via :core:notesEvalRender
+python3 -I scripts/notes-eval/notes_eval.py run               # dry run: how many calls, where answers go
+python3 -I scripts/notes-eval/notes_eval.py score --answers build/notes-eval/runs/<run-id>
+```
+
 ### App releases
 
 An app release is one GitHub release for every platform, tagged `v<version>-build.<n>` with the

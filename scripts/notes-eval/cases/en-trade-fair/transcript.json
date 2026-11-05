@@ -1,0 +1,59 @@
+{
+ "schema": 1,
+ "recordingId": "01JC7E5V0K3T9Q2W4X6Y8Z0A1C",
+ "track": "mono",
+ "language": "en",
+ "provider": {
+  "name": "synthetic"
+ },
+ "createdAt": "2026-11-05T00:00:00.000Z",
+ "durationSec": 165.6,
+ "speakers": [
+  {
+   "id": "S1",
+   "name": null
+  },
+  {
+   "id": "S2",
+   "name": null
+  },
+  {
+   "id": "S3",
+   "name": null
+  }
+ ],
+ "segments": [
+  {"start": 0.0, "end": 4.6, "speaker": "S1", "text": "Morning, everyone. Did anyone catch the game last night?"},
+  {"start": 5.0, "end": 9.6, "speaker": "S2", "text": "I did. That last-minute goal was unbelievable."},
+  {"start": 10.0, "end": 15.6, "speaker": "S3", "text": "I missed it, I was stuck repainting my kitchen all evening."},
+  {"start": 16.0, "end": 21.6, "speaker": "S1", "text": "Okay, let's get going. Today is the booth for the Berlin trade fair."},
+  {"start": 22.0, "end": 27.6, "speaker": "S1", "text": "First the venue. Last week we agreed to book the small booth in Hall 3."},
+  {"start": 28.0, "end": 32.6, "speaker": "S2", "text": "Right, Hall 3, the twelve square meter one."},
+  {"start": 33.0, "end": 38.6, "speaker": "S3", "text": "The problem is our new demo wall doesn't fit in twelve square meters."},
+  {"start": 39.0, "end": 41.6, "speaker": "S1", "text": "How much bigger do we need?"},
+  {"start": 42.0, "end": 47.6, "speaker": "S3", "text": "Eighteen square meters would work. Hall 5 has one left."},
+  {"start": 48.0, "end": 55.6, "speaker": "S2", "text": "Hall 5 is pricier. The quote is 14,500 euros versus 11,800 for Hall 3."},
+  {"start": 56.0, "end": 61.6, "speaker": "S1", "text": "Okay. Let's drop Hall 3 and go with the eighteen square meter booth in Hall 5."},
+  {"start": 62.0, "end": 64.6, "speaker": "S2", "text": "Fine by me, the budget covers it."},
+  {"start": 65.0, "end": 68.6, "speaker": "S3", "text": "Great, the demo wall fits there."},
+  {"start": 69.0, "end": 71.6, "speaker": "S1", "text": "Raj, can you send the deposit?"},
+  {"start": 72.0, "end": 79.6, "speaker": "S2", "text": "Yes. The deposit is thirty percent, so 4,350 euros. I'll wire it by Friday the 14th."},
+  {"start": 80.0, "end": 85.6, "speaker": "S1", "text": "Registration for exhibitors closes on the 21st, so the 14th gives us a week of slack."},
+  {"start": 86.0, "end": 88.6, "speaker": "S1", "text": "Lena, the booth graphics?"},
+  {"start": 89.0, "end": 95.6, "speaker": "S3", "text": "I'll send the final print files to the printer by Wednesday the 12th."},
+  {"start": 96.0, "end": 102.6, "speaker": "S1", "text": "The printer's contact is orders@printhaus.de, copy me on that email please."},
+  {"start": 103.0, "end": 109.6, "speaker": "S2", "text": "One more thing. Maybe we could also sponsor the evening reception at some point, if there's money left."},
+  {"start": 110.0, "end": 114.6, "speaker": "S1", "text": "Hmm, possibly. Let's not get into that today."},
+  {"start": 115.0, "end": 121.6, "speaker": "S3", "text": "Do we know yet whether the fair provides power outlets at the booth, or do we rent them?"},
+  {"start": 122.0, "end": 125.6, "speaker": "S1", "text": "Good question. Nobody's confirmed that yet."},
+  {"start": 126.0, "end": 128.6, "speaker": "S2", "text": "And who's staffing the booth on day one?"},
+  {"start": 129.0, "end": 135.6, "speaker": "S1", "text": "That's me and Lena on day one. Raj covers day two."},
+  {"start": 136.0, "end": 140.6, "speaker": "S3", "text": "For brochures, the printer suggested five thousand copies."},
+  {"start": 141.0, "end": 146.6, "speaker": "S1", "text": "That's way too many. Last year we brought back half of the 800 we printed."},
+  {"start": 147.0, "end": 149.6, "speaker": "S1", "text": "Let's print 500 this time."},
+  {"start": 150.0, "end": 153.6, "speaker": "S3", "text": "Okay, 500 copies."},
+  {"start": 154.0, "end": 156.6, "speaker": "S1", "text": "Great, that's it. Thanks, all."},
+  {"start": 157.0, "end": 161.6, "speaker": "S2", "text": "Thanks. Oh, and the coffee machine on the third floor is fixed, finally."},
+  {"start": 162.0, "end": 165.6, "speaker": "S3", "text": "Finally! I'll grab one on my way out."}
+ ]
+}

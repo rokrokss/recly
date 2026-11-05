@@ -1,0 +1,52 @@
+{
+ "schema": 1,
+ "recordingId": "01JC7E5V0K3T9Q2W4X6Y8Z0A1D",
+ "track": "mono",
+ "language": "ko-en",
+ "provider": {
+  "name": "synthetic"
+ },
+ "createdAt": "2026-11-05T00:00:00.000Z",
+ "durationSec": 128.6,
+ "speakers": [
+  {
+   "id": "S1",
+   "name": null
+  },
+  {
+   "id": "S2",
+   "name": null
+  },
+  {
+   "id": "S3",
+   "name": null
+  }
+ ],
+ "segments": [
+  {"start": 0.0, "end": 5.6, "speaker": "S1", "text": "Okay, let's start. 오늘은 database migration이랑 hiring 얘기할게요."},
+  {"start": 6.0, "end": 10.6, "speaker": "S2", "text": "Before that, 혹시 어제 회식 사진 누가 갖고 있어요?"},
+  {"start": 11.0, "end": 15.6, "speaker": "S3", "text": "제가 찍었어요, 이따 Slack에 올릴게요."},
+  {"start": 16.0, "end": 22.6, "speaker": "S1", "text": "좋아요. Migration부터. 원래 cutover를 this Saturday, the 8th로 잡았었죠."},
+  {"start": 23.0, "end": 29.6, "speaker": "S2", "text": "Yes, Saturday the 8th. 근데 replica lag 이슈가 아직 안 풀렸어요."},
+  {"start": 30.0, "end": 36.6, "speaker": "S3", "text": "Lag이 peak 때 40초까지 올라가요. 이 상태로 cutover하면 위험합니다."},
+  {"start": 37.0, "end": 43.6, "speaker": "S1", "text": "그럼 cutover는 다음 주 토요일, the 15th로 미루죠. 8일은 취소."},
+  {"start": 44.0, "end": 46.6, "speaker": "S2", "text": "Agreed, the 15th."},
+  {"start": 47.0, "end": 50.6, "speaker": "S3", "text": "네, 15일로 준비할게요."},
+  {"start": 51.0, "end": 54.6, "speaker": "S1", "text": "Sarah, replica lag fix는 언제까지 될까요?"},
+  {"start": 55.0, "end": 60.6, "speaker": "S2", "text": "I'll have the lag fix merged by Wednesday the 12th."},
+  {"start": 61.0, "end": 67.6, "speaker": "S3", "text": "그럼 저는 rollback runbook을 금요일, 14일까지 update할게요."},
+  {"start": 68.0, "end": 72.6, "speaker": "S1", "text": "Hiring으로 넘어갈게요. Senior backend 포지션 budget이 얼마였죠?"},
+  {"start": 73.0, "end": 79.6, "speaker": "S2", "text": "HR에서는 1억 2천까지 된다고 했고, 처음 요청은 1억 5천이었어요."},
+  {"start": 80.0, "end": 83.6, "speaker": "S1", "text": "그럼 offer는 1억 2천 cap으로 가는 걸로 하죠."},
+  {"start": 84.0, "end": 88.6, "speaker": "S3", "text": "OK, 1억 2천 cap으로 recruiter한테 전달할게요."},
+  {"start": 89.0, "end": 94.6, "speaker": "S2", "text": "Maybe we should also think about a referral bonus sometime... 나중에요."},
+  {"start": 95.0, "end": 98.6, "speaker": "S1", "text": "음, 그건 나중에 얘기해 봐요."},
+  {"start": 99.0, "end": 102.6, "speaker": "S3", "text": "그런데 cutover 날 on-call은 누가 서요?"},
+  {"start": 103.0, "end": 105.6, "speaker": "S1", "text": "그건 제가 설게요."},
+  {"start": 106.0, "end": 112.6, "speaker": "S2", "text": "And one open thing: 아직 vendor가 read replica를 하나 더 열어 줄 수 있는지 답을 안 줬어요."},
+  {"start": 113.0, "end": 116.6, "speaker": "S1", "text": "맞아요, 그건 아직 몰라요."},
+  {"start": 117.0, "end": 119.6, "speaker": "S1", "text": "OK, that's it. 수고하셨어요."},
+  {"start": 120.0, "end": 124.6, "speaker": "S2", "text": "Thanks! 점심은 그 새로 생긴 ramen 집 어때요?"},
+  {"start": 125.0, "end": 128.6, "speaker": "S3", "text": "좋아요, ramen 콜."}
+ ]
+}

@@ -94,6 +94,16 @@ tasks.register("assembleXCFramework") {
     dependsOn("assembleReclyCoreReleaseXCFramework")
 }
 
+// scripts/notes-eval: renders the notes bench's requests with the app's own prompt code — a main() in jvmTest that
+// jvmTest compiles and never runs. scripts/notes-eval/notes_eval.py render runs it.
+tasks.register<JavaExec>("notesEvalRender") {
+    description = "Renders the scripts/notes-eval requests (args: <cases> <out> [<answers>])."
+    val jvmCompilations = kotlin.jvm().compilations
+    val test = jvmCompilations.getByName("test")
+    classpath = files(test.output.allOutputs, jvmCompilations.getByName("main").output.allOutputs, test.runtimeDependencyFiles ?: files())
+    mainClass.set("recly.core.notes.NotesEvalKt")
+}
+
 sqldelight {
     databases {
         create("RecDatabase") {

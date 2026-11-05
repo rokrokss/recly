@@ -1,0 +1,9 @@
+{"summary": "The team planned its booth for the Berlin trade fair. The booth moved from the small Hall 3 space to an eighteen square meter booth in Hall 5 so the new demo wall fits. Raj will wire the deposit, Lena will send the print files, and 500 brochures will be printed. Whether the fair provides power outlets is still open.", "items": [
+ {"kind": "decision", "text": "Book the eighteen square meter booth in Hall 5 instead of the small Hall 3 booth.", "owner": null, "due": null, "at": "00:00:56", "quote": "Let's drop Hall 3 and go with the eighteen square meter booth in Hall 5."},
+ {"kind": "decision", "text": "Lena and the host staff the booth on day one; Raj covers day two.", "owner": null, "due": null, "at": "00:02:09", "quote": "That's me and Lena on day one. Raj covers day two."},
+ {"kind": "decision", "text": "Print 500 brochures this time.", "owner": null, "due": null, "at": "00:02:27", "quote": "Let's print 500 this time."},
+ {"kind": "todo", "text": "Wire the thirty percent deposit of 4,350 euros.", "owner": "S2", "due": "Friday the 14th", "at": "00:01:12", "quote": "The deposit is thirty percent, so 4,350 euros. I'll wire it by Friday the 14th."},
+ {"kind": "todo", "text": "Send the final print files to the printer at [email#1], copying the host.", "owner": "S3", "due": "Wednesday the 12th", "at": "00:01:29", "quote": "I'll send the final print files to the printer by Wednesday the 12th."},
+ {"kind": "question", "text": "Does the fair provide power outlets at the booth, or do they have to be rented?", "owner": null, "due": null, "at": "00:01:55", "quote": "Do we know yet whether the fair provides power outlets at the booth, or do we rent them?"},
+ {"kind": "point", "text": "The Hall 5 booth is quoted at 14,500 euros against 11,800 for Hall 3.", "owner": null, "due": null, "at": "00:00:48", "quote": "The quote is 14,500 euros versus 11,800 for Hall 3."}
+]}

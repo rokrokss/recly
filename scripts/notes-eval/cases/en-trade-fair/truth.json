@@ -1,0 +1,63 @@
+{
+ "about": "English trade-fair planning: the booth moves from Hall 3 to Hall 5 (old value); three amounts (14,500, 11,800 and a 4,350 deposit) and three dates (12th, 14th, 21st) sit close together; 5,000 and 800 brochures are said before 500 is settled; sponsoring the reception is only floated (hedge); who staffs day one is asked and answered at once; sports and coffee-machine talk; an e-mail address the request hides.",
+ "appLocale": "en-US",
+ "items": [
+  {
+   "id": "booth-hall",
+   "kind": "decision",
+   "topic": [["booth", "hall", "venue", "stand"]],
+   "value": ["hall5", "18squaremeter", "eighteensquaremeter", "18m2", "18sqm"],
+   "old": ["hall3", "12squaremeter", "twelvesquaremeter", "12m2", "12sqm"],
+   "at": ["00:00:56", "00:01:02", "00:01:05"],
+   "oldAt": ["00:00:22", "00:00:28"]
+  },
+  {
+   "id": "staffing",
+   "kind": "decision",
+   "kinds": ["decision", "todo"],
+   "topic": [["staff", "day one", "day two", "covers", "cover"]],
+   "at": ["00:02:09"]
+  },
+  {
+   "id": "brochures",
+   "kind": "decision",
+   "topic": [["brochure", "copies", "print run"]],
+   "value": ["500"],
+   "wrong": ["5000", "fivethousand", "800"],
+   "at": ["00:02:27", "00:02:30"]
+  },
+  {
+   "id": "deposit",
+   "kind": "todo",
+   "topic": [["deposit", "wire", "payment"]],
+   "owner": "S2",
+   "value": ["4350"],
+   "valueRequired": false,
+   "wrong": ["14500", "11800", "3540"],
+   "due": ["14th", "14", "friday"],
+   "wrongDue": ["21st", "21", "12th", "12"],
+   "at": ["00:01:12"]
+  },
+  {
+   "id": "print-files",
+   "kind": "todo",
+   "topic": [["print file", "graphics", "printer", "artwork"]],
+   "owner": "S3",
+   "due": ["12th", "12", "wednesday"],
+   "wrongDue": ["14th", "14", "21st", "21"],
+   "at": ["00:01:29", "00:01:36"]
+  },
+  {
+   "id": "power-outlets",
+   "kind": "question",
+   "topic": [["power", "outlet", "electric", "socket"]],
+   "at": ["00:01:55", "00:02:02"]
+  }
+ ],
+ "traps": [
+  {"id": "reception", "type": "hedge", "topic": [["reception", "sponsor"]], "at": ["00:01:43", "00:01:50"]},
+  {"id": "who-staffs", "type": "answered", "topic": [["staff"], ["who"]], "at": ["00:02:06"]},
+  {"id": "game", "type": "smalltalk", "topic": [["game", "goal", "kitchen", "repaint"]], "at": ["00:00:00", "00:00:05", "00:00:10"]},
+  {"id": "coffee", "type": "smalltalk", "topic": [["coffee"]], "at": ["00:02:37", "00:02:42"]}
+ ]
+}
