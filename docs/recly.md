@@ -1961,6 +1961,14 @@ Drive write, regardless of the provider.
 The default model names are updated to each provider's current GA model. Since the user can
 change `model`, **the core does not validate the name.**
 
+**OpenAI's two defaults stop working on 2027-02-26.** OpenAI's deprecations page (announced 2026-08-26) shuts down `whisper-1`,
+`gpt-4o-transcribe`, `gpt-4o-mini-transcribe` and `gpt-4o-transcribe-diarize` that day and names `gpt-transcribe` as the replacement.
+`gpt-transcribe` answers only `json` and `text`: in a real call on 2026-11-05, `verbose_json`, `diarized_json`, `srt` and `vtt` were each
+rejected with `400 unsupported_value`, and `stream=true` sent text deltas with no times. As a default it would turn a recording sent as
+one file into a single segment with no speaker, so the defaults stay as they are (2026-11-05). In January 2027 we look again for an
+OpenAI model that diarizes; without one, the last release before the shutdown makes `gpt-transcribe` the default and stops counting
+`openai` as diarizing. A model the user set explicitly is not replaced (§5 "Fixed processing settings").
+
 #### Length · size limits
 
 A one-hour meeting is roughly 14 MB at 32 kbps AAC. Still, every provider has a cap, and going over it gets a 4xx rejection
