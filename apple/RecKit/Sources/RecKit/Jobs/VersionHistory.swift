@@ -92,16 +92,20 @@ struct VersionHistoryPanel: View {
 
 extension TranscriptMatch {
     /// docs/09 "Transcript reader": where the words of [segments] are in the groups — the tint of an answer's changes
-    /// (docs/09 "Ask") — in UTF-16 units, as the groups join their segments' trimmed words with a space.
+    /// (docs/09 "Ask") — in UTF-16 units, as the groups join their segments' trimmed words (`TranscriptGroup.separator`).
     static func segments(_ segments: Set<Int>, in groups: [TranscriptGroup], of transcript: Transcript) -> [TranscriptMatch] {
         guard !segments.isEmpty else { return [] }
         return groups.flatMap { group -> [TranscriptMatch] in
             var offset = 0
+            var previous: String?
             var found: [TranscriptMatch] = []
             for index in group.segments where transcript.segments.indices.contains(index) {
-                let length = transcript.segments[index].text.trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
+                let text = transcript.segments[index].text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let previous { offset += TranscriptGroup.separator(previous, text).utf16.count }
+                let length = text.utf16.count
                 if segments.contains(index) { found.append(TranscriptMatch(group: group.id, offset: offset, length: length)) }
-                offset += length + 1
+                offset += length
+                previous = text
             }
             return found
         }

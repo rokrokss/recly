@@ -35,13 +35,19 @@ public struct TranscriptGroup: Identifiable, Equatable, Sendable {
                 speaker = segment.speaker
                 start = max(0, segment.start)
             } else {
-                words += " "
+                words += separator(words, text)
             }
             words += text
             indices.append(index)
         }
         flush()
         return groups
+    }
+
+    /// What goes between two segments' words in a group — the core's rule (docs/09 "Transcript reader"): nothing
+    /// between Japanese or Chinese characters, a space elsewhere. Only the edge characters cross into the core.
+    static func separator(_ before: String, _ after: String) -> String {
+        TranscriptDocument.companion.separator(before: String(before.suffix(1)), after: String(after.prefix(1)))
     }
 
     /// The group playing at [sec]: the last one that has started.

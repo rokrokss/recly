@@ -39,6 +39,19 @@ final class TranscriptDraftTests: XCTestCase {
         XCTAssertEqual(TranscriptMatch.segments([1], in: groups, of: transcript), [], "a segment that says nothing has no words to tint")
     }
 
+    /// docs/09 "Transcript reader": a group joins Japanese and Chinese segments without a space, as the core's
+    /// blocks and the transcript file do, so a phrase across two segments is found and a tint stays on its words.
+    func testJapaneseSegmentsRunOnWithoutASpaceAndTheTintsFollow() {
+        let transcript = transcript(["S1", "S1", "S1", "S1"], texts: ["今日は", " 会議です。 ", "Recly", "を使います"])
+        let groups = TranscriptGroup.make(transcript)
+        XCTAssertEqual(groups.map(\.text), ["今日は会議です。 Recly を使います"])
+        XCTAssertEqual(groups.map(\.text), TranscriptDocument(transcript: transcript).blocks.map(\.text))
+        let marks = TranscriptMatch.segments([1, 2, 3], in: groups, of: transcript)
+        XCTAssertEqual(marks.map { (groups[$0.group].text as NSString).substring(with: NSRange(location: $0.offset, length: $0.length)) },
+                       ["会議です。", "Recly", "を使います"])
+        XCTAssertEqual(TranscriptMatch.all("は会議", in: groups).count, 1)
+    }
+
     func testNewSpeakersOnAnUnidentifiedTranscriptBecomeTheCoresOwn() throws {
         let original = transcript(["", "", ""], texts: ["One", "Two", "Three"])
         let draft = TranscriptDraft(original)

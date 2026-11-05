@@ -2114,7 +2114,7 @@ screen; kept regardless of the part deletion rules).
 | File | Contents |
 |---|---|
 | `{base}.transcript.json` | The schema below. The canonical copy for machines |
-| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text` — or `[HH:MM:SS] Minsu: text` once the user named that speaker (2026-10-07, §8 "Editing"); a segment without a speaker has no label. A line break when the speaker changes or a segment passes 60 seconds. Within a line, segments are joined by a space — by nothing where both sides of the join are Han, Kana or full-width punctuation, as Japanese and Chinese are written; the space stays for Hangul, Thai and Latin and at a mixed join such as Han next to Latin or digits (2026-11-05, `WritingSystem.separator`; files written before stay as they are until the transcript is written again) |
+| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text` — or `[HH:MM:SS] Minsu: text` once the user named that speaker (2026-10-07, §8 "Editing"); a segment without a speaker has no label. A line break when the speaker changes or a segment passes 60 seconds. Within a line, segments are joined by a space — by nothing where both sides of the join are Han, Kana or full-width punctuation, as Japanese and Chinese are written; the space stays for Hangul, Thai and Latin and at a mixed join such as Han next to Latin or digits (2026-11-05, `WritingSystem.separator`; files written before stay as they are until the transcript is written again; the reader's paragraphs and the list's first words join the same way, §9 "Transcript reader") |
 | `{base}.transcript.md` | **Local folder only** (§3 "Storage location"), for notes apps such as Obsidian that open only Markdown (2026-10-03). Front matter `title` (only when there is one; a JSON string, which YAML reads as a double-quoted scalar) · `recordingId` · `startedAt`, then the lines of `.txt`, each its own paragraph. A rename and an edit rewrite it |
 
 Drive writes follow the same idempotency rule as `drive.upload` (same name + same md5 is skipped; otherwise it is **overwritten** — after a rerun the latest
@@ -3016,7 +3016,10 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      without speakers shows no badge, and there is no legend: speakers are told apart by label only, with **no speaker
      colours** — not on the waveform bars, not as tinted rows (2026-10-02 user decision, restated 2026-10-07). While a re-transcription runs, the old text
      stays under a one-line status, the square loader and `Transcribing again…` (external) or `Transcribing on this device` (local), until the new
-     transcript replaces it (the reading position goes back to the top only if the user had not scrolled).
+     transcript replaces it (the reading position goes back to the top only if the user had not scrolled). A group's segments
+     run on as the transcript file joins them (§8 "Result files"): nothing between Han, Kana or full-width punctuation, a space
+     elsewhere — so the find bar finds a Japanese or Chinese phrase that crosses two segments; the list's first words
+     (`core.previews`) join the same way (2026-11-05, every shell; `TranscriptDocument.separator` for a reader that builds its own groups).
    - **After an answer's changes** (2026-11-04, §9 "Ask"). The words of each segment it changed are tinted the way a search match is —
      the accent at 16 % behind them (`TranscriptDocument.segmentRanges` where the reader draws the core's blocks, Android and Windows; the
      Apple reader finds them in its own paragraphs, `TranscriptMatch.segments`) — for as long as the answer is on screen. No other mark.

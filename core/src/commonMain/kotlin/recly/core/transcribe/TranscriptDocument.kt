@@ -32,7 +32,7 @@ class TranscriptDocument(transcript: Transcript) {
             if (words.isEmpty()) {
                 speaker = segment.speaker
                 start = segment.start.coerceAtLeast(0.0)
-            } else words.append(' ')
+            } else words.append(WritingSystem.separator(words, text))
             placed[index] = BlockRange(size, words.length, text.length)
             words.append(text)
         }
@@ -54,5 +54,15 @@ class TranscriptDocument(transcript: Transcript) {
         return if (term.isEmpty()) blocks else blocks.filter {
             it.text.contains(term, ignoreCase = true) || it.speaker.contains(term, ignoreCase = true)
         }
+    }
+
+    companion object {
+        /**
+         * docs/09 "Transcript reader": what goes between the words of two segments in one paragraph, for a reader that
+         * builds its own paragraphs — as the transcript file joins them (docs/08 "Result files"): nothing where both
+         * sides are Han, Kana or full-width punctuation, a space everywhere else. Only the last character of [before]
+         * and the first of [after] count.
+         */
+        fun separator(before: String, after: String): String = WritingSystem.separator(before, after)
     }
 }

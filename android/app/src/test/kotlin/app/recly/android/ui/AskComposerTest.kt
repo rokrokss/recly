@@ -148,4 +148,21 @@ class AskComposerTest {
         // A segment the transcript no longer has tints nothing.
         assertEquals(emptyList(), segmentTints(transcript, listOf(9)))
     }
+
+    /** docs/09 "Transcript reader": Japanese and Chinese segments run on without a space, and the tints follow them. */
+    @Test
+    fun `the groups join Japanese without a space and the tints still fall on each segment`() {
+        val japanese = transcript.copy(language = "ja", segments = listOf(
+            TranscriptSegment(0.0, 1.0, "S1", "今日は"),
+            TranscriptSegment(1.0, 2.0, "S1", " 会議です。 "),
+            TranscriptSegment(2.0, 3.0, "S1", "Recly"),
+            TranscriptSegment(3.0, 4.0, "S1", "を使います"),
+        ))
+        val groups = readerGroups(japanese)
+        assertEquals(listOf("今日は会議です。 Recly を使います"), groups.map { it.text })
+        val tints = segmentTints(japanese, listOf(1, 2, 3))
+        assertEquals(listOf("会議です。", "Recly", "を使います"),
+            tints.map { groups[it.group].text.substring(it.offset, it.offset + it.length) })
+        assertEquals(1, findMatches(groups, "は会議").size)
+    }
 }

@@ -52,4 +52,25 @@ class TranscriptDocumentTest {
         )
         assertEquals("world", document.blocks[0].text.substring(6, 11))
     }
+
+    /** docs/09 "Transcript reader": a paragraph's segments join as the transcript file joins them (docs/08 "Result files"). */
+    @Test fun japaneseAndChineseSegmentsRunOnWithoutASpace() {
+        val document = TranscriptDocument(transcript(listOf(
+            TranscriptSegment(0.0, 1.0, "S1", "今日は"),
+            TranscriptSegment(1.0, 2.0, "S1", "会議です。"),
+            TranscriptSegment(2.0, 3.0, "S1", "Recly"),
+            TranscriptSegment(3.0, 4.0, "S1", "を使います"),
+            TranscriptSegment(4.0, 5.0, "S2", "我们"),
+            TranscriptSegment(5.0, 6.0, "S2", "开会"),
+            TranscriptSegment(6.0, 7.0, "S3", "오늘"),
+            TranscriptSegment(7.0, 8.0, "S3", "회의"),
+        )))
+        assertEquals(listOf("今日は会議です。 Recly を使います", "我们开会", "오늘 회의"), document.blocks.map { it.text })
+        assertEquals(
+            listOf(BlockRange(0, 3, 5), BlockRange(0, 9, 5), BlockRange(0, 15, 5), BlockRange(1, 2, 2)),
+            document.segmentRanges(listOf(1, 2, 3, 5)),
+        )
+        assertEquals(0, document.search("は会議").single().index, "a phrase across two segments is found")
+        assertEquals(1, document.search("们开").single().index)
+    }
 }

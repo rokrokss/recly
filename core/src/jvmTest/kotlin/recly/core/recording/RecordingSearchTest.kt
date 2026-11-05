@@ -242,6 +242,17 @@ class RecordingSearchTest {
     }
 
     @Test
+    fun `a preview runs Japanese and Chinese segments on without a space`() = runBlocking {
+        val meta = f.recordAndRun()
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "今日は会議"))
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(1, "です。"))
+        assertEquals("今日は会議です。", f.core.previews(listOf(meta.recordingId))[meta.recordingId])
+
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(1, "Recly"))
+        assertEquals("今日は会議 Recly", f.core.previews(listOf(meta.recordingId))[meta.recordingId])
+    }
+
+    @Test
     fun `a long preview is cut at a word, or at 120 characters when there is no word to cut at`() = runBlocking {
         val meta = f.recordAndRun()
         suspend fun preview() = f.core.previews(listOf(meta.recordingId)).getValue(meta.recordingId)

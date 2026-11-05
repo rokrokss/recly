@@ -57,6 +57,7 @@ internal data class ReaderGroup(val index: Int, val start: Double, val end: Doub
 internal fun readerGroups(transcript: Transcript): List<ReaderGroup> = buildList {
     var first = -1
     var last = -1
+    var previous = ""
     val words = StringBuilder()
     fun flush() {
         if (words.isEmpty()) return
@@ -71,8 +72,9 @@ internal fun readerGroups(transcript: Transcript): List<ReaderGroup> = buildList
             val head = transcript.segments[first]
             if (head.speaker != segment.speaker || segment.end - head.start.coerceAtLeast(0.0) > 60 || words.length + text.length > 1200) flush()
         }
-        if (words.isEmpty()) first = index else words.append(' ')
+        if (words.isEmpty()) first = index else words.append(TranscriptDocument.separator(previous, text))
         last = index
+        previous = text
         words.append(text)
     }
     flush()

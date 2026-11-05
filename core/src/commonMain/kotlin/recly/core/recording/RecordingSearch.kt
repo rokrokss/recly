@@ -10,6 +10,7 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
 import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
+import recly.core.transcribe.WritingSystem
 
 /** Where a match is in a piece of text: [length] characters from [offset]. */
 data class SearchRange(val offset: Int, val length: Int)
@@ -90,9 +91,10 @@ class RecordingSearch internal constructor(
 
     /**
      * The first words of each of [recordingIds] whose transcript is held on this device, for the rows of a
-     * list: the segments' words from the start, one space between them, cut to [SNIPPET_CHARS] — at a word
-     * when there is one in the second half — and ended with `…`. A recording with no transcript here, or
-     * only blank segments, is left out. Read through the same cache as [search], off the caller's thread.
+     * list: the segments' words from the start, joined as the transcript file joins them
+     * (docs/08 "Result files"), cut to [SNIPPET_CHARS] — at a word when there is one in the second half — and
+     * ended with `…`. A recording with no transcript here, or only blank segments, is left out. Read through the
+     * same cache as [search], off the caller's thread.
      */
     suspend fun previews(recordingIds: List<String>): Map<String, String> {
         if (recordingIds.isEmpty()) return emptyMap()
@@ -179,7 +181,7 @@ class RecordingSearch internal constructor(
         for (segment in segments) {
             if (words.length > SNIPPET_CHARS) break
             // A segment's text is trimmed and never blank, so the words neither start nor end with a space.
-            if (words.isNotEmpty()) words.append(' ')
+            if (words.isNotEmpty()) words.append(WritingSystem.separator(words, segment.text))
             for (c in segment.text) {
                 if (!c.isWhitespace()) words.append(c) else if (words.last() != ' ') words.append(' ')
             }
