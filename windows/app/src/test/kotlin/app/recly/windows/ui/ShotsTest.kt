@@ -378,7 +378,7 @@ class ShotsTest {
         model.saveMemo(live, "Agenda: the release date\nMina, Joon")
         model.observeMemo(live).first { it.isNotEmpty() }
         shot("popup-recording-memo-en", 520, 560, false) { TrayPopup(model, strings) {} }
-        // Its row clicked: the field open in place, with Done.
+        // Its row clicked: the field open under it, which another click on the row folds.
         shot("popup-recording-memo-open-en", 520, 560, false, clicks = listOf(TRAY_MEMO)) { TrayPopup(model, strings) {} }
         // 2026-10-15: More over the take still being written — every item waits, Delete too, each saying why.
         until { model.recents.any { it.id !in before } }

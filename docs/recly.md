@@ -3184,7 +3184,10 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   the recording's own lines while it records, there even when the memo is empty, its first line that says anything muted at its end. On
   the phones it opens the same field, focused, and its footnote under the title `Notes` — a bottom sheet on iPhone, as its other sheets there, a
   dialog on Android — with a primary `Done` that only closes it, the field having saved as it went; the popover and the tray,
-  too small for a dialog over them, open the field in the row's place, focused, and `Done` folds it again. The watches have none: a memo is typed, and a watch's recording gets one on the phone or computer once it is there (More →
+  too small for a dialog over them, open the field under the row, focused, and a click on the row folds it again, with no `Done`: the
+  field saves as it goes, and Stop or closing the popover keeps what was typed (2026-11-05, user decision). While the field is open, the
+  row is only its name, without the box or the memo's first line. A click anywhere else in the popover or the tray, or the popover
+  closing, takes the field's focus, so its box is not left blue (2026-11-05, user); the tray's popup is drawn anew when it opens. The watches have none: a memo is typed, and a watch's recording gets one on the phone or computer once it is there (More →
   `Notes`, §8 "Memo").
 - **Ask** (2026-10-10; 2026-11-04, user decision: one composer for questions and changes, §8 "Ask"). At the foot of the detail, on
   every shell — under the transcript or the summary on the desktops, over the player on the phones — a hairline, then on the surface,

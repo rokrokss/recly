@@ -224,6 +224,60 @@ class TrayPopupTest {
         assertTrue(statusLineShown(Str.RECORDING_FAILED.message(), emptyList()))
     }
 
+    /**
+     * 2026-11-05 (user): the memo's field gives up its focus on a click where the popup has nothing to press, as on the
+     * Mac, so its box does not stay blue; a click in the field itself keeps it, and the field stays open.
+     */
+    @Test
+    fun `a click elsewhere in the popup takes the focus from the memo's field`() = runBlocking {
+        val directory = Files.createTempDirectory("recly-tray-memo-").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val model = ShellModel(scope = scope, localization = Localization(
+            FakeSettings(consentReminder = false, language = AppLanguage.ENGLISH),
+        ) { StringTable.BASE })
+        suspend fun until(ready: () -> Boolean) = withTimeout(60_000) {
+            while (!ready()) delay(20)
+        }
+        try {
+            model.load(directory.absolutePath.toPath(), FakeHelperCommand.command("parts=1", "sec=2.0", "write"))
+            model.start()
+            until { model.recording && model.liveRecordingId != null }
+            val strings = model.localization.current
+            val scene = ImageComposeScene(520, 560, Density(1f)) {
+                ReclyDesktopTheme(dark = false, highContrast = false) { TrayPopup(model, strings) {} }
+            }
+            try {
+                repeat(3) { scene.render() }
+                fun click(at: androidx.compose.ui.geometry.Offset) {
+                    scene.sendPointerEvent(PointerEventType.Move, at)
+                    scene.sendPointerEvent(PointerEventType.Press, at, buttons = PointerButtons(isPrimaryPressed = true), button = PointerButton.Primary)
+                    scene.sendPointerEvent(PointerEventType.Release, at, buttons = PointerButtons(), button = PointerButton.Primary)
+                    repeat(3) { scene.render() }
+                }
+                fun says(node: SemanticsNode, text: String) = node.config.getOrNull(SemanticsProperties.Text).orEmpty().any { it.text == text }
+                fun field() = scene.nodes().singleOrNull { SemanticsProperties.EditableText in it.config }
+                fun focused() = field()?.config?.getOrNull(SemanticsProperties.Focused) == true
+
+                click(scene.nodes().single { it.config.getOrNull(SemanticsProperties.Role) == Role.Button && says(it, strings[Str.MEMO_TITLE]) }.boundsInRoot.center)
+                assertTrue(focused(), "the memo's field opens focused")
+                click(field()!!.boundsInRoot.center)
+                assertTrue(focused(), "a click in the field keeps its focus")
+
+                click(scene.nodes().first { says(it, app.recly.windows.APP_NAME) }.boundsInRoot.center)
+                assertTrue(field() != null, "the field stays open")
+                assertFalse(focused(), "a click on the header left the field focused")
+            } finally {
+                scene.close()
+            }
+            model.stop()
+            until { !model.recording }
+        } finally {
+            model.shutdown()
+            scope.coroutineContext[Job]?.cancelAndJoin()
+            directory.deleteRecursively()
+        }
+    }
+
     /** Every node of the scene's merged tree — one per thing a screen reader stops on. */
     @OptIn(ExperimentalComposeUiApi::class)
     private fun ImageComposeScene.nodes(): List<SemanticsNode> =

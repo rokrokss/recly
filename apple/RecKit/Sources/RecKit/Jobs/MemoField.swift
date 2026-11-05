@@ -94,44 +94,53 @@ public struct MemoField: View {
 }
 
 /// docs/08 "Memo": the recording screens' `Memo` row — always there while recording, empty or not — with the memo's
-/// first line in the muted ink beside its name. A tap opens the memo's field.
+/// first line in the muted ink beside its name. A tap opens the memo's field. [open] is the Mac popover's: the field is
+/// open under the row, so the row is only its name, without the box, and a tap folds the field again (docs/09 "AI view").
 public struct MemoRow: View {
     private let memo: String
+    private let open: Bool
     private let action: () -> Void
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
 
-    public init(memo: String, action: @escaping () -> Void) {
+    public init(memo: String, open: Bool = false, action: @escaping () -> Void) {
         self.memo = memo
+        self.open = open
         self.action = action
     }
 
     public var body: some View {
         Button(action: action) {
-            HStack(spacing: Space.sm) {
-                Text(verbatim: RecKitStrings.localized("Notes"))
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(blueprint.palette.text)
-                    .fixedSize()
-                if let line = MemoText.firstLine(memo) {
-                    Text(verbatim: line)
-                        .font(blueprint.fonts.bodySmall)
-                        .foregroundStyle(blueprint.palette.textMuted)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-                Spacer(minLength: 0)
+            if open {
+                label.contentShape(Rectangle())
+            } else {
+                label.fieldBox(focused: false, inset: EdgeInsets()).contentShape(Rectangle())
             }
-            .padding(FieldInset.field)
-            .frame(minHeight: minTouch)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .fieldBox(focused: false, inset: EdgeInsets())
-            .contentShape(Rectangle())
         }
         .buttonStyle(BlueprintPressStyle())
         .focusEffectDisabled()
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("memo-row")
+    }
+
+    private var label: some View {
+        HStack(spacing: Space.sm) {
+            Text(verbatim: RecKitStrings.localized("Notes"))
+                .font(blueprint.fonts.bodySmall)
+                .foregroundStyle(blueprint.palette.text)
+                .fixedSize()
+            if !open, let line = MemoText.firstLine(memo) {
+                Text(verbatim: line)
+                    .font(blueprint.fonts.bodySmall)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(FieldInset.field)
+        .frame(minHeight: minTouch)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

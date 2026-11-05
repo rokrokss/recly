@@ -117,19 +117,14 @@ struct MenuPopover: View {
             }
             .padding(.horizontal, Space.m)
             .padding(.top, Space.s)
-            // docs/08 "Memo": under the input lines while recording, empty or not; a click opens the field in its place,
-            // and Done folds it back. The field saves as it goes, so a popover closed by Escape loses nothing.
+            // docs/08 "Memo" · docs/09 "AI view": under the input lines while recording, empty or not; a click opens the field under the row,
+            // and another folds it back — no Done, as the field saves as it goes, so a popover closed by Escape loses nothing.
             if model.isRecording {
-                Group {
+                VStack(spacing: Space.s) {
+                    MemoRow(memo: model.liveMemo, open: editingMemo) { editingMemo.toggle() }
                     if editingMemo {
-                        VStack(alignment: .trailing, spacing: Space.s) {
-                            MemoField(memo: model.liveMemo, agreed: model.notesAgreed, lines: 4...8, focused: $memoFocused, save: model.saveLiveMemo)
-                                .onAppear { memoFocused = true }
-                            BlueprintButton(RecKitStrings.localized("Done"), tone: .primary) { editingMemo = false }
-                                .accessibilityIdentifier("memo-done")
-                        }
-                    } else {
-                        MemoRow(memo: model.liveMemo) { editingMemo = true }
+                        MemoField(memo: model.liveMemo, agreed: model.notesAgreed, lines: 4...8, focused: $memoFocused, save: model.saveLiveMemo)
+                            .onAppear { memoFocused = true }
                     }
                 }
                 .padding(.horizontal, Space.m)

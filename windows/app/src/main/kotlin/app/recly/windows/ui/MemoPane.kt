@@ -29,7 +29,6 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
-import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.component.pressCursor
@@ -139,7 +138,7 @@ internal fun MemoPane(model: ShellModel, detail: RecordingDetail, focus: Boolean
 /**
  * docs/08 "Memo" · docs/09 screen principle 6: the tray's `Memo` row while recording — there even when the memo is empty,
  * since it is where one is written. Its first line is beside the label; a click opens the field in place under it, and
- * Done folds it again.
+ * another folds it again — no Done, since the field saves as it goes (docs/09 "AI view").
  */
 @Composable
 internal fun TrayMemo(model: ShellModel, recordingId: String, strings: Strings) {
@@ -186,11 +185,6 @@ internal fun TrayMemo(model: ShellModel, recordingId: String, strings: Strings) 
                 minLines = TRAY_MEMO_LINES,
                 maxLines = TRAY_MEMO_LINES,
                 focusRequester = focus,
-            )
-            BlueprintButton(
-                strings[Str.EDIT_DONE],
-                { open = false },
-                modifier = Modifier.align(Alignment.End),
             )
         }
     }

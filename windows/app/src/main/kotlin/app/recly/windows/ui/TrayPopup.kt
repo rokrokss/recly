@@ -1,6 +1,7 @@
 package app.recly.windows.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -77,8 +80,11 @@ fun TrayPopup(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
     // docs/03 "Recordings from other devices": the ledger has just come on screen, so what the other devices have
     // uploaded since is asked for now rather than at the next job pass ([ShellModel.pullRemote]).
     LaunchedEffect(Unit) { model.pullRemote() }
+    // docs/09 "AI view" (2026-11-05, user): a click anywhere the popup has nothing to press — the header, the waveform, the
+    // page — takes the focus from the memo's field, as on the Mac. Closing the popup takes it already: it is drawn anew.
+    val focus = LocalFocusManager.current
 
-    Column(Modifier.fillMaxSize().dotGrid(palette)) {
+    Column(Modifier.fillMaxSize().dotGrid(palette).pointerInput(Unit) { detectTapGestures { focus.clearFocus() } }) {
         Header(model, strings)
         HairLine()
         Ledger(model, strings, Modifier.weight(1f).fillMaxWidth())

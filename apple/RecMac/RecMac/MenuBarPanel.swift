@@ -256,6 +256,28 @@ final class MenuBarPanel {
     private final class Panel: NSPanel {
         override var canBecomeKey: Bool { true }
         override var canBecomeMain: Bool { false }
+
+        /// docs/09 "AI view" (2026-11-05, user): the memo's field gives up its focus on a click anywhere else in the popover
+        /// and when the popover closes. A text view keeps it otherwise, and its box stayed blue over a popover opened again.
+        /// Only a text view of its own — the memo's — and not a field's editor, which the settings' fields keep as they were.
+        override func sendEvent(_ event: NSEvent) {
+            if event.type == .leftMouseDown, let editor = memoEditor {
+                let area = editor.enclosingScrollView ?? editor
+                // The field's box around the text view, its padding included, is still the field.
+                let box = area.bounds.insetBy(dx: -Space.sm, dy: -Space.sm)
+                if !box.contains(area.convert(event.locationInWindow, from: nil)) { makeFirstResponder(nil) }
+            }
+            super.sendEvent(event)
+        }
+
+        override func orderOut(_ sender: Any?) {
+            if memoEditor != nil { makeFirstResponder(nil) }
+            super.orderOut(sender)
+        }
+
+        private var memoEditor: NSTextView? {
+            (firstResponder as? NSTextView).flatMap { $0.isFieldEditor ? nil : $0 }
+        }
     }
 
     /// The hosting view, saying when the popover's ideal size has changed — which is the one thing
