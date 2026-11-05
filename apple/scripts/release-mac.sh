@@ -9,7 +9,8 @@
 #
 # Notarization is deliberately *not* part of a plain run. It uploads the build to Apple under the
 # user's own account, which is not a thing a script should do because it was executed; the steps are
-# here and are run by `NOTARIZE=1 NOTARY_PROFILE=<keychain profile>`. Sparkle is v1.1 (ADR/docs/12).
+# here and are run by `NOTARIZE=1 NOTARY_PROFILE=<keychain profile>`. The installed apps update from this same DMG through
+# the signed feed `scripts/desktop-update.swift` writes (docs/12 "Updates").
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

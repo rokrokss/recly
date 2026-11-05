@@ -79,6 +79,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 language: AppLanguage.shared,
                 theme: AppTheme.shared
             )
+            // docs/12 "Updates": the first automatic check waits a little, so it never competes with opening the core.
+            DesktopUpdater.shared?.start()
         }
     }
 

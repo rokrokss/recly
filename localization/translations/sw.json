@@ -586,5 +586,22 @@
   "Transcript {0}": "Nakala {0}",
   "Summary {0}": "Muhtasari {0}",
   "Changed: {0}": "Vilivyobadilika: {0}",
-  "Could not undo": "Imeshindwa kutendua"
+  "Could not undo": "Imeshindwa kutendua",
+  "Updates": "Masasisho",
+  "Check for updates automatically": "Angalia masasisho kiotomatiki",
+  "At launch and every six hours.": "Inapofunguliwa na kila baada ya saa sita.",
+  "Check now": "Angalia sasa",
+  "Checking…": "Inaangalia…",
+  "Restart and install": "Anzisha upya na usakinishe",
+  "Installing…": "Inasakinisha…",
+  "Recly is up to date.": "Recly imesasishwa.",
+  "Recly {0} is available.": "Recly {0} inapatikana.",
+  "You can install it once the recording is saved.": "Unaweza kuisakinisha baada ya rekodi kuhifadhiwa.",
+  "Could not check for updates.": "Imeshindwa kuangalia masasisho.",
+  "Could not download the update.": "Imeshindwa kupakua sasisho.",
+  "The update's signature did not match, so it was not installed.": "Sahihi ya sasisho haikulingana, kwa hivyo halikusakinishwa.",
+  "Could not install the update.": "Imeshindwa kusakinisha sasisho.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly haiwezi kujibadilisha mahali ilipo. Pakua toleo jipya kutoka ukurasa wa toleo.",
+  "Open release page": "Fungua ukurasa wa toleo",
+  "This update needs a newer macOS.": "Sasisho hili linahitaji macOS mpya zaidi."
 }

@@ -586,5 +586,22 @@
   "Transcript {0}": "رونوشت {0}",
   "Summary {0}": "خلاصه {0}",
   "Changed: {0}": "تغییرات: {0}",
-  "Could not undo": "واگرد ممکن نشد"
+  "Could not undo": "واگرد ممکن نشد",
+  "Updates": "به‌روزرسانی‌ها",
+  "Check for updates automatically": "بررسی خودکار به‌روزرسانی‌ها",
+  "At launch and every six hours.": "هنگام اجرا و هر شش ساعت.",
+  "Check now": "اکنون بررسی کن",
+  "Checking…": "در حال بررسی…",
+  "Restart and install": "راه‌اندازی دوباره و نصب",
+  "Installing…": "در حال نصب…",
+  "Recly is up to date.": "Recly به‌روز است.",
+  "Recly {0} is available.": "Recly {0} در دسترس است.",
+  "You can install it once the recording is saved.": "پس از ذخیره شدن ضبط می‌توانید آن را نصب کنید.",
+  "Could not check for updates.": "بررسی به‌روزرسانی‌ها ممکن نشد.",
+  "Could not download the update.": "بارگیری به‌روزرسانی ممکن نشد.",
+  "The update's signature did not match, so it was not installed.": "امضای به‌روزرسانی مطابقت نداشت، بنابراین نصب نشد.",
+  "Could not install the update.": "نصب به‌روزرسانی ممکن نشد.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly نمی‌تواند در محل فعلی خودش را جایگزین کند. نسخهٔ جدید را از صفحهٔ انتشار بارگیری کنید.",
+  "Open release page": "باز کردن صفحهٔ انتشار",
+  "This update needs a newer macOS.": "این به‌روزرسانی به macOS جدیدتری نیاز دارد."
 }

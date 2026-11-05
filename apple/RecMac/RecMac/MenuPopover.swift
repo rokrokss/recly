@@ -238,6 +238,10 @@ struct MenuPopover: View {
             // is the way to the screen that fixes it. It replaces the sign-in-only banner:
             // `NEEDS_AUTH` is one of the seven.
             AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
+            // docs/12 "Updates": a newer Recly to install, under the notices that need the user more.
+            if let updater = DesktopUpdater.shared {
+                UpdateLine(updater: updater, idle: model.isIdle)
+            }
             LedgerHeader(time: loc("Time"), title: loc("Title"), length: loc("Length"))
             ForEach(model.recents) { item in
                 row(item)
@@ -389,6 +393,11 @@ struct SettingsPane: View {
             // features.
             if let processing = model.processing {
                 ProcessingSettingsFileSection(model: processing)
+            }
+
+            // docs/12 "Updates": before About, which says what this build is.
+            if let updater = DesktopUpdater.shared {
+                UpdateSection(updater: updater, idle: model.isIdle)
             }
 
             // docs/09 trend 6: no mascot and no "handmade" line — what this build actually is.

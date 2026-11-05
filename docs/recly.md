@@ -4045,6 +4045,43 @@ section and no `Local agents` block, `Recly.app` carries no copy of the program,
 is a separate program the user installs and runs, with its own Google sign-in (§15 §9, `docs/recly-events.md`); its local MCP server is
 set up by hand (`docs/mcp.md`).
 
+### Updates
+
+2026-11-05 (user request, modeled on claude-switch's updater). The directly distributed Mac app updates itself from the app
+releases on GitHub, and the Windows app does the same with the same feed and the same words (§14 "Updates"). No Sparkle: the
+package is the release's own notarized DMG, so a release carries nothing new for the Mac but the feed. The data paths are in §15
+"Desktop updates".
+
+- **Feed**: `update.json` and `update.json.sig` on every app release (`spec/desktop-update.schema.json`), written by
+  `scripts/desktop-update.swift` (docs/development.md "App releases") and read at
+  `https://github.com/rokrokss/recly/releases/latest/download/update.json` — `latest` is the newest release that is neither a draft
+  nor a pre-release. The signature is Ed25519 over the file's exact bytes, with the release key whose public half both apps carry
+  (`UpdateFeed.publicKey`); no field of a file that does not verify is read. The Mac is offered `macos` when its `build` is above
+  this app's `CFBundleVersion`.
+- **When**: ten seconds after launch and every six hours while Settings → Updates → `Check for updates automatically` is on (the
+  default), and on `Check now`. A check that runs on its own and fails says nothing — the next one, or the user's own, will; one the
+  user asked for says why. A Debug build does not check — it would offer the release in its own place — unless it is given a test
+  feed (`RECLY_UPDATE_FEED`, `RECLY_UPDATE_PUBLIC_KEY`).
+- **Where it shows**: Settings → Updates, before About — the switch, then one row whose title is the news (`Recly 0.3.2`,
+  `Recly is up to date.`, `Recly 0.3.3 is available.`) and whose control is what can be done (`Check now`, `Restart and install`, or
+  the loader with `Checking…` · `Installing…`); and, while there is an update to install, one line above the popover's ledger with
+  `Restart and install` at the status badge's size. Nothing in the popover for a check that failed or found nothing.
+- **Install**: only on `Restart and install`, and only while the recorder is idle — a recording being made or saved is never cut
+  short; the button is off then and says `You can install it once the recording is saved.` The app downloads the DMG into
+  `~/Library/Caches/app.recly.mac/Updates/` and refuses it unless its size and SHA-256 are the feed's; opens it read-only and out of
+  sight (`hdiutil attach -nobrowse`); copies the app out with `ditto` into the volume's replacement directory; and refuses that copy
+  unless it is `app.recly.mac`, its build is above this one, its `LSMinimumSystemVersion` is no newer than this Mac's macOS, and its
+  code signature satisfies **this app's own designated requirement** — the same Developer ID team and identifier, so the
+  microphone and system-audio permissions and the keychain items carry over. It then swaps the bundle into place
+  (`FileManager.replaceItemAt`), leaves a shell that opens the app again once this process has gone (it gives up after ten
+  minutes), and quits through the ordinary quit.
+- **Where it cannot**: a copy whose folder this user cannot write (a standard account's `/Applications`) or that macOS runs
+  translocated says `Recly cannot replace itself where it is. Download the new version from the release page.` with
+  `Open release page` in place of the button. A new app that needs a newer macOS says `This update needs a newer macOS.`
+- **Log events**: `shell.update.check outcome=up_to_date|available|failed`, `shell.update.install`,
+  `shell.update.fail phase=prepare|install reason=check|download|signature|install|location|system`.
+- 0.3.2 build 41 and earlier have no updater: the first release with one is installed by hand.
+
 ### Tasks
 
 | # | Scope |
@@ -4057,7 +4094,7 @@ set up by hand (`docs/mcp.md`).
 | M6 | Meeting detection + notifications |
 | M7 | **Retired (2026-09-24)** — **workflow editing window** + workflow export/import in settings (§5): `NSSavePanel` (default name `recly-workflows.json`) · `NSOpenPanel`, import applies after a replace confirmation, a note that keys are not included in the file |
 | M8 | Consent reminder (before every new recording, can be turned off in settings) + jurisdiction notices (the speaker warning was removed with voice processing, 2026-10-07). The desktops ask before *every* recording (the phones only before the first, "Consent reminder · jurisdiction notices" below), and if "Do not ask again" is chosen, it can be turned back on in settings |
-| M9 | Distribution: Developer ID signing, hardened runtime, notarytool, DMG (`apple/scripts/release-mac.sh`). There is no Sparkle auto-update |
+| M9 | Distribution: Developer ID signing, hardened runtime, notarytool, DMG (`apple/scripts/release-mac.sh`). Updates from the release's own DMG through a signed feed, without Sparkle ("Updates" above, 2026-11-05) |
 
 ### Consent reminder · jurisdiction notices
 
@@ -4349,6 +4386,29 @@ balloons, so they have **no buttons**, and clicking one opens the tray popup as 
 `THIRD-PARTY-recly-events.txt`, and Settings has no Agent connection section and no `Local agents` block. On Windows too, recly-events
 is a program the user installs and runs (§15 §9, `docs/recly-events.md`).
 
+### Updates
+
+2026-11-05, as on the Mac (§12 "Updates"): the same feed and key, the same timing and switch, the same Settings → Updates section
+and words, and the tray popup carries the Mac popover's line. What differs:
+
+- A newer package is one whose `windows.installerVersion` is above this MSI's install version (`OAuthConfig.BUILD`), field by
+  field — the version the MSI upgrade itself goes by (docs/development.md "App releases").
+- Only the packaged app checks: jpackage sets `jpackage.app-path` to `Recly.exe`. A development run (`make windows-run`) has
+  none, makes no request and shows no Updates section.
+- Idle also means no recording is waiting for its name: the title dialog is a window of its own here, where the Mac's is modal
+  and nothing else can be pressed while it is up.
+- **Install**: the MSI is downloaded into the data folder's `updates\` and used only when its size and SHA-256 are the feed's —
+  the signed feed stands in for the Authenticode signature the MSI does not have yet (N7). A hidden PowerShell then waits for this
+  process to end, runs `msiexec /i <msi> /passive /norestart INSTALLDIR=<the current install folder>` with its log in
+  `updates\msiexec.log`, and starts `Recly.exe` again whether or not the install succeeded; the app quits as the tray's Quit
+  does, so the capture helper and ffmpeg end with it. The MSI is per-user, so there is no elevation prompt. `INSTALLDIR` is
+  jpackage's WiX directory for the app folder: its MSI does not remember a folder picked at install, and an upgrade without it
+  would move the app back to `%LOCALAPPDATA%\Recly`.
+- A file the app downloads itself carries no Mark of the Web, so SmartScreen does not stop the upgrade; only the first MSI,
+  downloaded in a browser, meets it.
+- Not yet run on Windows hardware: the PowerShell, `msiexec` and the relaunch are covered by unit tests of the command they are
+  given, not by an install (§20).
+
 ### Development host (macOS) stand-ins
 
 The development machine is macOS, so the Windows-only parts sit behind interfaces and stubs are selected on macOS.
@@ -4396,7 +4456,7 @@ transcription** in the recording processing settings, and (3) **the user's own o
 devices. (4) OpenAI receives a recording's transcript text — with the user's `About you` and, for its notes, the user's notes instructions and sections — only when the user signed in with ChatGPT and asks a question about it, to organize it again or to correct it — with what the user types or pastes into that request (§10), and — for a user who signed in and agreed to organizing — the text of each recording made on the device, part by part while it is recorded and again after Stop, with numbers and addresses left out, to organize its notes (§10, 2026-10-27). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
-links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
+links open in the browser only when the user taps them (end of §3). The Mac and Windows apps fetch a signed release description from GitHub to check for a new version, and the new version's installer only when the user installs it ("Desktop updates" below, 2026-11-05). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
 `recly-events` program (§9) runs only when the user installs and runs it, and its paths are listed there.
 
 ### Apple on-device speech model assets
@@ -4430,6 +4490,28 @@ links open in the browser only when the user taps them (end of §3). Webhooks (�
   embedding (Apache-2.0), `https://huggingface.co/csukuangfj/speaker-embedding-models/resolve/0743f301363dec56491a490f6d6cbc9d67f9a3bf/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx`
   (39,593,761 bytes, SHA-256 `1a331345f04805badbb495c775a6ddffcdd1a732567d5ec8b3d5749e3c7a5e4b`); both redirect to `*.cdn.hf.co` like the speech model
   (checked 2026-10-07). No new host. Diarization runs on the device like the transcription; nothing of the recording goes out on this path.
+
+### Desktop updates
+
+2026-11-05 (§12 "Updates", §14 "Updates"). The Mac app and the Windows app check the app releases on GitHub for a newer version
+of themselves. The phones and the watches are updated by their stores and never make these requests.
+
+- **Check**: `GET https://github.com/rokrokss/recly/releases/latest/download/update.json` and `…/update.json.sig`, which GitHub
+  answers with a redirect to the newest release's assets on `release-assets.githubusercontent.com` (checked 2026-11-05). Ten
+  seconds after launch and every six hours while Settings → Updates → `Check for updates automatically` is on (the default), and
+  whenever the user presses `Check now`. With the switch off, only `Check now` makes the request.
+- **Download**: only when the user chooses `Restart and install`, the release's DMG (Mac) or MSI (Windows) from
+  `https://github.com/rokrokss/recly/releases/download/<tag>/…`, through the same redirect.
+- **What is sent**: GET requests whose only header of note is the `User-Agent` `Recly/<version> (macOS)` or
+  `Recly/<version> (Windows)`. No recording, transcript, processing setting, key, account, install or device identifier, and no
+  cookie. What GitHub (Microsoft) sees is the IP address, that User-Agent and the requested public file, as for anyone who
+  downloads a release; its privacy statement applies.
+- **What stays**: the downloaded package until the next update — on the Mac in `~/Library/Caches/app.recly.mac/Updates/`, on
+  Windows in the app's data folder (`updates\`) — and the switch, in the app's settings store. Nothing about a check leaves the
+  device.
+- **Integrity**: the feed is signed with the release key (Ed25519, over the file's exact bytes) and read only when the signature
+  verifies; the package is used only when its size and SHA-256 are the feed's; on the Mac the app inside it must also satisfy the
+  running app's own designated requirement.
 
 ### China mainland App Store
 
@@ -4947,6 +5029,7 @@ violation prints 400. `--fail-first 1` answers 500 to the first delivery of a gi
 | iPhone · macOS real-device sign-in | This document has no record of it being checked. Store listing · signing are resolved (released on the App Store · Google Play on 2026-10-01, TestFlight skipped) |
 | Local folder storage on real devices (§3 "Storage location") | No Windows PC or test Android phone. Checked with core · shell unit tests, the `rec36` emulator's real external-storage provider, a macOS build and the iOS simulator. A real Windows path · `JFileChooser` · Controlled Folder Access · removed drive, a system-revoked Android grant, the Mac picker over the menu-bar popover, and on a real iPhone writing while locked · a folder in iCloud Drive or another app's provider · Obsidian reading it remain |
 | Real-device sync of iCloud storage (§3 "Storage location") | No iCloud container registration · App ID capability · Mac Developer ID profile yet (human work). Only upload waiting · completion · out of space · listing · titles were checked, with core JVM tests and RecKit unit tests. Uploading on an iPhone · Mac with the same Apple ID → listing on the other device → renaming → deleting must be checked on real devices |
+| Desktop updates on real installs (§12 "Updates", §14 "Updates", 2026-11-05) | No release carries `update.json` yet, so no installed app has updated from the published feed. On the Mac, the swap was run against the published 0.3.2 DMG — downloaded from GitHub, size and SHA-256 checked, Developer ID requirement satisfied, swapped into a copy outside `/Applications` — and the relaunch with a stand-in app. On Windows, the download checks and the PowerShell · `msiexec` command are unit-tested only: **no Windows PC** |
 
 ---
 

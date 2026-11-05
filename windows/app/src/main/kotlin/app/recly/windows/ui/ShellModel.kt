@@ -52,6 +52,9 @@ import app.recly.windows.settings.Settings
 import app.recly.windows.ui.component.BadgeTone
 import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.ProcessingState
+import app.recly.windows.update.UpdateDownload
+import app.recly.windows.update.UpdateFeed
+import app.recly.windows.update.UpdateInstaller
 import java.awt.Desktop
 import java.awt.FileDialog
 import java.awt.Frame
@@ -444,6 +447,23 @@ class ShellModel(
 
     /** docs/15 §10 "Sign in with ChatGPT": the settings section and what the notes run on. */
     var chatGpt: ChatGptViewModel? by mutableStateOf(null)
+        private set
+
+    /**
+     * docs/14 "Updates": the updater, in an installed copy only ([updater]) — null under `make windows-run` and in the
+     * tests, where nothing is checked and Settings has no Updates section.
+     */
+    var updates: UpdateViewModel? by mutableStateOf(null)
+        private set
+
+    /**
+     * docs/14 "Updates": what has to be over before an update may quit the app — no recording running, coming up or
+     * being saved, and none waiting for its name.
+     */
+    val updateIdle: Boolean get() = !recording && transition == null && titlePrompt == null
+
+    /** The updater has started the installer: `Main` quits the way the tray's Quit does ([shutdown], then exit). */
+    var quitRequested: Boolean by mutableStateOf(false)
         private set
 
     /** docs/03 "Deleting in the app": the recording the delete dialog is asking about, while it is up. */
@@ -994,6 +1014,8 @@ class ShellModel(
         // before the shell is ready is one that cannot be taken.
         detector?.start()
 
+        updates = updater(dataDirectory, logger)?.also { it.start() }
+
         ready = true
         status = when {
             helperMissing -> HELPER_MISSING
@@ -1011,6 +1033,28 @@ class ShellModel(
                 "signedIn" to signedIn,
                 "recovered" to recovered,
             ),
+        )
+    }
+
+    /**
+     * docs/14 "Updates": only a copy the MSI installed updates itself — jpackage tells its app where its `Recly.exe` is
+     * (`jpackage.app-path`), and the installer is started at that folder. The development host's own package is a
+     * DMG of a Windows app, and there is no MSI it could install.
+     */
+    private fun updater(dataDirectory: Path, logger: Logger): UpdateViewModel? {
+        val exe = System.getProperty("jpackage.app-path")?.takeIf { it.isNotBlank() }
+        if (!Host.isWindows || exe == null) return null
+        val feed = UpdateFeed()
+        val dir = dataDirectory.toNioPath().resolve("updates")
+        return UpdateViewModel(
+            scope = scope,
+            settings = settings,
+            logger = logger,
+            checkFeed = { withContext(Dispatchers.IO) { feed.check(OAuthConfig.BUILD) } },
+            download = { update -> withContext(Dispatchers.IO) { UpdateDownload(dir).fetch(update) } },
+            launch = { msi -> withContext(Dispatchers.IO) { UpdateInstaller.launch(msi, exe, dir) } },
+            idle = { updateIdle },
+            quit = { quitRequested = true },
         )
     }
 

@@ -586,5 +586,22 @@
   "Transcript {0}": "النص {0}",
   "Summary {0}": "الملخص {0}",
   "Changed: {0}": "تم التغيير: {0}",
-  "Could not undo": "تعذّر التراجع"
+  "Could not undo": "تعذّر التراجع",
+  "Updates": "التحديثات",
+  "Check for updates automatically": "التحقق من التحديثات تلقائيًا",
+  "At launch and every six hours.": "عند التشغيل وكل ست ساعات.",
+  "Check now": "التحقق الآن",
+  "Checking…": "جارٍ التحقق…",
+  "Restart and install": "إعادة التشغيل والتثبيت",
+  "Installing…": "جارٍ التثبيت…",
+  "Recly is up to date.": "Recly محدَّث.",
+  "Recly {0} is available.": "يتوفر Recly {0}.",
+  "You can install it once the recording is saved.": "يمكنك تثبيته بعد حفظ التسجيل.",
+  "Could not check for updates.": "تعذّر التحقق من التحديثات.",
+  "Could not download the update.": "تعذّر تنزيل التحديث.",
+  "The update's signature did not match, so it was not installed.": "لم يتطابق توقيع التحديث، لذلك لم يُثبَّت.",
+  "Could not install the update.": "تعذّر تثبيت التحديث.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "لا يستطيع Recly استبدال نفسه في موقعه الحالي. نزّل الإصدار الجديد من صفحة الإصدار.",
+  "Open release page": "فتح صفحة الإصدار",
+  "This update needs a newer macOS.": "يتطلب هذا التحديث إصدارًا أحدث من macOS."
 }

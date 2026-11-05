@@ -586,5 +586,22 @@
   "Transcript {0}": "Расшифровка {0}",
   "Summary {0}": "Сводка {0}",
   "Changed: {0}": "Изменено: {0}",
-  "Could not undo": "Не удалось отменить"
+  "Could not undo": "Не удалось отменить",
+  "Updates": "Обновления",
+  "Check for updates automatically": "Проверять обновления автоматически",
+  "At launch and every six hours.": "При запуске и каждые шесть часов.",
+  "Check now": "Проверить сейчас",
+  "Checking…": "Проверка…",
+  "Restart and install": "Перезапустить и установить",
+  "Installing…": "Установка…",
+  "Recly is up to date.": "У вас последняя версия Recly.",
+  "Recly {0} is available.": "Доступна версия Recly {0}.",
+  "You can install it once the recording is saved.": "Установить можно будет после сохранения записи.",
+  "Could not check for updates.": "Не удалось проверить обновления.",
+  "Could not download the update.": "Не удалось загрузить обновление.",
+  "The update's signature did not match, so it was not installed.": "Подпись обновления не совпала, поэтому оно не установлено.",
+  "Could not install the update.": "Не удалось установить обновление.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly не может заменить себя в этом расположении. Загрузите новую версию со страницы релиза.",
+  "Open release page": "Открыть страницу релиза",
+  "This update needs a newer macOS.": "Для этого обновления нужна более новая версия macOS."
 }

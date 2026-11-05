@@ -196,5 +196,11 @@ class PreviewTest {
                 writes += "skipSilence"
                 field = value
             }
+
+        override var autoUpdateCheck: Boolean = true
+            set(value) {
+                writes += "autoUpdateCheck"
+                field = value
+            }
     }
 }

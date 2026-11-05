@@ -586,5 +586,22 @@
   "Transcript {0}": "ट्रांसक्रिप्ट {0}",
   "Summary {0}": "सारांश {0}",
   "Changed: {0}": "बदला गया: {0}",
-  "Could not undo": "पहले जैसा नहीं किया जा सका"
+  "Could not undo": "पहले जैसा नहीं किया जा सका",
+  "Updates": "अपडेट",
+  "Check for updates automatically": "अपडेट अपने-आप जाँचें",
+  "At launch and every six hours.": "लॉन्च होने पर और हर छह घंटे में।",
+  "Check now": "अभी जाँचें",
+  "Checking…": "जाँच हो रही है…",
+  "Restart and install": "रीस्टार्ट करें और इंस्टॉल करें",
+  "Installing…": "इंस्टॉल हो रहा है…",
+  "Recly is up to date.": "Recly अप टू डेट है।",
+  "Recly {0} is available.": "Recly {0} उपलब्ध है।",
+  "You can install it once the recording is saved.": "रिकॉर्डिंग सेव होने के बाद आप इसे इंस्टॉल कर सकते हैं।",
+  "Could not check for updates.": "अपडेट की जाँच नहीं हो सकी।",
+  "Could not download the update.": "अपडेट डाउनलोड नहीं हो सका।",
+  "The update's signature did not match, so it was not installed.": "अपडेट का सिग्नेचर मेल नहीं खाया, इसलिए इसे इंस्टॉल नहीं किया गया।",
+  "Could not install the update.": "अपडेट इंस्टॉल नहीं हो सका।",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly अपनी मौजूदा जगह पर खुद को बदल नहीं सकता। रिलीज़ पेज से नया वर्शन डाउनलोड करें।",
+  "Open release page": "रिलीज़ पेज खोलें",
+  "This update needs a newer macOS.": "इस अपडेट के लिए नया macOS चाहिए।"
 }

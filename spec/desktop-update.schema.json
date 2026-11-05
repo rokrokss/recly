@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rec.app/spec/desktop-update.schema.json",
+  "title": "rec desktop update feed",
+  "description": "update.json, attached to every app release beside update.json.sig — the base64 Ed25519 signature of this file's exact bytes, made with the release key whose public half the Mac and Windows apps carry. The apps read it at https://github.com/rokrokss/recly/releases/latest/download/update.json, verify the signature before reading a field, and offer the package when it is newer than they are. Written by scripts/desktop-update.swift. See docs/recly.md §12 \"Updates\", §14 \"Updates\" and §15 \"Desktop updates\".",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "tag", "notes"],
+  "anyOf": [
+    { "properties": { "macos": true }, "required": ["macos"] },
+    { "properties": { "windows": true }, "required": ["windows"] }
+  ],
+  "properties": {
+    "schema": { "const": 1 },
+    "version": {
+      "description": "The display version every platform shares.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "tag": {
+      "description": "The release's tag, v<version>-build.<Apple build>.",
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+\\.\\d+-build\\.\\d+$"
+    },
+    "notes": {
+      "description": "The release's page, where a copy that cannot replace itself sends the user.",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "macos": {
+      "description": "The release's DMG. A Mac offers it when build is above its own CFBundleVersion.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["build", "url", "size", "sha256"],
+      "properties": {
+        "build": { "type": "string", "pattern": "^\\d+$" },
+        "url": { "$ref": "#/$defs/url" },
+        "size": { "$ref": "#/$defs/size" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "windows": {
+      "description": "The release's MSI. A PC offers it when installerVersion is above its own MSI version, compared field by field.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["installerVersion", "url", "size", "sha256"],
+      "properties": {
+        "installerVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "url": { "$ref": "#/$defs/url" },
+        "size": { "$ref": "#/$defs/size" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  },
+  "$defs": {
+    "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "size": { "description": "Bytes; the download is refused unless it is exactly this long.", "type": "integer", "minimum": 1 },
+    "sha256": { "description": "Lowercase hex; the download is refused unless it hashes to this.", "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

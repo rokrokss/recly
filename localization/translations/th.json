@@ -586,5 +586,22 @@
   "Transcript {0}": "ข้อความถอดเสียง {0}",
   "Summary {0}": "สรุป {0}",
   "Changed: {0}": "เปลี่ยนแล้ว: {0}",
-  "Could not undo": "เลิกทำไม่ได้"
+  "Could not undo": "เลิกทำไม่ได้",
+  "Updates": "อัปเดต",
+  "Check for updates automatically": "ตรวจหาอัปเดตโดยอัตโนมัติ",
+  "At launch and every six hours.": "เมื่อเปิดแอปและทุกหกชั่วโมง",
+  "Check now": "ตรวจหาเดี๋ยวนี้",
+  "Checking…": "กำลังตรวจหา…",
+  "Restart and install": "รีสตาร์ทและติดตั้ง",
+  "Installing…": "กำลังติดตั้ง…",
+  "Recly is up to date.": "Recly เป็นเวอร์ชันล่าสุดแล้ว",
+  "Recly {0} is available.": "มี Recly {0} ให้ติดตั้ง",
+  "You can install it once the recording is saved.": "ติดตั้งได้เมื่อบันทึกการบันทึกเสียงแล้ว",
+  "Could not check for updates.": "ตรวจหาอัปเดตไม่ได้",
+  "Could not download the update.": "ดาวน์โหลดอัปเดตไม่ได้",
+  "The update's signature did not match, so it was not installed.": "ลายเซ็นของอัปเดตไม่ตรงกัน จึงไม่ได้ติดตั้ง",
+  "Could not install the update.": "ติดตั้งอัปเดตไม่ได้",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly แทนที่ตัวเองในตำแหน่งปัจจุบันไม่ได้ ดาวน์โหลดเวอร์ชันใหม่จากหน้ารีลีส",
+  "Open release page": "เปิดหน้ารีลีส",
+  "This update needs a newer macOS.": "อัปเดตนี้ต้องใช้ macOS ที่ใหม่กว่า"
 }

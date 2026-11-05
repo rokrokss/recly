@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -54,6 +55,7 @@ import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.BlueprintDropdown
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
+import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SectionHeader
@@ -95,6 +97,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
                 NotesSettings(it, strings)
             }
             model.processing?.let { ProcessingSettingsFile(it, strings) }
+            model.updates?.let { Updates(it, model.updateIdle, strings) }
             About(model, strings)
         }
     }
@@ -526,6 +529,47 @@ internal fun PreferenceField(
         monospace = false,
         placeholder = placeholder,
         focusRequester = focusRequester,
+    )
+}
+
+/**
+ * docs/14 "Updates": whether this copy looks for a new release by itself, and one row whose title is the news and whose
+ * end is what to do about it — look again, or restart into the new version once nothing is recording. A failure is said
+ * under the title in the warning ink, and the button that tries again stays. Only in a copy the MSI installed.
+ */
+@Composable
+private fun Updates(updates: UpdateViewModel, idle: Boolean, strings: Strings) {
+    val palette = blueprint
+    Section(strings[Str.SETTINGS_UPDATES])
+    SwitchRow(
+        title = strings[Str.UPDATE_AUTOMATIC],
+        subtitle = strings[Str.UPDATE_AUTOMATIC_NOTE],
+        checked = updates.automatic,
+        onCheckedChange = updates::toggleAutomatic,
+    )
+    val row = updateRow(updates.state, updates.failure, idle)
+    TableRow(
+        title = row.title.text(strings),
+        subtitle = row.failure?.let { strings[it] },
+        subtitleColor = palette.warningInk,
+        below = if (row.waiting) {
+            { Text(strings[Str.UPDATE_WAIT_FOR_RECORDING], style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
+        } else {
+            null
+        },
+        trailing = {
+            // The loader is held at a button's height, so the row does not move when the button comes back.
+            val working = Modifier.defaultMinSize(minHeight = MinTouch)
+            when (row.action) {
+                UpdateAction.CHECK -> BlueprintButton(strings[Str.UPDATE_CHECK], { updates.check() }, tone = ButtonTone.QUIET)
+                UpdateAction.CHECKING ->
+                    LoadingText(strings[Str.UPDATE_CHECKING], MaterialTheme.typography.bodySmall, palette.textMuted, working)
+                UpdateAction.INSTALL ->
+                    BlueprintButton(strings[Str.UPDATE_INSTALL], updates::install, tone = ButtonTone.PRIMARY, enabled = idle)
+                UpdateAction.INSTALLING ->
+                    LoadingText(strings[Str.UPDATE_INSTALLING], MaterialTheme.typography.bodySmall, palette.textMuted, working)
+            }
+        },
     )
 }
 

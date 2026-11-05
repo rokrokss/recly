@@ -1,0 +1,18 @@
+{
+  "macos" : {
+    "build" : "41",
+    "sha256" : "717deb6ee6331f250cde13d34bfe980f008e59cf31b3deda48e341c405846960",
+    "size" : 41795079,
+    "url" : "https://github.com/rokrokss/recly/releases/download/v0.3.2-build.41/Recly-macOS-0.3.2-41.dmg"
+  },
+  "notes" : "https://github.com/rokrokss/recly/releases/tag/v0.3.2-build.41",
+  "schema" : 1,
+  "tag" : "v0.3.2-build.41",
+  "version" : "0.3.2",
+  "windows" : {
+    "installerVersion" : "0.3.2",
+    "sha256" : "1ec19244082a0a6a3fc2f4f58de38158b4825627d8057ccb6582334ac46e4f3e",
+    "size" : 169870253,
+    "url" : "https://github.com/rokrokss/recly/releases/download/v0.3.2-build.41/Recly-0.3.2.msi"
+  }
+}

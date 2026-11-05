@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,12 +45,14 @@ import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.LedgerHeader
 import app.recly.windows.ui.component.LedgerRow
 import app.recly.windows.ui.component.LiveWaveform
+import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.MonoTimer
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.theme.forWord
 import app.recly.windows.ui.component.RecordNode
 import app.recly.windows.ui.theme.BlueprintColors
+import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.dotGrid
@@ -259,6 +262,7 @@ private fun Ledger(
         // The first-run offer of the speech model, at the top while the model is really missing.
         if (model.modelCardShown) item { ModelCard(model, strings) }
         item { AlertBanner(model, strings) }
+        item { UpdateBanner(model, strings) }
         item {
             LedgerHeader(
                 time = strings[Str.LEDGER_TIME],
@@ -361,6 +365,39 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
         }
         HairLine()
     }
+}
+
+/**
+ * docs/14 "Updates": a newer release, on the banner's own line — what it is and Restart and install at the status badge's
+ * size, the loader while it installs, and why the last install stopped in the warning ink. While a recording runs or
+ * is saved the button is off and the line says when it can be pressed. Nothing here for a check: only Settings says
+ * one failed, or that the app is up to date.
+ */
+@Composable
+private fun UpdateBanner(model: ShellModel, strings: Strings) {
+    val updates = model.updates ?: return
+    val idle = model.updateIdle
+    val row = updateRow(updates.state, updates.failure, idle)
+    if (!row.offers) return
+    val palette = blueprint
+    BannerRow(
+        action = {
+            if (row.action == UpdateAction.INSTALLING) {
+                // At the button's target height, so the line does not shrink under it.
+                LoadingText(strings[Str.UPDATE_INSTALLING], MaterialTheme.typography.bodySmall, palette.textMuted,
+                    Modifier.defaultMinSize(minHeight = MinTouch))
+            } else {
+                BlueprintButton(strings[Str.UPDATE_INSTALL], updates::install, enabled = idle, compact = true)
+            }
+        },
+    ) {
+        Text(row.title.text(strings), style = MaterialTheme.typography.bodyMedium, color = palette.text)
+        row.failure?.let { Text(strings[it], style = MaterialTheme.typography.bodySmall, color = palette.warningInk) }
+        if (row.waiting) {
+            Text(strings[Str.UPDATE_WAIT_FOR_RECORDING], style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+        }
+    }
+    HairLine()
 }
 
 /**

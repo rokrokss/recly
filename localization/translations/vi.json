@@ -586,5 +586,22 @@
   "Transcript {0}": "Bản chép lời {0}",
   "Summary {0}": "Tóm tắt {0}",
   "Changed: {0}": "Đã thay đổi: {0}",
-  "Could not undo": "Không thể hoàn tác"
+  "Could not undo": "Không thể hoàn tác",
+  "Updates": "Cập nhật",
+  "Check for updates automatically": "Tự động kiểm tra cập nhật",
+  "At launch and every six hours.": "Khi khởi động và mỗi sáu giờ.",
+  "Check now": "Kiểm tra ngay",
+  "Checking…": "Đang kiểm tra…",
+  "Restart and install": "Khởi động lại và cài đặt",
+  "Installing…": "Đang cài đặt…",
+  "Recly is up to date.": "Recly đã là bản mới nhất.",
+  "Recly {0} is available.": "Đã có Recly {0}.",
+  "You can install it once the recording is saved.": "Bạn có thể cài đặt sau khi bản ghi âm được lưu.",
+  "Could not check for updates.": "Không thể kiểm tra cập nhật.",
+  "Could not download the update.": "Không thể tải bản cập nhật.",
+  "The update's signature did not match, so it was not installed.": "Chữ ký của bản cập nhật không khớp nên chưa được cài đặt.",
+  "Could not install the update.": "Không thể cài đặt bản cập nhật.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly không thể tự thay thế ở vị trí hiện tại. Hãy tải phiên bản mới từ trang phát hành.",
+  "Open release page": "Mở trang phát hành",
+  "This update needs a newer macOS.": "Bản cập nhật này cần macOS mới hơn."
 }

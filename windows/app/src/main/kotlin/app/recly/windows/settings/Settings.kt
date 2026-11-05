@@ -114,6 +114,9 @@ interface Settings {
 
     var skipSilence: Boolean
 
+    /** docs/14 "Updates": look for a new release at launch and every six hours. On until the user turns it off. */
+    var autoUpdateCheck: Boolean
+
     companion object {
         fun create(): Settings = PreferenceSettings()
     }
@@ -177,6 +180,10 @@ class PreferenceSettings(
         get() = prefs.getBoolean(SKIP_SILENCE, false)
         set(value) = prefs.putBoolean(SKIP_SILENCE, value)
 
+    override var autoUpdateCheck: Boolean
+        get() = prefs.getBoolean(AUTO_UPDATE_CHECK, true)
+        set(value) = prefs.putBoolean(AUTO_UPDATE_CHECK, value)
+
     private companion object {
         /** `Preferences` wants a path, and `app.recly.windows` is not one. */
         const val NODE = "app/recly/windows"
@@ -189,5 +196,6 @@ class PreferenceSettings(
         const val LOCAL_FOLDER = "localFolder"
         const val PLAYBACK_SPEED = "playbackSpeed"
         const val SKIP_SILENCE = "skipSilence"
+        const val AUTO_UPDATE_CHECK = "autoUpdateCheck"
     }
 }

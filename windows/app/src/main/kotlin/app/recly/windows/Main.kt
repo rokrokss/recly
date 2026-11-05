@@ -121,6 +121,9 @@ fun main(args: Array<String>) {
         val scope = rememberCoroutineScope()
         val quit = { scope.launch { model.shutdown(); exitApplication() }; Unit }
         LaunchedEffect(model) { model.load() }
+        // docs/14 "Updates": the installer is waiting for this process to end — out the tray's own Quit, so the capture
+        // helper and ffmpeg are gone with it and nothing holds a file the MSI replaces.
+        LaunchedEffect(model.quitRequested) { if (model.quitRequested) quit() }
         LaunchedEffect(dev) {
             model.popupOpen = model.popupOpen || dev.popup
             model.settingsOpen = model.settingsOpen || dev.settings

@@ -586,5 +586,22 @@
   "Transcript {0}": "逐字稿 {0}",
   "Summary {0}": "摘要 {0}",
   "Changed: {0}": "已變更：{0}",
-  "Could not undo": "無法復原"
+  "Could not undo": "無法復原",
+  "Updates": "更新",
+  "Check for updates automatically": "自動檢查更新",
+  "At launch and every six hours.": "啟動時及每六小時檢查一次。",
+  "Check now": "立即檢查",
+  "Checking…": "正在檢查…",
+  "Restart and install": "重新啟動並安裝",
+  "Installing…": "正在安裝…",
+  "Recly is up to date.": "Recly 已是最新版本。",
+  "Recly {0} is available.": "Recly {0} 可供安裝。",
+  "You can install it once the recording is saved.": "錄音儲存後即可安裝。",
+  "Could not check for updates.": "無法檢查更新。",
+  "Could not download the update.": "無法下載更新。",
+  "The update's signature did not match, so it was not installed.": "更新的簽章不符，因此未安裝。",
+  "Could not install the update.": "無法安裝更新。",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly 無法在目前位置取代自己。請從發布頁面下載新版本。",
+  "Open release page": "開啟發布頁面",
+  "This update needs a newer macOS.": "此更新需要較新版本的 macOS。"
 }

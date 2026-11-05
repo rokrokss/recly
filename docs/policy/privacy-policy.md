@@ -2,7 +2,7 @@
 
 [한국어](privacy-policy.ko.md)
 
-**Effective date: 2026-11-04**
+**Effective date: 2026-11-05**
 **Contact: q0115643@gmail.com**
 
 The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow).
@@ -139,6 +139,10 @@ Permission is remembered for the same provider and configured endpoint, independ
 On iPhone and Mac with iOS or macOS 26 or later, new recording settings default to local transcription, and Apple Speech analyzes audio on the device. On Android phones and Windows PCs with enough memory (about 8 GB or more), they default to local transcription with the open Qwen3-ASR model, which runs in the app on the device. Other devices have no on-device engine, so their new settings start with transcription off. Downloading a missing model is always your action — in Settings, on a recording waiting for the model, or on a one-time prompt; until then, recordings wait instead of being transcribed: on Apple devices Apple’s system service downloads the model assets; on Android and Windows the app downloads the model files (about 1 GB) from Hugging Face and GitHub. That download sends no recording, transcript, setting or key — those hosts see your IP address and which public files were requested — and each file is checked against a fixed checksum before use. Speakers are separated on the device too: on iPhone and Mac the speaker-separation model comes inside the app, so nothing is downloaded for it; on Android and Windows the same download also fetches two speaker-separation model files (about 41 MB) from Hugging Face — only those two on a device that already has the speech model — under the same rules. Recly does not send your recording to an external speech API for this local analysis. Original audio and finished transcripts still upload to your Google Drive or iCloud as separate steps in the recording flow.
 
 On those devices, choose an external provider if you want transcripts. Recly never silently switches local transcription to a paid or cloud API, and external transcription sends audio only to the provider you selected. Processing settings and API keys remain on the device; exported settings contain key references, not key values.
+
+### Update checks — Mac and Windows
+
+The Mac and Windows apps check for a new version of Recly. At launch and every six hours — unless you turn off **Check for updates automatically** in Settings → Updates — and whenever you press **Check now**, the app downloads a small file describing the newest release from GitHub (`github.com`, which serves it from `release-assets.githubusercontent.com`). Only when you choose **Restart and install** does it download the new version's installer (the DMG or the MSI) from the same place. These requests carry no recording, transcript, setting, key, or account or device identifier — only the app's name and version; GitHub sees your IP address and which public file was requested, as it does for anyone downloading a release, and handles that under GitHub's privacy statement. Before installing, the app checks the release's signature and the installer's checksum, and on the Mac that the new app is signed by the same developer. The downloaded installer stays in the app's own folder on your computer until the next update. The iPhone, Android and watch apps are updated by their app stores and make none of these requests.
 
 ### recly-events, an optional program you run yourself
 

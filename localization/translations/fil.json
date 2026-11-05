@@ -586,5 +586,22 @@
   "Transcript {0}": "Transcript {0}",
   "Summary {0}": "Buod {0}",
   "Changed: {0}": "Binago: {0}",
-  "Could not undo": "Hindi ma-undo"
+  "Could not undo": "Hindi ma-undo",
+  "Updates": "Mga update",
+  "Check for updates automatically": "Awtomatikong tingnan ang mga update",
+  "At launch and every six hours.": "Sa pagbukas at bawat anim na oras.",
+  "Check now": "Tingnan ngayon",
+  "Checking…": "Tinitingnan…",
+  "Restart and install": "I-restart at i-install",
+  "Installing…": "Ini-install…",
+  "Recly is up to date.": "Pinakabago na ang Recly.",
+  "Recly {0} is available.": "Available na ang Recly {0}.",
+  "You can install it once the recording is saved.": "Maaari mo itong i-install kapag na-save na ang recording.",
+  "Could not check for updates.": "Hindi matingnan ang mga update.",
+  "Could not download the update.": "Hindi ma-download ang update.",
+  "The update's signature did not match, so it was not installed.": "Hindi tumugma ang signature ng update, kaya hindi ito na-install.",
+  "Could not install the update.": "Hindi ma-install ang update.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Hindi kayang palitan ng Recly ang sarili nito sa kinalalagyan nito. I-download ang bagong bersyon mula sa release page.",
+  "Open release page": "Buksan ang release page",
+  "This update needs a newer macOS.": "Kailangan ng update na ito ng mas bagong macOS."
 }

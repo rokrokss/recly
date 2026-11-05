@@ -586,5 +586,22 @@
   "Transcript {0}": "文字起こし {0}",
   "Summary {0}": "要約 {0}",
   "Changed: {0}": "変更: {0}",
-  "Could not undo": "元に戻せませんでした"
+  "Could not undo": "元に戻せませんでした",
+  "Updates": "アップデート",
+  "Check for updates automatically": "アップデートを自動確認",
+  "At launch and every six hours.": "起動時と6時間ごとに確認します。",
+  "Check now": "今すぐ確認",
+  "Checking…": "確認しています…",
+  "Restart and install": "再起動してインストール",
+  "Installing…": "インストールしています…",
+  "Recly is up to date.": "Reclyは最新です。",
+  "Recly {0} is available.": "Recly {0}をインストールできます。",
+  "You can install it once the recording is saved.": "録音が保存されたらインストールできます。",
+  "Could not check for updates.": "アップデートを確認できませんでした。",
+  "Could not download the update.": "アップデートをダウンロードできませんでした。",
+  "The update's signature did not match, so it was not installed.": "アップデートの署名が一致しないため、インストールしませんでした。",
+  "Could not install the update.": "アップデートをインストールできませんでした。",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "この場所ではReclyを置き換えられません。リリースページから新しいバージョンをダウンロードしてください。",
+  "Open release page": "リリースページを開く",
+  "This update needs a newer macOS.": "このアップデートには新しいmacOSが必要です。"
 }

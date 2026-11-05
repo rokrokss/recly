@@ -125,8 +125,16 @@ jabswitch /enable
 The phone and watch apps update through Google Play or the App Store. A sideloaded APK updates when
 you install the newer APK the same way you installed the first.
 
-The Mac and Windows apps do not update themselves. Quit Recly (**Quit** in the Mac menu-bar popover
-or the Windows tray popup), then install the newer DMG or MSI from the
+The Mac and Windows apps update themselves. They look for a new release at launch and every six
+hours; when one is out, Settings → **Updates** and the Mac menu-bar popover or the Windows tray popup
+offer **Restart and install**. Recly downloads it, checks that it is the release's own signed file,
+installs it and opens again. It never installs while a recording is being made or saved. To look
+only when you press **Check now**, turn off **Check for updates automatically** in Settings →
+**Updates**.
+
+Recly 0.3.2 and earlier cannot update themselves, and a Mac whose account cannot write to the
+Applications folder cannot replace the app: quit Recly (**Quit** in the Mac menu-bar popover or the
+Windows tray popup), then install the newer DMG or MSI from the
 [latest release](https://github.com/rokrokss/recly/releases/latest) over the old one; the MSI
 upgrades the existing install.
 

@@ -591,6 +591,23 @@ enum class Str {
     VERSIONS_RESTORE_LABEL,
     VERSIONS_NOTE,
     VERSIONS_RESTORE_FAILED,
+
+    // docs/14 "Updates": Settings → Updates and the popup's banner. The Mac says the same words.
+    SETTINGS_UPDATES,
+    UPDATE_AUTOMATIC,
+    UPDATE_AUTOMATIC_NOTE,
+    UPDATE_CHECK,
+    UPDATE_CHECKING,
+    UPDATE_INSTALL,
+    UPDATE_INSTALLING,
+    UPDATE_CURRENT,
+    UPDATE_UP_TO_DATE,
+    UPDATE_AVAILABLE,
+    UPDATE_WAIT_FOR_RECORDING,
+    UPDATE_CHECK_FAILED,
+    UPDATE_DOWNLOAD_FAILED,
+    UPDATE_SIGNATURE_FAILED,
+    UPDATE_INSTALL_FAILED,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

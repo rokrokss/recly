@@ -19,6 +19,8 @@ const pairs = [
   ["recording-settings.schema.json", "examples/recording-settings-external.json"],
   ["notes.schema.json", "examples/notes.json"],
   ["memo.schema.json", "examples/memo.json"],
+  // docs/recly.md §15 "Desktop updates": the feed scripts/desktop-update.swift writes and the desktops read.
+  ["desktop-update.schema.json", "examples/desktop-update.json"],
 ];
 let failed = 0;
 for (const [s, d] of pairs) {
@@ -133,4 +135,23 @@ for (const [label, expected, change] of [
   if (valid !== expected) { console.error(`FAIL notes: ${label}`); failed++; }
   else console.log(`OK   notes: ${label} -> valid=${valid}`);
 }
+const updateAjv = new Ajv2020({ strict: true, allErrors: true });
+addFormats(updateAjv);
+const updateSchema = updateAjv.compile(load("desktop-update.schema.json"));
+const updateBase = load("examples/desktop-update.json");
+const updateMut = (f) => { const c = structuredClone(updateBase); f(c); return c; };
+for (const [name, expect, doc] of [
+  ["mac only", true, updateMut(c => delete c.windows)],
+  ["windows only", true, updateMut(c => delete c.macos)],
+  ["no package", false, updateMut(c => { delete c.macos; delete c.windows; })],
+  ["http package", false, updateMut(c => c.macos.url = "http://example.com/Recly.dmg")],
+  ["uppercase sha256", false, updateMut(c => c.windows.sha256 = c.windows.sha256.toUpperCase())],
+  ["numeric build", false, updateMut(c => c.macos.build = 41)],
+  ["future schema", false, updateMut(c => c.schema = 2)],
+]) {
+  const ok = updateSchema(doc);
+  if (ok !== expect) { failed++; console.log(`FAIL update: ${name} -> valid=${ok}`); }
+  else console.log(`OK   update: ${name} -> valid=${ok}`);
+}
+
 process.exit(failed ? 1 : 0);

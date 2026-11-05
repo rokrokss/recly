@@ -126,9 +126,47 @@ Apple build number as `<n>`, for example `v0.2.0-build.34`. The packages come fr
 The release carries `Recly-macOS-<version>-<build>.dmg`, `Recly-<installerVersion>.msi`,
 `Recly-Android-<version>-<build>.apk` and `.aab`, `Recly-WearOS-<version>-<build>.apk` and `.aab`
 (the `.aab` files are the Play upload bundles), `Recly-iOS-Watch-<version>-<build>.ipa` (the App
-Store upload package), `recly-notes.zip`, `recly-notion.zip`, `BUILDINFO.md`, `manifest.json` and
-`SHA256SUMS`. The build number differs per platform (below). The release body follows
+Store upload package), `recly-notes.zip`, `recly-notion.zip`, `BUILDINFO.md`, `manifest.json`,
+`update.json`, `update.json.sig` and `SHA256SUMS`. The build number differs per platform (below). The release body follows
 [Release notes](#release-notes).
+
+**Update feed (Mac and Windows)**: the installed desktop apps read `update.json` from the newest
+release that is neither a draft nor a pre-release, and install the DMG or MSI it names once its
+Ed25519 signature, size and SHA-256 check out (`docs/recly.md` §12 "Updates", §14 "Updates",
+`spec/desktop-update.schema.json`). When the DMG and the MSI are both in the release — the MSI comes
+from the workflow — sign the feed and upload it **before** the release is published as the latest,
+and list both files in `SHA256SUMS`:
+
+```bash
+swift scripts/desktop-update.swift sign --tag v0.3.3-build.42 --dmg Recly-macOS-0.3.3-42.dmg --msi Recly-0.3.3.msi
+```
+
+```bash
+gh release upload v0.3.3-build.42 update.json update.json.sig
+```
+
+A release without them leaves every installed app saying it could not check. The signing key is
+`~/.recly/update-signing.key`, made once with `swift scripts/desktop-update.swift keygen`; its public
+half is `UpdateFeed.publicKey` in `apple/RecKit/Sources/RecKit/Update/UpdateFeed.swift` and
+`windows/app/src/main/kotlin/app/recly/windows/update/UpdateFeed.kt`, and the script refuses a key
+the two do not carry. **Back the key up** (a password manager): without it no release can update the
+installed apps, and a new key means every user installs one release by hand.
+
+To try the Mac's swap without a release, sign a feed for a Debug build with a higher
+`CURRENT_PROJECT_VERSION` with a test key, and start an older Debug build with it. A Debug build
+looks for updates only when given these two variables:
+
+```bash
+swift scripts/desktop-update.swift keygen /tmp/recly-test-update.key
+```
+
+```bash
+swift scripts/desktop-update.swift sign --tag v0.3.3-build.999 --dmg /tmp/feed/Recly-macOS-0.3.3-999.dmg --key /tmp/recly-test-update.key --test-base-url file:///tmp/feed/ --test-public-key-ok --out /tmp/feed
+```
+
+```bash
+RECLY_UPDATE_FEED=file:///tmp/feed/update.json RECLY_UPDATE_PUBLIC_KEY=<the printed public key> /path/to/Debug/Recly.app/Contents/MacOS/Recly
+```
 
 **Release signing (Android)**: Play App Signing holds the app signing key; this tree only ever
 sees the *upload* key. Create it once, outside the repository (`*.jks` is gitignored anyway):

@@ -586,5 +586,22 @@
   "Transcript {0}": "Transcription {0}",
   "Summary {0}": "Résumé {0}",
   "Changed: {0}": "Modifié : {0}",
-  "Could not undo": "Impossible d’annuler"
+  "Could not undo": "Impossible d’annuler",
+  "Updates": "Mises à jour",
+  "Check for updates automatically": "Rechercher les mises à jour automatiquement",
+  "At launch and every six hours.": "Au lancement et toutes les six heures.",
+  "Check now": "Rechercher maintenant",
+  "Checking…": "Recherche…",
+  "Restart and install": "Redémarrer et installer",
+  "Installing…": "Installation…",
+  "Recly is up to date.": "Recly est à jour.",
+  "Recly {0} is available.": "Recly {0} est disponible.",
+  "You can install it once the recording is saved.": "Vous pourrez l’installer une fois l’enregistrement sauvegardé.",
+  "Could not check for updates.": "Impossible de rechercher les mises à jour.",
+  "Could not download the update.": "Impossible de télécharger la mise à jour.",
+  "The update's signature did not match, so it was not installed.": "La signature de la mise à jour ne correspondait pas ; elle n’a donc pas été installée.",
+  "Could not install the update.": "Impossible d’installer la mise à jour.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly ne peut pas se remplacer à cet emplacement. Téléchargez la nouvelle version depuis la page de publication.",
+  "Open release page": "Ouvrir la page de publication",
+  "This update needs a newer macOS.": "Cette mise à jour nécessite une version plus récente de macOS."
 }

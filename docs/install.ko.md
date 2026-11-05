@@ -114,9 +114,15 @@ jabswitch /enable
 폰과 워치 앱은 Google Play나 App Store에서 업데이트됩니다. 직접 설치한 APK는 새 APK를 처음과 같은 방법으로
 설치하면 업데이트됩니다.
 
-Mac과 Windows 앱은 스스로 업데이트하지 않습니다. Recly를 종료한 다음(Mac 메뉴 막대 팝오버나 Windows 트레이 창의
-**종료**), [최신 릴리스](https://github.com/rokrokss/recly/releases/latest)의 새 DMG나 MSI를 기존 앱 위에
-설치하세요. MSI는 설치된 앱을 업그레이드합니다.
+Mac과 Windows 앱은 스스로 업데이트합니다. 실행할 때와 6시간마다 새 릴리스를 확인하고, 새 버전이 나오면 설정 →
+**업데이트**와 Mac 메뉴 막대 팝오버, Windows 트레이 창에 **다시 시작하고 설치**가 나옵니다. Recly가 새 버전을 내려받아
+릴리스의 서명된 파일이 맞는지 확인한 다음 설치하고 다시 엽니다. 녹음하거나 저장하는 중에는 설치하지 않습니다.
+**지금 확인**을 누를 때만 확인하려면 설정 → **업데이트**에서 **업데이트 자동 확인**을 끄세요.
+
+Recly 0.3.2 이하는 스스로 업데이트할 수 없고, 응용 프로그램 폴더에 쓸 수 없는 계정의 Mac도 앱을 바꿀 수 없습니다.
+이럴 때는 Recly를 종료한 다음(Mac 메뉴 막대 팝오버나 Windows 트레이 창의 **종료**),
+[최신 릴리스](https://github.com/rokrokss/recly/releases/latest)의 새 DMG나 MSI를 기존 앱 위에 설치하세요.
+MSI는 설치된 앱을 업그레이드합니다.
 
 새 릴리스 알림을 받으려면 GitHub의 [rokrokss/recly](https://github.com/rokrokss/recly)에서 **Watch** →
 **Custom** → **Releases**를 고르세요.

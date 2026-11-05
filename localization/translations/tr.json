@@ -586,5 +586,22 @@
   "Transcript {0}": "Transkript {0}",
   "Summary {0}": "Özet {0}",
   "Changed: {0}": "Değişenler: {0}",
-  "Could not undo": "Geri alınamadı"
+  "Could not undo": "Geri alınamadı",
+  "Updates": "Güncellemeler",
+  "Check for updates automatically": "Güncellemeleri otomatik denetle",
+  "At launch and every six hours.": "Açılışta ve altı saatte bir.",
+  "Check now": "Şimdi denetle",
+  "Checking…": "Denetleniyor…",
+  "Restart and install": "Yeniden başlat ve kur",
+  "Installing…": "Kuruluyor…",
+  "Recly is up to date.": "Recly güncel.",
+  "Recly {0} is available.": "Recly {0} kullanılabilir.",
+  "You can install it once the recording is saved.": "Kayıt kaydedildikten sonra kurabilirsiniz.",
+  "Could not check for updates.": "Güncellemeler denetlenemedi.",
+  "Could not download the update.": "Güncelleme indirilemedi.",
+  "The update's signature did not match, so it was not installed.": "Güncellemenin imzası eşleşmediği için kurulmadı.",
+  "Could not install the update.": "Güncelleme kurulamadı.",
+  "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly bulunduğu yerde kendini değiştiremiyor. Yeni sürümü sürüm sayfasından indirin.",
+  "Open release page": "Sürüm sayfasını aç",
+  "This update needs a newer macOS.": "Bu güncelleme daha yeni bir macOS gerektiriyor."
 }
