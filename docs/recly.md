@@ -2042,7 +2042,7 @@ screen; kept regardless of the part deletion rules).
 | File | Contents |
 |---|---|
 | `{base}.transcript.json` | The schema below. The canonical copy for machines |
-| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text` — or `[HH:MM:SS] Minsu: text` once the user named that speaker (2026-10-07, §8 "Editing"); a segment without a speaker has no label. A line break when the speaker changes or a segment passes 60 seconds |
+| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text` — or `[HH:MM:SS] Minsu: text` once the user named that speaker (2026-10-07, §8 "Editing"); a segment without a speaker has no label. A line break when the speaker changes or a segment passes 60 seconds. Within a line, segments are joined by a space — by nothing where both sides of the join are Han, Kana or full-width punctuation, as Japanese and Chinese are written; the space stays for Hangul, Thai and Latin and at a mixed join such as Han next to Latin or digits (2026-11-05, `WritingSystem.separator`; files written before stay as they are until the transcript is written again) |
 | `{base}.transcript.md` | **Local folder only** (§3 "Storage location"), for notes apps such as Obsidian that open only Markdown (2026-10-03). Front matter `title` (only when there is one; a JSON string, which YAML reads as a double-quoted scalar) · `recordingId` · `startedAt`, then the lines of `.txt`, each its own paragraph. A rename and an edit rewrite it |
 
 Drive writes follow the same idempotency rule as `drive.upload` (same name + same md5 is skipped; otherwise it is **overwritten** — after a rerun the latest
@@ -2143,13 +2143,23 @@ first, `current` — as `TranscriptVersion(id, kind, at, current)`; `restoreTran
 is nothing in that format. `ExportFormat` is `TXT` (the `.txt` lines), `MD` (the `.md` above and — 2026-10-28 —
 the recording's notes as their own section (`notes.markdown`, §8 "Organizing") before a `## Transcript` one; the `.md` in a local folder
 is written without them), `NOTES` (the notes as text, `notes.text`, `… .notes.txt`), `SRT` and `VTT` —
-one cue per segment, the speaker's name or id in front when speakers were identified; a segment longer than 7 seconds or 84 characters is
-cut between its words where it has word timings and stays one cue where it does not — and `AUDIO`, the playback track (`mix`, else
+one cue per segment, the speaker's name or id in front when speakers were identified; a segment longer than 7 seconds or its writing
+system's cue length is cut between its words where it has word timings and stays one cue where it does not — and `AUDIO`, the playback track (`mix`, else
 `mono`) joined into one `.m4a` by the shell's lossless `AudioTools.concat`, after any part the retention sweep took is fetched back. The
 file is named for people — `2026-08-26 Weekly meeting.srt`, the date in the recording's own time zone and without what file systems
 refuse, the title cut to 100 characters and to what fits in a 255-byte UTF-8 name, never inside a character, or the recording's `{base}`
 when it has no title — in a directory of its own under `{dataDir}/exports/`. Exports are a cache: the
 first export of a process removes every earlier one, each later one those older than an hour.
+
+**Cue length** (2026-11-05, `WritingSystem.cueLimit`). A cue is measured in half-width units — a Hangul, Han or Kana character or
+full-width punctuation counts 2, anything else 1 — against two lines of the Netflix Timed Text Style Guides (partnerhelp.netflixstudios.com,
+read 2026-11-05): Japanese 13 full-width characters a line (article 215767517, change log 2025-12-19), Korean 16 (216001127,
+2025-07-07), Simplified Chinese 16 (215986007, 2025-07-04) and Traditional Chinese 16 (215994807, 2025-12-19), at most two lines each —
+52 units for Japanese, 64 for Korean and Chinese. The Korean and Japanese guides count a half-width character, space or punctuation mark
+as half a character; the Chinese guides do not say, and Recly counts it half there too. Everything else keeps 84 characters, two lines
+of the English (USA) guide's 42 (217350977, 2025-12-19). A segment is measured as East Asian when its Hangul, Han and Kana letters are
+at least as many as its other letters, and as Japanese when Kana is among them — a Korean line with an English word is Korean, an
+English line with a Japanese place name English. The speaker's name in front is not counted.
 
 ### Meta hint `context.participants`
 
