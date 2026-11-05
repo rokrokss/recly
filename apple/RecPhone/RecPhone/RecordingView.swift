@@ -162,6 +162,9 @@ struct RecordingView: View {
             }
             .padding(.bottom, Space.l)
         }
+        // The screen's width, not its widest line's: with nothing full-width left in it since the state nodes went
+        // (2026-11-04), the stack hugged the timer and the GeometryReader set it at the leading edge.
+        .frame(maxWidth: .infinity)
     }
 
     /// The notes block as the recording screen has it: no overview, and the time a plain label — there is no playback
