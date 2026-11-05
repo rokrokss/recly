@@ -8,6 +8,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,13 +56,40 @@ fun ScreenHeader(
         horizontalArrangement = Arrangement.spacedBy(Space.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
-            // docs/09 "Disabled, focus and structure": a screen's title is a heading a reader can jump to.
-            Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
-                maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
-            meta?.let { SelectionContainer { Text(it, style = mono.small, color = blueprint.textMuted) } }
-        }
+        ScreenTitle(title, meta, Modifier.weight(1f))
         trailing?.invoke()
+    }
+}
+
+/**
+ * [ScreenHeader] for a list down the side, whose [actions] go on a line of their own under the title when they do not
+ * fit beside it, rather than breaking the title's word: in half the languages a title and two worded buttons are more
+ * than [SidebarWidth] (docs/09 "To-dos view").
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ListHeader(title: String, meta: String?, modifier: Modifier = Modifier, actions: @Composable () -> Unit) {
+    FlowRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = Space.m, end = Space.m, top = Space.m, bottom = Space.sm),
+        // 8 beside the title rather than the 12 of [ScreenHeader]: in English the title and both buttons just fit.
+        horizontalArrangement = Arrangement.spacedBy(Space.s),
+        verticalArrangement = Arrangement.spacedBy(Space.s),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        ScreenTitle(title, meta, Modifier.weight(1f))
+        actions()
+    }
+}
+
+@Composable
+private fun ScreenTitle(title: String, meta: String?, modifier: Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+        // docs/09 "Disabled, focus and structure": a screen's title is a heading a reader can jump to.
+        Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
+            maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
+        meta?.let { SelectionContainer { Text(it, style = mono.small, color = blueprint.textMuted) } }
     }
 }
 

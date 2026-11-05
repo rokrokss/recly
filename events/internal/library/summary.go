@@ -42,6 +42,7 @@ type noteItem struct {
 	Due      string `json:"due"`
 	Section  string `json:"section"`
 	EditedAt string `json:"editedAt"`
+	DoneAt   string `json:"doneAt"`
 	Evidence struct {
 		AtSec float64 `json:"atSec"`
 	} `json:"evidence"`
@@ -162,6 +163,8 @@ type summaryItem struct {
 	AtSec        float64 `json:"atSec"`
 	Clock        string  `json:"clock"`
 	EditedByUser bool    `json:"editedByUser,omitempty"`
+	// Done marks a to-do the user checked in the app.
+	Done bool `json:"done,omitempty"`
 }
 
 type userNotes struct {
@@ -221,7 +224,7 @@ func renderSummary(f *SummaryFiles) summaryAnswer {
 		}
 		item := summaryItem{
 			Text: it.words(), Owner: it.Owner, OwnerName: names[it.Owner], OwnerIsUser: it.Owner != "" && me[it.Owner], Due: it.Due,
-			AtSec: it.Evidence.AtSec, Clock: Clock(it.Evidence.AtSec), EditedByUser: it.EditedAt != "",
+			AtSec: it.Evidence.AtSec, Clock: Clock(it.Evidence.AtSec), EditedByUser: it.EditedAt != "", Done: it.DoneAt != "",
 		}
 		sections[i].Items = append(sections[i].Items, item)
 	}

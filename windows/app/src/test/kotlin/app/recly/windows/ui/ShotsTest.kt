@@ -32,6 +32,7 @@ import app.recly.windows.helper.FakeHelperCommand
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
+import app.recly.windows.i18n.UiMessage
 import app.recly.windows.ui.component.DialogCard
 import app.recly.windows.ui.theme.ReclyDesktopTheme
 import app.recly.windows.ui.theme.blueprint
@@ -319,7 +320,7 @@ class ShotsTest {
             shot("notes-changed-$lang", 700, 620, ko) {
                 Column(androidx.compose.ui.Modifier.fillMaxSize().background(blueprint.background).padding(16.dp)) {
                     NotesBlock(
-                        notes, canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, strings = strings,
+                        notes, canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, onDone = { _, _ -> }, strings = strings,
                         changed = setOf(notes.decisions.first().id), overviewChanged = true,
                     )
                 }
@@ -435,6 +436,146 @@ class ShotsTest {
         model.shutdown()
     }
 
+    /**
+     * docs/09 "To-dos view", over a shell of its own with three recordings: the list's button, the view with open, held and
+     * done rows, a group opening its recording, a to-do checked in the detail, and the view going back by itself. The boxes
+     * and the buttons are pressed, so what is on disk is what is drawn.
+     */
+    @Test
+    fun `the to-dos view as it looks`() = runBlocking {
+        val out = out ?: return@runBlocking println("SHOTS skipped — no -Drecly.shots")
+        out.mkdirs()
+        val dir = File("build/shots-todos-data").absoluteFile.apply { deleteRecursively(); mkdirs() }
+        val folder = File(dir, "folder").apply { mkdirs() }
+        val model = ShellModel(localization = Localization(FakeSettings(localFolder = folder.path, consentReminder = false)) { "en" })
+        model.load(dataDirectory = File(dir, "data").path.toPath(), helperCommand = FakeHelperCommand.command())
+        until {
+            model.selectStorage(StorageKind.FOLDER)
+            model.storage == StorageKind.FOLDER
+        }
+        model.useLocalFolder(folder.path)
+        val processing = model.processing!!
+        until { processing.draft != null }
+        delay(500)
+        processing.edit { it.selectTranscriptionMode(TranscriptionMode.OFF, "en") }
+        processing.save()
+        runCatching { until { processing.summary.mode == TranscriptionMode.OFF } }.onFailure { error("save: ${processing.message}") }
+
+        // Oldest first, so that the list reads newest first as the view does.
+        val now = System.currentTimeMillis()
+        val names = listOf("Share", "Customer call about the Hanbit renewal and the pricing follow-up", "Weekly sync")
+        names.forEachIndexed { index, name ->
+            val audio = File(dir, "$name.wav")
+            run("ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=300:duration=40:sample_rate=16000", audio.path)
+            audio.setLastModified(now - (names.size - index) * 86_400_000L)
+            model.importFiles(listOf(audio))
+            until { model.recents.size == index + 1 && model.recents.all { it.jobStatus?.name == "DONE" } }
+        }
+        val share = model.recents.single { (it.title as? UiMessage.Text)?.value == "Share" }.id
+        val customer = model.recents.single { (it.title as? UiMessage.Text)?.value == names[1] }.id
+        val weekly = model.recents.single { (it.title as? UiMessage.Text)?.value == "Weekly sync" }.id
+        // The row's fallback: a recording with no title is Untitled in the view too.
+        model.rename(RenameRequest(share, "Share"), "")
+        until { model.recents.any { it.id == share && it.title !is UiMessage.Text } }
+
+        fun seed(recordingId: String, vararg items: String) {
+            val recording = File(dir, "data/recordings").listFiles()!!.single { candidate ->
+                candidate.listFiles()!!.first { it.name.endsWith(".meta.json") }.readText().contains(recordingId)
+            }
+            val base = recording.listFiles()!!.first { it.name.endsWith(".meta.json") }.name.removeSuffix(".meta.json")
+            File(recording, "$base.transcript.json").writeText(Json.encodeToString(Transcript.serializer(), sample(recordingId)))
+            File(recording, "$base.notes.v1.json").writeText(
+                """{"schema":1,"recordingId":"$recordingId","stage":"final",""" +
+                    """"overview":"A short release review: the import button and the speed controls are in, and the release ships on Friday.",""" +
+                    """"items":[${items.joinToString(",")}],"conversations":[{"startSec":0.0,"endSec":40.0}],"model":"gpt-5.4","modelName":"GPT-5.4",""" +
+                    """"createdAt":"2026-11-06T10:00:00Z","updatedAt":"2026-11-06T10:05:00Z","finalizedAt":"2026-11-06T10:05:00Z"}""",
+            )
+        }
+        fun item(id: String, kind: String, text: String, atSec: Double, extra: String = "") =
+            """{"id":"$id","kind":"$kind","text":"$text","evidence":{"atSec":$atSec,"quote":""},"provisional":false,""" +
+                """"conversation":0$extra,"createdAt":"2026-11-06T10:05:00Z"}"""
+        val done = ""","doneAt":"2026-11-06T11:00:00Z""""
+        seed(
+            weekly,
+            item("w0", "decision", "Ship the release on Friday.", 31.0),
+            item("w1", "todo", "Publish the release notes.", 20.0, ""","owner":"S1","due":"Thursday""""),
+            item("w2", "todo", "Check the speed controls on the player bar before the release goes out to everyone on the list.", 11.5, ""","owner":"S2""""),
+            item("w3", "todo", "Move the import button to the list header.", 6.0, done),
+        )
+        seed(
+            customer,
+            item("c1", "todo", "Send the quote.", 20.0, ""","due":"Friday""""),
+            item("c2", "todo", "Book the follow-up call.", 6.0, done),
+        )
+        seed(share, item("s1", "todo", "Share the recording with Joon.", 6.0, done))
+        suspend fun set(recordingId: String, itemId: String, value: Boolean) {
+            model.setTodoDone(recordingId, itemId, value)
+            withTimeout(30_000) { model.observeTodos().first { all -> all.flatMap { it.items }.single { it.id == itemId }.done == value } }
+        }
+
+        val window: @Composable () -> Unit = { RecordingsWindow(model, model.localization.current) { it() } }
+        // Light and dark in English, and the plain states in Korean and right to left.
+        for (dark in listOf(false, true)) {
+            val theme = if (dark) "dark" else "light"
+            shot("todos-list-$theme", 1000, 680, false, dark = dark) { window() }
+            shot("todos-view-$theme", 1000, 680, false, dark = dark, clicks = listOf(TODOS)) { window() }
+            shot("todos-done-open-$theme", 1000, 680, false, dark = dark, clicks = listOf(TODOS, TODOS_DONE)) { window() }
+            // Checked here: it stays where it is, struck through, and the header counts one fewer.
+            shot("todos-held-$theme", 1000, 680, false, dark = dark, clicks = listOf(TODOS, TODOS_FIRST_BOX)) { window() }
+            set(weekly, "w1", false)
+            // Left and opened again, it has gone behind `Done`.
+            shot("todos-held-left-$theme", 1000, 680, false, dark = dark, clicks = listOf(TODOS, TODOS_FIRST_BOX, TODOS_BACK, TODOS)) { window() }
+            set(weekly, "w1", false)
+            // A group's header opens the recording on its Summary chip, with its done to-do where it was.
+            shot("todos-detail-$theme", 1000, 680, false, dark = dark, clicks = listOf(TODOS, TODOS_FIRST_GROUP)) { window() }
+            check(model.detail?.recordingId == weekly && model.detail?.showingNotes == true) { "the group did not open on its summary: ${model.detail}" }
+            // Its box in the detail, with the view beside it.
+            shot("todos-detail-checked-$theme", 1000, 680, false, dark = dark, clicks = listOf(TODOS, TODOS_DETAIL_BOX)) { window() }
+            check(model.observeTodos().first().flatMap { it.items }.single { it.id == "w1" }.done) { "the detail's box did not check it" }
+            set(weekly, "w1", false)
+        }
+        // The keyboard's focus on the box, which on a ticked one is the ink on its fill.
+        for (ticked in listOf(false, true)) {
+            shot("todos-focus-${if (ticked) "ticked" else "open"}-light", 500, 60, false, tabs = 2) {
+                Column(androidx.compose.ui.Modifier.fillMaxSize().background(blueprint.surface)) {
+                    TodoRow(
+                        recly.core.notes.NoteItem("f", recly.core.notes.NoteKind.TODO, "Send the quote.", null, "Friday", 20.0, "", provisional = false, done = ticked),
+                        onDone = {}, onOpen = {},
+                    )
+                }
+            }
+        }
+        // The header in the languages with the longest words: the buttons under the title, and the title whole.
+        for ((language, lang) in listOf(AppLanguage.KOREAN to "ko", AppLanguage.GERMAN to "de", AppLanguage.RUSSIAN to "ru", AppLanguage.FILIPINO to "fil")) {
+            model.selectLanguage(language)
+            val strings = model.localization.current
+            shot("todos-list-$lang", 1000, 680, language == AppLanguage.KOREAN) { RecordingsWindow(model, strings) { it() } }
+        }
+        model.selectLanguage(AppLanguage.KOREAN)
+        model.localization.current.let { strings ->
+            shot("todos-view-ko", 1000, 680, true, clicks = listOf(TODOS_KO)) { RecordingsWindow(model, strings) { it() } }
+        }
+        model.selectLanguage(AppLanguage.ARABIC)
+        model.localization.current.let { strings ->
+            shot("todos-view-ar", 1000, 680, false, rtl = true, clicks = listOf(Offset(1000f - TODOS_AR.x, TODOS_AR.y))) { RecordingsWindow(model, strings) { it() } }
+        }
+        model.selectLanguage(AppLanguage.ENGLISH)
+
+        // Nothing open: the done rows are simply there, with no `Done` row.
+        set(weekly, "w1", true)
+        set(weekly, "w2", true)
+        set(customer, "c1", true)
+        shot("todos-all-done-light", 1000, 680, false, clicks = listOf(TODOS)) { window() }
+        // The last to-do gone with the view on show: it goes back by itself, and the button with it.
+        shot("todos-none-left-light", 1000, 680, false, clicks = listOf(TODOS), after = {
+            listOf(weekly to "w1", weekly to "w2", weekly to "w3", customer to "c1", customer to "c2", share to "s1").forEach { (recordingId, itemId) ->
+                model.deleteNote(recordingId, itemId)
+            }
+            withTimeout(30_000) { model.observeTodos().first { it.isEmpty() } }
+        }) { window() }
+        model.shutdown()
+    }
+
     /** `{base}.notes.v1.json` as the final pass writes it (`spec/notes.schema.json`), over [sample]'s lines. */
     private fun notesFile(recordingId: String): String {
         fun item(id: String, kind: String, text: String, atSec: Double, quote: String, extra: String = "") =
@@ -486,6 +627,10 @@ class ShotsTest {
         scroll: Offset? = null,
         /** Laid out right to left, as `Main.Themed` lays out Arabic, Persian and Urdu. */
         rtl: Boolean = false,
+        /** Tab presses, after the clicks: what the keyboard's focus ring looks like. */
+        tabs: Int = 0,
+        /** Run once the clicks have been drawn, with the scene still up. */
+        after: (suspend () -> Unit)? = null,
 
         content: @Composable () -> Unit,
     ): Unit = withContext(Dispatchers.Swing) {
@@ -511,6 +656,17 @@ class ShotsTest {
                 settle(scene)
             }
             val source = java.awt.Canvas()
+            repeat(tabs) {
+                for ((id, type) in listOf(java.awt.event.KeyEvent.KEY_PRESSED to KeyEventType.KeyDown, java.awt.event.KeyEvent.KEY_RELEASED to KeyEventType.KeyUp)) {
+                    val key = java.awt.event.KeyEvent(source, id, System.currentTimeMillis(), 0, java.awt.event.KeyEvent.VK_TAB, '\t')
+                    scene.sendKeyEvent(androidx.compose.ui.input.key.KeyEvent(Key.Tab, type, codePoint = '\t'.code, nativeEvent = key))
+                }
+            }
+            if (tabs > 0) settle(scene)
+            after?.let {
+                it()
+                settle(scene)
+            }
             typed.forEach { char ->
                 val key = java.awt.event.KeyEvent(source, java.awt.event.KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, java.awt.event.KeyEvent.VK_UNDEFINED, char)
                 scene.sendKeyEvent(androidx.compose.ui.input.key.KeyEvent(Key.Unknown, KeyEventType.Unknown, codePoint = char.code, nativeEvent = key))
@@ -569,6 +725,15 @@ class ShotsTest {
         val TRAY_MEMO = Offset(60f, 300f)
         // The decision's field in Edit notes, past the end of its words.
         val NOTES_FIELD = Offset(900f, 513f)
+        // The to-dos view in the 1000×680 window, with [ShotsTest]'s three recordings seeded for it.
+        val TODOS = Offset(120f, 38f)
+        val TODOS_KO = Offset(136f, 38f)
+        val TODOS_AR = Offset(159f, 38f)
+        val TODOS_BACK = Offset(240f, 38f)
+        val TODOS_FIRST_GROUP = Offset(150f, 95f)
+        val TODOS_FIRST_BOX = Offset(25f, 135f)
+        val TODOS_DONE = Offset(60f, 369f)
+        val TODOS_DETAIL_BOX = Offset(326f, 411f)
         const val SETTINGS_HEIGHT = 3100
 
         const val ASK_REQUEST = "Mina's name is spelled Minna. Who publishes the release notes?"

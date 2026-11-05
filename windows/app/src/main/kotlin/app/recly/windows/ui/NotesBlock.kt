@@ -43,6 +43,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.BlueprintButton
+import app.recly.windows.ui.component.BlueprintCheckBox
 import app.recly.windows.ui.component.BlueprintMenu
 import app.recly.windows.ui.component.BlueprintMenuColumn
 import app.recly.windows.ui.component.BlueprintMenuRow
@@ -63,6 +65,7 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
 import recly.core.notes.NoteItem
+import recly.core.notes.NoteKind
 import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 
@@ -71,7 +74,8 @@ import recly.core.notes.RecordingNotes
  * To-dos and Questions, then the user's own sections under their names, each only while it has items, and nothing at
  * all when there is nothing (no empty state, no label for how far they have come). A row opens the transcript's lines
  * around its moment under itself, one row at a time ([linesAround]); its time moves the playhead there ([onSeek]) while
- * [canSeek]; its context menu — a right click, the menu key or Shift+F10 — has Delete, which asks nothing ([onDelete]).
+ * [canSeek]; its context menu — a right click, the menu key or Shift+F10 — has Delete, which asks nothing ([onDelete]);
+ * a to-do's has its box before its words ([onDone]).
  */
 @Composable
 internal fun NotesBlock(
@@ -80,6 +84,8 @@ internal fun NotesBlock(
     onSeek: (Double) -> Unit,
     linesAround: suspend (Double) -> List<NoteLine>,
     onDelete: (NoteItem) -> Unit,
+    /** docs/09 "To-dos view": a to-do's box was pressed. */
+    onDone: (NoteItem, Boolean) -> Unit,
     strings: Strings,
     /** A time past it is off, as a transcript time past it is. */
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
@@ -114,6 +120,7 @@ internal fun NotesBlock(
                     onSeek = onSeek,
                     linesAround = linesAround,
                     onDelete = onDelete,
+                    onDone = onDone,
                     strings = strings,
                     spanSec = spanSec,
                     tint = tint.takeIf { item.id in changed },
@@ -148,12 +155,12 @@ internal fun NoteRow(
     onSeek: (Double) -> Unit,
     linesAround: suspend (Double) -> List<NoteLine>,
     onDelete: (NoteItem) -> Unit,
+    onDone: (NoteItem, Boolean) -> Unit,
     strings: Strings,
     spanSec: Double?,
     /** docs/09 "Ask": the background of its words, where the answer on screen changed or added it. */
     tint: Color? = null,
 ) {
-    val palette = blueprint
     // Where the context menu hangs: the click, or the row's foot for a key.
     var menuAt by remember(item.id) { mutableStateOf<Offset?>(null) }
     var size by remember { mutableStateOf(IntSize.Zero) }
@@ -188,12 +195,7 @@ internal fun NoteRow(
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    noteText(item, palette.textMuted, tint),
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
-                    color = palette.text,
-                )
+                NoteWords(item, { done -> onDone(item, done) }, Modifier.weight(1f), tint)
                 // The transcript's time button, at the status badge's size, which only moves the playhead as the
                 // transcript's does (2026-10-28): playing or paused stays as it was. An answer's time still plays.
                 val label = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((item.atSec * 1000).toLong())]
@@ -228,6 +230,27 @@ internal fun NoteRow(
             }
         }
         if (expanded) NoteLines(item, linesAround, strings)
+    }
+}
+
+/**
+ * docs/09 "To-dos view": what a row says, in the detail and in the To-dos view — a to-do's words after its box, on their
+ * first line, and struck through in the secondary colour once it is done.
+ */
+@Composable
+internal fun NoteWords(item: NoteItem, onDone: (Boolean) -> Unit, modifier: Modifier = Modifier, tint: Color? = null) {
+    val palette = blueprint
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+        if (item.kind == NoteKind.TODO) BlueprintCheckBox(item.text, item.done, onDone, Modifier.padding(top = BOX_ON_FIRST_LINE))
+        Text(
+            noteText(item, palette.textMuted, tint),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                textDirection = TextDirection.Content,
+                textDecoration = if (item.done) TextDecoration.LineThrough else null,
+            ),
+            color = if (item.done) palette.textMuted else palette.text,
+        )
     }
 }
 
@@ -289,3 +312,6 @@ private fun folded(text: String): String = text.filter(Char::isLetterOrDigit).lo
 
 /** The keys that open a focused row's context menu on Windows: the menu key, and Shift+F10. */
 internal fun opensContextMenu(key: Key, shift: Boolean): Boolean = key == Key.Menu || (shift && key == Key.F10)
+
+/** The box's 18 centred on the first line of a row's words. */
+private val BOX_ON_FIRST_LINE = 1.dp

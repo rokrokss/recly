@@ -357,8 +357,46 @@ class AskEditsTest {
         )
         assertTrue(AskProposal.parse("""{"items":[{"n":2,"text":"(owner: Mina; due: Friday)"}]}""", sent, summary).items.isEmpty())
         val instructions = AskPrompts.instructions(sent, summary, SummaryPreferences())
-        assertTrue("never a time, owner or due date: the (owner: …; due: …) and the [HH:MM:SS] that end a summary line are kept apart" in instructions, instructions)
-        assertTrue("@number text (owner: …; due: …) [HH:MM:SS]" in AskPrompts.input(sent, summary, "", "Fix it."))
+        assertTrue("never a time, owner or due date: the (owner: …; due: …; done) and the [HH:MM:SS] that end a summary line are kept apart" in instructions, instructions)
+        assertTrue("@number text (owner: …; due: …; done) [HH:MM:SS]" in AskPrompts.input(sent, summary, "", "Fix it."))
+    }
+
+    @Test
+    fun `a checked to-do says so in the request, and the mark copied after its words is dropped`() {
+        val done = AskSummary(
+            summary.notes.copy(todos = summary.notes.todos.map { it.copy(done = true) }),
+            listOf(NoteSection("risks", "Risks", "What could go wrong")),
+        )
+        val input = AskPrompts.input(sent, done, "", "What's left?")
+        assertTrue("@2 Write it. (owner: Mina; due: Friday; done) [00:00:01]" in input, input)
+        assertEquals(
+            mapOf("T1" to "Write it by noon."),
+            AskProposal.parse("""{"items":[{"n":2,"text":"Write it by noon. (owner: Mina; due: Friday; done)"}]}""", sent, done).items,
+        )
+        assertEquals(
+            mapOf("T1" to "Write it by noon."),
+            AskProposal.parse("""{"items":[{"n":2,"text":"Write it by noon. (owner: Mina; due: Friday; done)"}]}""", sent, summary).items,
+            "not checked, the mark asked for is dropped: the check is the user's",
+        )
+        assertEquals(mapOf("T1" to "Write it by noon."), AskProposal.parse("""{"items":[{"n":2,"text":"Write it by noon. (owner: Mina; due: Friday)"}]}""", sent, done).items)
+        assertTrue("a request can neither set it nor clear it" in AskPrompts.instructions(sent, summary, SummaryPreferences()))
+    }
+
+    @Test
+    fun `a to-do checked after a request does not stop its Undo, and stays checked`() = runBlocking {
+        val meta = f.recordAndRun()
+        finalNotes(meta)
+        val change = assertNotNull(f.core.notes.applyAsk(meta.recordingId, null, mapOf("D1" to "레클리 ships on Monday."), emptyList()))
+
+        assertTrue(f.core.notes.setDone(meta.recordingId, "T1", true))
+        assertTrue(f.core.notes.undoAsk(meta.recordingId, change))
+
+        val undone = f.core.notes.get(meta.recordingId)
+        assertEquals(listOf("레클리 ships on Friday."), undone.decisions.map { it.text })
+        assertEquals(listOf("T1" to true), undone.todos.map { it.id to it.done })
+
+        assertTrue(f.core.notes.edit(meta.recordingId, "Mine", emptyList()))
+        assertFalse(f.core.notes.undoAsk(meta.recordingId, change), "changed in any other way, it stays")
     }
 
     @Test

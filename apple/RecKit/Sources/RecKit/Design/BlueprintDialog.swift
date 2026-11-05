@@ -354,7 +354,7 @@ private struct OptionRow: View {
 ///
 /// Disabled, it keeps what it shows — ticked or not — in `disabled`, its edge dashed (docs/09 "Disabled, focus and
 /// structure").
-private struct SelectionMark: View {
+struct SelectionMark: View {
     @Environment(\.blueprint) private var blueprint
     @Environment(\.isEnabled) private var isEnabled
     let selected: Bool

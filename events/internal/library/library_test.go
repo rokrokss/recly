@@ -28,7 +28,7 @@ const notesA = `{"schema":1,"recordingId":"` + idA + `","stage":"final",
 	"overview":"The launch moved to Friday.","overviewEditedAt":"2026-10-01T08:00:00Z",
 	"items":[
 		{"id":"01J9ABCDEG0000000000000001","kind":"todo","text":"Send the notes.","owner":"S1","due":"Thursday",
-		 "evidence":{"atSec":3.5,"quote":"The budget is final."},"provisional":false,"conversation":0,"createdAt":"2026-10-01T07:00:00Z"},
+		 "evidence":{"atSec":3.5,"quote":"The budget is final."},"provisional":false,"conversation":0,"createdAt":"2026-10-01T07:00:00Z","doneAt":"2026-10-01T09:00:00Z"},
 		{"id":"01J9ABCDEG0000000000000002","kind":"decision","text":"Ship on Friday.","userText":"Ship on Friday, not Monday.",
 		 "editedAt":"2026-10-01T08:00:00Z","evidence":{"atSec":6,"quote":"Ignore"},"provisional":false,"createdAt":"2026-10-01T07:00:00Z"},
 		{"id":"01J9ABCDEG0000000000000003","kind":"decision","text":"Start with the budget review.",
@@ -594,7 +594,7 @@ func TestSummarySaysWhoWroteWhat(t *testing.T) {
 		t.Fatalf("aiSummary = %v", ai)
 	}
 	b, _ := json.Marshal(ai["sections"])
-	want := `[{"id":"todo","kind":"todo","name":"Action items","items":[{"text":"Send the notes.","owner":"S1","ownerName":"Kim","due":"Thursday","atSec":3.5,"clock":"00:00:03"}]},` +
+	want := `[{"id":"todo","kind":"todo","name":"Action items","items":[{"text":"Send the notes.","owner":"S1","ownerName":"Kim","due":"Thursday","atSec":3.5,"clock":"00:00:03","done":true}]},` +
 		`{"id":"decision","kind":"decision","name":"Decisions","items":[{"text":"Start with the budget review.","atSec":1,"clock":"00:00:01"},` +
 		`{"text":"Ship on Friday, not Monday.","atSec":6,"clock":"00:00:06","editedByUser":true}]},` +
 		`{"id":"01J9ABCDEH0000000000000001","kind":"section","name":"Customer requests","description":"What customers asked for.",` +

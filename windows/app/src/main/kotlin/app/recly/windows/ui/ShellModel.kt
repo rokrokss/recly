@@ -93,6 +93,7 @@ import recly.core.notes.NoteEdit
 import recly.core.notes.NoteLine
 import recly.core.notes.NotesHeadings
 import recly.core.notes.RecordingNotes
+import recly.core.notes.RecordingTodos
 import recly.core.platform.Logger
 import recly.core.processing.ProcessingSaveResult
 import recly.core.recording.DeleteResult
@@ -107,6 +108,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOn
 import recly.core.recording.RecordingRecord
 import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptAvailability
@@ -1655,6 +1657,11 @@ class ShellModel(
             showingNotes = opensOnNotes(hit), showingMemo = opensOnMemo(hit))
     }
 
+    /** docs/09 "To-dos view": a group or a row of the view opens the recording on its Summary chip, as a hit found in the notes does. */
+    fun openTodos(recordingId: String, title: String?) {
+        openDetail(recordingId, title?.takeIf { it.isNotBlank() }?.let(UiMessage::Text) ?: Str.UNTITLED.message(), showingNotes = true)
+    }
+
     /** More → Transcribe again: the confirmation, worded from the settings as they are now. */
     fun askToRetranscribe() {
         val detail = detail ?: return
@@ -1962,6 +1969,18 @@ class ShellModel(
         scope.launch {
             runCatching { graph.core.notes.deleteItem(recordingId, itemId) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.delete.failed", error = it) }
+        }
+    }
+
+    /** docs/08 "To-dos": every recording's to-dos on this device, as they change; none before the shell has loaded. */
+    fun observeTodos(): Flow<List<RecordingTodos>> = graph?.core?.notes?.observeTodos()?.flowOn(Dispatchers.IO) ?: emptyFlow()
+
+    /** A to-do's box. A failed write leaves the row as it was (docs/09 "To-dos view"): the log says so, and nothing else does. */
+    fun setTodoDone(recordingId: String, itemId: String, done: Boolean) {
+        val graph = graph ?: return
+        scope.launch {
+            runCatching { graph.core.notes.setDone(recordingId, itemId, done) }
+                .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.done.failed", error = it) }
         }
     }
 

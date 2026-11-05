@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import okio.Path.Companion.toPath
@@ -128,5 +129,30 @@ class TranscriptReaderTest {
         val goTo = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.transcript_seek, hms(42))
         ui.onNodeWithContentDescription(goTo).performClick()
         ui.runOnIdle { assertEquals(42.0, target) }
+    }
+
+    /** docs/09 "To-dos view": a to-do's row has the box, a check box named by its words; a decision's has none. */
+    @Test fun aToDoHasTheBoxAndADecisionNone() {
+        val decision = NoteItem("d", NoteKind.DECISION, "Ship it", null, null, atSec = 1.0, quote = "", provisional = false)
+        val todo = NoteItem("t", NoteKind.TODO, "Send it", null, null, atSec = 2.0, quote = "", provisional = false)
+        val notes = RecordingNotes("reader-test", NotesStage.FINAL, null, listOf(decision), listOf(todo), emptyList(), organizing = false)
+        var done: Pair<NoteItem, Boolean>? = null
+        ui.setContent { ReclyTheme {
+            NotesBlock(notes, overview = true, scaleSec = 7200, onDelete = {}, lines = { emptyList() }, onDone = { item, checked -> done = item to checked })
+        } }
+        ui.onNodeWithTag("todo-box-d").assertDoesNotExist()
+        ui.onNodeWithContentDescription("Send it")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
+            .assertIsOff()
+            .performClick()
+        ui.runOnIdle { assertEquals(todo to true, done) }
+    }
+
+    /** docs/09 "To-dos view": the record screen passes no callback, and its rows have no box. */
+    @Test fun aRowWithoutTheCallbackHasNoBox() {
+        val todo = NoteItem("t", NoteKind.TODO, "Send it", null, null, atSec = 2.0, quote = "", provisional = false)
+        val notes = RecordingNotes("reader-test", NotesStage.FINAL, null, emptyList(), listOf(todo), emptyList(), organizing = false)
+        ui.setContent { ReclyTheme { NotesBlock(notes, overview = false, scaleSec = 7200, onDelete = {}, lines = { emptyList() }) } }
+        ui.onNodeWithTag("todo-box-t").assertDoesNotExist()
     }
 }

@@ -43,7 +43,8 @@ enum class NotesStage {
  * the person who made the recording when they have no name (docs/08 "Me and others"), or null when that speaker has
  * none, or while the notes are provisional; never a label like `S1`. [due] is the deadline as it was
  * said. [atSec] and [quote] are its evidence: where on the recording, and the words, verbatim. [section] is the id
- * of the user's section a [NoteKind.SECTION] item is in.
+ * of the user's section a [NoteKind.SECTION] item is in. [done] is a [NoteKind.TODO] the user checked (docs/08
+ * "To-dos").
  */
 data class NoteItem(
     val id: String,
@@ -55,7 +56,27 @@ data class NoteItem(
     val quote: String,
     val provisional: Boolean,
     val section: String? = null,
+    val done: Boolean = false,
 )
+
+/**
+ * docs/08 "To-dos": one recording's to-dos in `Notes.observeTodos`, as its detail orders them, under what its row in the
+ * list says: its [title], or none, and when it started.
+ */
+data class RecordingTodos(val recordingId: String, val title: String?, val startedAt: String, val items: List<NoteItem>)
+
+/**
+ * docs/09 "To-dos view": [all] as the view lists it. [open] is what is still open, with the items in [held] — checked since
+ * the view was opened, which stay where they are until it is left. [done] is the rest, [doneCount] items behind `Done`.
+ */
+class TodoGroups(all: List<RecordingTodos>, held: Set<String>) {
+    val open: List<RecordingTodos> = all.mapNotNull { group -> group.only { !it.done || it.id in held } }
+    val done: List<RecordingTodos> = all.mapNotNull { group -> group.only { it.done && it.id !in held } }
+    val doneCount: Int = done.sumOf { it.items.size }
+
+    private fun RecordingTodos.only(keep: (NoteItem) -> Boolean): RecordingTodos? =
+        items.filter(keep).takeIf { it.isNotEmpty() }?.let { copy(items = it) }
+}
 
 /** One of the user's own sections in a recording's notes, under the name it had when its items were made. */
 data class NoteSectionItems(val id: String, val name: String, val items: List<NoteItem>)
@@ -231,6 +252,7 @@ internal data class NotesFile(
  * [owner] is the speaker id of the transcript the note was made from: the recording's for a final note, the
  * part's own for a provisional one. [conversation] is the index of a final note's conversation. [text] is what the
  * model wrote, which matching goes by; [userText] is the user's edit of it, which is what is shown ([shown]).
+ * [doneAt] is when the user checked a to-do.
  */
 @Serializable
 internal data class StoredNote(
@@ -246,6 +268,7 @@ internal data class StoredNote(
     val userText: String? = null,
     val editedAt: String? = null,
     val createdAt: String,
+    val doneAt: String? = null,
 ) {
     val shown: String get() = userText ?: text
 }

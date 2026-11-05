@@ -12,6 +12,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.pressCursor
 import kotlinx.coroutines.launch
+import recly.core.notes.NoteItem
+import recly.core.notes.RecordingTodos
+import recly.core.notes.TodoGroups
 import recly.core.recording.SearchHit
 import recly.core.transcribe.EditResult
 import recly.core.transcribe.TranscriptDocument
@@ -71,6 +74,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -110,6 +114,7 @@ import app.recly.windows.jobs.RecentItem
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
+import app.recly.windows.ui.component.ListHeader
 import app.recly.windows.ui.component.Placeholder
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
@@ -169,11 +174,13 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
             player.stop()
         }
     }
+    val todosView = remember { TodosViewState() }
     // docs/03 "Naming rules": audio and video dropped anywhere on the window are imported, one after another.
     val drop = remember(model) {
         object : DragAndDropTarget {
             override fun onDrop(event: DragAndDropEvent): Boolean {
                 val files = droppedFiles(event)
+                if (files.isNotEmpty()) todosView.leave()
                 model.importFiles(files)
                 return files.isNotEmpty()
             }
@@ -221,6 +228,15 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
     val searchFocus = remember { FocusRequester() }
     var findOpen by remember { mutableStateOf(false) }
     var findRequest by remember { mutableIntStateOf(0) }
+    // docs/09 "To-dos view": every recording's to-dos while this window is up, and the list's area as the view of them,
+    // which goes back by itself once there are none.
+    val todos by remember(model, model.ready) { model.observeTodos() }.collectAsState(emptyList())
+    LaunchedEffect(todos) { if (todos.isEmpty()) todosView.leave() }
+    // The box in the view and the one in the detail beside it: on screen together, a row stays put for either.
+    val checkTodo: (String, NoteItem, Boolean) -> Unit = { recordingId, item, done ->
+        todosView.checking(item.id, done)
+        model.setTodoDone(recordingId, item.id, done)
+    }
     Row(
         Modifier.fillMaxSize().background(blueprint.background)
             // Only the kind of data while dragging: the file list itself is readable once it is dropped.
@@ -250,6 +266,18 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                     model.openSearchHit(hit, query.trim())
                 }
             },
+            todos = todos,
+            todosView = todosView,
+            onTodoDone = { group, item, done -> checkTodo(group.recordingId, item, done) },
+            onOpenTodos = { group ->
+                // docs/09 "To-dos view": the recording already open turns to its Summary chip, with nothing reloaded.
+                if (model.detail?.recordingId == group.recordingId) model.showNotes(true)
+                pickRecording(model.detail?.recordingId, group.recordingId, leave) {
+                    // Nothing to find here, as a hit in the title alone: no bar left open from before either.
+                    findOpen = false
+                    model.openTodos(group.recordingId, group.title)
+                }
+            },
             modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
         )
         VerticalHairLine(Modifier.fillMaxHeight())
@@ -276,6 +304,7 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
                         notesDraft = notesDraft?.takeIf { it.recordingId == detail.recordingId },
                         onNotesDraft = { notesDraft = it },
                         onLeaveEditor = leave,
+                        onTodoDone = { item, done -> checkTodo(detail.recordingId, item, done) },
                         findOpen = findOpen,
                         onFindOpen = { findOpen = it },
                         findRequest = findRequest,
@@ -333,20 +362,38 @@ private fun Sidebar(
     searchFocus: FocusRequester,
     onOpen: (RecentItem) -> Unit,
     onOpenHit: (SearchHit) -> Unit,
+    todos: List<RecordingTodos>,
+    /** docs/09 "To-dos view": while it is shown, the view of [todos] has the list's place, and there is no search. */
+    todosView: TodosViewState,
+    onTodoDone: (RecordingTodos, NoteItem, Boolean) -> Unit,
+    onOpenTodos: (RecordingTodos) -> Unit,
     modifier: Modifier,
 ) {
+    val todoGroups = remember(todos, todosView.held) { TodoGroups(todos, todosView.held) }
     LazyColumn(modifier.background(blueprint.surface)) {
         item {
-            ScreenHeader(
-                title = strings[Str.WINDOW_RECORDINGS],
-                // "14 · 2 waiting · 1 failed", as the phones head their lists (D11) — once the list has been read.
-                meta = if (model.recentsLoading) null else ledgerCounts(
-                    model.recents,
-                    waitingWord = { strings[Str.LIST_WAITING, it] },
-                    failedWord = { strings[Str.LIST_FAILED, it] },
-                ),
-                trailing = { BlueprintButton(strings[Str.IMPORT_AUDIO], model::chooseImport, tone = ButtonTone.QUIET, enabled = model.ready) },
-            )
+            // Each header names the view it is on and the button the other, so no word is on screen twice.
+            if (todosView.shown) {
+                ListHeader(strings[Str.NOTES_TODOS], openTodoCount(todoGroups).toString()) {
+                    BlueprintButton(strings[Str.WINDOW_RECORDINGS], todosView::leave, tone = ButtonTone.QUIET)
+                }
+            } else {
+                ListHeader(
+                    title = strings[Str.WINDOW_RECORDINGS],
+                    // "14 · 2 waiting · 1 failed", as the phones head their lists (D11) — once the list has been read.
+                    meta = if (model.recentsLoading) null else ledgerCounts(
+                        model.recents,
+                        waitingWord = { strings[Str.LIST_WAITING, it] },
+                        failedWord = { strings[Str.LIST_FAILED, it] },
+                    ),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                        // At its own width rather than a worded button's 88: with that, the title and both do not fit in English.
+                        if (todos.isNotEmpty()) BlueprintButton(strings[Str.NOTES_TODOS], todosView::open, tone = ButtonTone.QUIET, minWidth = MinTouch)
+                        BlueprintButton(strings[Str.IMPORT_AUDIO], model::chooseImport, tone = ButtonTone.QUIET, enabled = model.ready)
+                    }
+                }
+            }
             HairLine()
             // What the last delete or retry had to say, above the list (D9); a click puts it away.
             model.listMessage?.let { notice ->
@@ -362,11 +409,17 @@ private fun Sidebar(
                 }
                 HairLine()
             }
-            SearchField(
-                query, onQuery, strings[Str.SEARCH_PLACEHOLDER], strings[Str.TRANSCRIPT_CLEAR_SEARCH],
-                Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), searchFocus,
-            )
-            HairLine()
+            if (!todosView.shown) {
+                SearchField(
+                    query, onQuery, strings[Str.SEARCH_PLACEHOLDER], strings[Str.TRANSCRIPT_CLEAR_SEARCH],
+                    Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), searchFocus,
+                )
+                HairLine()
+            }
+        }
+        if (todosView.shown) {
+            todosList(todoGroups, todosView.doneOpen, todosView::toggleDone, strings, onTodoDone, onOpenTodos)
+            return@LazyColumn
         }
         if (query.isNotBlank()) {
             val found = hits.orEmpty()
@@ -537,6 +590,8 @@ private fun ColumnScope.Detail(
     notesDraft: NotesDraft?,
     onNotesDraft: (NotesDraft?) -> Unit,
     onLeaveEditor: (() -> Unit) -> Unit,
+    /** docs/09 "To-dos view": a to-do's box was pressed. */
+    onTodoDone: (NoteItem, Boolean) -> Unit,
     findOpen: Boolean,
     onFindOpen: (Boolean) -> Unit,
     /** Ctrl+F's count: each press puts the cursor back in the find field. */
@@ -790,7 +845,7 @@ private fun ColumnScope.Detail(
             notesDraft != null -> NotesEditor(
                 notesDraft, notesEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
             )
-            notesShown -> NotesPane(model, detail, canSeek, onSeek, strings, Modifier.fillMaxSize())
+            notesShown -> NotesPane(model, detail, canSeek, onSeek, onTodoDone, strings, Modifier.fillMaxSize())
             memoShown -> MemoPane(model, detail, memoFocus, strings, Modifier.fillMaxSize())
             draft != null -> TranscriptEditor(
                 draft = draft,

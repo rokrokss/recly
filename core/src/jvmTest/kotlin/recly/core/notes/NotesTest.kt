@@ -887,7 +887,7 @@ class NotesTest {
         // Restored in Settings later, the notes keep the name their items were made under.
         notes.setPreferences(NotesPreferences())
         assertEquals("Action items", notes.get(meta.recordingId).names.todos)
-        assertTrue("\nAction items\n- Order able parts" in notes.text(meta.recordingId)!!)
+        assertTrue("\nAction items\n- [ ] Order able parts" in notes.text(meta.recordingId)!!)
     }
 
     @Test
@@ -939,7 +939,7 @@ class NotesTest {
             "We met.\nWe shipped.\n\n" +
                 "Key points\n- Costs doubled [00:00:30]\n\n" +
                 "Decisions\n- Ship on Friday [00:00:01]\n\n" +
-                "To-dos\n- Send the deck — Mina · Monday [00:01:05]\n\n" +
+                "To-dos\n- [ ] Send the deck — Mina · Monday [00:01:05]\n\n" +
                 "Questions\n- Who pays? [01:02:03]\n\n" +
                 "Risks\n- May slip [00:00:40]\n",
             NotesText.plain(all, NotesHeadings()),
@@ -948,7 +948,7 @@ class NotesTest {
             "## Notes\n\nWe met.  \nWe shipped.\n\n" +
                 "### Key points\n\n- Costs doubled [00:00:30]\n\n" +
                 "### Decisions\n\n- Ship on Friday [00:00:01]\n\n" +
-                "### To-dos\n\n- Send the deck — Mina · Monday [00:01:05]\n\n" +
+                "### To-dos\n\n- [ ] Send the deck — Mina · Monday [00:01:05]\n\n" +
                 "### Questions\n\n- Who pays? [01:02:03]\n\n" +
                 "### Risks\n\n- May slip [00:00:40]\n",
             NotesText.markdown(all, NotesHeadings()),
@@ -1195,7 +1195,7 @@ class NotesTest {
 
         notes.setHeadings(NotesHeadings(me = "나"))
         assertEquals("나", notes.observe(meta.recordingId).first().todos.single().owner, "the app's word, in its language")
-        assertTrue("- Order able parts — 나 [00:00:30]" in notes.text(meta.recordingId)!!)
+        assertTrue("- [ ] Order able parts — 나 [00:00:30]" in notes.text(meta.recordingId)!!)
 
         assertIs<EditResult.Edited>(f.core.editTranscript(meta.recordingId, TranscriptEdit.RenameSpeaker("S2", "Mina")))
         assertEquals("Mina", notes.observe(meta.recordingId).first().todos.single().owner, "a name the user gives comes first")

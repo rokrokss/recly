@@ -21,6 +21,8 @@ struct RecordingsView: View {
     /// docs/09 "Import": the system picker for audio and video files is up.
     @State private var importing = false
     @FocusState private var searchFocused: Bool
+    /// docs/09 "To-dos view": every recording's to-dos, and whether the list's area is the view.
+    @StateObject private var todos = TodosModel()
 
     /// docs/07 rule 3: this view draws strings that were resolved outside SwiftUI — a model's
     /// status line, a RecKit label — and `Text(verbatim:)` carries no dependency on the language.
@@ -36,6 +38,7 @@ struct RecordingsView: View {
                 do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
                 hits = await model.search(typed)
             }
+            .task(id: model.isReady) { await model.followTodos(todos) }
     }
 
     private var searching: Bool { !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -44,7 +47,16 @@ struct RecordingsView: View {
         VStack(spacing: 0) {
             // docs/09 screen principle 2: how many rows, and how many of them are waiting on something or
             // have stopped — the count on its own is a number with nothing to do (Recents.summary).
-            ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents), trailingAlignment: .trailing) {
+            // docs/09 "To-dos view": each header names the view it is on and the button the other.
+            ScreenHeader(
+                title: todos.shown ? RecKitStrings.localized("To-dos") : loc("Recordings"),
+                meta: todos.shown ? String(todos.openCount) : Recents.summary(model.recents),
+                trailingAlignment: .trailing
+            ) {
+                if !todos.all.isEmpty {
+                    BlueprintButton(todos.shown ? loc("Recordings") : RecKitStrings.localized("To-dos"), tone: .quiet) { todos.toggleShown() }
+                        .accessibilityIdentifier("todos-button")
+                }
                 // docs/09 "Import": a file from elsewhere — audio, or a video's sound — as a recording of
                 // this phone.
                 BlueprintIconButton("square.and.arrow.down", label: RecKitStrings.localized("Import audio")) { importing = true }
@@ -53,7 +65,9 @@ struct RecordingsView: View {
             }
             // docs/09 "Search" · 2026-10-08 §12: under the title and its count line, above the ledger —
             // the order Android draws, and the Mac's Details window's own field.
-            ListSearchField(text: $query, focus: $searchFocused)
+            if !todos.shown {
+                ListSearchField(text: $query, focus: $searchFocused)
+            }
             // docs/10 "iPhone": a banner at the top of the list — one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it.
@@ -69,7 +83,10 @@ struct RecordingsView: View {
                 }
                 .accessibilityIdentifier("import-failure")
             }
-            if searching {
+            if todos.shown {
+                HairLine()
+                TodosView(model: todos) { detail = model.detail(for: $0) }
+            } else if searching {
                 results
             } else {
                 ledger
@@ -77,8 +94,14 @@ struct RecordingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dotGridBackground()
+        // Here and not on what is under the header: the view goes back by itself when the page deleted its last to-do,
+        // and the page stays up through that.
+        .sheet(item: $detail, onDismiss: runAfterClose) { detailPage($0) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.audio, .movie], allowsMultipleSelection: true) { result in
-            if case .success(let urls) = result { model.importFiles(urls) }
+            if case .success(let urls) = result {
+                todos.leave()
+                model.importFiles(urls)
+            }
         }
     }
 
@@ -115,7 +138,6 @@ struct RecordingsView: View {
             }
             .scrollDismissesKeyboard(.immediately)
         }
-        .sheet(item: $detail, onDismiss: runAfterClose) { detailPage($0) }
     }
 
     private var ledger: some View {
@@ -151,7 +173,6 @@ struct RecordingsView: View {
         // docs/03: and beside it, never in front of it — the list is drawn from what is already
         // here, and a row another device uploaded arrives on the recordings observation.
         .task { await model.pullRemoteRecordings() }
-        .sheet(item: $detail, onDismiss: runAfterClose) { detailPage($0) }
     }
 
     /// docs/09 screen principle 2 (2026-10-28): the page a row or a search hit opens, with what the open row used to

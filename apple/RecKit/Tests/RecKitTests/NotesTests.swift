@@ -193,7 +193,7 @@ final class NoteGroupsTests: XCTestCase {
         quote: String = "",
         section: String? = nil
     ) -> NoteItem {
-        NoteItem(id: id, kind: kind, text: text, owner: owner, due: due, atSec: atSec, quote: quote, provisional: true, section: section)
+        NoteItem(id: id, kind: kind, text: text, owner: owner, due: due, atSec: atSec, quote: quote, provisional: true, section: section, done: false)
     }
 
     static func line(at start: Double, end: Double, _ text: String, id: String? = nil, name: String? = nil, me: Bool = false) -> NoteLine {
@@ -435,6 +435,117 @@ final class RecordingNotesTests: XCTestCase {
         XCTAssertTrue(text?.contains("Launch on Friday") == true, text ?? "nil")
     }
 
+    /// docs/09 "To-dos view" — "In the detail": the box checks and unchecks through the core, and the row stays where it is.
+    @MainActor
+    func testTheDetailsBoxChecksAToDoThatStaysInItsPlace() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        try await writeTranscript(bridge, id)
+        try await writeNotes(bridge, id)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        let follow = Task { await model.followNotes() }
+        addTeardownBlock { follow.cancel(); await follow.value }
+        try await waitFor { model.notes?.stage == .final }
+        let todo = try XCTUnwrap(model.notes?.todos.first)
+        XCTAssertFalse(todo.done)
+
+        model.toggleDone(todo)
+        try await waitFor { model.notes?.todos.first?.done == true }
+        XCTAssertEqual(model.notes?.todos.map(\.id), [todo.id])
+        XCTAssertEqual(NoteGroups.of(model.notes).map(\.title), ["Decisions", "To-dos"])
+
+        model.toggleDone(try XCTUnwrap(model.notes?.todos.first))
+        try await waitFor { model.notes?.todos.first?.done == false }
+    }
+
+    /// docs/09 "To-dos view": the header's number no longer counts a row checked in the view, which stays where it is until
+    /// the view is left; then it is behind `Done`, and with nothing open the done rows are simply there.
+    @MainActor
+    func testTheViewKeepsACheckedRowInPlaceUntilItIsLeft() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        try await writeTranscript(bridge, id)
+        try await writeNotes(bridge, id)
+        let todos = TodosModel()
+        let follow = Task { await todos.follow(core: bridge.core) }
+        addTeardownBlock { follow.cancel(); await follow.value }
+        try await waitFor { !todos.all.isEmpty }
+        XCTAssertFalse(todos.shown)
+        XCTAssertEqual(todos.all.map(\.titleLabel), ["Untitled"], "as a row with no title says it")
+        XCTAssertEqual(todos.openCount, 1)
+
+        todos.toggleShown()
+        XCTAssertTrue(todos.shown)
+        let group = try XCTUnwrap(todos.groups.open.first)
+        let todo = try XCTUnwrap(group.items.first)
+        XCTAssertEqual(NoteGroups.text(todo), "Send the release notes — Minji")
+
+        todos.toggleDone(todo, of: group)
+        try await waitFor { todos.openCount == 0 }
+        XCTAssertEqual(todos.groups.open.first?.items.map(\.id), [todo.id], "it stays where it is")
+        XCTAssertEqual(todos.groups.open.first?.items.first?.done, true)
+        XCTAssertEqual(todos.groups.doneCount, 0)
+
+        todos.toggleShown()
+        XCTAssertFalse(todos.shown)
+        XCTAssertTrue(todos.groups.open.isEmpty, "leaving lets go of what was held")
+        XCTAssertEqual(todos.groups.doneCount, 1)
+
+        todos.toggleShown()
+        let done = try XCTUnwrap(todos.groups.done.first)
+        todos.toggleDone(try XCTUnwrap(done.items.first), of: done)
+        try await waitFor { todos.openCount == 1 }
+        XCTAssertEqual(todos.groups.open.first?.items.map(\.id), [todo.id], "unchecked, it is open again")
+        XCTAssertEqual(todos.groups.doneCount, 0)
+    }
+
+    /// docs/09 "To-dos view": a view left with no to-do at all goes back by itself.
+    @MainActor
+    func testTheViewGoesBackByItselfWithNoToDoLeft() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        try await writeTranscript(bridge, id)
+        try await writeNotes(bridge, id)
+        let todos = TodosModel()
+        let follow = Task { await todos.follow(core: bridge.core) }
+        addTeardownBlock { follow.cancel(); await follow.value }
+        try await waitFor { !todos.all.isEmpty }
+        todos.toggleShown()
+
+        let todo = try XCTUnwrap(todos.all.first?.items.first)
+        _ = try await bridge.core.notes.deleteItem(recordingId: id, itemId: todo.id)
+        try await waitFor { todos.all.isEmpty }
+        XCTAssertFalse(todos.shown)
+    }
+
+    /// docs/09 "To-dos view": a failed write leaves the row as it was — here a recording's folder that cannot be written.
+    @MainActor
+    func testAFailedCheckLeavesTheRowAsItWas() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        try await writeTranscript(bridge, id)
+        try await writeNotes(bridge, id)
+        let todos = TodosModel()
+        let follow = Task { await todos.follow(core: bridge.core) }
+        addTeardownBlock { follow.cancel(); await follow.value }
+        try await waitFor { !todos.all.isEmpty }
+        todos.toggleShown()
+        let group = try XCTUnwrap(todos.groups.open.first)
+        let todo = try XCTUnwrap(group.items.first)
+
+        let (dir, base) = try await base(bridge, id)
+        let paths = [dir.path, dir.appendingPathComponent("\(base).notes.v1.json").path]
+        for path in paths { try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: path) }
+        addTeardownBlock {
+            for path in paths { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: path) }
+        }
+
+        todos.toggleDone(todo, of: group)
+        XCTAssertEqual(todos.held, [todo.id])
+        try await waitFor { todos.held.isEmpty }
+        XCTAssertEqual(todos.openCount, 1)
+        XCTAssertEqual(todos.all.first?.items.first?.done, false)
+    }
 
     /// docs/08 "Organizing": a job whose only unfinished step is its notes — waiting out a usage limit here — reads as
     /// done, with nothing to explain or retry; the same job with its upload left reads as the wait it is.

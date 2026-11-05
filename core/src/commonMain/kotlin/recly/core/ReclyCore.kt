@@ -298,6 +298,7 @@ class ReclyCore(
         db, deps, chatGpt, summaries, recordings, processingSettings, localTranscription, transferConsents,
         transcript = { results(it).transcript },
         transcriptChanges = { recordingId -> observeResults(recordingId) },
+        transcriptsChanged = { resultChanges },
         published = { recordingId ->
             recordings.notesPending(recordingId)
             pushes.launch { remote.pushNotes() }

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -46,6 +47,7 @@ import recly.core.model.RecordingStatus
 import recly.core.notes.NoteEdit
 import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
+import recly.core.notes.RecordingTodos
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
@@ -198,7 +200,25 @@ data class JobsUiState(
     val organizing: List<String> = emptyList(),
     /** docs/08 "Memo": `notes.observeAgreed()` — the memo view's line about the notes reading it. */
     val notesAgreed: Boolean = false,
+    /** docs/08 "To-dos": `notes.observeTodos()`, every recording with a to-do. */
+    val todos: List<RecordingTodos> = emptyList(),
+    /** docs/09 "To-dos view": non-null while the view has the list's place. */
+    val todosView: TodosViewState? = null,
 )
+
+/**
+ * docs/09 "To-dos view": the view while it is up. [held] is what was checked in it, which stays where it is until the
+ * view is left (`TodoGroups`), and [doneOpen] whether the `Done` row is open.
+ */
+data class TodosViewState(val held: Set<String> = emptySet(), val doneOpen: Boolean = false)
+
+/** The new [todos]: a view left with no to-do at all goes back by itself (docs/09 "To-dos view"). */
+internal fun JobsUiState.withTodos(todos: List<RecordingTodos>): JobsUiState =
+    copy(todos = todos, todosView = todosView.takeIf { todos.isNotEmpty() })
+
+/** [itemId] was checked in the view, which keeps it in place. Outside the view, nothing. */
+internal fun JobsUiState.holding(itemId: String): JobsUiState =
+    copy(todosView = todosView?.let { it.copy(held = it.held + itemId) })
 
 /** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
 data class FindRequest(val query: String, val atSec: Double?)
@@ -367,6 +387,10 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { core().notes.observeAgreed().collect { agreed -> _state.update { it.copy(notesAgreed = agreed) } } }
         viewModelScope.launch {
             val core = core()
+            core.notes.observeTodos().flowOn(core.deps.io).collect { todos -> _state.update { it.withTodos(todos) } }
+        }
+        viewModelScope.launch {
+            val core = core()
             var before = emptyList<FillRun>()
             core.observeFills().collect { fills ->
                 _state.update { it.copy(fills = fills) }
@@ -442,7 +466,11 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun setSkipSilence(on: Boolean) = launch { preferences.setSkipSilence(on) }
 
     /** docs/03 "Naming rules": files picked or shared into Recly, each its own row, one after another. */
-    fun importAudio(uris: List<android.net.Uri>) = AudioImports.get(getApplication()).import(uris)
+    fun importAudio(uris: List<android.net.Uri>) {
+        // The file lands on the list, where its row appears, not behind the to-dos view.
+        if (uris.isNotEmpty()) closeTodos()
+        AudioImports.get(getApplication()).import(uris)
+    }
 
     fun dismissImportFailure() = AudioImports.get(getApplication()).dismissFailure()
 
@@ -484,6 +512,37 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         resultJob?.cancel()
         detailJob = viewModelScope.launch {
             openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find, opensOnNotes(hit), opensOnMemo(hit))
+        }
+    }
+
+    /** docs/09 "To-dos view": the list's area turns into the view, and back, which forgets what it held. */
+    fun openTodos() = _state.update { it.copy(todosView = TodosViewState()) }
+
+    fun closeTodos() = _state.update { it.copy(todosView = null) }
+
+    /** Its `Done` row opens and closes the rest. */
+    fun toggleDoneTodos() = _state.update { state -> state.copy(todosView = state.todosView?.let { it.copy(doneOpen = !it.doneOpen) }) }
+
+    /** A group or a row opens its recording on the notes, as a search hit found in the notes does. */
+    fun openTodo(group: RecordingTodos) {
+        closeAsk()
+        detailJob?.cancel()
+        resultJob?.cancel()
+        detailJob = viewModelScope.launch { openDetail(group.recordingId, group.title?.takeIf { it.isNotBlank() }, openNotes = true) }
+    }
+
+    /** A box in the view: a row checked there stays in place from the tap on, before the write comes back. */
+    fun checkTodo(recordingId: String, itemId: String, done: Boolean) {
+        if (done) _state.update { it.holding(itemId) }
+        setDone(recordingId, itemId, done)
+    }
+
+    /** docs/08 "To-dos": a to-do's box; the rows follow on what the core reports, so a failed write leaves them as they were. */
+    fun setDone(recordingId: String, itemId: String, done: Boolean) {
+        viewModelScope.launch {
+            val core = core()
+            runCatching { withContext(core.deps.io) { core.notes.setDone(recordingId, itemId, done) } }
+                .onFailure { core.deps.logger.log(Logger.Level.ERROR, "shell.notes.done.failed", mapOf("recordingId" to recordingId), it) }
         }
     }
 

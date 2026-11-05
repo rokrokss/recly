@@ -37,6 +37,7 @@ struct NotesPane: View {
                         onSeek: onSeek,
                         lines: model.noteLines(atSec:),
                         delete: model.deleteNote,
+                        toggleDone: model.toggleDone,
                         changed: Set(model.askChanges?.items ?? []),
                         overviewChanged: model.askChanges?.overview == true
                     )

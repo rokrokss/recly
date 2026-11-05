@@ -1195,6 +1195,23 @@ final class MenuModel: ObservableObject {
         detail?.opensOnMemo = hit.onlyInMemo
     }
 
+    /// docs/09 "To-dos view": a recording in the view opens beside it on its `Summary` chip, as a hit found in the notes
+    /// does, with nothing to find.
+    func showDetail(_ todos: RecordingTodos) {
+        if detail?.recordingId == todos.recordingId {
+            detail?.askSummary()
+            return
+        }
+        guard showDetail(recordingId: todos.recordingId, title: todos.titleLabel) else { return }
+        detail?.opensOnNotes = true
+    }
+
+    /// docs/09 "To-dos view": every recording's to-dos, for as long as the Details window stands.
+    func followTodos(_ todos: TodosModel) async {
+        guard let core = bridge?.core else { return }
+        await todos.follow(core: core)
+    }
+
     /// Every way a recording is put in the Details window — a row, a search hit, the popover's Details — comes
     /// through here, so every one of them asks before an editor's changes are dropped. The recording that is already
     /// open stays as it is (2026-10-15): nothing is loaded again, and there is nothing to lose to ask about.

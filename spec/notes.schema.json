@@ -329,6 +329,11 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "doneAt": {
+          "description": "When the user checked a to-do; a to-do without it is open.",
+          "type": "string",
+          "format": "date-time"
         }
       }
     }

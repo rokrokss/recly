@@ -80,7 +80,7 @@ func GetSummaryTool(withEvents bool) map[string]any {
 		"description": "A Recly recording's summary and the user's own notes, by recordingId (from " + from + "). " +
 			"aiSummary was written by AI from the transcript: an overview, and sections such as key points, decisions, " +
 			"to-dos (owner is the speaker's id, ownerName the name the user gave them, ownerIsUser true when the owner is " +
-			"the user who made the recording, not you; due as it was said) and questions, each item with the time in the " +
+			"the user who made the recording, not you; due as it was said; done true when the user checked it off) and questions, each item with the time in the " +
 			"recording it rests on; editedByUser marks what the user changed. truncated means the items latest in the " +
 			"recording did not fit and were left out: read what was said after the last item's time with get_transcript. " +
 			"userNotes is what the user typed about the recording themselves: not AI output, and not what was said. Each " +

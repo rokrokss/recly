@@ -742,6 +742,20 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         return detail
     }
 
+    /// The same for a recording in the To-dos view: on its `Summary` chip, as a hit found in the notes opens, with nothing
+    /// to find (docs/09 "To-dos view").
+    func detail(for todos: RecordingTodos) -> RecordingDetailModel? {
+        let detail = detail(id: todos.recordingId, title: todos.titleLabel)
+        detail?.opensOnNotes = true
+        return detail
+    }
+
+    /// docs/09 "To-dos view": every recording's to-dos, for as long as the list stands.
+    func followTodos(_ todos: TodosModel) async {
+        guard let core = bridge?.core else { return }
+        await todos.follow(core: core)
+    }
+
     private func detail(id: String, title: String) -> RecordingDetailModel? {
         guard let core = bridge?.core else { return nil }
         let detail = RecordingDetailModel(core: core, recordingId: id, title: title, playbackGate: playbackGate)

@@ -95,6 +95,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var notes: RecordingNotes?
     /// docs/10 "Search": the page opens on the notes — a search hit whose only match is in them.
     public var opensOnNotes = false
+    /// docs/09 "To-dos view": rises when the page that is open is asked to turn to its `Summary` chip.
+    @Published public private(set) var summaryAsked = 0
+    public func askSummary() {
+        summaryAsked += 1
+    }
+
     /// docs/08 "Memo": the recording's memo as the core has it; empty when it has none.
     @Published public private(set) var memo = ""
     /// docs/08 "Memo": signed in to ChatGPT and agreed to organizing — the memo field says the notes read it.
@@ -643,6 +649,21 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
                 _ = try await core.notes.deleteItem(recordingId: recordingId, itemId: item.id)
             } catch {
                 logger.error("shell.notes.delete.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
+
+    /// A to-do's box (docs/08 "To-dos"): the change arrives through [followNotes], and a failed write leaves the row as
+    /// it was (docs/09 "To-dos view").
+    public func toggleDone(_ item: NoteItem) {
+        let core = core
+        let recordingId = recordingId
+        let logger = logger
+        Task {
+            do {
+                _ = try await core.notes.setDone(recordingId: recordingId, itemId: item.id, done: !item.done)
+            } catch {
+                logger.error("shell.notes.done.failed error=\(String(describing: error), privacy: .private)")
             }
         }
     }
@@ -1588,6 +1609,7 @@ public struct RecordingDetailView: View {
         .task(id: ObjectIdentifier(model)) { await model.followNotes() }
         .task(id: ObjectIdentifier(model)) { await model.followMemo() }
         .task(id: ObjectIdentifier(model)) { await model.followNotesAgreed() }
+        .onChange(of: model.summaryAsked) { _, _ in pane = .notes }
         .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
         // docs/09 "Editing and speakers": what a shell about to put another recording here has to ask about first.
         .onChange(of: unsavedEdits, initial: true) { _, edits in model.unsavedEdits = edits }

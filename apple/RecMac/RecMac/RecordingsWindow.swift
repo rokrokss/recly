@@ -19,13 +19,25 @@ struct RecordingsWindow: View {
     /// Files are being dragged over the list.
     @State private var dropping = false
     @FocusState private var searchFocused: Bool
+    /// docs/09 "To-dos view": every recording's to-dos, and whether the left pane is the view.
+    @StateObject private var todos = TodosModel()
 
     var body: some View {
         HSplitView {
             VStack(spacing: 0) {
                 // docs/09 screen principle 2: how many, and how many of them are waiting or have stopped — the
-                // phones' line (Recents.summary), over every recording though the list is a page.
-                ScreenHeader(title: loc("Details"), meta: Recents.summary(menu.recents, count: menu.recordingCount)) {
+                // phones' line (Recents.summary), over every recording though the list is a page. docs/09 "To-dos
+                // view": each header names the view it is on and the button the other.
+                ScreenHeader(
+                    title: todos.shown ? RecKitStrings.localized("To-dos") : loc("Details"),
+                    meta: todos.shown ? String(todos.openCount) : Recents.summary(menu.recents, count: menu.recordingCount),
+                    // A long count line sends the two buttons under it at the list's 360: they stay at the end they were at.
+                    trailingAlignment: .trailing
+                ) {
+                    if !todos.all.isEmpty {
+                        BlueprintButton(todos.shown ? loc("Details") : RecKitStrings.localized("To-dos"), tone: .quiet) { todos.toggleShown() }
+                            .accessibilityIdentifier("todos-button")
+                    }
                     // ux §7: an agent app shows no menu bar, so the list header's button carries ⌘I.
                     BlueprintIconButton("square.and.arrow.down", label: RecKitStrings.localized("Import audio")) { pickFiles() }
                         .keyboardShortcut("i")
@@ -33,7 +45,9 @@ struct RecordingsWindow: View {
                         .accessibilityIdentifier("import-audio")
                 }
                 // ux §6: titles and transcripts, above the ledger.
-                ListSearchField(text: $menu.searchQuery, focus: $searchFocused)
+                if !todos.shown {
+                    ListSearchField(text: $menu.searchQuery, focus: $searchFocused)
+                }
                 HairLine()
                 // What the last delete or retry from a list came to, above the list, as the phone says it — it goes
                 // when it is clicked.
@@ -54,13 +68,17 @@ struct RecordingsWindow: View {
                     )
                     .padding(Space.s)
                 }
-                ScrollView {
-                    // Lazy, so the page marker under the rows appears only when it is scrolled to.
-                    LazyVStack(spacing: 0) {
-                        if let hits = menu.searchHits {
-                            results(hits)
-                        } else {
-                            ledger
+                if todos.shown {
+                    TodosView(model: todos) { menu.showDetail($0) }
+                } else {
+                    ScrollView {
+                        // Lazy, so the page marker under the rows appears only when it is scrolled to.
+                        LazyVStack(spacing: 0) {
+                            if let hits = menu.searchHits {
+                                results(hits)
+                            } else {
+                                ledger
+                            }
                         }
                     }
                 }
@@ -72,6 +90,7 @@ struct RecordingsWindow: View {
             .dotGridBackground()
             // ux §7: audio and video files dropped on the list are imported, one row each.
             .dropDestination(for: URL.self) { urls, _ in
+                todos.leave()
                 menu.importAudio(urls)
                 return true
             } isTargeted: { dropping = $0 }
@@ -127,6 +146,7 @@ struct RecordingsWindow: View {
         // since it last looked. The rows it adopts arrive on the model's recordings observation, so
         // nothing here waits for it.
         .task { await menu.pullRemoteRecordings() }
+        .task(id: menu.isReady) { await menu.followTodos(todos) }
         // docs/03 "Deleting in the app": the open recording's More asks it, and this window is where every delete is
         // asked, so the dialog is the platform's own sheet.
         .blueprintDialog(
@@ -190,6 +210,7 @@ struct RecordingsWindow: View {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK else { return }
+        todos.leave()
         menu.importAudio(panel.urls)
     }
 

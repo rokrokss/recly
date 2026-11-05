@@ -12,12 +12,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -70,6 +73,7 @@ import recly.core.transcribe.SttProvider
 import recly.core.transcribe.SttProviders
 import recly.core.transcribe.SttResult
 import recly.core.transcribe.Submitted
+import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptNormalizer
 import recly.core.transcribe.TranscriptProvider
@@ -108,6 +112,8 @@ class Notes internal constructor(
     private val nameSpeakers: (String) -> Unit = {},
     /** The user's memo of the recording as a request carries it, empty when there is none (docs/08 "Memo"). */
     private val memo: suspend (String) -> String = { "" },
+    /** Emits whenever any recording's transcript may have changed, for [observeTodos]' owners. */
+    private val transcriptsChanged: () -> Flow<Any?> = { flowOf(Unit) },
 ) {
     /** The providers a part goes to (tests replace it). */
     internal var providers: (String) -> SttProvider? = SttProviders::create
@@ -122,6 +128,16 @@ class Notes internal constructor(
     private val partLock = Mutex()
 
     private val changes = MutableStateFlow(0L)
+
+    /** [todos] of each recording, read once and kept until its notes or transcript file changes or the word for `me` does. */
+    private val heldTodos = HashMap<String, HeldTodos>()
+    private val heldTodosLock = Mutex()
+
+    private class HeldTodos(val stamp: List<Any?>, val items: List<NoteItem>)
+
+    /** All [readTodos] wants of a transcript, which can be long. */
+    @Serializable
+    private class TranscriptSpeakers(val speakers: List<TranscriptSpeaker> = emptyList())
 
     /** How many runs are organizing each recording now — a part, the final pass, Organize again. */
     private val working = MutableStateFlow<Map<String, Int>>(emptyMap())
@@ -291,6 +307,81 @@ class Notes internal constructor(
     }
 
     /**
+     * docs/08 "To-dos": checks or unchecks a to-do. The mark is the user's and stays through every pass that makes the same
+     * item again. False when there is no such to-do, or it already is so.
+     */
+    @Throws(Throwable::class)
+    suspend fun setDone(recordingId: String, itemId: String, done: Boolean): Boolean {
+        val now = deps.clock.now().isoUtc()
+        val changed = update(recordingId) { file ->
+            val note = file?.items?.firstOrNull { it.id == itemId && it.kind == NoteKind.TODO } ?: return@update null
+            if ((note.doneAt != null) == done) return@update null
+            val marked = note.copy(doneAt = now.takeIf { done })
+            file.copy(items = file.items.map { if (it === note) marked else it }, updatedAt = now)
+        }
+        if (changed) deps.logger.log(Logger.Level.INFO, "organize.item.done", mapOf("recordingId" to recordingId, "done" to done))
+        return changed
+    }
+
+    /**
+     * docs/08 "To-dos": the to-dos of every recording whose notes are on this device, newest recording first, as they
+     * change. Never fails, for the same reason as [observeNeedsConsent], and never goes to the network: a recording's
+     * folder is asked only when it is opened.
+     */
+    fun observeTodos(): Flow<List<RecordingTodos>> =
+        combine(changes, recordings.observe(), transcriptsChanged(), headings) { _, _, _, _ -> }
+            .conflate()
+            .transform {
+                // What is shown stays when the list itself cannot be read now.
+                val all = try {
+                    todos()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    return@transform
+                }
+                emit(all)
+            }
+            .distinctUntilChanged()
+
+    /** [observeTodos]' value now. */
+    @Throws(Throwable::class)
+    suspend fun todos(): List<RecordingTodos> = heldTodosLock.withLock {
+        val me = headings.value.me
+        val rows = recordings.list(Int.MAX_VALUE)
+        heldTodos.keys.retainAll(rows.map { it.id }.toSet())
+        rows.mapNotNull { row ->
+            val base = base(row)
+            val items = try {
+                val stamp = listOf(fileStamp(row, NotesFile.name(base)), fileStamp(row, TranscribeRunner.jsonFileName(base)), me)
+                heldTodos[row.id]?.takeIf { it.stamp == stamp }?.items
+                    ?: readTodos(row, me).also { heldTodos[row.id] = HeldTodos(stamp, it) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // One file that cannot be read now costs only its recording, and it is read again at the next change.
+                heldTodos[row.id]?.items.orEmpty()
+            }
+            items.takeIf { it.isNotEmpty() }?.let { RecordingTodos(row.id, row.meta.title, row.meta.startedAt, it) }
+        }
+    }
+
+    private suspend fun fileStamp(row: RecordingRecord, name: String): Pair<Long?, Long?>? =
+        withContext(deps.io) { deps.fileSystem.metadataOrNull(row.dir / name) }?.let { it.size to it.lastModifiedAtMillis }
+
+    private suspend fun readTodos(row: RecordingRecord, me: String): List<NoteItem> {
+        val todos = readNotes(row)?.items.orEmpty().filter { it.kind == NoteKind.TODO }
+        val names = if (todos.any { !it.provisional && it.owner != null }) {
+            recordings.readFile(row.id, TranscribeRunner.jsonFileName(base(row)))
+                ?.let { json -> runCatching { recJson.decodeFromString(TranscriptSpeakers.serializer(), json) }.getOrNull() }
+                ?.let { ownerNames(it.speakers, me) }.orEmpty()
+        } else {
+            emptyMap()
+        }
+        return items(todos, names)
+    }
+
+    /**
      * Edit notes: the user's own words for the [overview] — null leaves it, empty removes it — and for [items]; an item
      * whose words are emptied is deleted as [deleteItem] deletes it. What the user wrote is theirs from then on: no later
      * pass changes it (docs/08 "Organizing" — "Editing"). True when anything changed.
@@ -392,10 +483,18 @@ class Notes internal constructor(
         return change
     }
 
-    /** Brings the notes back to how they were before [change], while they are still as it left them; true when it did. */
+    /**
+     * Brings the notes back to how they were before [change], while they are still as it left them, whatever was checked
+     * since (docs/08 "To-dos"), which stays; true when it did.
+     */
     internal suspend fun undoAsk(recordingId: String, change: NotesAskChange): Boolean {
         val now = deps.clock.now().isoUtc()
-        return update(recordingId) { file -> if (file == change.after) change.before.copy(updatedAt = now) else null }
+        fun NotesFile.withoutChecks() = copy(items = items.map { it.copy(doneAt = null) }, updatedAt = "")
+        return update(recordingId) { file ->
+            if (file?.withoutChecks() != change.after.withoutChecks()) return@update null
+            val checks = file.items.associate { it.id to it.doneAt }
+            change.before.copy(items = change.before.items.map { if (it.id in checks) it.copy(doneAt = checks[it.id]) else it }, updatedAt = now)
+        }
     }
 
     /**
@@ -510,24 +609,11 @@ class Notes internal constructor(
     private suspend fun view(recordingId: String, organizing: Boolean, failure: String?): RecordingNotes {
         val file = readNotes(recordingId) ?: fetched(recordingId) ?: return empty(recordingId, organizing, failure)
         val names = if (file.items.any { !it.provisional && it.owner != null }) {
-            val me = headings.value.me
-            readTranscript(recordingId)?.speakers.orEmpty().mapNotNull { speaker ->
-                (speaker.name?.trim()?.takeIf { it.isNotEmpty() } ?: me.takeIf { speaker.me == true })?.let { speaker.id to it }
-            }.toMap()
+            readTranscript(recordingId)?.let { ownerNames(it.speakers, headings.value.me) }.orEmpty()
         } else {
             emptyMap()
         }
-        val items = file.items
-            .sortedWith(compareByDescending<StoredNote> { it.evidence.atSec }.thenByDescending { it.createdAt })
-            .map { note ->
-                NoteItem(
-                    id = note.id, kind = note.kind, text = note.shown,
-                    // A part's own label names nobody the user can see; only a named speaker of the transcript is shown.
-                    owner = note.owner?.takeUnless { note.provisional }?.let(names::get),
-                    due = note.due, atSec = note.evidence.atSec, quote = note.evidence.quote, provisional = note.provisional,
-                    section = note.section,
-                )
-            }
+        val items = items(file.items, names)
         val sections = items.filter { it.kind == NoteKind.SECTION }.groupBy { it.section }
         // A built-in group heads its items under the name it had when they were made, if the user gave it one.
         fun named(kind: NoteKind) = file.sections.firstOrNull { it.kind == kind }?.name?.takeIf { it.isNotEmpty() }
@@ -548,6 +634,24 @@ class Notes internal constructor(
             names = NoteNames(named(NoteKind.POINT), named(NoteKind.DECISION), named(NoteKind.TODO), named(NoteKind.QUESTION)),
         )
     }
+
+    /** What a to-do's owner is shown as, by speaker id: the name the user gave them, or [me] for the person who recorded. */
+    private fun ownerNames(speakers: List<TranscriptSpeaker>, me: String): Map<String, String> = speakers.mapNotNull { speaker ->
+        (speaker.name?.trim()?.takeIf { it.isNotEmpty() } ?: me.takeIf { speaker.me == true })?.let { speaker.id to it }
+    }.toMap()
+
+    /** [notes] as the shells show them, latest time first. */
+    private fun items(notes: List<StoredNote>, names: Map<String, String>): List<NoteItem> = notes
+        .sortedWith(compareByDescending<StoredNote> { it.evidence.atSec }.thenByDescending { it.createdAt })
+        .map { note ->
+            NoteItem(
+                id = note.id, kind = note.kind, text = note.shown,
+                // A part's own label names nobody the user can see; only a named speaker of the transcript is shown.
+                owner = note.owner?.takeUnless { note.provisional }?.let(names::get),
+                due = note.due, atSec = note.evidence.atSec, quote = note.evidence.quote, provisional = note.provisional,
+                section = note.section, done = note.doneAt != null,
+            )
+        }
 
     private fun empty(recordingId: String, organizing: Boolean, failure: String?) =
         RecordingNotes(recordingId, NotesStage.NONE, null, emptyList(), emptyList(), emptyList(), organizing, failure = failure)
@@ -988,20 +1092,19 @@ class Notes internal constructor(
                     tombstoned++
                     return@mapNotNull null
                 }
-                // An edited item passes on the user's words only to one that says the same: by its moment alone, a
-                // different item would be hidden behind them.
-                val same = earlier.firstOrNull {
-                    item.section == it.section && if (it.editedAt != null) {
-                        item.kind == it.kind && SameItem.sameText(item.text, it.text)
-                    } else {
-                        SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.evidence.atSec)
+                // An edited or checked item passes on the user's words or check only to one that says the same: by its moment
+                // alone, a different item would be hidden behind them, or marked done.
+                val same = earlier.firstOrNull { item.section == it.section && item.kind == it.kind && SameItem.sameText(item.text, it.text) }
+                    ?: earlier.firstOrNull {
+                        item.section == it.section && it.editedAt == null && it.doneAt == null &&
+                            SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.evidence.atSec)
                     }
-                }
-                    ?.also { earlier.remove(it) }
+                same?.let { earlier.remove(it) }
                 StoredNote(
                     id = same?.id ?: ulid(), kind = item.kind, text = item.text, owner = item.owner, due = item.due,
                     evidence = NoteEvidence(item.atSec, item.quote), provisional = false, conversation = conversation,
                     section = item.section, userText = same?.userText, editedAt = same?.editedAt, createdAt = same?.createdAt ?: now,
+                    doneAt = same?.doneAt,
                 )
             }
             // An item the user edited is theirs, made again or not. One from a part keeps no owner: a part's label is its own.

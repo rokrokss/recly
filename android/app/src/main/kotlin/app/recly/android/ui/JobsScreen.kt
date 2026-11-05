@@ -3,6 +3,7 @@
 package app.recly.android.ui
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.width
@@ -17,6 +18,7 @@ import app.recly.android.core.coreMessage
 import app.recly.android.ui.component.Glyph
 import app.recly.android.ui.component.GlyphButton
 import app.recly.android.ui.component.GlyphIcon
+import recly.core.notes.RecordingTodos
 import recly.core.recording.SearchHit
 import recly.core.recording.SearchRange
 import androidx.compose.foundation.background
@@ -107,17 +109,25 @@ fun JobsScreen(
     /** docs/09 "Search": the field's text, and a result's tap. */
     onSearch: (String) -> Unit = {},
     onOpenHit: (SearchHit) -> Unit = {},
+    /** docs/09 "To-dos view": the header's button both ways, a group or a row's tap, a box, and the `Done` row. */
+    onOpenTodos: () -> Unit = {},
+    onCloseTodos: () -> Unit = {},
+    onOpenTodo: (RecordingTodos) -> Unit = {},
+    onCheckTodo: (recordingId: String, itemId: String, done: Boolean) -> Unit = { _, _, _ -> },
+    onToggleDoneTodos: () -> Unit = {},
 ) {
     val palette = blueprint
     val metered = rememberMeteredGate(state.download.info?.modelBytes)
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> onImport(uris) }
 
     val resources = LocalContext.current.resources
+    val todosView = state.todosView
+    BackHandler(enabled = todosView != null, onBack = onCloseTodos)
     Column(modifier.fillMaxSize()) {
         // The tab is "List"; the screen is what is in it, as on the iPhone.
         ScreenHeader(
-            title = stringResource(R.string.jobs_title),
-            meta = headerCounts(
+            title = stringResource(if (todosView != null) R.string.notes_todos else R.string.jobs_title),
+            meta = if (todosView != null) openTodoCount(state.todos).toString() else headerCounts(
                 state.items.size,
                 state.items.count { it.waiting() },
                 state.items.count { it.state.failing() },
@@ -126,13 +136,22 @@ fun JobsScreen(
             ),
             // docs/09 "Import": at the header's end, the system picker for audio and video.
             trailing = {
+                // docs/09 "To-dos view": only while a recording has a to-do. The title names the view it is on and this the other.
+                if (state.todos.isNotEmpty()) {
+                    BlueprintButton(
+                        stringResource(if (todosView != null) R.string.jobs_title else R.string.notes_todos),
+                        if (todosView != null) onCloseTodos else onOpenTodos,
+                        Modifier.testTag("todos-toggle"),
+                        tone = ButtonTone.QUIET,
+                    )
+                }
                 GlyphButton(Glyph.IMPORT, stringResource(R.string.import_audio), { picker.launch(arrayOf("audio/*", "video/*")) },
                     Modifier.testTag("import"))
             },
             stackable = false,
         )
 
-        SearchField(state.query, onSearch, Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s))
+        if (todosView == null) SearchField(state.query, onSearch, Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s))
 
         AlertBanner(
             alerts = state.alerts,
@@ -162,6 +181,14 @@ fun JobsScreen(
                 failed = true,
                 modifier = Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s),
             )
+        }
+
+        // docs/09 "To-dos view": it takes the list's place, whatever the search field held, which waits behind it.
+        if (todosView != null) {
+            // The banner ends in a line of its own.
+            if (state.alerts.isEmpty()) HairLine()
+            TodosView(state.todos, todosView, onOpenTodo, onCheckTodo, onToggleDoneTodos, Modifier.fillMaxWidth().weight(1f))
+            return@Column
         }
 
         // docs/09 "Search": the results take the ledger's place while the field has text.
