@@ -146,7 +146,6 @@ fun ModelBanner(model: ShellModel, strings: Strings, alert: JobAlert) {
     val download = model.modelDownload ?: return
     val palette = blueprint
     BannerRow(
-        badge = alert.reason.badge().worded(strings),
         action = {
             // At the badge's size, as every action on the banner (2026-11-05).
             if (download.running) {

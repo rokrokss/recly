@@ -57,9 +57,7 @@ public struct LedgerStatus: Equatable, Sendable {
         return RecKitStrings.localized(key)
     }
 
-    /// 2026-10-08 §1a: one word per code, in RecKit's catalog. `ICLOUD_STORAGE_FULL` and `NEEDS_SPACE`
-    /// are the banner's codes for the ledger's `NO_SPACE`; the banner's failure codes (a missing key, a
-    /// refused key, a quota) are failures, so they say so.
+    /// 2026-10-08 §1a: one word per code, in RecKit's catalog.
     static let words: [String: String] = [
         "DONE": "Done",
         "FAILED": "Failed",
@@ -75,17 +73,10 @@ public struct LedgerStatus: Equatable, Sendable {
         "NEEDS_AUTH": "Waiting for Drive",
         "NEEDS_CONSENT": "Needs permission",
         "NEEDS_MODEL": "Waiting for model",
-        "NEEDS_SPACE": "Storage full",
         "NO_SPACE": "Storage full",
-        "ICLOUD_STORAGE_FULL": "Storage full",
         "SKIPPED": "Too short",
         "WAITING": "Waiting for iCloud",
         "UNKNOWN": "Unknown",
-        "MISSING_SECRET": "Failed",
-        "AUTH_REJECTED": "Failed",
-        "QUOTA": "Failed",
-        "LOCAL_TRANSCRIPTION_UNAVAILABLE": "Failed",
-        "LOCAL_DIARIZATION_UNAVAILABLE": "Failed",
     ]
 
     /// docs/09 screen principle 2 · docs/08 "Titles and speaker names": ChatGPT is filling in the recording's title or

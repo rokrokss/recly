@@ -363,13 +363,6 @@ final class JobAlertsTests: XCTestCase {
         )
     }
 
-    /// docs/09 screen principle 2: the banner's badge is a code, and no two reasons share one.
-    func testEveryReasonHasACodeOfItsOwn() {
-        let codes = AlertReason.allCases.map(\.code)
-        XCTAssertEqual(codes.count, Set(codes).count)
-        XCTAssertTrue(codes.allSatisfy { $0 == $0.uppercased() })
-    }
-
     // MARK: - Pieces
 
     /// A provider 5xx: retried by the runner, never the user's to fix.

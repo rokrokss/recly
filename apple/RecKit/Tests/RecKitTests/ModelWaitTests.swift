@@ -68,8 +68,6 @@ final class ModelWaitTests: XCTestCase {
     /// The banner starts the download where it stands rather than sending the user to settings.
     func testTheBannersFixIsTheDownload() {
         XCTAssertEqual(AlertReason.localModel.fix, .modelDownload)
-        // The job's own status, like consent's — the long message code squeezed the banner.
-        XCTAssertEqual(AlertReason.localModel.code, "NEEDS_MODEL")
         AppLanguage.current = .en
         XCTAssertEqual(FixSurface.modelDownload.label, "Download model")
         AppLanguage.current = .ko

@@ -16,8 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -53,7 +51,7 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (status.busy) BlueprintLoader(status.tone.ink())
-        // UX decisions of 2026-10-08: a word wider than its room (a ledger row's title, [statusColumnWidth]'s cap) takes a
+        // UX decisions of 2026-10-08: a word wider than its room (a ledger row's title) takes a
         // second line inside its badge, centred and never ellipsized — between words, and inside one
         // only when that one word alone is wider than its room, and then at a hyphen in the language's
         // own places (N2, 2026-10-11). Phrase breaking keeps a Korean word whole, where the default would
@@ -76,34 +74,6 @@ private val BADGE_LINE_BREAK = LineBreak(
     strictness = LineBreak.Strictness.Normal,
     wordBreak = LineBreak.WordBreak.Phrase,
 )
-
-/**
- * The cap on the status column (UX decisions of 2026-10-08, the same rule on the iPhone): as wide as the
- * old code `TRANSCRIBING` needed in the badge's font, so the title column is never narrower than it was
- * when the badges said codes. A word wider than that wraps in its badge instead of widening the column.
- */
-private const val STATUS_CAP_SAMPLE = "TRANSCRIBING"
-
-/**
- * How wide a column of badges is — the room [AlertLine] keeps for its code, now the ledger has no status
- * column (docs/09 screen principle 2, 2026-11-04): the widest word of [codes] *in the current
- * language* — what each code is drawn as — measured in the style the badge draws, up to the cap of
- * [STATUS_CAP_SAMPLE], plus what the badge adds around it. No state is ever ellipsized, in any language,
- * at any scale: a word past the cap wraps inside its badge.
- */
-@Composable
-fun statusColumnWidth(codes: List<String>): Dp = statusColumn(
-    // A dp of slack on both: a word measured to the pixel must not wrap on the pixel the layout rounds away.
-    widest = textColumnWidth(codes.map { monoWords(badgeLabel(it)) }, mono.small, padding = 1.dp),
-    line = blueprint.line,
-    cap = textColumnWidth(listOf(STATUS_CAP_SAMPLE), mono.small, padding = 1.dp),
-)
-
-/**
- * The rule, without a screen to measure on: the widest word up to [cap], plus the badge's own padding
- * and border on each side. Up to the cap no word wraps; past it the badge takes a second line.
- */
-internal fun statusColumn(widest: Dp, line: Dp, cap: Dp = Dp.Infinity): Dp = minOf(widest, cap) + (BADGE_PAD + line) * 2
 
 @Composable
 fun BadgeTone.ink(): Color = when (this) {

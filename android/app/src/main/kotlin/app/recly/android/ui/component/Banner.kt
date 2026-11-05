@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalLayoutApi::class)
-
 package app.recly.android.ui.component
 
 import androidx.compose.foundation.background
@@ -10,8 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,19 +36,18 @@ import app.recly.android.ui.theme.blueprint
 // The list's two banners, shared: the fixable-failure line ([AlertLine]) and the one-off message ([MessageBanner]).
 
 /**
- * One reason: what it is, how many recordings are behind it, the code (none for the Drive wait), and what
- * to press — the iPhone's `AlertLine`. On a phone the sentence has the row's whole width and the code and
- * the button sit under it, at the end (N5, UX decisions of 2026-10-11): beside it, they squeezed a
- * sentence such as the quota's to a few words a line. A wider window keeps them beside it, in at most
- * half the row, folding onto a second line there when they do not fit side by side, so a long code such
- * as `LOCAL_TRANSCRIPTION_UNAVAILABLE` never squeezes the sentence to a word per line. Either way a word
- * too long for its line breaks at a hyphen, not anywhere (N2).
+ * One reason: what it is, how many recordings are behind it, and what to press — the iPhone's `AlertLine`.
+ * On a phone the sentence has the row's whole width and the button sits under it, at the end (N5, UX
+ * decisions of 2026-10-11): beside it, it squeezed a sentence such as the quota's to a few words a line. A
+ * wider window keeps it beside it, in at most half the row. Either way a word too long for its line breaks
+ * at a hyphen, not anywhere (N2).
+ *
+ * No badge (2026-11-05, user decision): beside the button, at its size, `Failed` read as a second button that
+ * did nothing, and it only said again what the line's colour and the row's own badge say.
  */
 @Composable
 internal fun AlertLine(
-    code: String?,
     lines: @Composable ColumnScope.() -> Unit,
-    tone: BadgeTone = BadgeTone.WARNING,
     description: String? = null,
     onClick: (() -> Unit)? = null,
     action: @Composable () -> Unit,
@@ -66,10 +61,6 @@ internal fun AlertLine(
                 Modifier
             },
         )
-    val trailing: @Composable () -> Unit = {
-        code?.let { StatusBadge(LedgerStatus(it, tone)) }
-        action()
-    }
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(hyphens = Hyphens.Auto)) {
         BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
             if (maxWidth + Space.m * 2 < PHONE_WIDTH) {
@@ -79,17 +70,11 @@ internal fun AlertLine(
                         verticalArrangement = Arrangement.spacedBy(Space.xxs),
                         content = lines,
                     )
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Space.s),
-                        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-                        verticalArrangement = Arrangement.spacedBy(Space.xs),
-                        itemVerticalAlignment = Alignment.CenterVertically,
-                    ) { trailing() }
+                    Box(Modifier.fillMaxWidth().padding(bottom = Space.s), contentAlignment = Alignment.CenterEnd) { action() }
                 }
                 return@BoxWithConstraints
             }
-            // Half the row, or the code's own width where that is more: a code is never cut.
-            val half = maxOf(maxWidth / 2, code?.let { statusColumnWidth(listOf(it)) } ?: 0.dp)
+            val half = maxWidth / 2
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -100,12 +85,7 @@ internal fun AlertLine(
                     verticalArrangement = Arrangement.spacedBy(Space.xxs),
                     content = lines,
                 )
-                FlowRow(
-                    modifier = Modifier.widthIn(max = half).padding(vertical = Space.s),
-                    horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(Space.xs),
-                    itemVerticalAlignment = Alignment.CenterVertically,
-                ) { trailing() }
+                Box(Modifier.widthIn(max = half).padding(vertical = Space.s)) { action() }
             }
         }
     }

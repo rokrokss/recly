@@ -1,8 +1,6 @@
 package app.recly.windows.ui
 
 import app.recly.windows.i18n.Str
-import app.recly.windows.ui.component.BadgeTone
-import app.recly.windows.ui.component.LedgerStatus
 import recly.core.job.JobStatus
 import recly.core.job.StepRun
 import recly.core.job.StepStatus
@@ -21,34 +19,15 @@ import recly.core.message.CoreMessageRef
  * held together by having the same tests over the same rules rather than by sharing code the core
  * does not own.
  */
-enum class AlertReason(val label: Str, val code: String, val fix: FixSurface) {
-    LOCAL_TRANSCRIPTION_UNAVAILABLE(Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE, "LOCAL_TRANSCRIPTION_UNAVAILABLE", FixSurface.EDITOR),
-    // Worn as the job's own status, like `NEEDS_CONSENT`: it is a wait, and the ledger rows say the same.
-    LOCAL_MODEL_REQUIRED(Str.CORE_LOCAL_MODEL_REQUIRED, "NEEDS_MODEL", FixSurface.MODEL_DOWNLOAD),
-    LOCAL_DIARIZATION_UNAVAILABLE(Str.CORE_LOCAL_DIARIZATION_UNAVAILABLE, "LOCAL_DIARIZATION_UNAVAILABLE", FixSurface.EDITOR),
-    NEEDS_AUTH(Str.ALERT_NEEDS_AUTH, "NEEDS_AUTH", FixSurface.SIGN_IN),
-    NEEDS_SPACE(Str.ALERT_NEEDS_SPACE, "NEEDS_SPACE", FixSurface.DRIVE_STORAGE),
-    MISSING_SECRET(Str.ALERT_MISSING_SECRET, "MISSING_SECRET", FixSurface.SECRETS),
-    AUTH_REJECTED(Str.ALERT_AUTH_REJECTED, "AUTH_REJECTED", FixSurface.SECRETS),
-    QUOTA(Str.ALERT_QUOTA, "QUOTA", FixSurface.EDITOR),
-    ;
-
-    /**
-     * docs/09 screen principle 2: the banner row wears the state in the tone of what it is — as the word the
-     * ledger rows say for the same jobs (2026-10-08): the wait's own word in the warning tone, and `Failed` for the
-     * reasons a job the queue gave up on carries, as the Apple shells say it — in the failure's red, as the rows
-     * wear it (2026-10-10).
-     */
-    fun badge(): LedgerStatus = WORDS[this]?.let { LedgerStatus(code, BadgeTone.WARNING, word = it) }
-        ?: LedgerStatus(code, BadgeTone.DANGER, word = Str.STATE_FAILED)
-
-    private companion object {
-        val WORDS = mapOf(
-            LOCAL_MODEL_REQUIRED to Str.BADGE_NEEDS_MODEL,
-            NEEDS_AUTH to Str.DRIVE_PENDING,
-            NEEDS_SPACE to Str.BADGE_STORAGE_FULL,
-        )
-    }
+enum class AlertReason(val label: Str, val fix: FixSurface) {
+    LOCAL_TRANSCRIPTION_UNAVAILABLE(Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE, FixSurface.EDITOR),
+    LOCAL_MODEL_REQUIRED(Str.CORE_LOCAL_MODEL_REQUIRED, FixSurface.MODEL_DOWNLOAD),
+    LOCAL_DIARIZATION_UNAVAILABLE(Str.CORE_LOCAL_DIARIZATION_UNAVAILABLE, FixSurface.EDITOR),
+    NEEDS_AUTH(Str.ALERT_NEEDS_AUTH, FixSurface.SIGN_IN),
+    NEEDS_SPACE(Str.ALERT_NEEDS_SPACE, FixSurface.DRIVE_STORAGE),
+    MISSING_SECRET(Str.ALERT_MISSING_SECRET, FixSurface.SECRETS),
+    AUTH_REJECTED(Str.ALERT_AUTH_REJECTED, FixSurface.SECRETS),
+    QUOTA(Str.ALERT_QUOTA, FixSurface.EDITOR),
 }
 
 /**

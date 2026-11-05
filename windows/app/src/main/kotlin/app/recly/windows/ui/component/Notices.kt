@@ -18,12 +18,14 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 
 /**
- * docs/10 "Failures the user can fix, and their notices": one line of the banner — the state's badge (none for a line
- * that is a sentence alone), what it says over how many wait, and the way to fix it at the end. The popup's lines and
- * the speech model's alike.
+ * docs/10 "Failures the user can fix, and their notices": one line of the banner — what it says over how many wait, and
+ * the way to fix it at the end. The popup's lines and the speech model's alike.
+ *
+ * No badge (2026-11-05, user decision): `Failed` at a button's size read as a second button that did nothing, and it
+ * only said again what the rows' own badges say.
  */
 @Composable
-fun BannerRow(badge: LedgerStatus?, action: @Composable () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+fun BannerRow(action: @Composable () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -32,7 +34,6 @@ fun BannerRow(badge: LedgerStatus?, action: @Composable () -> Unit, content: @Co
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        badge?.let { StatusBadge(it) }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs), content = content)
         action()
     }

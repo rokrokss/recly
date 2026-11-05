@@ -2,9 +2,6 @@
 
 package app.recly.windows.ui
 
-import app.recly.windows.i18n.Str
-import app.recly.windows.ui.component.BadgeTone
-import app.recly.windows.ui.component.LedgerStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -43,8 +40,6 @@ class JobAlertsTest {
             alertReasonOf(JobStatus.NEEDS_MODEL, CoreMessage.LOCAL_MODEL_REQUIRED.code()),
         )
         assertEquals(FixSurface.MODEL_DOWNLOAD, AlertReason.LOCAL_MODEL_REQUIRED.fix)
-        // The banner wears the job's own status, as a wait — the long reason code squeezed its line.
-        assertEquals(LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING, word = Str.BADGE_NEEDS_MODEL), AlertReason.LOCAL_MODEL_REQUIRED.badge())
     }
 
     /** A failed job no longer carries the model's code, and one that did would not be the model's. */

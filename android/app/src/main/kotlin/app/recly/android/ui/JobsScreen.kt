@@ -284,8 +284,8 @@ fun JobsScreen(
  * of the list where the recordings they are about are. One row per reason, however many jobs are
  * behind it, and the row is the way to the screen that fixes it.
  *
- * docs/09 "Component measurements" (2026-11-05, user decision): every action on it is drawn at the status badge's size —
- * the fix sits beside its badge, and two neighbours of two sizes read as two kinds of thing.
+ * docs/09 "Component measurements" (2026-11-05, user decision): every action on it is drawn at the status badge's size,
+ * and it wears no badge — the line's colour and the rows' own badges say the state.
  */
 @Composable
 private fun AlertBanner(
@@ -304,7 +304,6 @@ private fun AlertBanner(
             // While it runs, the line is its progress and the button its cancel.
             if (alert.reason == AlertReason.LOCAL_MODEL_REQUIRED) {
                 AlertLine(
-                    code = alert.reason.code,
                     lines = {
                         if (download.active) {
                             ModelDownloadLines(download, download.info)
@@ -330,7 +329,6 @@ private fun AlertBanner(
             }
             if (alert.reason == AlertReason.NEEDS_AUTH) {
                 AlertLine(
-                    code = null,
                     lines = {
                         Text(
                             stringResource(R.string.alert_uploads_waiting, alert.count),
@@ -351,11 +349,8 @@ private fun AlertBanner(
             val reason = stringResource(alert.reason.label)
             val waiting = stringResource(R.string.alert_waiting, alert.count)
             AlertLine(
-                code = alert.reason.code,
-                // A failure's `Failed` in the failure's own red, as its row says it; a wait in the warning.
-                tone = if (alert.reason.wait) BadgeTone.WARNING else BadgeTone.DANGER,
-                // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and a code
-                // read out as three separate things (the same rule as [LedgerRow]).
+                // docs/09 "Accessibility": one node with a sentence in it, not a reason and a count read out
+                // as two separate things (the same rule as [LedgerRow]).
                 description = "$reason $waiting",
                 onClick = { onFix(alert) },
                 lines = {

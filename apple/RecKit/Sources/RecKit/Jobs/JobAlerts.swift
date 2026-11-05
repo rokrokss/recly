@@ -34,25 +34,6 @@ public enum AlertReason: String, CaseIterable, Sendable {
 
     public var label: String { RecKitStrings.localized(labelKey) }
 
-    /// docs/09 screen principle 2: the badge on the banner row is the state as a code, the same word the
-    /// core and the logs use.
-    public var code: String {
-        switch self {
-        case .localUnavailable: return "LOCAL_TRANSCRIPTION_UNAVAILABLE"
-        // The job's own status, as consent's is: the long message code squeezed the banner's line.
-        case .localModel: return "NEEDS_MODEL"
-        case .localDiarization: return "LOCAL_DIARIZATION_UNAVAILABLE"
-        case .needsConsent: return "NEEDS_CONSENT"
-        case .needsAuth: return "NEEDS_AUTH"
-        case .needsSpace: return "NEEDS_SPACE"
-        // The core's own word for it: the job's status is the same `NEEDS_SPACE` as a full Drive's.
-        case .icloudSpace: return "ICLOUD_STORAGE_FULL"
-        case .missingSecret: return "MISSING_SECRET"
-        case .authRejected: return "AUTH_REJECTED"
-        case .quota: return "QUOTA"
-        }
-    }
-
     /// A job parked until someone acts, not one that failed: its banner line and its row's sentence
     /// are drawn in the warning tone its badge wears, never in the red that means failure.
     public var isWait: Bool {

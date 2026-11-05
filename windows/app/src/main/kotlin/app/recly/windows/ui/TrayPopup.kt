@@ -309,8 +309,8 @@ private fun Ledger(
  * The lines come and go with the queue: a reason nothing is blocked on any more is not in
  * [ShellModel.alerts], so its row is simply not drawn (docs/10 rule 3).
  *
- * docs/09 "Component measurements" (2026-11-05, user decision): every action on it is drawn at the status badge's size —
- * the badge and the fix share the line, and two sizes on it read as two kinds of thing.
+ * docs/09 "Component measurements" (2026-11-05, user decision): every action on it is drawn at the status badge's size,
+ * and it wears no badge — the rows' own badges say the state.
  */
 @Composable
 private fun AlertBanner(model: ShellModel, strings: Strings) {
@@ -324,7 +324,6 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
         }
         val waitingForDrive = alert.reason == AlertReason.NEEDS_AUTH
         BannerRow(
-            badge = if (waitingForDrive) null else alert.reason.badge().worded(strings),
             action = {
                 // The sign-in is the one fix that happens here rather than on another screen, so it is
                 // the one that has a result to show (docs/09 trend 2).

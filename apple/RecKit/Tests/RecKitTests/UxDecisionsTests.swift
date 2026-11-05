@@ -32,7 +32,6 @@ final class UxDecisionsTests: XCTestCase {
         (LedgerStatus(code: "NEEDS_CONSENT", tone: .warning), "Needs permission", "허용 필요"),
         (LedgerStatus(code: "NEEDS_MODEL", tone: .warning), "Waiting for model", "모델 대기"),
         (LedgerStatus(code: "NO_SPACE", tone: .warning), "Storage full", "저장 공간 부족"),
-        (LedgerStatus(code: "NEEDS_SPACE", tone: .warning), "Storage full", "저장 공간 부족"),
         (LedgerStatus(code: "SKIPPED", tone: .neutral), "Too short", "너무 짧음"),
         (LedgerStatus.forRecent(state: "Waiting for iCloud"), "Waiting for iCloud", "iCloud 대기"),
         (LedgerStatus.forRecent(state: "Waiting for the local folder"), "Waiting for folder", "폴더 대기"),

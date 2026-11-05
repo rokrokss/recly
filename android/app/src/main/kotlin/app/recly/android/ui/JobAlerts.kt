@@ -22,7 +22,7 @@ enum class AlertReason(
     val fix: FixSurface,
     /**
      * A job parked on something to come — a sign-in, space, the speech model — rather than one that
-     * failed. The banner draws it in the warning its badge is; red is for failures.
+     * failed. The banner draws it in the warning tone; red is for failures.
      */
     val wait: Boolean = false,
 ) {
@@ -35,17 +35,6 @@ enum class AlertReason(
     AUTH_REJECTED(R.string.alert_auth_rejected, FixSurface.SECRETS),
     QUOTA(R.string.alert_quota, FixSurface.PROCESSING),
     ;
-
-    /**
-     * docs/09 screen principle 2: the banner row's badge is the job's own state, as on the iPhone — a wait
-     * on the model is `NEEDS_MODEL`, and a reason a FAILED job stopped on is that job's `FAILED`
-     * ("Failed"), not the reason's own code (UX decisions of 2026-10-08). The sentence beside it says why.
-     */
-    val code: String get() = when (this) {
-        LOCAL_MODEL_REQUIRED -> "NEEDS_MODEL"
-        NEEDS_AUTH, NEEDS_SPACE -> name
-        LOCAL_TRANSCRIPTION_UNAVAILABLE, LOCAL_DIARIZATION_UNAVAILABLE, MISSING_SECRET, AUTH_REJECTED, QUOTA -> "FAILED"
-    }
 }
 
 /**
