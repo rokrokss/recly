@@ -142,7 +142,9 @@ class MemosTest {
         val fillRequest = chatGpt.server.requests.first(chatGpt::isFill)
         val fill = text(fillRequest)
         assertTrue(fill.endsWith("\n" + block("Agenda: alpha, bravo")), fill)
-        assertTrue("A name in the user's memo may be one of the speakers'" in fillRequest.json()["instructions"]!!.jsonPrimitive.content)
+        val fillInstructions = fillRequest.json()["instructions"]!!.jsonPrimitive.content
+        assertTrue("A name in the user's memo may be one of the speakers'" in fillInstructions, fillInstructions)
+        assertTrue("a role or anything else the memo says about someone is not enough." in fillInstructions, fillInstructions)
         assertFalse("user's memo" in Summaries.fillInstructions("English", title = true, speakers = listOf("S1")), "not without a memo")
 
         // Changed after the notes were written: nothing runs until Organize again, which reads it as it is then.
@@ -192,5 +194,8 @@ class MemosTest {
         assertIs<AskState.Ready>(f.core.summaries.ask(meta.recordingId, null, "Who owns it?"))
         val sent = input(0)
         assertTrue(sent.endsWith("\n" + block("Who owns pricing?") + recly.core.chatgpt.AskPrompts.REQUEST_HEADING + "\nWho owns it?\n"), sent)
+        val instructions = responses()[0].json()["instructions"]!!.jsonPrimitive.content
+        assertTrue("then the user's memo; then the request." in instructions, instructions)
+        assertTrue("on its own it asks for nothing" in instructions, instructions)
     }
 }

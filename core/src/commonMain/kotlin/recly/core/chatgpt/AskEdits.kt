@@ -158,20 +158,22 @@ internal data class AskProposal(
                     val item = element as? JsonObject ?: continue
                     val note = summary.items.getOrNull((number(item["n"]) ?: continue) - 1) ?: continue
                     val said = string(item["text"])?.let(::oneLine) ?: continue
-                    // The item's time is shown beside it: a time copied into its words is dropped, and words that were
-                    // only times remove nothing (2026-11-04).
-                    val text = NoteText.withoutTimes(said).takeIf { it.isNotEmpty() || said.isEmpty() }?.take(NotesAnswer.TEXT_MAX) ?: continue
+                    // The item's time, owner and due date are shown beside it: copied into its words they are dropped, and
+                    // words that were only those remove nothing (2026-11-04, 2026-11-05).
+                    val text = withoutAbout(NoteText.withoutTimes(said), note.owner, note.due)
+                        .takeIf { it.isNotEmpty() || said.isEmpty() }?.take(NotesAnswer.TEXT_MAX) ?: continue
                     if (text != note.text) items[note.id] = text
                 }
                 for (element in (json["add"] as? JsonArray).orEmpty()) {
                     val item = element as? JsonObject ?: continue
                     val (kind, section) = string(item["section"])?.trim()?.let(summary::place) ?: continue
-                    val text = string(item["text"])?.let(::oneLine)?.let(NoteText::withoutTimes)?.takeIf { it.isNotEmpty() }
-                        ?.take(NotesAnswer.TEXT_MAX) ?: continue
-                    val segment = number(item["line"])?.let { sent.segments.getOrNull(it - 1) }?.takeIf { it.text.isNotBlank() }
                     val owner = string(item["owner"])?.trim()?.takeIf { kind == NoteKind.TODO && it in ids }
                     val due = string(item["due"])?.trim()?.takeIf { kind == NoteKind.TODO && it.isNotEmpty() }?.take(NotesAnswer.DUE_MAX)
-                    added += AskNote(kind, section, text, segment?.start?.coerceAtLeast(0.0) ?: 0.0, segment?.text?.trim()?.take(QUOTE_MAX).orEmpty(), owner, due)
+                    val text = string(item["text"])?.let(::oneLine)?.let(NoteText::withoutTimes)?.let { withoutAbout(it, owner, due) }
+                        ?.takeIf { it.isNotEmpty() }?.take(NotesAnswer.TEXT_MAX) ?: continue
+                    // Every item comes from a line (2026-11-05): one with none would sit at 00:00:00 with nothing behind it.
+                    val segment = number(item["line"])?.let { sent.segments.getOrNull(it - 1) }?.takeIf { it.text.isNotBlank() } ?: continue
+                    added += AskNote(kind, section, text, segment.start.coerceAtLeast(0.0), segment.text.trim().take(QUOTE_MAX), owner, due)
                 }
             }
             return AskProposal(
@@ -181,6 +183,10 @@ internal data class AskProposal(
         }
 
         private fun oneLine(text: String): String = text.replace(Regex("\\s*\\n\\s*"), " ").trim()
+
+        /** [text] without the `(owner: …; due: …)` a summary line gives this item, copied after its words. */
+        private fun withoutAbout(text: String, owner: String?, due: String?): String =
+            AskPrompts.about(owner, due)?.let { text.removeSuffix(it).trimEnd() } ?: text
 
         private fun number(element: JsonElement?): Int? = (element as? JsonPrimitive)?.intOrNull
 
@@ -219,7 +225,7 @@ internal object AskEdits {
 internal object AskPrompts {
     const val TRANSCRIPT_HEADING = "TRANSCRIPT — one line per segment: #number [HH:MM:SS] speaker id: text"
     const val SPEAKERS_HEADING = "SPEAKERS"
-    const val SUMMARY_HEADING = "SUMMARY — its overview, then its items under their sections, one line per item: @number text [HH:MM:SS], the item's time last"
+    const val SUMMARY_HEADING = "SUMMARY — its overview, then its items under their sections, one line per item: @number text (owner: …; due: …) [HH:MM:SS], the item's owner, due date and time kept apart from its words"
     const val REQUEST_HEADING = "REQUEST — what the user asks or wants changed, with anything they give to help"
 
     /** The built-in groups as the request names them, whatever the user calls them. */
@@ -240,13 +246,20 @@ internal object AskPrompts {
         NoteKind.SECTION -> null
     }?.trim()?.takeIf { it.isNotEmpty() }
 
-    fun instructions(transcript: Transcript, summary: AskSummary?, preferences: SummaryPreferences): String = buildString {
+    fun instructions(transcript: Transcript, summary: AskSummary?, preferences: SummaryPreferences, memo: Boolean = false): String = buildString {
         val speakers = transcript.speakers.isNotEmpty()
         append("You work on one recording for the person who made it: you answer their question about it, or make the change they ask for")
         append(if (summary != null) " in its transcript or its summary" else " in its transcript").append(", or both.\n")
         append("The transcript comes first, one line per segment").append(if (speakers) ", then its speakers" else "")
-        append(if (summary != null) ", then the summary made of it" else "").append("; then the request. The request may carry material ")
+        append(if (summary != null) ", then the summary made of it" else "").append(if (memo) ", then the user's memo" else "")
+        append("; then the request. The request may carry material ")
         append("to help: names, terms, background, or another transcript of the same conversation, perhaps made where the sound was clearer.\n")
+        // docs/08 "Ask" (2026-11-05): the memo's heading is the one every request gives it, written for organizing; here
+        // only the request asks for a change.
+        if (memo) {
+            append("The memo is the user's own text about the recording, not part of what was said. Take it as material when the request ")
+            append("says to use it; on its own it asks for nothing.\n")
+        }
         append("Answer with one JSON object and nothing else: no Markdown, no code fence, no other text.\n")
         append("\"answer\": what you say to the person, in the language of the request. For a question, the answer: plain text, no Markdown ")
         append("(no #, no **, no tables), list items starting with \"- \", the time something was said added as [HH:MM:SS] where it helps; ")
@@ -263,7 +276,9 @@ internal object AskPrompts {
         append("from one segment to another.\n")
         if (speakers) {
             append("\"names\": an object from speaker id to that speaker's name, only for a speaker the request or its material says who they ")
-            append("are.\n")
+            append("are. Never guess a name from how someone speaks or what they talk about.\n")
+            // As the fills say it (docs/08 "Titles and speaker names"): the people a memo lists are who may be there.
+            if (memo) append("A name in the memo may be one of the speakers', but give it only where the transcript itself shows which speaker it is: a role or anything else the memo says about someone is not enough.\n")
             if (transcript.speakers.any { it.me == true }) {
                 append("The speaker marked \"${TranscriptNormalizer.ME}\" is the person who made the recording.\n")
             }
@@ -275,9 +290,12 @@ internal object AskPrompts {
             append("\"add\": items to add to the summary, each {\"section\": one of the section ids listed, \"text\": the item, \"line\": the ")
             append("number of the transcript segment it comes from}, and for a to-do \"owner\", the speaker id who does it, and \"due\", ")
             append("its due date as it was said.\n")
+            append("Add only what the transcript says, each item with the line it comes from. For anything it does not say — something ")
+            append("only in the request").append(if (memo) " or the memo" else "").append(" — add nothing, and say so in \"answer\".\n")
             append("Write the summary's words in the language the summary is in, in the style of its other items.\n")
-            append("An item's text is its words alone, never a time: the [HH:MM:SS] that ends a summary line is the item's time, kept ")
-            append("apart and shown beside it, and an added item's time is its line's.\n")
+            append("An item's text is its words alone, never a time, owner or due date: the (owner: …; due: …) and the [HH:MM:SS] that end ")
+            append("a summary line are kept apart and shown beside it; an added item's time is its line's, and its owner and due date go in ")
+            append("\"owner\" and \"due\".\n")
             append("A name or term corrected in the transcript is corrected wherever the summary has it too, and the other way round.\n")
         }
         preferences.aboutMe.trim().takeIf { it.isNotEmpty() }?.let {
@@ -322,8 +340,7 @@ internal object AskPrompts {
                 if (items.isEmpty()) append("(none)\n")
                 for (item in items) {
                     append('@').append(numbered.getValue(item)).append(' ').append(item.text)
-                    val about = listOfNotNull(item.owner?.let { "owner: $it" }, item.due?.let { "due: $it" })
-                    if (about.isNotEmpty()) append(" (").append(about.joinToString("; ")).append(')')
+                    about(item.owner, item.due)?.let { append(' ').append(it) }
                     append(" [").append(clock(item.atSec)).append("]\n")
                 }
             }
@@ -331,6 +348,10 @@ internal object AskPrompts {
         NotesPrompts.memoBlock(memo).takeIf { it.isNotEmpty() }?.let { append('\n').append(it.trimEnd()).append('\n') }
         append('\n').append(REQUEST_HEADING).append('\n').append(request.trim()).append('\n')
     }
+
+    /** What a summary line says after an item's words: `(owner: …; due: …)`, or null when it has neither. */
+    fun about(owner: String?, due: String?): String? =
+        listOfNotNull(owner?.let { "owner: $it" }, due?.let { "due: $it" }).takeIf { it.isNotEmpty() }?.joinToString("; ", "(", ")")
 
     private fun clock(seconds: Double): String {
         val total = seconds.coerceAtLeast(0.0).toLong()

@@ -392,9 +392,10 @@ class Summaries internal constructor(
             Logger.Level.INFO, "summary.ask.start",
             mapOf("recordingId" to recordingId, "model" to model, "preset" to "own", "summary" to (summary != null), "chars" to question.length),
         )
+        val memo = memo(recordingId)
         val answer = complete(
-            model, AskPrompts.instructions(transcript, summary, preferences()),
-            AskPrompts.input(transcript, summary, memo(recordingId), question), timeoutSec = REQUEST_TIMEOUT_SEC,
+            model, AskPrompts.instructions(transcript, summary, preferences(), memo = memo.isNotBlank()),
+            AskPrompts.input(transcript, summary, memo, question), timeoutSec = REQUEST_TIMEOUT_SEC,
         )
         val proposal = AskProposal.parse(answer, transcript, summary)
         val saved = if (proposal.changesTranscript || proposal.changesSummary) apply(recordingId, transcript, summary, proposal) else null
@@ -444,7 +445,7 @@ class Summaries internal constructor(
                 append("Leave out honorifics that only go with a name, such as 님, 씨, さん or Mr.; a form of address used on its own, such as 팀장님, stays as it is. ")
                 append("Never guess from how someone speaks or what they talk about, and never give two speakers the same name.\n")
                 // docs/08 "Memo": the people a memo lists are who may be there, not who is who.
-                if (memo) append("A name in the user's memo may be one of the speakers', but give it only where the transcript itself shows which speaker it is.\n")
+                if (memo) append("A name in the user's memo may be one of the speakers', but give it only where the transcript itself shows which speaker it is: a role or anything else the memo says about someone is not enough.\n")
             }
             if (hasMe) append("\"${TranscriptNormalizer.ME}\" in the transcript is the person who made the recording; it is not one of the ids.\n")
         }

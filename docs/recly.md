@@ -2427,21 +2427,25 @@ and the summary together (§8 "AI requests"). `summaries.ask(recordingId, preset
     `me`, or `no name`; then, when the recording has final notes, `SUMMARY` — the overview, then each section by its id (a built-in group
     under its English name and the name the user gave it, a section of the user's own with what goes in it), one line per item:
     `@7 text (owner: …; due: …) [HH:MM:SS]`; the memo when it says something (§8 "Memo"); and `REQUEST`, the user's words as typed,
-    trimmed. About you goes in the instructions when set. No title, never audio, and no placeholders: a number is often what is being
-    corrected. The model is the one Settings → ChatGPT picked, at its own effort, given 30 minutes.
+    trimmed. About you goes in the instructions when set. With a memo, the instructions also say that it is the user's own text and
+    material only when the request says to use it, and — as the fills do (§8 "Titles and speaker names") — that a name in it names a
+    speaker only where the transcript shows which one, a role or anything else the memo says about someone not being enough (2026-11-05). Every request with a summary is told to add only what the transcript
+    says, each item with its line, and to say in `answer` what only the request or the memo says. No title, never audio, and no
+    placeholders: a number is often what is being corrected. The model is the one Settings → ChatGPT picked, at its own effort, given 30 minutes.
   - **What comes back.** One JSON object: `answer`, the words for the user in the request's language — for a question the answer, plain
     text with `[HH:MM:SS]` where it helps; for a change nothing, or one short sentence on what could not be changed — and only when the
     request asks for a change (a question never changes anything): `lines`, the transcript's segments that change, each
     `{"n": 12, "text": "…"}` (the segment's whole corrected words) and/or `"speaker": "S2"`; `names`, a speaker's name only where the
-    request or its material says who they are; `overview`, the summary's whole overview rewritten; `items`, the summary's items that
+    request or its material says who they are, never guessed from how someone speaks or what they talk about; `overview`, the summary's whole overview rewritten; `items`, the summary's items that
     change, each `{"n": 7, "text": "…"}`, an empty text removing one; `add`, items to add, each `{"section": id, "text": "…", "line": 12}`
     and for a to-do `owner` (a speaker id) and `due`. A name or term corrected in one document is corrected in the other too. Read
     leniently, as a fill's answer is (§8 "Titles and speaker names"); an answer that is no such object is all words for the user. Kept
     only where it fits: a segment that is there and says something, its words on one line (a line break becomes a space), at most 5,000
     characters and not its own words again; a speaker id the transcript has, on a transcript whose speakers were identified; a name as a
     fill takes one (at most 100 characters, never `Me` or an id, never one two speakers were both given, not the name the speaker
-    already has); an item the summary has, a section it has; an item's words without the times copied into them (`[HH:MM:SS]`, a run of them or a range — the item's time is shown beside it; 2026-11-04), words that were only times changing nothing; an added item's evidence is the segment it names — its start and its first
-    300 characters. Segments are never split, merged, moved or retimed; a segment whose words change loses its word timings, as with a
+    already has); an item the summary has, a section it has; an item's words without the times copied into them (`[HH:MM:SS]`, a run of them or a range — the item's time is shown beside it; 2026-11-04) and without the `(owner: …; due: …)` its summary line gives it copied after them (the owner and due date are shown beside it too, and the instructions say an item's text is its words alone; 2026-11-05), words that were only these changing nothing; an added item's evidence is the segment it names — its start and its first
+    300 characters — and an item that names no segment that is there and says something is dropped, as it would sit at 00:00:00 with
+    nothing behind it (2026-11-05). Segments are never split, merged, moved or retimed; a segment whose words change loses its word timings, as with a
     manual edit.
   - **Saved at once** (2026-11-04, user decision: no review step — `Undo` and the versions take it back). The transcript's changes are one
     edit (§8 "Editing": `editedAt`, the folder's copy marked `edited`, pushed now or with the next pull, a `CORRECTED` version — §8
@@ -2528,7 +2532,7 @@ the user chose automatic instead.)
   there.
 - **The request** is §8 "AI requests"'s (§15 §10) with its own instructions: the transcript's lines with their times and the speakers' names, and
   under them the recording's memo when it says something (§8 "Memo": a name in it may be a speaker's, given only where the transcript
-  itself shows which speaker it is) — no title, never audio — and the answer asked for is one JSON object: `title` in the notes' language (§8 "AI requests"), at
+  itself shows which speaker it is — a role or anything else the memo says about someone is not enough, 2026-11-05) — no title, never audio — and the answer asked for is one JSON object: `title` in the notes' language (§8 "AI requests"), at
   most 20 characters in Korean, Japanese or Chinese and 40 in any other language, in a few words rather than a sentence (2026-10-29,
   user request: titles of 60 ran long), and `speakers`, each asked id's name only as the transcript gives it — what they call themselves, or what the others
   call them when talking to them, without honorifics that go with a name (`님`, `씨`, `さん`, `Mr.`), a form of address used alone

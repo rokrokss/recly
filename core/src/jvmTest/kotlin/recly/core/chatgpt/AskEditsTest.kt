@@ -297,8 +297,11 @@ class AskEditsTest {
                 {"section":"nowhere","text":"lost"},
                 {"section":"decision","text":"  "},
                 {"section":"decision","text":"Price later.","line":2,"owner":"S1","due":"Monday"},
-                {"section":"todo","text":"Send it.","line":9,"owner":"S9","due":"Monday"},
-                {"section":"risks","text":"It may slip.","line":1}
+                {"section":"todo","text":"Send it.","line":1,"owner":"S9","due":"Monday"},
+                {"section":"risks","text":"It may slip.","line":1},
+                {"section":"todo","text":"Only in the memo.","line":9},
+                {"section":"todo","text":"No line at all."},
+                {"section":"todo","text":"A line that says nothing.","line":3}
             ]}""",
             sent, summary,
         )
@@ -307,11 +310,12 @@ class AskEditsTest {
         assertEquals(
             listOf(
                 AskNote(NoteKind.DECISION, null, "Price later.", 1.0, "hello 2", null, null),
-                AskNote(NoteKind.TODO, null, "Send it.", 0.0, "", null, "Monday"),
+                AskNote(NoteKind.TODO, null, "Send it.", 0.0, "hello 1", null, "Monday"),
                 AskNote(NoteKind.SECTION, "risks", "It may slip.", 0.0, "hello 1", null, null),
             ),
             proposal.added,
-            "an owner and a due date only for a to-do, an owner only a speaker of the transcript, a line only one that is there",
+            "an owner and a due date only for a to-do, an owner only a speaker of the transcript, and an item only with a line " +
+                "that is there and says something",
         )
         assertFalse(AskProposal.parse("""{"items":[{"n":1,"text":"Changed."}]}""", sent, null).changesSummary, "no summary, no summary changes")
     }
@@ -334,6 +338,30 @@ class AskEditsTest {
     }
 
     @Test
+    fun `an item's owner and due date copied after its words are dropped, and words that were only those change nothing`() {
+        val proposal = AskProposal.parse(
+            """{"items":[
+                {"n":2,"text":"Write it by noon. (owner: Mina; due: Friday) [00:00:01]"}
+            ],"add":[
+                {"section":"todo","text":"Send it. (owner: S1; due: Monday)","line":1,"owner":"S1","due":"Monday"},
+                {"section":"todo","text":"Call back. (due: Monday)","line":1},
+                {"section":"todo","text":"(due: Monday)","line":1,"due":"Monday"}
+            ]}""",
+            sent, summary,
+        )
+        assertEquals(mapOf("T1" to "Write it by noon."), proposal.items)
+        assertEquals(
+            listOf(AskNote(NoteKind.TODO, null, "Send it.", 0.0, "hello 1", "S1", "Monday"), AskNote(NoteKind.TODO, null, "Call back. (due: Monday)", 0.0, "hello 1", null, null)),
+            proposal.added,
+            "only what the item's own owner and due date would say is taken off: words the model gave none for stay",
+        )
+        assertTrue(AskProposal.parse("""{"items":[{"n":2,"text":"(owner: Mina; due: Friday)"}]}""", sent, summary).items.isEmpty())
+        val instructions = AskPrompts.instructions(sent, summary, SummaryPreferences())
+        assertTrue("never a time, owner or due date: the (owner: …; due: …) and the [HH:MM:SS] that end a summary line are kept apart" in instructions, instructions)
+        assertTrue("@number text (owner: …; due: …) [HH:MM:SS]" in AskPrompts.input(sent, summary, "", "Fix it."))
+    }
+
+    @Test
     fun `the request names segments by number, speakers by id and summary items by number, with the memo`() {
         val transcript = sent.copy(speakers = sent.speakers + TranscriptSpeaker("S3", me = true))
         val input = AskPrompts.input(transcript, summary, "Agenda: launch", "Fix it.")
@@ -349,5 +377,27 @@ class AskEditsTest {
         assertTrue("\"speaker\"" !in plain, "no speakers to move lines between")
         assertTrue("\"add\"" !in plain, "no summary to add to")
         assertTrue("\"add\"" in AskPrompts.instructions(sent, summary, SummaryPreferences()))
+    }
+
+    @Test
+    fun `with a memo, the instructions say what it is, keep its names from guessing speakers, and add nothing it alone says`() {
+        val without = AskPrompts.instructions(sent, summary, SummaryPreferences())
+        assertTrue("memo" !in without, without)
+        assertTrue("something only in the request — add nothing" in without, without)
+
+        val with = AskPrompts.instructions(sent, summary, SummaryPreferences(), memo = true)
+        assertTrue("then the summary made of it, then the user's memo; then the request." in with, with)
+        assertTrue("Take it as material when the request says to use it; on its own it asks for nothing." in with, with)
+        assertTrue(
+            "A name in the memo may be one of the speakers', but give it only where the transcript itself shows which speaker it is: a role " +
+                "or anything else the memo says about someone is not enough." in with,
+            with,
+        )
+        assertTrue("Never guess a name from how someone speaks or what they talk about." in with, with)
+        assertTrue("something only in the request or the memo — add nothing, and say so in \"answer\"." in with, with)
+
+        val unnamed = AskPrompts.instructions(sent.copy(speakers = emptyList()), null, SummaryPreferences(), memo = true)
+        assertTrue("A name in the memo" !in unnamed, "no speakers to name")
+        assertTrue("then the user's memo; then the request." in unnamed, unnamed)
     }
 }
