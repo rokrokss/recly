@@ -1495,6 +1495,23 @@ The overall direction and the conditions for a real-device release follow the [f
   an update that changes only the runtime uses the same folder, and when a new model has been fully downloaded, the previous revision's folder is deleted.
   Silero VAD cuts the recording into speech segments, and segments are split into pieces of 20 seconds or less for decoding — for input beyond the model's context,
   sherpa-onnx returns empty text instead of an error. Confirmed segments are saved per piece, so cancel, resume and waiting take effect at piece boundaries.
+  **Repetition guard** (2026-11-05, `RepetitionGuard`): every decoded piece passes through it before it is saved. Qwen3-ASR decodes
+  greedily and can loop — transcribe.cpp's input-limits notes list `qwen3_asr` among the families that do — and a piece stuck in a loop
+  used to become up to 256 tokens (`MAX_NEW_TOKENS`) of one phrase. sherpa-onnx 1.13.8 stops a loop of at most 3 distinct tokens over
+  its last 64 and removes it (its Qwen3-ASR decoder, read 2026-11-05); the guard covers longer blocks and loops that stop by
+  themselves. It counts **units of the text**: each Hangul, Han, Kana and Thai character, and each other run of letters, digits and
+  marks, compared ignoring case; spaces, punctuation and symbols part units. sherpa-onnx's result tokens are not used as the unit —
+  they do not always join up to the text (it removes U+FFFD from the text, not from the tokens), and a word is a different token with
+  and without a space before it — only their count, to tell a decode that used up its budget (at least 240 tokens: sherpa-onnx leaves
+  out Qwen's "language … <asr_text>" opening, which it looks for in the first 16). A piece that **ends in copies of one block** is cut
+  back to what came before them and their first copy, when the copies cover at least 64 units — 8 copies for a block of up to 27 units,
+  sliding to 4 by 48, blocks up to 128 (transcribe.cpp's bar, MIT) — or, after a decode that used up its budget, at least 3 copies over
+  32 units. The copies start where their boundaries most often meet a space or punctuation, so a cut never splits "감사합니다" just
+  because "…니다" also ended the sentence before. A piece where **one unit makes up 75%** of the units or more and occurs at least 16
+  times is dropped (LiveSub-Offline-Translator's `NoiseTextFilter`, MIT). Emphatic repetition — "네 네 네", "no, no, no", "좋아요
+  좋아요" — is far below both bars, and no piece loses a word for being a particular word. A trim or a drop logs
+  `local.repetition.removed` with `action` (`trimmed` · `dropped`), `units`, `removed` and `budgetHit` — counts, never text. It has not
+  been checked against real looping Qwen output on a device (§20).
   Timing is per segment; speakers come from sherpa-onnx's `OfflineSpeakerDiarization` where the engine reports `supportsDiarization`
   (the models are §15 "Android · Windows local transcription models"). It runs on 2 CPU threads. Android waits at thermal state `SEVERE` or above (battery saver
   does not stop it, 2026-09-27); Windows has no thermal signal to wait on. Languages are chosen only from those this model knows (Ukrainian excluded; they are passed to the prompt by their English

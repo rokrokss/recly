@@ -32,6 +32,7 @@ import recly.core.transcribe.LocalTranscriptionProgress
 import recly.core.transcribe.LocalTranscriptionRequest
 import recly.core.transcribe.LocalTranscriptionResult
 import recly.core.transcribe.Qwen3Asr
+import recly.core.transcribe.RepetitionGuard
 import recly.core.transcribe.SpeakerDiarizationModels
 import recly.core.transcribe.SpeakerEmbedder
 import recly.core.transcribe.SpeakerTurn
@@ -197,7 +198,9 @@ class QwenSpeechEngine private constructor(
                 if (hotwords.isNotEmpty()) stream.setOption("hotwords", hotwords)
                 stream.acceptWaveform(piece, SAMPLE_RATE)
                 recognizer.decode(stream)
-                recognizer.getResult(stream).text.trim()
+                val result = recognizer.getResult(stream)
+                // A decode caught in a loop is cut back to its first copy, or dropped when it is one word over and over.
+                RepetitionGuard.apply(result.text.trim(), RepetitionGuard.budgetHit(result.tokens.size, MAX_NEW_TOKENS), logger)
             } finally {
                 stream.release()
             }

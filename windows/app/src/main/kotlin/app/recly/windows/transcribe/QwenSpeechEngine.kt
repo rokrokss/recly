@@ -16,6 +16,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path
+import recly.core.platform.Logger
 import recly.core.platform.Transport
 import recly.core.transcribe.AudioSpan
 import recly.core.transcribe.LocalEngineInfo
@@ -26,6 +27,7 @@ import recly.core.transcribe.LocalTranscriptionProgress
 import recly.core.transcribe.LocalTranscriptionRequest
 import recly.core.transcribe.LocalTranscriptionResult
 import recly.core.transcribe.Qwen3Asr
+import recly.core.transcribe.RepetitionGuard
 import recly.core.transcribe.SpeakerDiarizationModels
 import recly.core.transcribe.SpeakerEmbedder
 import recly.core.transcribe.SpeakerTurn
@@ -49,6 +51,7 @@ class QwenSpeechEngine private constructor(
     private val store: LocalModelStore,
     private val speakers: LocalModelStore,
     private val natives: Natives,
+    private val logger: Logger,
 ) : LocalTranscriptionEngine, SpeakerEmbedder {
     @Volatile private var cancelled = false
 
@@ -188,7 +191,9 @@ class QwenSpeechEngine private constructor(
                 if (hotwords.isNotEmpty()) stream.setOption("hotwords", hotwords)
                 stream.acceptWaveform(piece, SAMPLE_RATE)
                 recognizer.decode(stream)
-                recognizer.getResult(stream).text.trim()
+                val result = recognizer.getResult(stream)
+                // A decode caught in a loop is cut back to its first copy, or dropped when it is one word over and over.
+                RepetitionGuard.apply(result.text.trim(), RepetitionGuard.budgetHit(result.tokens.size, MAX_NEW_TOKENS), logger)
             } finally {
                 stream.release()
             }
@@ -279,7 +284,7 @@ class QwenSpeechEngine private constructor(
          * native library for (sherpa-onnx's `win-x64` is the one the MSI ships): `local` is then
          * never offered.
          */
-        fun make(dataDir: Path, transport: Transport, fileSystem: FileSystem, io: CoroutineDispatcher): LocalTranscriptionEngine {
+        fun make(dataDir: Path, transport: Transport, fileSystem: FileSystem, io: CoroutineDispatcher, logger: Logger): LocalTranscriptionEngine {
             val memory = (ManagementFactory.getOperatingSystemMXBean() as com.sun.management.OperatingSystemMXBean).totalMemorySize
             val resources = "sherpa-onnx/native/${osArch()}"
             val bundled = QwenSpeechEngine::class.java.classLoader.getResource("$resources/${System.mapLibraryName("sherpa-onnx-jni")}") != null
@@ -292,6 +297,7 @@ class QwenSpeechEngine private constructor(
                 Natives(fileSystem, dataDir / "native" / Qwen3Asr.REVISION) { name ->
                     QwenSpeechEngine::class.java.classLoader.getResourceAsStream("$resources/$name")
                 },
+                logger,
             )
         }
 
