@@ -21,9 +21,9 @@ val localProperties: Properties = Properties().apply {
 fun oauth(key: String, env: String, fallback: String): String =
     localProperties.getProperty(key) ?: System.getenv(env) ?: fallback
 
-version = "0.3.2"
+version = "0.3.3"
 // Keep the app's display version stable while advancing MSI's MAJOR.MINOR.BUILD for upgrades.
-val installerVersion = "0.3.2"
+val installerVersion = "0.3.3"
 
 /**
  * `BuildConfig` by hand: one generated object, so the ids are compiled in rather than read off a
