@@ -603,5 +603,9 @@
   "Could not install the update.": "アップデートをインストールできませんでした。",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "この場所ではReclyを置き換えられません。リリースページから新しいバージョンをダウンロードしてください。",
   "Open release page": "リリースページを開く",
-  "This update needs a newer macOS.": "このアップデートには新しいmacOSが必要です。"
+  "This update needs a newer macOS.": "このアップデートには新しいmacOSが必要です。",
+  "Check for updates automatically?": "アップデートを自動で確認しますか？",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "起動時と6時間ごとに、ReclyはGitHubで最新リリースを確認します。送信するのはアプリのバージョンだけです。",
+  "Check automatically": "自動で確認",
+  "Don't check": "確認しない"
 }

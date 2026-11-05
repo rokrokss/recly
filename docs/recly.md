@@ -4058,14 +4058,18 @@ package is the release's own notarized DMG, so a release carries nothing new for
   nor a pre-release. The signature is Ed25519 over the file's exact bytes, with the release key whose public half both apps carry
   (`UpdateFeed.publicKey`); no field of a file that does not verify is read. The Mac is offered `macos` when its `build` is above
   this app's `CFBundleVersion`.
-- **When**: ten seconds after launch and every six hours while Settings → Updates → `Check for updates automatically` is on (the
-  default), and on `Check now`. A check that runs on its own and fails says nothing — the next one, or the user's own, will; one the
+- **When**: ten seconds after launch and every six hours while Settings → Updates → `Check for updates automatically` is on, and
+  on `Check now`. The switch is off until the user has answered `Check for updates automatically?`, asked once on the popover's
+  update line (`Check automatically` · `Don't check`) with `At launch and every six hours, Recly asks GitHub for the newest release
+  and sends only its version.` under it: the check is a new way for something to leave the Mac (privacy policy §10), so nothing is
+  checked on its own before a yes. Either answer is the switch from then on, and the switch is an answer too. A check that runs on its own and fails says nothing — the next one, or the user's own, will; one the
   user asked for says why. A Debug build does not check — it would offer the release in its own place — unless it is given a test
   feed (`RECLY_UPDATE_FEED`, `RECLY_UPDATE_PUBLIC_KEY`).
 - **Where it shows**: Settings → Updates, before About — the switch, then one row whose title is the news (`Recly 0.3.2`,
   `Recly is up to date.`, `Recly 0.3.3 is available.`) and whose control is what can be done (`Check now`, `Restart and install`, or
   the loader with `Checking…` · `Installing…`); and, while there is an update to install, one line above the popover's ledger with
-  `Restart and install` at the status badge's size. Nothing in the popover for a check that failed or found nothing.
+  `Restart and install` at the status badge's size — the question above sits on that line until it is answered. Nothing in the
+  popover for a check that failed or found nothing.
 - **Install**: only on `Restart and install`, and only while the recorder is idle — a recording being made or saved is never cut
   short; the button is off then and says `You can install it once the recording is saved.` The app downloads the DMG into
   `~/Library/Caches/app.recly.mac/Updates/` and refuses it unless its size and SHA-256 are the feed's; opens it read-only and out of
@@ -4078,7 +4082,8 @@ package is the release's own notarized DMG, so a release carries nothing new for
 - **Where it cannot**: a copy whose folder this user cannot write (a standard account's `/Applications`) or that macOS runs
   translocated says `Recly cannot replace itself where it is. Download the new version from the release page.` with
   `Open release page` in place of the button. A new app that needs a newer macOS says `This update needs a newer macOS.`
-- **Log events**: `shell.update.check outcome=up_to_date|available|failed`, `shell.update.install`,
+- **Log events**: `shell.update.automatic on=true|false` (the answer), `shell.update.check outcome=up_to_date|available|failed`,
+  `shell.update.install`,
   `shell.update.fail phase=prepare|install reason=check|download|signature|install|location|system`.
 - 0.3.2 build 41 and earlier have no updater: the first release with one is installed by hand.
 
@@ -4388,8 +4393,8 @@ is a program the user installs and runs (§15 §9, `docs/recly-events.md`).
 
 ### Updates
 
-2026-11-05, as on the Mac (§12 "Updates"): the same feed and key, the same timing and switch, the same Settings → Updates section
-and words, and the tray popup carries the Mac popover's line. What differs:
+2026-11-05, as on the Mac (§12 "Updates"): the same feed and key, the same timing and switch, the same one-time question before
+anything is checked on its own, the same Settings → Updates section and words, and the tray popup carries the Mac popover's line. What differs:
 
 - A newer package is one whose `windows.installerVersion` is above this MSI's install version (`OAuthConfig.BUILD`), field by
   field — the version the MSI upgrade itself goes by (docs/development.md "App releases").
@@ -4498,8 +4503,9 @@ of themselves. The phones and the watches are updated by their stores and never 
 
 - **Check**: `GET https://github.com/rokrokss/recly/releases/latest/download/update.json` and `…/update.json.sig`, which GitHub
   answers with a redirect to the newest release's assets on `release-assets.githubusercontent.com` (checked 2026-11-05). Ten
-  seconds after launch and every six hours while Settings → Updates → `Check for updates automatically` is on (the default), and
-  whenever the user presses `Check now`. With the switch off, only `Check now` makes the request.
+  seconds after launch and every six hours while Settings → Updates → `Check for updates automatically` is on, and whenever the
+  user presses `Check now`. The switch stays off until the user answers the one-time question (§12 "Updates"); until a yes, and
+  with the switch off, only `Check now` makes the request.
 - **Download**: only when the user chooses `Restart and install`, the release's DMG (Mac) or MSI (Windows) from
   `https://github.com/rokrokss/recly/releases/download/<tag>/…`, through the same redirect.
 - **What is sent**: GET requests whose only header of note is the `User-Agent` `Recly/<version> (macOS)` or

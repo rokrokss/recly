@@ -84,7 +84,7 @@ class FakeSettings(
     override var localFolder: String? = null,
     override var playbackSpeed: Float = 1f,
     override var skipSilence: Boolean = false,
-    override var autoUpdateCheck: Boolean = true,
+    override var autoUpdateCheck: Boolean? = null,
 ) : Settings
 
 /**

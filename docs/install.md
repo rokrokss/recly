@@ -125,12 +125,13 @@ jabswitch /enable
 The phone and watch apps update through Google Play or the App Store. A sideloaded APK updates when
 you install the newer APK the same way you installed the first.
 
-The Mac and Windows apps update themselves. They look for a new release at launch and every six
-hours; when one is out, Settings → **Updates** and the Mac menu-bar popover or the Windows tray popup
+The Mac and Windows apps update themselves. The first time they run they ask whether to check for
+updates automatically; once you say yes, they look for a new release at launch and every six hours.
+When one is out, Settings → **Updates** and the Mac menu-bar popover or the Windows tray popup
 offer **Restart and install**. Recly downloads it, checks that it is the release's own signed file,
 installs it and opens again. It never installs while a recording is being made or saved. To look
-only when you press **Check now**, turn off **Check for updates automatically** in Settings →
-**Updates**.
+only when you press **Check now**, answer **Don't check**, or turn off **Check for updates
+automatically** in Settings → **Updates**.
 
 Recly 0.3.2 and earlier cannot update themselves, and a Mac whose account cannot write to the
 Applications folder cannot replace the app: quit Recly (**Quit** in the Mac menu-bar popover or the

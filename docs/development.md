@@ -154,7 +154,8 @@ installed apps, and a new key means every user installs one release by hand.
 
 To try the Mac's swap without a release, sign a feed for a Debug build with a higher
 `CURRENT_PROJECT_VERSION` with a test key, and start an older Debug build with it. A Debug build
-looks for updates only when given these two variables:
+looks for updates only when given these two variables; answer the popover's one-time question with
+**Check automatically**, or press **Check now**:
 
 ```bash
 swift scripts/desktop-update.swift keygen /tmp/recly-test-update.key

@@ -603,5 +603,9 @@
   "Could not install the update.": "اپ ڈیٹ انسٹال نہیں ہو سکی۔",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly اپنی موجودہ جگہ پر خود کو تبدیل نہیں کر سکتا۔ ریلیز صفحے سے نیا ورژن ڈاؤن لوڈ کریں۔",
   "Open release page": "ریلیز صفحہ کھولیں",
-  "This update needs a newer macOS.": "اس اپ ڈیٹ کے لیے نیا macOS درکار ہے۔"
+  "This update needs a newer macOS.": "اس اپ ڈیٹ کے لیے نیا macOS درکار ہے۔",
+  "Check for updates automatically?": "کیا اپ ڈیٹس خودکار طور پر چیک کی جائیں؟",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "کھلنے پر اور ہر چھ گھنٹے بعد Recly GitHub سے تازہ ترین ریلیز کے بارے میں پوچھتا ہے اور صرف اپنا ورژن نمبر بھیجتا ہے۔",
+  "Check automatically": "خودکار طور پر چیک کریں",
+  "Don't check": "چیک نہ کریں"
 }

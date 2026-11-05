@@ -608,6 +608,10 @@ enum class Str {
     UPDATE_DOWNLOAD_FAILED,
     UPDATE_SIGNATURE_FAILED,
     UPDATE_INSTALL_FAILED,
+    UPDATE_QUESTION,
+    UPDATE_QUESTION_NOTE,
+    UPDATE_ALLOW,
+    UPDATE_DENY,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

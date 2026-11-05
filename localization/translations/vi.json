@@ -603,5 +603,9 @@
   "Could not install the update.": "Không thể cài đặt bản cập nhật.",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly không thể tự thay thế ở vị trí hiện tại. Hãy tải phiên bản mới từ trang phát hành.",
   "Open release page": "Mở trang phát hành",
-  "This update needs a newer macOS.": "Bản cập nhật này cần macOS mới hơn."
+  "This update needs a newer macOS.": "Bản cập nhật này cần macOS mới hơn.",
+  "Check for updates automatically?": "Tự động kiểm tra cập nhật?",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Khi khởi động và mỗi sáu giờ, Recly hỏi GitHub về bản phát hành mới nhất và chỉ gửi số phiên bản của ứng dụng.",
+  "Check automatically": "Tự động kiểm tra",
+  "Don't check": "Không kiểm tra"
 }

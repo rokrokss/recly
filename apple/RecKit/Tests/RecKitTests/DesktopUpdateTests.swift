@@ -217,14 +217,44 @@ final class DesktopUpdateTests: XCTestCase {
             installer: installer(installed: directory.appendingPathComponent("Test.app")),
             defaults: defaults
         )
-        XCTAssertTrue(updater.checksAutomatically, "automatic checks are on until turned off")
         await updater.check(manual: false)
         XCTAssertEqual(updater.status, .idle)
         await updater.check(manual: true)
         XCTAssertEqual(updater.status, .failed(.check, update: nil))
+    }
+
+    @MainActor
+    func testNothingIsCheckedOnItsOwnUntilTheUserSaysYes() async throws {
+        let body = feed()
+        let url = directory.appendingPathComponent("update.json")
+        try body.write(to: url)
+        try sign(body).write(to: directory.appendingPathComponent("update.json.sig"))
+        let suite = "recly-update-tests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let updater = DesktopUpdater(
+            feed: UpdateFeed(feed: url, publicKey: publicKey),
+            installer: installer(installed: directory.appendingPathComponent("Test.app")),
+            defaults: defaults,
+            firstCheckDelay: .milliseconds(10)
+        )
+        XCTAssertTrue(updater.asks)
+        XCTAssertFalse(updater.checksAutomatically, "off until answered")
+        updater.start()
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(updater.status, .idle, "no check before an answer")
+
+        updater.answer(true)
+        XCTAssertFalse(updater.asks)
+        XCTAssertEqual(defaults.object(forKey: "updates.checkAutomatically") as? Bool, true)
+        for _ in 0..<100 where updater.offered == nil { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertNotNil(updater.offered, "a yes starts the checks")
 
         updater.checksAutomatically = false
         XCTAssertEqual(defaults.object(forKey: "updates.checkAutomatically") as? Bool, false)
+        let again = DesktopUpdater(feed: UpdateFeed(feed: url, publicKey: publicKey), defaults: defaults)
+        XCTAssertFalse(again.asks, "asked once")
+        XCTAssertFalse(again.checksAutomatically)
+        defaults.removePersistentDomain(forName: suite)
     }
 
     @MainActor

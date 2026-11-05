@@ -114,8 +114,11 @@ interface Settings {
 
     var skipSilence: Boolean
 
-    /** docs/14 "Updates": look for a new release at launch and every six hours. On until the user turns it off. */
-    var autoUpdateCheck: Boolean
+    /**
+     * docs/14 "Updates": look for a new release at launch and every six hours. Null until the user has answered the
+     * question the popup asks once, and nothing is checked by itself until the answer is yes.
+     */
+    var autoUpdateCheck: Boolean?
 
     companion object {
         fun create(): Settings = PreferenceSettings()
@@ -180,9 +183,9 @@ class PreferenceSettings(
         get() = prefs.getBoolean(SKIP_SILENCE, false)
         set(value) = prefs.putBoolean(SKIP_SILENCE, value)
 
-    override var autoUpdateCheck: Boolean
-        get() = prefs.getBoolean(AUTO_UPDATE_CHECK, true)
-        set(value) = prefs.putBoolean(AUTO_UPDATE_CHECK, value)
+    override var autoUpdateCheck: Boolean?
+        get() = prefs.get(AUTO_UPDATE_CHECK, null)?.toBooleanStrictOrNull()
+        set(value) = if (value == null) prefs.remove(AUTO_UPDATE_CHECK) else prefs.putBoolean(AUTO_UPDATE_CHECK, value)
 
     private companion object {
         /** `Preferences` wants a path, and `app.recly.windows` is not one. */

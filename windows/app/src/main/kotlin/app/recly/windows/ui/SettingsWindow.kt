@@ -545,7 +545,7 @@ private fun Updates(updates: UpdateViewModel, idle: Boolean, strings: Strings) {
         title = strings[Str.UPDATE_AUTOMATIC],
         subtitle = strings[Str.UPDATE_AUTOMATIC_NOTE],
         checked = updates.automatic,
-        onCheckedChange = updates::toggleAutomatic,
+        onCheckedChange = updates::answer,
     )
     val row = updateRow(updates.state, updates.failure, idle)
     TableRow(

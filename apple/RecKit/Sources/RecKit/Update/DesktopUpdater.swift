@@ -5,9 +5,11 @@ import os
 /// docs/12 "Updates": the Mac's update check and install, for the settings' Updates section and the popover's line.
 ///
 /// It looks at launch (after a short wait, so it never competes with opening the core) and every six hours while
-/// "Check for updates automatically" is on, and whenever the user asks. Nothing is downloaded or installed until the
-/// user chooses Restart and install, and never while a recording is being made or saved — the shell says when it may.
-/// An automatic check that fails says nothing: the next one, or the user's own, will.
+/// "Check for updates automatically" is on, and whenever the user asks. That switch is off until the user has answered
+/// the question the popover asks once ([asks]): the check is a new way for something to leave the Mac, so it is not
+/// made on its own before the user has said yes. Nothing is downloaded or installed until the user chooses Restart and
+/// install, and never while a recording is being made or saved — the shell says when it may. An automatic check that
+/// fails says nothing: the next one, or the user's own, will.
 @MainActor
 public final class DesktopUpdater: ObservableObject {
     public enum Status: Equatable {
@@ -25,12 +27,25 @@ public final class DesktopUpdater: ObservableObject {
     public static let shared: DesktopUpdater? = fromEnvironment()
 
     @Published public private(set) var status: Status = .idle
-    @Published public var checksAutomatically: Bool {
-        didSet {
-            guard checksAutomatically != oldValue else { return }
-            defaults.set(checksAutomatically, forKey: Self.automaticKey)
-            schedule()
-        }
+    /// The user's answer to "Check for updates automatically?" — the popover's question or the settings' switch — and
+    /// nil until there is one.
+    @Published public private(set) var automatic: Bool?
+
+    /// The settings' switch: off until the user has answered, and setting it is an answer.
+    public var checksAutomatically: Bool {
+        get { automatic == true }
+        set { answer(newValue) }
+    }
+
+    /// The popover asks once whether to check on its own.
+    public var asks: Bool { automatic == nil }
+
+    public func answer(_ yes: Bool) {
+        guard automatic != yes else { return }
+        automatic = yes
+        defaults.set(yes, forKey: Self.automaticKey)
+        logger.info("shell.update.automatic on=\(yes, privacy: .public)")
+        schedule()
     }
 
     /// The update the popover offers: one that is there, being installed, or whose install failed.
@@ -46,7 +61,7 @@ public final class DesktopUpdater: ObservableObject {
     private let installer: UpdateInstaller
     private let defaults: UserDefaults
     private let firstCheckDelay: Duration
-    private var automatic: Task<Void, Never>?
+    private var loop: Task<Void, Never>?
     private let logger = Logger(subsystem: "app.recly.mac", category: "shell")
     static let automaticKey = "updates.checkAutomatically"
     static let interval: Duration = .seconds(6 * 60 * 60)
@@ -61,7 +76,7 @@ public final class DesktopUpdater: ObservableObject {
         self.installer = installer
         self.defaults = defaults
         self.firstCheckDelay = firstCheckDelay
-        checksAutomatically = defaults.object(forKey: Self.automaticKey) as? Bool ?? true
+        automatic = defaults.object(forKey: Self.automaticKey) as? Bool
     }
 
     private static func fromEnvironment() -> DesktopUpdater? {
@@ -79,15 +94,15 @@ public final class DesktopUpdater: ObservableObject {
 
     /// Starts the automatic checks, once, when the shell is up.
     public func start() {
-        if automatic == nil { schedule() }
+        if loop == nil { schedule() }
     }
 
     private func schedule() {
-        automatic?.cancel()
-        automatic = nil
+        loop?.cancel()
+        loop = nil
         guard checksAutomatically else { return }
         let delay = firstCheckDelay
-        automatic = Task { [weak self] in
+        loop = Task { [weak self] in
             try? await Task.sleep(for: delay)
             while !Task.isCancelled {
                 await self?.check(manual: false)

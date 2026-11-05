@@ -603,5 +603,9 @@
   "Could not install the update.": "نصب به‌روزرسانی ممکن نشد.",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly نمی‌تواند در محل فعلی خودش را جایگزین کند. نسخهٔ جدید را از صفحهٔ انتشار بارگیری کنید.",
   "Open release page": "باز کردن صفحهٔ انتشار",
-  "This update needs a newer macOS.": "این به‌روزرسانی به macOS جدیدتری نیاز دارد."
+  "This update needs a newer macOS.": "این به‌روزرسانی به macOS جدیدتری نیاز دارد.",
+  "Check for updates automatically?": "به‌روزرسانی‌ها به‌طور خودکار بررسی شوند؟",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Recly هنگام اجرا و هر شش ساعت آخرین نسخه را از GitHub می‌پرسد و فقط شمارهٔ نسخهٔ خودش را می‌فرستد.",
+  "Check automatically": "بررسی خودکار",
+  "Don't check": "بررسی نکن"
 }

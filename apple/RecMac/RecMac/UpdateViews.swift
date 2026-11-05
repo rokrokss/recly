@@ -49,7 +49,9 @@ struct UpdateLine: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
-        if updater.offered != nil {
+        if updater.offered == nil, updater.asks {
+            UpdateQuestion(updater: updater)
+        } else if updater.offered != nil {
             VStack(spacing: 0) {
                 HairLine()
                 HStack(spacing: Space.s) {
@@ -75,6 +77,38 @@ struct UpdateLine: View {
             }
             .background(blueprint.palette.surface)
         }
+    }
+}
+
+/// docs/12 "Updates": asked once, in the line's place, before anything is checked on its own — the check is a new way
+/// for something to leave the Mac (privacy policy §10). Either answer is the settings' switch from then on.
+private struct UpdateQuestion: View {
+    @ObservedObject var updater: DesktopUpdater
+    @Environment(\.blueprint) private var blueprint
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HairLine()
+            VStack(alignment: .leading, spacing: Space.xs) {
+                WrappingText(loc("Check for updates automatically?"))
+                    .font(blueprint.fonts.bodySmall)
+                    .foregroundStyle(blueprint.palette.text)
+                WrappingText(loc("At launch and every six hours, Recly asks GitHub for the newest release and sends only its version."))
+                    .font(blueprint.fonts.sans(TypeSize.small))
+                    .foregroundStyle(blueprint.palette.textMuted)
+                HStack(spacing: Space.s) {
+                    BlueprintButton(loc("Check automatically"), tone: .primary, compact: true) { updater.answer(true) }
+                        .accessibilityIdentifier("update-allow")
+                    BlueprintButton(loc("Don't check"), tone: .quiet, compact: true) { updater.answer(false) }
+                        .accessibilityIdentifier("update-deny")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
+            HairLine()
+        }
+        .background(blueprint.palette.surface)
     }
 }
 

@@ -197,7 +197,7 @@ class PreviewTest {
                 field = value
             }
 
-        override var autoUpdateCheck: Boolean = true
+        override var autoUpdateCheck: Boolean? = null
             set(value) {
                 writes += "autoUpdateCheck"
                 field = value

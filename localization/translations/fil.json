@@ -603,5 +603,9 @@
   "Could not install the update.": "Hindi ma-install ang update.",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "Hindi kayang palitan ng Recly ang sarili nito sa kinalalagyan nito. I-download ang bagong bersyon mula sa release page.",
   "Open release page": "Buksan ang release page",
-  "This update needs a newer macOS.": "Kailangan ng update na ito ng mas bagong macOS."
+  "This update needs a newer macOS.": "Kailangan ng update na ito ng mas bagong macOS.",
+  "Check for updates automatically?": "Awtomatikong tingnan ang mga update?",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Sa pagbukas at bawat anim na oras, tinatanong ng Recly sa GitHub ang pinakabagong release at bersyon lang nito ang ipinapadala.",
+  "Check automatically": "Awtomatikong tingnan",
+  "Don't check": "Huwag tingnan"
 }

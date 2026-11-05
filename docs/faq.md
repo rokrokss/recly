@@ -131,8 +131,9 @@ Windows PC. Please report what you find in [Issues](https://github.com/rokrokss/
 
 ## How do I update the Mac and Windows apps?
 
-They update themselves: when a new release is out, Settings → **Updates** and the menu-bar popover
-or tray popup offer **Restart and install**. Recly 0.3.2 and earlier cannot; for those, install the
+They update themselves once you say yes to the question they ask the first time they run: when a
+new release is out, Settings → **Updates** and the menu-bar popover or tray popup offer **Restart and
+install**. Recly 0.3.2 and earlier cannot; for those, install the
 newer DMG or MSI from the [latest release](https://github.com/rokrokss/recly/releases/latest) over the
 old one once. The update check sends GitHub nothing but the app's name and version; see
 [update checks](https://recly.dev/policy/privacy-policy#update-checks--mac-and-windows) in the

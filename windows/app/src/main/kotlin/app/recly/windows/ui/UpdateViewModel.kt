@@ -37,7 +37,8 @@ sealed interface UpdateState {
 /**
  * docs/14 "Updates": the one updater of an installed copy. It looks at the signed feed by itself about ten seconds
  * after launch and every six hours after while the setting is on, and when asked from Settings; a look it made by
- * itself that fails is only logged. It installs only when the user asks, and only while [idle] — nothing recording,
+ * itself that fails is only logged. The setting is off until the user has answered the question the popup asks once
+ * ([asks]): the check is a new way for something to leave the PC, so it is not made by itself before a yes. It installs only when the user asks, and only while [idle] — nothing recording,
  * starting or being saved — so no recording is ever lost to it: the MSI is fetched and verified, the installer is
  * started, and [quit] takes the same way out the tray's Quit does.
  *
@@ -63,8 +64,12 @@ class UpdateViewModel(
     var failure: UpdateFailure? by mutableStateOf(null)
         private set
 
-    /** "Check for updates automatically", this PC's own. */
-    var automatic: Boolean by mutableStateOf(settings.autoUpdateCheck)
+    /** "Check for updates automatically", this PC's own: off until the user has answered ([asks]). */
+    var automatic: Boolean by mutableStateOf(settings.autoUpdateCheck == true)
+        private set
+
+    /** The popup asks once whether to check by itself; the Settings switch is an answer too. */
+    var asks: Boolean by mutableStateOf(settings.autoUpdateCheck == null)
         private set
 
     /** A check is running. Not the job's own `isActive`, which outlives [finish] by a moment. */
@@ -85,9 +90,14 @@ class UpdateViewModel(
         }
     }
 
-    fun toggleAutomatic(enabled: Boolean) {
-        settings.autoUpdateCheck = enabled
-        automatic = enabled
+    /** The popup's answer or the Settings switch. A yes looks at once rather than at the next six-hourly turn. */
+    fun answer(yes: Boolean) {
+        if (!asks && automatic == yes) return
+        settings.autoUpdateCheck = yes
+        automatic = yes
+        asks = false
+        logger.log(Logger.Level.INFO, "shell.update.automatic", mapOf("on" to yes))
+        if (yes) check(manual = false)
     }
 
     /**

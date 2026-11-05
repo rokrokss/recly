@@ -59,7 +59,7 @@ class UpdateViewModelTest {
     fun `it checks about ten seconds after launch and every six hours after, while the setting is on`() = runTest {
         var checks = 0
         answer = { checks++; null }
-        val settings = FakeSettings()
+        val settings = FakeSettings(autoUpdateCheck = true)
         val model = model(settings)
         model.start()
 
@@ -75,8 +75,8 @@ class UpdateViewModelTest {
         runCurrent()
         assertEquals(2, checks)
 
-        model.toggleAutomatic(false)
-        assertFalse(settings.autoUpdateCheck, "kept for the next launch")
+        model.answer(false)
+        assertEquals(false, settings.autoUpdateCheck, "kept for the next launch")
         advanceTimeBy(UpdateViewModel.INTERVAL_MS)
         runCurrent()
         assertEquals(2, checks, "off: no check")
@@ -261,9 +261,37 @@ class UpdateViewModelTest {
     }
 
     @Test
-    fun `the setting starts on and follows the store`() = runTest {
-        assertTrue(model().automatic)
-        assertFalse(model(FakeSettings(autoUpdateCheck = false)).automatic)
+    fun `the setting follows the store, and is off and asked until there is an answer`() = runTest {
+        val unanswered = model()
+        assertTrue(unanswered.asks)
+        assertFalse(unanswered.automatic)
+        assertTrue(model(FakeSettings(autoUpdateCheck = true)).automatic)
+        assertFalse(model(FakeSettings(autoUpdateCheck = false)).asks)
+    }
+
+    @Test
+    fun `nothing is checked by itself until the user says yes, and a yes looks at once`() = runTest {
+        var checks = 0
+        answer = { checks++; update }
+        val settings = FakeSettings()
+        val model = model(settings)
+        model.start()
+        advanceTimeBy(UpdateViewModel.FIRST_CHECK_MS + 1)
+        runCurrent()
+        assertEquals(0, checks, "unanswered: no check")
+        assertTrue(model.asks)
+
+        model.answer(true)
+        runCurrent()
+        assertEquals(1, checks)
+        assertFalse(model.asks)
+        assertEquals(true, settings.autoUpdateCheck)
+        assertEquals(UpdateState.Available(update), model.state)
+        assertTrue(events.any { it == ("shell.update.automatic" to mapOf<String, Any?>("on" to true)) })
+
+        model.answer(true)
+        runCurrent()
+        assertEquals(1, checks, "the same answer again changes nothing")
     }
 
     private fun row(model: UpdateViewModel) = updateRow(model.state, model.failure, idle, appVersion = "0.3.2")

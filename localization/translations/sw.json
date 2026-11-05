@@ -603,5 +603,9 @@
   "Could not install the update.": "Imeshindwa kusakinisha sasisho.",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly haiwezi kujibadilisha mahali ilipo. Pakua toleo jipya kutoka ukurasa wa toleo.",
   "Open release page": "Fungua ukurasa wa toleo",
-  "This update needs a newer macOS.": "Sasisho hili linahitaji macOS mpya zaidi."
+  "This update needs a newer macOS.": "Sasisho hili linahitaji macOS mpya zaidi.",
+  "Check for updates automatically?": "Uangalie masasisho kiotomatiki?",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Inapofunguliwa na kila baada ya saa sita, Recly huuliza GitHub toleo jipya zaidi na hutuma nambari ya toleo lake pekee.",
+  "Check automatically": "Angalia kiotomatiki",
+  "Don't check": "Usiangalie"
 }

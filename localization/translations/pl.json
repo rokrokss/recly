@@ -603,5 +603,9 @@
   "Could not install the update.": "Nie udało się zainstalować aktualizacji.",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly nie może zastąpić się w tym miejscu. Nową wersję można pobrać ze strony wydania.",
   "Open release page": "Otwórz stronę wydania",
-  "This update needs a newer macOS.": "Ta aktualizacja wymaga nowszej wersji macOS."
+  "This update needs a newer macOS.": "Ta aktualizacja wymaga nowszej wersji macOS.",
+  "Check for updates automatically?": "Sprawdzać aktualizacje automatycznie?",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Przy uruchomieniu i co sześć godzin Recly pyta GitHub o najnowsze wydanie i wysyła tylko numer swojej wersji.",
+  "Check automatically": "Sprawdzaj automatycznie",
+  "Don't check": "Nie sprawdzaj"
 }

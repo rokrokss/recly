@@ -378,8 +378,11 @@ private fun UpdateBanner(model: ShellModel, strings: Strings) {
     val updates = model.updates ?: return
     val idle = model.updateIdle
     val row = updateRow(updates.state, updates.failure, idle)
-    if (!row.offers) return
     val palette = blueprint
+    if (!row.offers) {
+        if (updates.asks) UpdateQuestion(updates, strings)
+        return
+    }
     BannerRow(
         action = {
             if (row.action == UpdateAction.INSTALLING) {
@@ -395,6 +398,24 @@ private fun UpdateBanner(model: ShellModel, strings: Strings) {
         row.failure?.let { Text(strings[it], style = MaterialTheme.typography.bodySmall, color = palette.warningInk) }
         if (row.waiting) {
             Text(strings[Str.UPDATE_WAIT_FOR_RECORDING], style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+        }
+    }
+    HairLine()
+}
+
+/**
+ * docs/14 "Updates": asked once, on the update banner's line, before anything is checked by itself — the check is a new
+ * way for something to leave the PC (privacy policy §10). Either answer is the Settings switch from then on.
+ */
+@Composable
+private fun UpdateQuestion(updates: UpdateViewModel, strings: Strings) {
+    val palette = blueprint
+    BannerRow(action = {}) {
+        Text(strings[Str.UPDATE_QUESTION], style = MaterialTheme.typography.bodyMedium, color = palette.text)
+        Text(strings[Str.UPDATE_QUESTION_NOTE], style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+        Row(Modifier.padding(top = Space.xs), horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+            BlueprintButton(strings[Str.UPDATE_ALLOW], { updates.answer(true) }, compact = true)
+            BlueprintButton(strings[Str.UPDATE_DENY], { updates.answer(false) }, tone = ButtonTone.QUIET, compact = true)
         }
     }
     HairLine()

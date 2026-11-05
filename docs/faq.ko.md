@@ -115,8 +115,8 @@ MSI에 코드 서명이 없어서 SmartScreen이 "Windows의 PC 보호" 창을 �
 
 ## Mac과 Windows 앱은 어떻게 업데이트하나요?
 
-스스로 업데이트합니다. 새 릴리스가 나오면 설정 → **업데이트**와 메뉴 막대 팝오버나 트레이 창에 **다시 시작하고 설치**가
-나옵니다. Recly 0.3.2 이하는 스스로 업데이트할 수 없으니, [최신 릴리스](https://github.com/rokrokss/recly/releases/latest)의
+처음 실행할 때 묻는 질문에 허락하면 스스로 업데이트합니다. 새 릴리스가 나오면 설정 → **업데이트**와 메뉴 막대 팝오버나
+트레이 창에 **다시 시작하고 설치**가 나옵니다. Recly 0.3.2 이하는 스스로 업데이트할 수 없으니, [최신 릴리스](https://github.com/rokrokss/recly/releases/latest)의
 새 DMG나 MSI를 기존 앱 위에 한 번 설치하세요. 업데이트 확인은 GitHub에 앱 이름과 버전 말고는 아무것도 보내지 않습니다.
 개인정보처리방침의 [업데이트 확인](https://recly.dev/policy/privacy-policy.ko#업데이트-확인--mac과-windows)과
 [업데이트하기](install.ko.md#업데이트하기)를 보세요.

@@ -79,7 +79,7 @@ public struct UpdateInstaller: Sendable {
         let mountPoint = FileManager.default.temporaryDirectory.appendingPathComponent("recly-update-\(UUID().uuidString)")
         do {
             try FileManager.default.createDirectory(at: mountPoint, withIntermediateDirectories: true)
-            try Self.run("/usr/bin/hdiutil", ["attach", dmg.path, "-nobrowse", "-noautoopen", "-readonly", "-mountpoint", mountPoint.path])
+            try Self.attach(dmg, at: mountPoint)
         } catch {
             try? FileManager.default.removeItem(at: mountPoint)
             throw UpdateFailure.install
@@ -202,6 +202,22 @@ public struct UpdateInstaller: Sendable {
 
     private static func isSymlink(_ url: URL) -> Bool {
         (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
+    }
+
+    /// `hdiutil attach`, tried three times a second apart: an image another disk-image process is still letting go of,
+    /// or a mount macOS turns down for a moment while it is busy, fails the first try and not the next (seen 2026-11-05).
+    private static func attach(_ dmg: URL, at mountPoint: URL) throws {
+        var attempt = 1
+        while true {
+            do {
+                try run("/usr/bin/hdiutil", ["attach", dmg.path, "-nobrowse", "-noautoopen", "-readonly", "-mountpoint", mountPoint.path])
+                return
+            } catch {
+                guard attempt < 3 else { throw error }
+                attempt += 1
+                Thread.sleep(forTimeInterval: 1)
+            }
+        }
     }
 
     private struct ToolFailed: Error {}

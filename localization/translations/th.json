@@ -603,5 +603,9 @@
   "Could not install the update.": "ติดตั้งอัปเดตไม่ได้",
   "Recly cannot replace itself where it is. Download the new version from the release page.": "Recly แทนที่ตัวเองในตำแหน่งปัจจุบันไม่ได้ ดาวน์โหลดเวอร์ชันใหม่จากหน้ารีลีส",
   "Open release page": "เปิดหน้ารีลีส",
-  "This update needs a newer macOS.": "อัปเดตนี้ต้องใช้ macOS ที่ใหม่กว่า"
+  "This update needs a newer macOS.": "อัปเดตนี้ต้องใช้ macOS ที่ใหม่กว่า",
+  "Check for updates automatically?": "ตรวจหาอัปเดตโดยอัตโนมัติไหม?",
+  "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "เมื่อเปิดแอปและทุกหกชั่วโมง Recly จะถามหารีลีสล่าสุดจาก GitHub และส่งเพียงหมายเลขเวอร์ชันของแอปเท่านั้น",
+  "Check automatically": "ตรวจหาโดยอัตโนมัติ",
+  "Don't check": "ไม่ตรวจหา"
 }
