@@ -1,0 +1,75 @@
+{
+ "about": "Korean/English engineering sync (a ko-en transcript, the app in Korean): the cutover moves from the 8th to the 15th (old value); the lag fix, runbook and cutover dates sit close together (12th, 14th, 15th); the offer cap is 120M won, not the 150M first asked for; a referral bonus is only floated (hedge); who is on call is asked and answered at once; a team-dinner photo promise and lunch talk (small talk that sounds like a to-do).",
+ "appLocale": "ko-KR",
+ "items": [
+  {
+   "id": "cutover-date",
+   "kind": "decision",
+   "topic": [["cutover", "컷오버", "migration", "마이그레이션", "전환"]],
+   "value": ["15일", "15th", "11/15", "nov15"],
+   "old": ["8일", "8th", "11/8", "nov8"],
+   "wrong": ["12일", "12th", "14일", "14th"],
+   "at": ["00:00:37", "00:00:44", "00:00:47"],
+   "oldAt": ["00:00:16", "00:00:23"]
+  },
+  {
+   "id": "offer-cap",
+   "kind": "decision",
+   "topic": [["offer", "오퍼", "연봉", "cap", "상한", "budget", "예산"]],
+   "value": ["1억2천", "1억2000", "120000000", "120m", "120million"],
+   "wrong": ["1억5천", "1억5000", "150000000", "150m", "150million"],
+   "at": ["00:01:20", "00:01:24"]
+  },
+  {
+   "id": "lag-fix",
+   "kind": "todo",
+   "topic": [["lag", "랙", "지연"]],
+   "owner": "S2",
+   "due": ["12일", "12th", "수요일", "wednesday"],
+   "wrongDue": ["15일", "15th", "14일", "14th", "8일", "8th"],
+   "at": ["00:00:55"]
+  },
+  {
+   "id": "runbook",
+   "kind": "todo",
+   "topic": [["runbook", "런북", "rollback", "롤백"]],
+   "owner": "S3",
+   "due": ["14일", "14th", "금요일", "friday"],
+   "wrongDue": ["15일", "15th", "12일", "12th", "8일", "8th"],
+   "at": ["00:01:01"]
+  },
+  {
+   "id": "tell-recruiter",
+   "kind": "todo",
+   "topic": [["recruiter", "리크루터", "채용 담당", "전달"]],
+   "owner": "S3",
+   "due": null,
+   "value": ["1억2천", "1억2000", "120000000", "120m", "120million"],
+   "valueRequired": false,
+   "wrong": ["1억5천", "1억5000", "150000000", "150m", "150million"],
+   "at": ["00:01:24"]
+  },
+  {
+   "id": "on-call",
+   "kind": "todo",
+   "kinds": ["todo", "decision"],
+   "topic": [["on-call", "oncall", "온콜", "당직"]],
+   "owner": "S1",
+   "due": ["15일", "15th", "cutover", "컷오버", "전환", "당일"],
+   "wrongDue": ["8일", "8th", "12일", "14일"],
+   "at": ["00:01:43"]
+  },
+  {
+   "id": "vendor-replica",
+   "kind": "question",
+   "topic": [["vendor", "벤더", "업체"]],
+   "at": ["00:01:46", "00:01:53"]
+  }
+ ],
+ "traps": [
+  {"id": "referral", "type": "hedge", "topic": [["referral", "추천", "리퍼럴"]], "at": ["00:01:29", "00:01:35"]},
+  {"id": "who-on-call", "type": "answered", "topic": [["on-call", "oncall", "온콜", "당직"], ["누가", "누구", "who"]], "at": ["00:01:39"]},
+  {"id": "dinner-photos", "type": "smalltalk", "topic": [["사진", "회식", "photo", "slack"]], "at": ["00:00:06", "00:00:11"]},
+  {"id": "lunch", "type": "smalltalk", "topic": [["ramen", "라멘", "점심", "lunch"]], "at": ["00:02:00", "00:02:05"]}
+ ]
+}

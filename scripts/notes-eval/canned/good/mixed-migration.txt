@@ -1,0 +1,10 @@
+{"summary": "Database migration과 채용을 다룬 회의입니다. Replica lag 문제가 남아 cutover를 이번 주 토요일 8일에서 다음 주 토요일 15일로 미뤘습니다. Lag fix와 rollback runbook 마감이 정해졌고, senior backend offer는 1억 2천 cap으로 하기로 했습니다. Vendor가 read replica를 하나 더 열어 줄 수 있는지는 아직 답이 없습니다.", "items": [
+ {"kind": "decision", "text": "Cutover를 8일에서 다음 주 토요일 15일로 미룬다.", "owner": null, "due": null, "at": "00:00:37", "quote": "그럼 cutover는 다음 주 토요일, the 15th로 미루죠."},
+ {"kind": "decision", "text": "Senior backend 포지션 offer는 1억 2천 cap으로 한다.", "owner": null, "due": null, "at": "00:01:20", "quote": "그럼 offer는 1억 2천 cap으로 가는 걸로 하죠."},
+ {"kind": "todo", "text": "Replica lag fix를 merge한다.", "owner": "S2", "due": "수요일(12일)", "at": "00:00:55", "quote": "I'll have the lag fix merged by Wednesday the 12th."},
+ {"kind": "todo", "text": "Rollback runbook을 update한다.", "owner": "S3", "due": "금요일, 14일", "at": "00:01:01", "quote": "그럼 저는 rollback runbook을 금요일, 14일까지 update할게요."},
+ {"kind": "todo", "text": "1억 2천 cap을 recruiter에게 전달한다.", "owner": "S3", "due": null, "at": "00:01:24", "quote": "OK, 1억 2천 cap으로 recruiter한테 전달할게요."},
+ {"kind": "todo", "text": "Cutover 날 on-call을 선다.", "owner": "S1", "due": "cutover 날", "at": "00:01:43", "quote": "그건 제가 설게요."},
+ {"kind": "question", "text": "Vendor가 read replica를 하나 더 열어 줄 수 있는지 아직 답이 없다.", "owner": null, "due": null, "at": "00:01:46", "quote": "아직 vendor가 read replica를 하나 더 열어 줄 수 있는지 답을 안 줬어요."},
+ {"kind": "point", "text": "Replica lag이 peak 때 40초까지 올라간다.", "owner": null, "due": null, "at": "00:00:30", "quote": "Lag이 peak 때 40초까지 올라가요."}
+]}

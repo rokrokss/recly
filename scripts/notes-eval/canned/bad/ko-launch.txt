@@ -1,0 +1,15 @@
+{"summary": "출시 일정과 광고 예산을 논의했습니다.", "items": [
+ {"kind": "decision", "text": "출시일은 11월 18일 화요일로 한다.", "owner": null, "due": null, "at": "00:00:31", "quote": "네, 18일 출시로 정했었습니다."},
+ {"kind": "decision", "text": "광고 예산은 1,200만 원으로 집행한다.", "owner": null, "due": null, "at": "00:01:53", "quote": "출시 광고 예산은 원래 1,200만 원을 요청했었어요."},
+ {"kind": "todo", "text": "결제 모듈 QA를 끝낸다.", "owner": "S2", "due": "11월 25일", "at": "00:01:32", "quote": "제가 11월 21일 금요일까지 QA 끝내 놓겠습니다."},
+ {"kind": "todo", "text": "보도자료 초안을 팀 채널에 올린다.", "owner": "S1", "due": "11월 19일 수요일", "at": "00:01:42", "quote": "다음 주 수요일, 11월 19일까지 초안을 팀 채널에 올릴게요."},
+ {"kind": "todo", "text": "결제 대행사에 전화한다.", "owner": "S1", "due": "오늘", "at": "00:02:51", "quote": "제가 지금 바로 대행사 사장님께 직접 연락드리겠습니다."},
+ {"kind": "todo", "text": "보도자료를 검토한다.", "owner": "S1"},
+ {"kind": "decision", "text": "다크 모드를 나중에 추가하기로 했다.", "owner": null, "due": null, "at": "00:02:21", "quote": "그건 언젠가 한번 생각해 보죠."},
+ {"kind": "question", "text": "출시 공지 메일은 누가 보내나?", "owner": null, "due": null, "at": "00:02:36", "quote": "출시 공지 메일은 누가 보내기로 했죠?"},
+ {"kind": "todo", "text": "출시 공지 메일을 보낸다.", "owner": "S1", "due": "출시 당일 아침", "at": "00:02:47", "quote": "그건 제가 출시 당일 아침에 보낼게요."},
+ {"kind": "todo", "text": "다음 주에 다시 등산을 간다.", "owner": "S3", "due": "다음 주", "at": "00:00:12", "quote": "다음 주에 다시 가 보려고요."},
+ {"kind": "decision", "text": "환불 흐름은 이번 출시에서 제외한다.", "owner": null, "due": null, "at": "00:00:55", "quote": "카드 간편결제랑 환불 흐름이요."},
+ {"kind": "question", "text": "iOS 앱 심사가 25일 전에 통과될지 아직 모른다.", "owner": null, "due": null, "at": "00:02:25", "quote": "iOS 앱 심사가 25일 전에 통과될지는 아직 모르는 거죠?"},
+ {"kind": "question", "text": "iOS 심사 통과 시점이 불확실하다.", "owner": null, "due": null, "at": "00:02:31", "quote": "그건 애플 쪽 답을 기다려 봐야 알 것 같아요."}
+]}

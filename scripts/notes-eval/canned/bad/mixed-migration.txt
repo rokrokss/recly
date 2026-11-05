@@ -1,0 +1,16 @@
+다음은 회의 정리입니다.
+
+```json
+{"summary": "Migration과 hiring 회의입니다.", "items": [
+ {"kind": "decision", "text": "Cutover는 이번 토요일 8일에 진행한다.", "owner": null, "due": null, "at": "00:00:16", "quote": "원래 cutover를 this Saturday, the 8th로 잡았었죠."},
+ {"kind": "decision", "text": "[00:01:20] Offer는 1억 2천 cap으로 한다.", "owner": null, "due": null, "at": 80, "quote": "그럼 offer는 1억 2천 cap으로 가는 걸로 하죠."},
+ {"kind": "todo", "text": "Replica lag fix를 merge한다.", "owner": "S9", "due": "수요일", "at": "00:00:55", "quote": "I'll have the lag fix merged by Wednesday the 12th."},
+ {"kind": "To-Do", "text": "Rollback runbook을 update한다.", "owner": "S3", "due": "  금요일, 14일  ", "at": "[00:01:01]", "quote": "rollback runbook을 금요일, 14일까지 update할게요."},
+ {"kind": "todo", "text": "1억 2천 cap을 recruiter에게 전달한다.", "owner": "S3", "due": "금요일", "at": "00:01:24", "quote": "OK, 1억 2천 cap으로 recruiter한테 전달할게요."},
+ {"kind": "decision", "text": "Cutover 날 on-call은 팀장이 선다.", "owner": null, "due": null, "at": "00:01:43", "quote": "그건 제가 설게요."},
+ {"kind": "todo", "text": "회식 사진을 Slack에 올린다.", "owner": "S3", "due": "이따", "at": "00:00:11", "quote": "이따 Slack에 올릴게요."},
+ {"kind": "todo", "text": "Lag fix 일정을 확인한다.", "owner": "S1", "due": null, "at": null, "atSec": 51, "quote": "Sarah, replica lag fix는 언제까지 될까요?"}
+]}
+```
+
+이상입니다.

@@ -1,0 +1,82 @@
+{
+ "about": "Korean launch sync: the launch date moves from the 18th to the 25th (old value); QA, press-release and launch dates sit close together (21st, 19th, 25th); the ad budget asked for (12M won) is not the one approved (9M won); dark mode is only floated (hedge); who sends the announcement is asked and answered at once; weekend and lunch talk; a phone number the request hides.",
+ "appLocale": "ko-KR",
+ "items": [
+  {
+   "id": "launch-date",
+   "kind": "decision",
+   "topic": [["출시", "런칭", "launch", "release"], ["25일", "18일", "날짜", "일정", "연기", "미루", "미뤄", "date", "postpone", "delay", "move"]],
+   "value": ["25일", "11/25", "25th", "nov25", "november25"],
+   "old": ["18일", "11/18", "18th", "nov18", "november18"],
+   "wrong": ["21일", "19일"],
+   "at": ["00:01:13", "00:01:20", "00:01:23"],
+   "oldAt": ["00:00:25", "00:00:31"]
+  },
+  {
+   "id": "ad-budget",
+   "kind": "decision",
+   "topic": [["예산", "광고비", "광고", "budget", "advertising"]],
+   "value": ["900만", "9백만", "9000000", "9million"],
+   "wrong": ["1200만", "1천200만", "12000000", "12million"],
+   "at": ["00:01:59", "00:02:04"]
+  },
+  {
+   "id": "qa-done",
+   "kind": "todo",
+   "topic": [["qa", "테스트", "test"]],
+   "owner": "S2",
+   "due": ["21일", "11/21", "21st", "nov21", "금요일", "friday"],
+   "wrongDue": ["25일", "18일", "19일"],
+   "at": ["00:01:32"]
+  },
+  {
+   "id": "press-draft",
+   "kind": "todo",
+   "topic": [["보도자료", "press"]],
+   "owner": "S3",
+   "due": ["19일", "11/19", "19th", "nov19", "수요일", "wednesday"],
+   "wrongDue": ["21일", "25일", "18일"],
+   "at": ["00:01:42"]
+  },
+  {
+   "id": "channel-split",
+   "kind": "todo",
+   "topic": [["배분", "채널", "channel", "allocation", "split"]],
+   "owner": "S3",
+   "due": null,
+   "value": ["900만", "9백만", "9000000", "9million"],
+   "valueRequired": false,
+   "wrong": ["1200만", "1천200만", "12000000", "12million"],
+   "at": ["00:02:09"]
+  },
+  {
+   "id": "launch-mail",
+   "kind": "todo",
+   "topic": [["공지", "메일", "announcement", "email"]],
+   "owner": "S1",
+   "due": ["당일", "25일", "출시일", "launchday", "releaseday"],
+   "wrongDue": ["18일", "21일", "19일"],
+   "at": ["00:02:40"]
+  },
+  {
+   "id": "call-payment-vendor",
+   "kind": "todo",
+   "topic": [["대행사", "담당자", "전화", "연락", "vendor", "call"]],
+   "owner": "S1",
+   "due": ["오늘", "today"],
+   "at": ["00:02:51", "00:02:45"]
+  },
+  {
+   "id": "ios-review",
+   "kind": "question",
+   "topic": [["심사", "앱스토어", "appstore", "review"]],
+   "at": ["00:02:25", "00:02:31"]
+  }
+ ],
+ "traps": [
+  {"id": "dark-mode", "type": "hedge", "topic": [["다크", "dark"]], "at": ["00:02:15", "00:02:21"]},
+  {"id": "who-sends-mail", "type": "answered", "topic": [["공지", "메일", "announcement", "email"], ["누가", "누구", "who"]], "at": ["00:02:36"]},
+  {"id": "weekend", "type": "smalltalk", "topic": [["등산", "드라마", "주말", "hiking", "drama", "weekend"]], "at": ["00:00:00", "00:00:07", "00:00:12"]},
+  {"id": "lunch", "type": "smalltalk", "topic": [["김치찌개", "점심", "lunch", "kimchi"]], "at": ["00:03:01", "00:03:06"]}
+ ]
+}

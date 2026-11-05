@@ -1,0 +1,12 @@
+{"summary": "Booth planning for the Berlin trade fair.", "items": [
+ {"kind": "decision", "text": "Book the eighteen square meter booth in Hall 5.", "owner": null, "due": null, "at": "00:00:47", "quote": "Let's drop Hall 3 and go with the eighteen square meter booth in Hall 5."},
+ {"kind": "decision", "text": "Move the booth to Hall 5.", "owner": null, "due": null, "at": "00:01:02", "quote": "Fine by me, the budget covers it."},
+ {"kind": "decision", "text": "Print five thousand brochures.", "owner": null, "due": null, "at": "00:02:16", "quote": "For brochures, the printer suggested five thousand copies."},
+ {"kind": "action", "text": "Wire the 14,500 euro deposit.", "owner": "S2", "due": "Friday the 14th", "at": "00:01:12", "quote": "I'll wire it by Friday the 14th."},
+ {"kind": "todo", "text": "Send the final print files to the printer at [email#1].", "owner": "S3", "due": "Wednesday the 12th", "at": "00:01:36", "quote": "The printer's contact is [email#1], copy me on that email please."},
+ {"kind": "todo", "text": "Lena staffs day one with the host; Raj covers day two.", "owner": "S3", "due": "day one", "at": "00:02:09", "quote": "That's me and Lena on day one. Raj covers day two."},
+ {"kind": "todo", "text": "Sponsor the evening reception if money is left.", "owner": "S2", "due": null, "at": "00:01:43", "quote": "Maybe we could also sponsor the evening reception at some point"},
+ {"kind": "question", "text": "Who is staffing the booth on day one?", "owner": null, "due": null, "at": "00:02:06", "quote": "And who's staffing the booth on day one?"},
+ {"kind": "point", "text": "The coffee machine on the third floor is fixed.", "owner": null, "due": null, "at": "00:02:37", "quote": "the coffee machine on the third floor is fixed, finally."},
+ {"kind": "section1", "text": "Graphics are Lena's.", "owner": null, "due": null, "at": "00:01:26", "quote": "Lena, the booth graphics?"}
+]}
