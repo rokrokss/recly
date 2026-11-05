@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Imechelewa kuhifadhi kichwa — upakiaji umeanza</string>
     <string name="recording_finish_deferred">Imeshindwa kumaliza kuhifadhi — itarejeshwa programu itakapofunguliwa tena</string>
     <string name="recording_failed">Kurekodi kumeshindwa</string>
+    <string name="recording_storage_low">Hakuna hifadhi ya kutosha kurekodi</string>
     <string name="enqueue_no_workflow">Kagua mipangilio ya kurekodi ili uendelee</string>
     <string name="enqueue_parts_purged">Sauti tayari imefutwa</string>
     <string name="enqueue_skipped_short">Fupi mno — imerukwa</string>

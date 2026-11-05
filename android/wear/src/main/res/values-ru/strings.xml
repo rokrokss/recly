@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Включите его в разделе Настройки → Приложения → Recly → Разрешения.</string>
     <string name="recording_save_deferred">Сохранено не полностью — восстановим позже</string>
     <string name="recording_failed">Ошибка записи</string>
+    <string name="recording_storage_low">Недостаточно места для записи</string>
     <string name="pending_badge">Ожидает отправки</string>
     <string name="sending_badge">Отправка</string>
     <string name="transfer_failed_badge">Сбой передачи</string>

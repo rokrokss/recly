@@ -570,6 +570,8 @@
   "Open Recly to check.": "Kontrol etmek için Recly'yi açın.",
   "No one has spoken for 10 minutes.": "10 dakikadır kimse konuşmadı.",
   "Recording stopped: battery low": "Kayıt durduruldu: pil zayıf",
+  "Not enough storage to record": "Kayıt için yeterli depolama alanı yok",
+  "Recording stopped: storage full": "Kayıt durduruldu: depolama dolu",
   "Recording alerts": "Kayıt uyarıları",
   "Recording paused": "Kayıt duraklatıldı",
   "Open Recly to keep recording.": "Kayda devam etmek için Recly'yi açın.",

@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Troppo tardi per salvare il titolo: il caricamento è iniziato</string>
     <string name="recording_finish_deferred">Salvataggio non completato: verrà recuperato al prossimo avvio</string>
     <string name="recording_failed">Registrazione non riuscita</string>
+    <string name="recording_storage_low">Spazio insufficiente per registrare</string>
     <string name="enqueue_no_workflow">Controlla le impostazioni di registrazione per continuare</string>
     <string name="enqueue_parts_purged">L’audio è già stato rimosso</string>
     <string name="enqueue_skipped_short">Troppo breve: ignorata</string>

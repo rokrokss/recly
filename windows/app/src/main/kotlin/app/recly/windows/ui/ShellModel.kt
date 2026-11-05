@@ -37,6 +37,7 @@ import app.recly.windows.jobs.JobRunner
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
 import app.recly.windows.record.Completion
+import app.recly.windows.record.NotEnoughStorage
 import app.recly.windows.record.PowerSources
 import app.recly.windows.record.RecordingOutcome
 import app.recly.windows.record.RecordingRecovery
@@ -138,13 +139,13 @@ internal fun completionLine(failed: Boolean, completion: Completion?): Str = whe
 /**
  * docs/09 "What a start or a stop says": what a stop had to report — anything [completionLine] says but plain waiting —
  * is news of that moment, so the wait for Drive a job pass finds next does not take its place on the line. The banner
- * and the row already say that wait.
+ * and the row already say that wait. A start refused for storage (docs/03 "Free storage on the device") is news the same way.
  */
 internal fun isStopReport(status: UiMessage): Boolean = (status as? UiMessage.Res)?.key in STOP_REPORTS
 
 private val STOP_REPORTS = setOf(
     Str.ENQUEUE_FAILED, Str.RECORDING_FAILED, Str.RECORDING_TITLE_TOO_LATE, Str.ENQUEUE_NO_WORKFLOW,
-    Str.ENQUEUE_PARTS_PURGED, Str.ENQUEUE_SKIPPED_SHORT, Str.ENQUEUE_ALREADY_DONE,
+    Str.ENQUEUE_PARTS_PURGED, Str.ENQUEUE_SKIPPED_SHORT, Str.ENQUEUE_ALREADY_DONE, Str.STATUS_STORAGE_LOW,
 )
 
 /**
@@ -949,6 +950,11 @@ class ShellModel(
                 stop(askTitle = false)
                 recordingBalloon?.show(Str.NOTIFY_BATTERY_STOP, null)
             },
+            // docs/03 "Free storage on the device": the same stop and a balloon of its own.
+            onStorageLow = {
+                stop(askTitle = false)
+                recordingBalloon?.show(Str.NOTIFY_STORAGE_STOP, null)
+            },
         )
 
         waveforms = WaveformPrecompute(
@@ -1229,6 +1235,9 @@ class ShellModel(
                     // A gate held by the disconnect says so; one held by another start that is
                     // already opening is the same answer the recorder itself would have given this.
                     ?: DisconnectGate.startBlocker() ?: Str.RECORDING_FAILED.message()
+            } catch (e: NotEnoughStorage) {
+                // docs/03 "Free storage on the device": refused before anything was written; the recorder logged why.
+                status = Str.STATUS_STORAGE_LOW.message()
             } catch (e: Exception) {
                 // A start that threw failed as much as one that was refused; the throw still goes on to the scope.
                 status = Str.RECORDING_FAILED.message()

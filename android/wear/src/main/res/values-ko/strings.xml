@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">설정 → 애플리케이션 → Recly → 권한에서 켜세요.</string>
     <string name="recording_save_deferred">저장 마무리 실패 — 다음에 복구</string>
     <string name="recording_failed">녹음 실패</string>
+    <string name="recording_storage_low">저장 공간이 부족해 녹음할 수 없습니다</string>
     <string name="pending_badge">전송 대기</string>
     <string name="sending_badge">전송 중</string>
     <string name="transfer_failed_badge">전송 실패</string>

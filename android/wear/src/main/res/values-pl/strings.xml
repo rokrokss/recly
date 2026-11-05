@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Włącz je w Ustawienia → Aplikacje → Recly → Uprawnienia.</string>
     <string name="recording_save_deferred">Zapis niepełny — odzyskany później</string>
     <string name="recording_failed">Nagrywanie nie powiodło się</string>
+    <string name="recording_storage_low">Za mało miejsca na nagrywanie</string>
     <string name="pending_badge">Czeka na wysłanie</string>
     <string name="sending_badge">Wysyłanie</string>
     <string name="transfer_failed_badge">Błąd przekazywania</string>

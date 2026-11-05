@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">সেটিংস → অ্যাপ → Recly → অনুমতি থেকে এটি চালু করুন।</string>
     <string name="recording_save_deferred">সেভ অসম্পূর্ণ — পরে পুনরুদ্ধার হবে</string>
     <string name="recording_failed">রেকর্ডিং ব্যর্থ হয়েছে</string>
+    <string name="recording_storage_low">রেকর্ড করার মতো যথেষ্ট স্টোরেজ নেই</string>
     <string name="pending_badge">পাঠানোর অপেক্ষায়</string>
     <string name="sending_badge">পাঠানো হচ্ছে</string>
     <string name="transfer_failed_badge">ট্রান্সফার ব্যর্থ হয়েছে</string>

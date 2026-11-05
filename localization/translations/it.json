@@ -570,6 +570,8 @@
   "Open Recly to check.": "Apri Recly per controllare.",
   "No one has spoken for 10 minutes.": "Nessuno ha parlato negli ultimi 10 minuti.",
   "Recording stopped: battery low": "Registrazione interrotta: batteria scarica",
+  "Not enough storage to record": "Spazio insufficiente per registrare",
+  "Recording stopped: storage full": "Registrazione interrotta: spazio esaurito",
   "Recording alerts": "Avvisi di registrazione",
   "Recording paused": "Registrazione in pausa",
   "Open Recly to keep recording.": "Apri Recly per continuare a registrare.",

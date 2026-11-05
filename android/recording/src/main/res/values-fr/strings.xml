@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Enregistrement en cours</string>
     <string name="rec_reminder_body">Personne n’a parlé depuis 10 minutes.</string>
     <string name="rec_battery_stop_title">Enregistrement arrêté : batterie faible</string>
+    <string name="rec_storage_stop_title">Enregistrement arrêté : stockage plein</string>
 </resources>

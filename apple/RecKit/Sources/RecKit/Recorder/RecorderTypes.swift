@@ -40,6 +40,11 @@ public enum RecorderEvent: Equatable, Sendable {
     /// The input came back after [awaitingResume].
     case resumed
 
+    /// docs/03 "Free storage on the device": under 50 MB at a boundary, or a write that failed that low (the core's
+    /// `StorageFloor`, already logged). Once per recording; [RecordingNotices] stops it the battery stop's way and
+    /// says why.
+    case storageLow
+
     /// The stop took the recording — the user's, an intent's, or the one a fatal error asks for.
     case ended
 }
@@ -73,6 +78,10 @@ public struct RecorderError: Error, CustomStringConvertible {
         /// answer — and the shell's answer to it is the deep link plus the offer to record the
         /// microphone alone (M4-L3 deliverable 1).
         case systemAudioUnavailable
+
+        /// docs/03 "Free storage on the device": under 200 MB free, the start was refused before anything was
+        /// opened. Not a failure: the shell says why, in the words every shell uses.
+        case notEnoughStorage
 
         case capture
     }

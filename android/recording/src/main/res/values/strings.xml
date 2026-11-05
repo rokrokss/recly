@@ -10,4 +10,6 @@
     <string name="rec_reminder_title">Still recording</string>
     <string name="rec_reminder_body">No one has spoken for 10 minutes.</string>
     <string name="rec_battery_stop_title">Recording stopped: battery low</string>
+    <!-- docs/03 "Free storage on the device": under 50 MB while recording. -->
+    <string name="rec_storage_stop_title">Recording stopped: storage full</string>
 </resources>

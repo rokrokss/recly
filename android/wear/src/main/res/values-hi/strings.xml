@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">इसे सेटिंग → ऐप्स → Recly → अनुमतियाँ में चालू करें।</string>
     <string name="recording_save_deferred">सहेजना अधूरा — बाद में बहाल होगा</string>
     <string name="recording_failed">रिकॉर्डिंग विफल हुई</string>
+    <string name="recording_storage_low">रिकॉर्ड करने के लिए पर्याप्त स्टोरेज नहीं है</string>
     <string name="pending_badge">भेजने की प्रतीक्षा में</string>
     <string name="sending_badge">भेजा जा रहा है</string>
     <string name="transfer_failed_badge">ट्रांसफ़र विफल</string>

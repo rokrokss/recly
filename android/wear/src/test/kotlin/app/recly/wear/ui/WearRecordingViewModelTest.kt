@@ -298,4 +298,21 @@ class WearRecordingViewModelTest {
         vm.start()
         assertNull(vm.state.value.message)
     }
+
+    /** docs/03 "Free storage on the device": a start the recorder refused under 200 MB free says why, and only that. */
+    @Test
+    fun `a start refused for storage says so and queues nothing`() = runTest(dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+        vm.start()
+        runCurrent()
+
+        recorder.idle()
+        recorder.emit(RecorderEvent.NotEnoughStorage)
+        runCurrent()
+
+        assertEquals(emptyList(), queue.added)
+        assertEquals(WearMessage.NotEnoughStorage, vm.state.value.message)
+        assertTrue(vm.state.value.canStart, "a later start, with space freed, is taken")
+    }
 }

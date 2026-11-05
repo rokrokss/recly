@@ -570,6 +570,8 @@
   "Open Recly to check.": "Buksan ang Recly para tingnan.",
   "No one has spoken for 10 minutes.": "Walang nagsalita sa loob ng 10 minuto.",
   "Recording stopped: battery low": "Huminto ang pagre-record: mahina ang baterya",
+  "Not enough storage to record": "Kulang ang storage para mag-record",
+  "Recording stopped: storage full": "Huminto ang pagre-record: puno na ang storage",
   "Recording alerts": "Mga alerto sa pagre-record",
   "Recording paused": "Naka-pause ang pagre-record",
   "Open Recly to keep recording.": "Buksan ang Recly para ituloy ang pagre-record.",

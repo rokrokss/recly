@@ -65,6 +65,9 @@ public final class SegmentedRecorder {
         /// docs/01 "Long recordings": ten minutes of the same windows without speech — the core's rule, the
         /// one every shell calls.
         let quiet = SilenceReminder()
+        /// docs/03 "Free storage on the device": [RecorderEvent.storageLow] has gone out — the stop is on its
+        /// way, and nothing is said twice.
+        var storageLow = false
 
         init(
             recordingId: String,
@@ -97,6 +100,9 @@ public final class SegmentedRecorder {
     private let awaitsResume: Bool
     /// Scales the waits between reattach attempts; 1 in the app.
     private let retryPace: Double
+    /// docs/03 "Free storage on the device": the free bytes on the volume that holds a URL ([FreeStorage]), −1 when
+    /// unreadable. A test fakes it.
+    private let freeBytes: (URL) -> Int64
     private let onError: (RecorderError) -> Void
 
     private let lock = NSLock()
@@ -201,6 +207,7 @@ public final class SegmentedRecorder {
         driftIntervalSec: Double = DriftEstimator.intervalSec,
         awaitsResume: Bool = SegmentedRecorder.awaitsResumeOnThisPlatform,
         retryPace: Double = 1,
+        freeBytes: @escaping (URL) -> Int64 = FreeStorage.bytes(at:),
         onError: @escaping (RecorderError) -> Void
     ) {
         self.core = core
@@ -215,6 +222,7 @@ public final class SegmentedRecorder {
         // cannot sit through the fifteen seconds of attempts that lead to it.
         self.awaitsResume = awaitsResume
         self.retryPace = retryPace
+        self.freeBytes = freeBytes
         self.onError = onError
         input.onConfigurationChange = { [weak self] reason in self?.requestRestart(reason: reason) }
         // docs/03 `silenced`: the microphone taken away and given back. Not a restart — the input
@@ -259,6 +267,9 @@ public final class SegmentedRecorder {
     /// A meeting whose tap cannot be built throws `.systemAudioUnavailable` and leaves nothing
     /// behind, rather than quietly recording one track under a meta that promises three: the shell's
     /// answer is the permission deep link and the offer to record the microphone alone.
+    ///
+    /// docs/03 "Free storage on the device": under 200 MB free it throws `.notEnoughStorage` before the
+    /// microphone is asked for anything or a file is written.
     @discardableResult
     public func start(
         title: String?,
@@ -268,6 +279,11 @@ public final class SegmentedRecorder {
         guard !isRecording else { throw RecorderError("already recording") }
         if mode == .meeting, systemInput == nil {
             throw RecorderError("this device cannot capture system audio", kind: .systemAudioUnavailable)
+        }
+        let free = freeBytes(core.deps.dataDir.url)
+        if StorageFloor.shared.tooLow(freeBytes: free, recording: false) {
+            log(.warn, "rec.recorder.storageRefused", ["freeBytes": free])
+            throw RecorderError("not enough storage to record: \(free) bytes free", kind: .notEnoughStorage)
         }
         try await input.authorize()
 
@@ -474,7 +490,10 @@ public final class SegmentedRecorder {
             // microphone buffer" (docs/12 "estimate the rate difference every 60 seconds").
             session.drift?.observeMic(frames: session.totalFrames, atSec: Self.nowSec)
         } catch {
-            report(RecorderError("could not write the segment", underlying: error))
+            // docs/03 "Free storage on the device": a write the disk had no room for is the storage stop.
+            if !failedForSpace(session, error) {
+                report(RecorderError("could not write the segment", underlying: error))
+            }
         }
     }
 
@@ -642,6 +661,7 @@ public final class SegmentedRecorder {
             do {
                 try writer.openNext()
             } catch {
+                guard !failedForSpace(session, error) else { continue }
                 report(RecorderError(
                     "could not open segment \(writer.openPart) of \(writer.track.name)",
                     underlying: error
@@ -649,6 +669,44 @@ public final class SegmentedRecorder {
             }
         }
         return closed
+    }
+
+    // MARK: - Free storage (docs/03 "Free storage on the device")
+
+    /// At every boundary, off the audio thread once its parts are filed: under 50 MB the recording is stopped
+    /// ([RecorderEvent.storageLow]), once.
+    private func checkStorage(of recordingId: String, in directory: URL) {
+        let free = freeBytes(directory)
+        guard StorageFloor.shared.tooLow(freeBytes: free, recording: true) else { return }
+        let due: Bool = lock.withLock {
+            guard let open = session, open.recordingId == recordingId, !open.storageLow else { return false }
+            open.storageLow = true
+            return true
+        }
+        if due { storageStop(recordingId: recordingId, freeBytes: free, cause: "boundary", error: nil) }
+    }
+
+    /// Under [lock], from the write path: a write that failed is one for lack of space when the platform says so
+    /// ([FreeStorage.isOutOfSpace]) or the device is under 50 MB. True when the recording is being stopped for it —
+    /// now or already — and the failure is not to be reported as one. A recording a stop has already taken is not
+    /// stopped twice.
+    private func failedForSpace(_ open: Session, _ error: Error) -> Bool {
+        guard session === open else { return false }
+        if open.storageLow { return true }
+        let free = freeBytes(open.directory)
+        guard FreeStorage.isOutOfSpace(error) || StorageFloor.shared.tooLow(freeBytes: free, recording: true) else {
+            return false
+        }
+        open.storageLow = true
+        storageStop(recordingId: open.recordingId, freeBytes: free, cause: "write", error: error)
+        return true
+    }
+
+    private func storageStop(recordingId: String, freeBytes: Int64, cause: String, error: Error?) {
+        var fields: [String: Any] = ["recordingId": recordingId, "freeBytes": freeBytes, "cause": cause]
+        if let error { fields["error"] = "\(error)" }
+        log(.warn, "rec.recorder.storageStop", fields)
+        emit(.storageLow)
     }
 
     /// A part that cannot reach the database is not a lost part: the audio is on disk and a sidecar
@@ -664,6 +722,7 @@ public final class SegmentedRecorder {
                 await self.register(segment, in: directory, recordingId: recordingId, core: core)
             }
             self.onPartFiled?(recordingId)
+            self.checkStorage(of: recordingId, in: directory)
         }
     }
 

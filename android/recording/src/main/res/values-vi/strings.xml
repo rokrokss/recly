@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Vẫn đang ghi âm</string>
     <string name="rec_reminder_body">Không ai nói gì trong 10 phút qua.</string>
     <string name="rec_battery_stop_title">Đã dừng ghi âm: pin yếu</string>
+    <string name="rec_storage_stop_title">Đã dừng ghi âm: hết dung lượng</string>
 </resources>

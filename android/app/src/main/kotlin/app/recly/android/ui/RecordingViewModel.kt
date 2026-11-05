@@ -419,6 +419,10 @@ class RecordingViewModel @JvmOverloads constructor(
         // user is told what happened, in the iPhone's words.
         is RecorderEvent.Failed ->
             _state.update { it.copy(messages = listOf(res(R.string.recording_failed))) }
+
+        // docs/03 "Free storage on the device": the start was refused, and why is the whole of what to say.
+        RecorderEvent.NotEnoughStorage ->
+            _state.update { it.copy(messages = listOf(res(R.string.recording_storage_low))) }
     }
 
     /** Clears the prompt first: whatever the queue says, the recording is safe on disk already. */

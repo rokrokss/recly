@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">I-on ito sa Mga Setting → Mga App → Recly → Mga Pahintulot.</string>
     <string name="recording_save_deferred">Kulang ang pag-save — mababawi mamaya</string>
     <string name="recording_failed">Nabigo ang pag-record</string>
+    <string name="recording_storage_low">Kulang ang storage para mag-record</string>
     <string name="pending_badge">Naghihintay maipadala</string>
     <string name="sending_badge">Ipinapadala</string>
     <string name="transfer_failed_badge">Nabigo ang paglilipat</string>

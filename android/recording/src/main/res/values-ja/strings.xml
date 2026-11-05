@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">まだ録音中</string>
     <string name="rec_reminder_body">10分間、誰も話していません。</string>
     <string name="rec_battery_stop_title">バッテリー残量が少ないため録音を停止しました</string>
+    <string name="rec_storage_stop_title">空き容量が少ないため録音を停止しました</string>
 </resources>

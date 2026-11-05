@@ -570,6 +570,8 @@
   "Open Recly to check.": "Mở Recly để kiểm tra.",
   "No one has spoken for 10 minutes.": "Không ai nói gì trong 10 phút qua.",
   "Recording stopped: battery low": "Đã dừng ghi âm: pin yếu",
+  "Not enough storage to record": "Không đủ dung lượng để ghi âm",
+  "Recording stopped: storage full": "Đã dừng ghi âm: hết dung lượng",
   "Recording alerts": "Cảnh báo ghi âm",
   "Recording paused": "Đã tạm dừng ghi âm",
   "Open Recly to keep recording.": "Mở Recly để tiếp tục ghi âm.",

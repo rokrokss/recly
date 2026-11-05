@@ -127,6 +127,7 @@ class RecorderService : Service() {
                 onPartFiled = { host().onPartFiled(it) },
                 onError = { fail(it) },
                 onBoundary = { RecordingAlerts.armWatchdog(this@RecorderService, segmentSec) },
+                onStorageLow = ::storageStop,
             )
             try {
                 val recordingId = recorder.start(title)
@@ -135,6 +136,12 @@ class RecorderService : Service() {
                 // Not for a stop that raced the start: `started` has just replayed it.
                 if (_state.value is RecorderState.Recording) startAlerts(segmentSec)
             } catch (e: Exception) {
+                if (e is RecorderError && e.notEnoughStorage) {
+                    // docs/03 "Free storage on the device": nothing was opened, and the recorder logged why. The
+                    // ongoing notification goes with the service.
+                    session.refusedForStorage()
+                    return@launch
+                }
                 session.startFailed()
                 core.deps.logger.log(Logger.Level.ERROR, "rec.recorder.startFailed", emptyMap(), e)
                 fail(RecorderError("could not start recording: ${e.describe()}", e))
@@ -241,6 +248,20 @@ class RecorderService : Service() {
                     mapOf("recordingId" to recordingId, "level" to percent),
                 )
             }
+        }
+    }
+
+    /**
+     * docs/03 "Free storage on the device": under 50 MB at a boundary, or a write that failed that low (the core's
+     * `StorageFloor`, already logged by the recorder). Stopped the battery stop's way — the notification's stop,
+     * nobody asked for a title, what was filed handed over as it stands — then the notice that says why.
+     * Launched: the recorder calls this holding its own lock, which the stop needs.
+     */
+    private fun storageStop() {
+        scope.launch {
+            if (_state.value !is RecorderState.Recording) return@launch
+            stopRecording(title = null, enqueue = true)
+            RecordingAlerts.post(this@RecorderService, RecordingAlerts.STORAGE_ID, getString(R.string.rec_storage_stop_title))
         }
     }
 

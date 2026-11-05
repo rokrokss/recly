@@ -24,6 +24,9 @@ import IOKit.ps
 ///   nothing and is never asked again.
 /// - **The pause** (iPhone, watch): a restart that ran out of attempts waits for the app to come
 ///   back ([SegmentedRecorder.becameActive]), and the person is asked to open it.
+/// - **The storage stop** (every Apple shell, docs/03 "Free storage on the device"): the recorder found the
+///   device under 50 MB at a boundary, or a write failed for want of space ([RecorderEvent.storageLow]) — the
+///   battery stop's way out, and its own notice.
 ///
 /// None plays a sound on the iPhone or the Mac: a reminder fires while the microphone records, and
 /// its chime would be in the audio. The watch is the exception for the three that fire only when
@@ -133,6 +136,18 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
             waiting = false
             withdraw([Self.pausedId])
             post(deadMan(segmentSec: recording.segmentSec))
+
+        case .storageLow:
+            // The recorder has logged it. The stop that asks nothing, then the notice that says why — posted once
+            // the recording is no longer capturing, as the battery's is.
+            guard let recording else { return }
+            onStop?()
+            post(notice(
+                Self.storageId,
+                title: RecKitStrings.localized("Recording stopped: storage full"),
+                recordingId: recording.id,
+                sound: Self.idleSound
+            ))
 
         case .ended:
             recording = nil
@@ -332,11 +347,12 @@ public final class RecordingNotices: NSObject, UNUserNotificationCenterDelegate 
     static let deadManId = "recording.deadman"
     static let pausedId = "recording.paused"
     static let batteryId = "recording.battery"
+    static let storageId = "recording.storage"
     static let reminderId = "recording.reminder"
     public static let reminderCategory = "recording.reminder"
     static let stopAction = "recording.stop"
     private static let recordingKey = "recordingId"
-    /// What a stop withdraws: everything but the battery notice, which is posted by the stop itself.
+    /// What a stop withdraws: everything but the battery and storage notices, which are posted by the stop itself.
     static let scheduledIds = [deadManId, pausedId, reminderId]
 
     // MARK: - UNUserNotificationCenterDelegate (the watch)

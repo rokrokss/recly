@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Ayarlar → Uygulamalar → Recly → İzinler bölümünden açın.</string>
     <string name="recording_save_deferred">Kayıt tamamlanmadı — sonra kurtarılacak</string>
     <string name="recording_failed">Kayıt başarısız oldu</string>
+    <string name="recording_storage_low">Kayıt için yeterli depolama alanı yok</string>
     <string name="pending_badge">Gönderim bekliyor</string>
     <string name="sending_badge">Gönderiliyor</string>
     <string name="transfer_failed_badge">Aktarım başarısız</string>

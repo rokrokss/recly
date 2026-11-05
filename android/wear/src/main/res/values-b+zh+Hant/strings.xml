@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">請在「設定→應用程式→Recly→權限」中開啟。</string>
     <string name="recording_save_deferred">無法完成儲存，將在下次執行時復原</string>
     <string name="recording_failed">錄音失敗</string>
+    <string name="recording_storage_low">儲存空間不足，無法錄音</string>
     <string name="pending_badge">等待傳送</string>
     <string name="sending_badge">正在傳送</string>
     <string name="transfer_failed_badge">傳輸失敗</string>

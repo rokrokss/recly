@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Za późno na zapisanie tytułu — przesyłanie już się rozpoczęło</string>
     <string name="recording_finish_deferred">Nie można dokończyć zapisywania — nagranie zostanie odzyskane przy następnym uruchomieniu</string>
     <string name="recording_failed">Nagrywanie nie powiodło się</string>
+    <string name="recording_storage_low">Za mało miejsca na nagrywanie</string>
     <string name="enqueue_no_workflow">Sprawdź ustawienia nagrywania, aby kontynuować</string>
     <string name="enqueue_parts_purged">Audio zostało już usunięte</string>
     <string name="enqueue_skipped_short">Za krótkie — pominięto</string>

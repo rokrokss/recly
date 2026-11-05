@@ -673,6 +673,24 @@ class CrossShellDictionaryTest {
                 android = "recording_failed",
                 phone = "The recording failed",
             ),
+            // docs/03 "Free storage on the device": the start refused under 200 MB, on the line under the record button,
+            // and the notice of the recording stopped under 50 MB. The watches say the first in the same words; their
+            // modules are not read here.
+            Line(
+                what = "a start refused for storage",
+                en = "Not enough storage to record",
+                ko = "저장 공간이 부족해 녹음할 수 없습니다",
+                android = "recording_storage_low",
+                windows = "status.storage.low",
+                reckit = "Not enough storage to record",
+            ),
+            Line(
+                what = "a recording stopped for storage",
+                en = "Recording stopped: storage full",
+                ko = "저장 공간이 부족해 녹음을 멈췄습니다",
+                windows = "notify.storage.stop",
+                reckit = "Recording stopped: storage full",
+            ),
             // The tab is "List"; the screen is what is in it — in Korean the tab's own word, so it is not
             // the Record tab's 녹음 (UX decisions of 2026-10-08).
             Line(

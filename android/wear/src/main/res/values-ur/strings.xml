@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">اسے ترتیبات ← ایپس ← Recly ← اجازتیں میں آن کریں۔</string>
     <string name="recording_save_deferred">محفوظ کرنا ادھورا — بعد میں بحال ہو گا</string>
     <string name="recording_failed">ریکارڈنگ ناکام ہو گئی</string>
+    <string name="recording_storage_low">ریکارڈ کرنے کے لیے کافی اسٹوریج نہیں ہے</string>
     <string name="pending_badge">بھیجنے کا انتظار</string>
     <string name="sending_badge">بھیجا جا رہا ہے</string>
     <string name="transfer_failed_badge">منتقلی ناکام</string>

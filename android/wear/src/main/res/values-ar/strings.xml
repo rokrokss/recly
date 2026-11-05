@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">شغّله من الإعدادات ← التطبيقات ← Recly ← الأذونات.</string>
     <string name="recording_save_deferred">لم يكتمل الحفظ — ستتم الاستعادة لاحقًا</string>
     <string name="recording_failed">فشل التسجيل</string>
+    <string name="recording_storage_low">لا توجد مساحة تخزين كافية للتسجيل</string>
     <string name="pending_badge">بانتظار الإرسال</string>
     <string name="sending_badge">جارٍ الإرسال</string>
     <string name="transfer_failed_badge">فشل النقل</string>

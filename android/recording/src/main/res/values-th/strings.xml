@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">ยังบันทึกอยู่</string>
     <string name="rec_reminder_body">ไม่มีใครพูดมา 10 นาทีแล้ว</string>
     <string name="rec_battery_stop_title">หยุดบันทึกเสียงแล้ว: แบตเตอรี่เหลือน้อย</string>
+    <string name="rec_storage_stop_title">หยุดบันทึกเสียงแล้ว: พื้นที่จัดเก็บเต็ม</string>
 </resources>

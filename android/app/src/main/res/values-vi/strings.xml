@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Đã quá muộn để lưu tiêu đề — quá trình tải lên đã bắt đầu</string>
     <string name="recording_finish_deferred">Chưa lưu xong — sẽ khôi phục ở lần chạy sau</string>
     <string name="recording_failed">Ghi âm thất bại</string>
+    <string name="recording_storage_low">Không đủ dung lượng để ghi âm</string>
     <string name="enqueue_no_workflow">Xem lại cài đặt ghi âm để tiếp tục</string>
     <string name="enqueue_parts_purged">Âm thanh đã được dọn dẹp</string>
     <string name="enqueue_skipped_short">Quá ngắn — đã bỏ qua</string>

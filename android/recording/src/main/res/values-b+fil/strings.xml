@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Nagre-record pa</string>
     <string name="rec_reminder_body">Walang nagsalita sa loob ng 10 minuto.</string>
     <string name="rec_battery_stop_title">Huminto ang pagre-record: mahina ang baterya</string>
+    <string name="rec_storage_stop_title">Huminto ang pagre-record: puno na ang storage</string>
 </resources>

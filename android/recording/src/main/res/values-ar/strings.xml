@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">التسجيل مستمر</string>
     <string name="rec_reminder_body">لم يتحدث أحد منذ 10 دقائق.</string>
     <string name="rec_battery_stop_title">توقف التسجيل: البطارية منخفضة</string>
+    <string name="rec_storage_stop_title">توقف التسجيل: مساحة التخزين ممتلئة</string>
 </resources>

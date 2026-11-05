@@ -73,6 +73,8 @@ enum class Str {
     STATUS_DEFERRED,
     STATUS_NAMING,
     STATUS_MIC_DENIED,
+    /** docs/03 "Free storage on the device": a start refused under 200 MB free. */
+    STATUS_STORAGE_LOW,
     STATUS_SIGN_IN_NEEDED,
     STATUS_SIGNING_IN,
     STATUS_NO_CLIENT,
@@ -204,6 +206,7 @@ enum class Str {
     NOTIFY_WATCHDOG_TITLE,
     NOTIFY_WATCHDOG_BODY,
     NOTIFY_BATTERY_STOP,
+    NOTIFY_STORAGE_STOP,
 
     STATE_UPLOADING,
     STATE_RETRY_WAIT,

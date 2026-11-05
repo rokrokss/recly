@@ -570,6 +570,8 @@
   "Open Recly to check.": "যাচাই করতে Recly খুলুন।",
   "No one has spoken for 10 minutes.": "10 মিনিট ধরে কেউ কথা বলেনি।",
   "Recording stopped: battery low": "রেকর্ডিং থেমেছে: ব্যাটারি কম",
+  "Not enough storage to record": "রেকর্ড করার মতো যথেষ্ট স্টোরেজ নেই",
+  "Recording stopped: storage full": "রেকর্ডিং থেমেছে: স্টোরেজ পূর্ণ",
   "Recording alerts": "রেকর্ডিং সতর্কতা",
   "Recording paused": "রেকর্ডিং বিরতিতে আছে",
   "Open Recly to keep recording.": "রেকর্ডিং চালিয়ে যেতে Recly খুলুন।",

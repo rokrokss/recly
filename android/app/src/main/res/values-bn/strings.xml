@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">শিরোনাম সেভ করতে দেরি হয়ে গেছে; আপলোড শুরু হয়ে গেছে</string>
     <string name="recording_finish_deferred">সেভ করা শেষ হয়নি; পরের বার চালু হলে পুনরুদ্ধার করা হবে</string>
     <string name="recording_failed">রেকর্ডিং ব্যর্থ হয়েছে</string>
+    <string name="recording_storage_low">রেকর্ড করার মতো যথেষ্ট স্টোরেজ নেই</string>
     <string name="enqueue_no_workflow">চালিয়ে যেতে রেকর্ডিং সেটিংস পর্যালোচনা করুন</string>
     <string name="enqueue_parts_purged">অডিও আগেই মুছে ফেলা হয়েছে</string>
     <string name="enqueue_skipped_short">খুব ছোট; এড়িয়ে যাওয়া হয়েছে</string>

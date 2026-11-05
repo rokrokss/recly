@@ -25,4 +25,8 @@ public enum StopLine {
     /// A capture that ended without the user stopping it: queued untitled, with no title asked, and said as the failure it was —
     /// over whatever the queue answered, which is the less important of the two.
     public static let recordingFailed = UiMessage.key("The recording failed")
+
+    /// docs/03 "Free storage on the device": the start was refused — under 200 MB free — in the words all six shells
+    /// use. A recording that runs low later is stopped with a notice of its own ([RecordingNotices]).
+    public static let notEnoughStorage = UiMessage.key("Not enough storage to record")
 }

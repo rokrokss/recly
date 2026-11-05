@@ -10,6 +10,7 @@ import app.recly.windows.helper.HelperCommand
 import app.recly.windows.helper.HelperEvent
 import app.recly.windows.helper.HelperNotice
 import app.recly.windows.settings.RecordingMode
+import java.nio.file.Files
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -39,6 +40,7 @@ import recly.core.platform.Logger
 import recly.core.recording.BatteryStop
 import recly.core.recording.MetaWriter
 import recly.core.recording.SilenceReminder
+import recly.core.recording.StorageFloor
 import kotlin.time.Clock as TimeClock
 
 /** What a finished recording leaves behind — the shell enqueues it (docs/14 "Runner" (a)). */
@@ -52,6 +54,12 @@ data class RecordingOutcome(
      */
     val failed: Boolean = false,
 )
+
+/**
+ * docs/03 "Free storage on the device": [WindowsRecorder.start] refused — under 200 MB free on the volume that holds
+ * the recordings. Nothing was created, the helper was not spawned, and the recorder has logged it; the shell says why.
+ */
+class NotEnoughStorage(val freeBytes: Long) : Exception("not enough storage to record: $freeBytes bytes free")
 
 /** What a stop made of the recording. The Mac's `StopResult` has the same three answers. */
 sealed interface StopResult {
@@ -113,6 +121,14 @@ class WindowsRecorder(
     /** The battery went low under the recording (the core's [BatteryStop]): the shell stops it, asking nothing. */
     private val onBatteryLow: (recordingId: String) -> Unit = {},
     private val batteryCheck: Duration = BatteryStop.CHECK_SEC.seconds,
+    /**
+     * docs/03 "Free storage on the device": under 50 MB at a part boundary, or a helper that died writing with the disk
+     * that low (the core's [StorageFloor], already logged). Once per recording: the shell stops it the battery stop's
+     * way, asking nothing — the stop is what files it.
+     */
+    private val onStorageLow: (recordingId: String) -> Unit = {},
+    /** The free bytes on the volume that holds a path ([usableBytes]), −1 when unreadable. A test fakes it. */
+    private val freeBytes: (Path) -> Long = ::usableBytes,
 ) {
     private class Session(
         val recordingId: String,
@@ -143,6 +159,9 @@ class WindowsRecorder(
 
         /** The battery's reader for as long as this session records; cancelled when it ends. */
         @Volatile var battery: Job? = null
+
+        /** Handed to [onStorageLow] already: the stop is on its way, and nothing is said twice. */
+        @Volatile var storageLow: Boolean = false
 
         /**
          * Parts the helper reported and the database refused. Kept whole, not counted: the stop
@@ -185,6 +204,9 @@ class WindowsRecorder(
      * only for a track that needs it — so a microphone-only recording never touches the speakers.
      * It is a parameter and not a field because it is fixed at the start and cannot change under a
      * running recording (docs/14 "Capture", as on the Mac).
+     *
+     * docs/03 "Free storage on the device": under 200 MB free it throws [NotEnoughStorage] before anything is written
+     * or spawned. The three tracks of a meeting have the same floor as one.
      */
     suspend fun start(
         title: String? = null,
@@ -192,6 +214,12 @@ class WindowsRecorder(
     ): String? = mutex.withLock {
         if (session != null) return@withLock null
         val client = helper() ?: return@withLock null
+
+        val free = withContext(core.deps.io) { freeBytes(core.deps.dataDir) }
+        if (StorageFloor.tooLow(free, recording = false)) {
+            core.deps.logger.log(Logger.Level.WARN, "rec.recorder.storageRefused", mapOf("freeBytes" to free))
+            throw NotEnoughStorage(free)
+        }
 
         val tracks = mode.tracks
         val startedAt = core.deps.clock.now()
@@ -277,6 +305,9 @@ class WindowsRecorder(
         detection.resume(open.detectionToken)
         open.drained.complete(Unit)
         if (open.stopping) return
+        // A helper that died writing to a disk with no room left: the storage stop, whose stop files what reached the
+        // database as any stop does — not a recording that failed.
+        if (stopIfLow(open, cause = "write")) return
         core.deps.logger.log(
             Logger.Level.ERROR,
             "rec.helper.died",
@@ -313,6 +344,9 @@ class WindowsRecorder(
                         open.unfiled += part
                         mark(open, part, failure)
                     }
+                // docs/03 "Free storage on the device": at every boundary, once its part is filed or marked. Not at the
+                // stop's own last parts — that stop is already the way out.
+                stopIfLow(open, cause = "boundary")
             }
 
             is HelperEvent.Level -> {
@@ -361,6 +395,25 @@ class WindowsRecorder(
             }
             delay(batteryCheck)
         }
+    }
+
+    /**
+     * docs/03 "Free storage on the device": under 50 MB the recording is handed to [onStorageLow], once, unless a stop
+     * already has it. True when it is being stopped for lack of space — now or already.
+     */
+    private suspend fun stopIfLow(open: Session, cause: String): Boolean {
+        if (open.storageLow) return true
+        if (open.stopping) return false
+        val free = withContext(core.deps.io) { freeBytes(open.dir) }
+        if (!StorageFloor.tooLow(free, recording = true)) return false
+        open.storageLow = true
+        core.deps.logger.log(
+            Logger.Level.WARN,
+            "rec.recorder.storageStop",
+            mapOf("recordingId" to open.recordingId, "freeBytes" to free, "cause" to cause),
+        )
+        onStorageLow(open.recordingId)
+        return true
     }
 
     /** Writes the marker for a part the database refused. True when it is on disk to be found. */
@@ -473,4 +526,15 @@ class WindowsRecorder(
 
         internal val DRAIN_TIMEOUT: Duration = 5.seconds
     }
+}
+
+/**
+ * docs/03 "Free storage on the device": `FileStore.usableSpace` — what this user may still write — on the volume that
+ * holds [path], read through the nearest directory that exists. −1 when Windows cannot say, which refuses and stops
+ * nothing (`File.usableSpace` answers 0 then, which would refuse every start).
+ */
+internal fun usableBytes(path: Path): Long {
+    var dir: java.nio.file.Path? = path.toNioPath().toAbsolutePath()
+    while (dir != null && !Files.exists(dir)) dir = dir.parent
+    return dir?.let { runCatching { Files.getFileStore(it).usableSpace }.getOrNull() } ?: -1L
 }

@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Ainda gravando</string>
     <string name="rec_reminder_body">Ninguém falou nos últimos 10 minutos.</string>
     <string name="rec_battery_stop_title">Gravação interrompida: bateria fraca</string>
+    <string name="rec_storage_stop_title">Gravação interrompida: armazenamento cheio</string>
 </resources>

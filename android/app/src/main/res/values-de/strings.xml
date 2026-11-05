@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Titel kann nicht mehr gespeichert werden: Upload gestartet</string>
     <string name="recording_finish_deferred">Speichern nicht abgeschlossen; Wiederherstellung beim nächsten Start</string>
     <string name="recording_failed">Die Aufnahme ist fehlgeschlagen</string>
+    <string name="recording_storage_low">Nicht genug Speicherplatz für die Aufnahme</string>
     <string name="enqueue_no_workflow">Zum Fortfahren Aufnahmeeinstellungen prüfen</string>
     <string name="enqueue_parts_purged">Das Audio wurde bereits bereinigt</string>
     <string name="enqueue_skipped_short">Zu kurz; übersprungen</string>

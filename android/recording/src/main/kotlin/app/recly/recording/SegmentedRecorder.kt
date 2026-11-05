@@ -5,6 +5,7 @@ package app.recly.recording
 import android.content.Context
 import android.media.AudioManager
 import android.media.MediaRecorder
+import android.os.StatFs
 import android.os.SystemClock
 import java.io.File
 import kotlin.time.ExperimentalTime
@@ -28,6 +29,7 @@ import recly.core.model.Source
 import recly.core.model.Track
 import recly.core.platform.Logger
 import recly.core.recording.MetaWriter
+import recly.core.recording.StorageFloor
 import kotlin.time.Clock as TimeClock
 
 /** What [SegmentedRecorder.stop] hands back once the recording is on disk and finalized. */
@@ -66,6 +68,14 @@ class SegmentedRecorder(
      * Before the filing and whether or not it succeeds — [onPartFiled] is the filing itself.
      */
     private val onBoundary: () -> Unit = {},
+    /**
+     * docs/03 "Free storage on the device": the recording ran low on space — under 50 MB at a boundary, or a write
+     * that failed with the device that low. Once per recording, already logged; the shell stops it the way the
+     * battery stop does.
+     */
+    private val onStorageLow: () -> Unit = {},
+    /** The free bytes on the volume that holds [Path] (`StatFs.availableBytes`), −1 when unreadable. A test fakes it. */
+    private val freeBytes: (Path) -> Long = ::availableBytes,
 ) : Capture {
     private class Session(
         val recorder: MediaRecorder,
@@ -80,6 +90,9 @@ class SegmentedRecorder(
     ) {
         /** The highest part number handed to `setNextOutputFile`; part 1 is the initial output. */
         var armedPart: Int = 1
+
+        /** Handed to [onStorageLow] already: the stop is on its way, and nothing is said twice. */
+        var storageLow: Boolean = false
     }
 
     private val mutex = Mutex()
@@ -109,9 +122,18 @@ class SegmentedRecorder(
      *
      * The recorder starts before the row exists so a device that cannot do 16 kHz is discovered
      * first — the fallback rate has to be the one written into the meta (ADR-006).
+     *
+     * docs/03 "Free storage on the device": a device under 200 MB free is refused before anything is
+     * opened or written — a [RecorderError] that says [RecorderError.notEnoughStorage], and nothing left behind.
      */
     suspend fun start(title: String?): String = mutex.withLock {
         check(session == null) { "already recording" }
+
+        val free = withContext(core.deps.io) { freeBytes(core.deps.dataDir) }
+        if (StorageFloor.tooLow(free, recording = false)) {
+            core.deps.logger.log(Logger.Level.WARN, "rec.recorder.storageRefused", mapOf("freeBytes" to free))
+            throw RecorderError("not enough storage to record: $free bytes free", notEnoughStorage = true)
+        }
 
         val startedAt = core.deps.clock.now()
         // The id's own timestamp is the recording's start, not "whenever this ran".
@@ -143,7 +165,7 @@ class SegmentedRecorder(
                 timer = SegmentTimer { SystemClock.elapsedRealtime() },
                 silence = silence,
                 routing = started.routing,
-            ).also { armNext(it) }
+            ).also { armNext(it)?.let(onError) }
             started.routing.start()
         } catch (e: Exception) {
             session = null
@@ -277,7 +299,8 @@ class SegmentedRecorder(
             setOnInfoListener { sender, what, _ -> onInfo(sender, what) }
             setOnErrorListener { sender, what, extra ->
                 scope.launch { mutex.withLock {
-                    if (session?.recorder === sender) onError(RecorderError("MediaRecorder error what=$what extra=$extra"))
+                    val open = session?.takeIf { it.recorder === sender } ?: return@withLock
+                    failWriting(open, RecorderError("MediaRecorder error what=$what extra=$extra"))
                 } }
             }
         }
@@ -306,7 +329,8 @@ class SegmentedRecorder(
             MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED,
             MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED,
             -> scope.launch { mutex.withLock {
-                if (session?.recorder === sender) onError(RecorderError("recorder stopped at its limit (what=$what)"))
+                val open = session?.takeIf { it.recorder === sender } ?: return@withLock
+                failWriting(open, RecorderError("recorder stopped at its limit (what=$what)"))
             } }
         }
     }
@@ -322,13 +346,51 @@ class SegmentedRecorder(
                 val open = session?.takeIf { it.recorder === sender } ?: return@withLock
                 // Filed or not: a part that cannot reach the database is still a recording that runs.
                 onBoundary()
-                armNext(open)
+                armNext(open)?.let { failWriting(open, it) }
                 val hintSec = open.timer.advance(boundaryMs)
                 open.closer.drain(open.ledger.openPart, hintSec) { part -> registerPart(open, part) }
             }
         } catch (e: Throwable) {
             onError(RecorderError("segment boundary failed", e, fatal = false))
         }
+        // After the filing, and whether or not it succeeded: a part that could not reach a full disk's
+        // database is one more reason to look.
+        try {
+            mutex.withLock {
+                val open = session?.takeIf { it.recorder === sender } ?: return@withLock
+                stopIfLow(open, cause = "boundary")
+            }
+        } catch (e: Throwable) {
+            onError(RecorderError("storage check failed", e, fatal = false))
+        }
+    }
+
+    /**
+     * A fatal failure of the platform writer, under [mutex]. With the device under 50 MB it is the storage stop
+     * (docs/03 "Free storage on the device") — the parts already written are filed and handed over as at any stop,
+     * and the user is told why — rather than a failure.
+     */
+    private suspend fun failWriting(open: Session, error: RecorderError) {
+        if (!stopIfLow(open, cause = "write", error = error)) onError(error)
+    }
+
+    /**
+     * docs/03 "Free storage on the device", under [mutex]: true when the recording is being stopped for lack of
+     * space — now, under 50 MB, or already.
+     */
+    private suspend fun stopIfLow(open: Session, cause: String, error: Throwable? = null): Boolean {
+        if (open.storageLow) return true
+        val free = withContext(core.deps.io) { freeBytes(open.dir) }
+        if (!StorageFloor.tooLow(free, recording = true)) return false
+        open.storageLow = true
+        core.deps.logger.log(
+            Logger.Level.WARN,
+            "rec.recorder.storageStop",
+            mapOf("recordingId" to open.recordingId, "freeBytes" to free, "cause" to cause),
+            error,
+        )
+        onStorageLow()
+        return true
     }
 
     /**
@@ -349,13 +411,15 @@ class SegmentedRecorder(
         }
     }
 
-    private fun armNext(open: Session) {
+    /** The failure, for the caller to report; null when the next file is armed. */
+    private fun armNext(open: Session): RecorderError? {
         val part = open.armedPart + 1
-        try {
+        return try {
             open.recorder.setNextOutputFile(File(open.dir.toFile(), open.ledger.fileName(part)))
             open.armedPart = part
+            null
         } catch (e: Exception) {
-            onError(RecorderError("could not arm segment $part", e))
+            RecorderError("could not arm segment $part", e)
         }
     }
 
@@ -406,4 +470,15 @@ class SegmentedRecorder(
         private const val CONTAINER_OVERHEAD_PERCENT = 107
         private val SAMPLE_RATES_HZ = listOf(PREFERRED_SAMPLE_RATE_HZ, 44_100)
     }
+}
+
+/**
+ * docs/03 "Free storage on the device": `StatFs.availableBytes` — what this app may still write — on the volume
+ * that holds [path], read through the nearest directory that exists (the recording's own does not until a start
+ * makes it). −1 when the platform cannot say, which refuses and stops nothing.
+ */
+internal fun availableBytes(path: Path): Long {
+    var dir: File? = path.toFile()
+    while (dir != null && !dir.exists()) dir = dir.parentFile
+    return dir?.let { runCatching { StatFs(it.path).availableBytes }.getOrNull() } ?: -1L
 }
