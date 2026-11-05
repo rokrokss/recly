@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">仍在录音</string>
     <string name="rec_reminder_body">已经10分钟没有人说话了。</string>
     <string name="rec_battery_stop_title">电量不足，录音已停止</string>
+    <string name="rec_storage_stop_title">存储空间不足，录音已停止</string>
 </resources>

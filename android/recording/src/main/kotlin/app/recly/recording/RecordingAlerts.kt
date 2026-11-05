@@ -19,7 +19,8 @@ import recly.core.platform.Logger
 /**
  * What a long recording tells the user while nobody is looking at it (docs/11 ":android:recording"):
  * that it may have died, that it is still going with nobody speaking (the core's `SilenceReminder`), and
- * that the battery ended it (the core's `BatteryStop`). Each is its own notification in a channel of its
+ * that the battery ended it (the core's `BatteryStop`), and that the device ran out of storage under it (the
+ * core's `StorageFloor`, docs/03 "Free storage on the device"). Each is its own notification in a channel of its
  * own, apart from the ongoing one.
  *
  * What is Android's own — the watchdog's delay, the battery reading's shape — is the pure functions at
@@ -32,6 +33,7 @@ internal object RecordingAlerts {
     const val WATCHDOG_ID: Int = 2
     const val REMINDER_ID: Int = 3
     const val BATTERY_ID: Int = 4
+    const val STORAGE_ID: Int = 5
 
     /** A process that is gone cannot cancel this; only a recording that is still alive pushes it back. */
     fun armWatchdog(context: Context, segmentSec: Int) {

@@ -570,6 +570,8 @@
   "Open Recly to check.": "افتح Recly للتحقق.",
   "No one has spoken for 10 minutes.": "لم يتحدث أحد منذ 10 دقائق.",
   "Recording stopped: battery low": "توقف التسجيل: البطارية منخفضة",
+  "Not enough storage to record": "لا توجد مساحة تخزين كافية للتسجيل",
+  "Recording stopped: storage full": "توقف التسجيل: مساحة التخزين ممتلئة",
   "Recording alerts": "تنبيهات التسجيل",
   "Recording paused": "توقف التسجيل مؤقتًا",
   "Open Recly to keep recording.": "افتح Recly لمتابعة التسجيل.",

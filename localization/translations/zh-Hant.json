@@ -570,6 +570,8 @@
   "Open Recly to check.": "開啟Recly查看。",
   "No one has spoken for 10 minutes.": "已經10分鐘沒有人說話了。",
   "Recording stopped: battery low": "電量不足，錄音已停止",
+  "Not enough storage to record": "儲存空間不足，無法錄音",
+  "Recording stopped: storage full": "儲存空間不足，錄音已停止",
   "Recording alerts": "錄音提醒",
   "Recording paused": "錄音已暫停",
   "Open Recly to keep recording.": "開啟Recly繼續錄音。",

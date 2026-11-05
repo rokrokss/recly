@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">هنوز در حال ضبط</string>
     <string name="rec_reminder_body">۱۰ دقیقه است که کسی صحبت نکرده است.</string>
     <string name="rec_battery_stop_title">ضبط متوقف شد: باتری کم است</string>
+    <string name="rec_storage_stop_title">ضبط متوقف شد: فضای ذخیره‌سازی پر است</string>
 </resources>

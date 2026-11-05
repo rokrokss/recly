@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Aufnahme läuft noch</string>
     <string name="rec_reminder_body">Seit 10 Minuten hat niemand gesprochen.</string>
     <string name="rec_battery_stop_title">Aufnahme beendet: Akku schwach</string>
+    <string name="rec_storage_stop_title">Aufnahme beendet: Speicher voll</string>
 </resources>

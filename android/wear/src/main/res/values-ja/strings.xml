@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">「設定→アプリ→Recly→権限」でオンにしてください。</string>
     <string name="recording_save_deferred">保存を完了できませんでした。次回起動時に復元します</string>
     <string name="recording_failed">録音に失敗しました</string>
+    <string name="recording_storage_low">空き容量が少ないため録音できません</string>
     <string name="pending_badge">送信待ち</string>
     <string name="sending_badge">送信中</string>
     <string name="transfer_failed_badge">転送に失敗</string>

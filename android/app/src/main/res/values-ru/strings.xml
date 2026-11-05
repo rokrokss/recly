@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Название сохранить уже нельзя: загрузка началась</string>
     <string name="recording_finish_deferred">Не удалось завершить сохранение; запись будет восстановлена при следующем запуске</string>
     <string name="recording_failed">Ошибка записи</string>
+    <string name="recording_storage_low">Недостаточно места для записи</string>
     <string name="enqueue_no_workflow">Проверьте настройки записи, чтобы продолжить</string>
     <string name="enqueue_parts_purged">Аудио уже удалено</string>
     <string name="enqueue_skipped_short">Слишком коротко; пропущено</string>

@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Ya no se puede guardar el título: la subida ha empezado</string>
     <string name="recording_finish_deferred">No se pudo terminar de guardar; se recuperará al volver a abrir</string>
     <string name="recording_failed">La grabación falló</string>
+    <string name="recording_storage_low">No hay espacio suficiente para grabar</string>
     <string name="enqueue_no_workflow">Revisa los ajustes de grabación para continuar</string>
     <string name="enqueue_parts_purged">El audio ya se ha eliminado</string>
     <string name="enqueue_skipped_short">Demasiado corto; omitido</string>

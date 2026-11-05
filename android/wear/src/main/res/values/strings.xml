@@ -18,6 +18,8 @@
     <string name="recording_save_deferred">Could not finish saving — recovered next time</string>
     <!-- P2: the phones' sentence; the cause is logged, not shown. -->
     <string name="recording_failed">The recording failed</string>
+    <!-- docs/03 "Free storage on the device": a start refused under 200 MB free; the six shells say the same. -->
+    <string name="recording_storage_low">Not enough storage to record</string>
     <!-- docs/11 W2: the same recordings, said as the pass sees them — waiting for a phone, or
          going over to one right now. No count: what the user asks is whether any are left. -->
     <string name="pending_badge">Waiting to send</string>

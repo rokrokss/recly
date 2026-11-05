@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Huli na para i-save ang pamagat — nagsimula na ang pag-upload</string>
     <string name="recording_finish_deferred">Hindi natapos ang pag-save — mababawi ito sa susunod na pagbukas</string>
     <string name="recording_failed">Nabigo ang pag-record</string>
+    <string name="recording_storage_low">Kulang ang storage para mag-record</string>
     <string name="enqueue_no_workflow">Suriin ang mga setting ng pag-record para magpatuloy</string>
     <string name="enqueue_parts_purged">Nalinis na ang audio</string>
     <string name="enqueue_skipped_short">Masyadong maikli — nilaktawan</string>

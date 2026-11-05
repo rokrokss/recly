@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">アップロード開始後はタイトルを保存できません</string>
     <string name="recording_finish_deferred">保存を完了できませんでした。次回起動時に復元します</string>
     <string name="recording_failed">録音に失敗しました</string>
+    <string name="recording_storage_low">空き容量が少ないため録音できません</string>
     <string name="enqueue_no_workflow">続けるには録音設定を確認してください</string>
     <string name="enqueue_parts_purged">音声はすでに削除されています</string>
     <string name="enqueue_skipped_short">短すぎるためスキップしました</string>

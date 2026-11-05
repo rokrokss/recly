@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">ابھی ریکارڈنگ جاری ہے</string>
     <string name="rec_reminder_body">10 منٹ سے کسی نے بات نہیں کی۔</string>
     <string name="rec_battery_stop_title">ریکارڈنگ رک گئی: بیٹری کم ہے</string>
+    <string name="rec_storage_stop_title">ریکارڈنگ رک گئی: اسٹوریج بھر گئی</string>
 </resources>

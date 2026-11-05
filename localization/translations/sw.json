@@ -570,6 +570,8 @@
   "Open Recly to check.": "Fungua Recly ili kuangalia.",
   "No one has spoken for 10 minutes.": "Hakuna aliyezungumza kwa dakika 10.",
   "Recording stopped: battery low": "Kurekodi kumesimamishwa: betri iko chini",
+  "Not enough storage to record": "Hakuna hifadhi ya kutosha kurekodi",
+  "Recording stopped: storage full": "Kurekodi kumesimamishwa: hifadhi imejaa",
   "Recording alerts": "Arifa za kurekodi",
   "Recording paused": "Kurekodi kumesitishwa",
   "Open Recly to keep recording.": "Fungua Recly ili kuendelea kurekodi.",

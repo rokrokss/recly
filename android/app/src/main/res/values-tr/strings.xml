@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Başlığı kaydetmek için çok geç — yükleme başladı</string>
     <string name="recording_finish_deferred">Kaydetme tamamlanamadı — bir sonraki çalıştırmada kurtarılacak</string>
     <string name="recording_failed">Kayıt başarısız oldu</string>
+    <string name="recording_storage_low">Kayıt için yeterli depolama alanı yok</string>
     <string name="enqueue_no_workflow">Devam etmek için kayıt ayarlarını gözden geçirin</string>
     <string name="enqueue_parts_purged">Ses zaten temizlendi</string>
     <string name="enqueue_skipped_short">Çok kısa — atlandı</string>

@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Ative em Definições → Aplicações → Recly → Autorizações.</string>
     <string name="recording_save_deferred">Gravação incompleta — recuperada depois</string>
     <string name="recording_failed">A gravação falhou</string>
+    <string name="recording_storage_low">Espaço insuficiente para gravar</string>
     <string name="pending_badge">Envio pendente</string>
     <string name="sending_badge">A enviar</string>
     <string name="transfer_failed_badge">Falha no envio</string>

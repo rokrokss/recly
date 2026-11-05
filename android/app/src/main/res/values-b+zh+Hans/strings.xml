@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">上传已开始，无法再保存标题</string>
     <string name="recording_finish_deferred">无法完成保存，将在下次运行时恢复</string>
     <string name="recording_failed">录音失败</string>
+    <string name="recording_storage_low">存储空间不足，无法录音</string>
     <string name="enqueue_no_workflow">检查录音设置以继续</string>
     <string name="enqueue_parts_purged">音频已被清理</string>
     <string name="enqueue_skipped_short">时长过短，已跳过</string>

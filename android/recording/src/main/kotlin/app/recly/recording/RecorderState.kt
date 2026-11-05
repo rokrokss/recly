@@ -47,6 +47,13 @@ sealed interface RecorderEvent {
 
     /** The parts written so far are kept — a failed recording is still a recording (docs/03). */
     data class Failed(val recordingId: String?, val reason: String) : RecorderEvent
+
+    /**
+     * docs/03 "Free storage on the device": the start was refused — under 200 MB free (the core's
+     * `StorageFloor`). Nothing was opened, so there is nothing to stop or hand over; the screen says why.
+     * A recording the floor stops later ends the way the battery stop does, with its own notification.
+     */
+    data object NotEnoughStorage : RecorderEvent
 }
 
 /**
@@ -60,4 +67,6 @@ class RecorderError(
     message: String,
     cause: Throwable? = null,
     val fatal: Boolean = true,
+    /** docs/03 "Free storage on the device": a start refused for lack of space — not a failure to report as one. */
+    val notEnoughStorage: Boolean = false,
 ) : Exception(message, cause)

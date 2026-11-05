@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">Trop tard pour enregistrer le titre : l’envoi a commencé</string>
     <string name="recording_finish_deferred">Enregistrement incomplet ; récupération au prochain lancement</string>
     <string name="recording_failed">L’enregistrement a échoué</string>
+    <string name="recording_storage_low">Stockage insuffisant pour enregistrer</string>
     <string name="enqueue_no_workflow">Vérifiez les réglages d’enregistrement pour continuer</string>
     <string name="enqueue_parts_purged">L’audio a déjà été supprimé</string>
     <string name="enqueue_skipped_short">Trop court ; ignoré</string>

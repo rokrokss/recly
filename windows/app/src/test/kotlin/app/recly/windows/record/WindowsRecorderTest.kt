@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -26,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okio.FileSystem
@@ -323,6 +325,91 @@ class WindowsRecorderTest {
         desktop.stop()
         assertEquals(1, desktopReads.get(), "a machine with no battery is asked once")
         assertFalse(stopped.get())
+    }
+
+    /** docs/03 "Free storage on the device": under 200 MB free nothing is created, and the helper is never spawned. */
+    @Test
+    fun `a start under 200 MB is refused before anything is written`() = runBlocking {
+        val core = core()
+        val asked = mutableListOf<okio.Path>()
+        val recorder = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command(), Dispatchers.IO, SilentLogger) },
+            onFinalized = { error("nothing was recorded") },
+            freeBytes = { asked += it; 199_999_999L },
+        )
+
+        val refused = assertFailsWith<NotEnoughStorage> { recorder.start() }
+
+        assertEquals(199_999_999L, refused.freeBytes)
+        assertEquals(listOf(core.deps.dataDir), asked, "the volume that holds the recordings")
+        assertFalse(recorder.isRecording)
+        assertEquals(emptyList(), core.recordings.list(limit = 10), "no row")
+        assertFalse(FileSystem.SYSTEM.exists(core.deps.dataDir / "recordings"), "no directory")
+    }
+
+    /**
+     * docs/03 "Free storage on the device": at a part boundary under 50 MB the shell is asked once for the stop that asks
+     * nothing, and that stop files what was recorded — not a failure.
+     */
+    @Test
+    fun `a boundary under 50 MB stops the recording the normal way`() = runBlocking {
+        val core = core()
+        val finalized = CompletableDeferred<RecordingOutcome>()
+        val reads = AtomicInteger()
+        val lows = AtomicInteger()
+        lateinit var recorder: WindowsRecorder
+        recorder = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command("parts=1", "sec=2.0"), Dispatchers.IO, SilentLogger) },
+            onFinalized = { finalized.complete(it) },
+            // The start's reading is plenty; every one after it is 40 MB.
+            freeBytes = { if (reads.getAndIncrement() == 0) 1_000_000_000L else 40_000_000L },
+            // The shell's answer: the stop that asks nothing.
+            onStorageLow = { lows.incrementAndGet(); scope.launch { recorder.stop() } },
+        )
+
+        val recordingId = assertNotNull(recorder.start())
+
+        val outcome = withTimeout(TIMEOUT_MS) { finalized.await() }
+        assertEquals(recordingId, outcome.recordingId)
+        assertEquals(3, outcome.parts, "the part every track had filed")
+        assertFalse(outcome.failed, "stopped for storage, not failed")
+        assertEquals(1, lows.get(), "asked once for the three tracks of one boundary")
+        assertEquals(RecordingStatus.FINALIZED, assertNotNull(core.recordings.get(recordingId)).meta.status)
+    }
+
+    /**
+     * A helper that dies writing to a disk under 50 MB is the storage stop, not a death: the shell's stop files the
+     * parts that made it, and nobody is told the recording failed.
+     */
+    @Test
+    fun `a helper that dies on a full disk is a storage stop`() = runBlocking {
+        val core = core()
+        val finalized = CompletableDeferred<RecordingOutcome>()
+        val reads = AtomicInteger()
+        val died = AtomicBoolean(false)
+        lateinit var recorder: WindowsRecorder
+        recorder = WindowsRecorder(
+            core = core,
+            scope = scope,
+            helper = { HelperClient(FakeHelperCommand.command("die", "sec=3.0"), Dispatchers.IO, SilentLogger) },
+            onFinalized = { finalized.complete(it) },
+            onHelperDied = { died.set(true) },
+            // The start and the three parts' boundary read plenty; the disk fills as the helper dies.
+            freeBytes = { if (reads.getAndIncrement() < 4) 1_000_000_000L else 0L },
+            onStorageLow = { scope.launch { recorder.stop() } },
+        )
+
+        val recordingId = assertNotNull(recorder.start())
+
+        val outcome = withTimeout(TIMEOUT_MS) { finalized.await() }
+        assertEquals(recordingId, outcome.recordingId)
+        assertEquals(3, outcome.parts)
+        assertFalse(outcome.failed)
+        assertFalse(died.get(), "not offered as a helper that died")
     }
 
     /**

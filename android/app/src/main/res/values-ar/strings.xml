@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">فات وقت حفظ العنوان؛ بدأ الرفع</string>
     <string name="recording_finish_deferred">تعذّر إتمام الحفظ؛ ستتم الاستعادة عند التشغيل التالي</string>
     <string name="recording_failed">فشل التسجيل</string>
+    <string name="recording_storage_low">لا توجد مساحة تخزين كافية للتسجيل</string>
     <string name="enqueue_no_workflow">راجع إعدادات التسجيل للمتابعة</string>
     <string name="enqueue_parts_purged">تمت إزالة الصوت مسبقًا</string>
     <string name="enqueue_skipped_short">قصير جدًا؛ تم تخطيه</string>

@@ -66,6 +66,9 @@ sealed interface WearMessage {
      * the watch's Settings it is turned back on (P8).
      */
     data class MicDenied(val permanent: Boolean = false) : WearMessage
+
+    /** docs/03 "Free storage on the device": the start was refused, under 200 MB free — the phones' sentence. */
+    data object NotEnoughStorage : WearMessage
 }
 
 /**
@@ -131,6 +134,8 @@ class WearRecordingViewModel(
             }
 
             is RecorderEvent.Failed -> _state.update { it.copy(message = WearMessage.Failed) }
+
+            RecorderEvent.NotEnoughStorage -> _state.update { it.copy(message = WearMessage.NotEnoughStorage) }
         }
     }
 }

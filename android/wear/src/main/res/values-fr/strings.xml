@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Activez-la dans Paramètres → Applications → Recly → Autorisations.</string>
     <string name="recording_save_deferred">Enregistrement incomplet — repris plus tard</string>
     <string name="recording_failed">L’enregistrement a échoué</string>
+    <string name="recording_storage_low">Stockage insuffisant pour enregistrer</string>
     <string name="pending_badge">En attente d\'envoi</string>
     <string name="sending_badge">Envoi</string>
     <string name="transfer_failed_badge">Échec du transfert</string>

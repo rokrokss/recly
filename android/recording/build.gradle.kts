@@ -16,6 +16,12 @@ android {
     defaultConfig {
         minSdk = 34
     }
+
+    // `NotEnoughStorageTest` builds a real `SegmentedRecorder` on a stub `Context` it never calls into: the refusal
+    // comes before the microphone. Without this the stub android.jar throws on construction instead.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 // The watch shares this module, so nothing Compose and nothing phone-only may land here.

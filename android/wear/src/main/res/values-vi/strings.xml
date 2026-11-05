@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Bật trong Cài đặt → Ứng dụng → Recly → Quyền.</string>
     <string name="recording_save_deferred">Chưa lưu xong — sẽ khôi phục vào lần sau</string>
     <string name="recording_failed">Ghi âm thất bại</string>
+    <string name="recording_storage_low">Không đủ dung lượng để ghi âm</string>
     <string name="pending_badge">Chờ gửi</string>
     <string name="sending_badge">Đang gửi</string>
     <string name="transfer_failed_badge">Chuyển dữ liệu thất bại</string>

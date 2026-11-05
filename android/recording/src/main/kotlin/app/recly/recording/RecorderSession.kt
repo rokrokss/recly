@@ -77,6 +77,17 @@ internal class RecorderSession(
     }
 
     /**
+     * docs/03 "Free storage on the device": the recorder refused the start — under 200 MB free — before it
+     * opened anything. Back to Idle as any start that never opened, the screen is told why, and the service
+     * has nothing left to do.
+     */
+    suspend fun refusedForStorage() {
+        startFailed()
+        events.emit(RecorderEvent.NotEnoughStorage)
+        if (stopJob == null) onIdle()
+    }
+
+    /**
      * The button, the notification action and a second tap on either can all arrive. A stop happens
      * once: finalize is not idempotent from the user's side, and handing the same recording over
      * twice is not free.

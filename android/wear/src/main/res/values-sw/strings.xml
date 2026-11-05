@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Iwashe katika Mipangilio → Programu → Recly → Ruhusa.</string>
     <string name="recording_save_deferred">Uhifadhi haujakamilika — itarejeshwa baadaye</string>
     <string name="recording_failed">Kurekodi kumeshindwa</string>
+    <string name="recording_storage_low">Hakuna hifadhi ya kutosha kurekodi</string>
     <string name="pending_badge">Inasubiri kutuma</string>
     <string name="sending_badge">Inatuma</string>
     <string name="transfer_failed_badge">Imeshindwa kutuma</string>

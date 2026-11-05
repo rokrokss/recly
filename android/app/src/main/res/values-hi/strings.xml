@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">शीर्षक सहेजने में देर हो गई; अपलोड शुरू हो चुका है</string>
     <string name="recording_finish_deferred">सहेजना पूरा नहीं हो सका; अगली बार खोलने पर बहाल होगा</string>
     <string name="recording_failed">रिकॉर्डिंग विफल हुई</string>
+    <string name="recording_storage_low">रिकॉर्ड करने के लिए पर्याप्त स्टोरेज नहीं है</string>
     <string name="enqueue_no_workflow">जारी रखने के लिए रिकॉर्डिंग सेटिंग जाँचें</string>
     <string name="enqueue_parts_purged">ऑडियो पहले ही साफ़ किया जा चुका है</string>
     <string name="enqueue_skipped_short">बहुत छोटा; छोड़ दिया गया</string>

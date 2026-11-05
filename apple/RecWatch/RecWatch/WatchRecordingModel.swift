@@ -213,6 +213,9 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         } catch let error as RecorderError where error.kind == .microphoneDenied {
             note = "The microphone permission is needed"
             microphoneDenied = true
+        } catch let error as RecorderError where error.kind == .notEnoughStorage {
+            // docs/03 "Free storage on the device": the recorder logged the free bytes.
+            note = "Not enough storage to record"
         } catch {
             note = "The recording failed"
             logger.error("shell.recording.start.failed error=\(String(describing: error), privacy: .public)")

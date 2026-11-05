@@ -599,6 +599,113 @@ final class SegmentedRecorderTests: XCTestCase {
         _ = await recorder.stop(title: nil)
     }
 
+    // MARK: - Free storage (docs/03 "Free storage on the device")
+
+    /// Under 200 MB on the volume that holds the recordings the start is refused before the microphone is asked
+    /// for anything: no row, no directory, and the refusal logged. Nothing is left behind to stop a start at the
+    /// floor itself.
+    func testAStartUnder200MBIsRefusedAndLeavesNothingBehind() async throws {
+        let logger = RecordingLogger()
+        let bridge = try await makeBridge(logger: logger)
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let disk = FakeDisk(free: 199_999_999)
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, input: input, freeBytes: disk.read
+        ) { failures.record($0) }
+
+        do {
+            try await recorder.start(title: nil)
+            XCTFail("a start under 200 MB went ahead")
+        } catch let error as RecorderError {
+            XCTAssertEqual(error.kind, .notEnoughStorage)
+        }
+        let dataDir = bridge.core.deps.dataDir.url
+        XCTAssertEqual(disk.asked.map(\.path), [dataDir.path], "the volume that holds the recordings")
+        XCTAssertFalse(recorder.isRecording)
+        XCTAssertEqual(input.starts, 0, "the microphone was never opened")
+        let rows = try await bridge.core.recordings.list(limit: 10)
+        XCTAssertTrue(rows.isEmpty, "no row")
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: dataDir.appendingPathComponent("recordings").path),
+            "no directory"
+        )
+        XCTAssertTrue(logger.events.contains("rec.recorder.storageRefused"))
+        XCTAssertEqual(failures.all.count, 0, "a refusal is not a capture failure")
+
+        disk.set(200_000_000)
+        let recordingId = try await recorder.start(title: nil)
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+        let result = await recorder.stop(title: nil)
+        guard case .finalized = result else {
+            return XCTFail("a start at the floor did not record: \(result) (errors: \(failures.all))")
+        }
+        let row = try await bridge.core.recordings.get(id: recordingId)
+        XCTAssertNotNil(row)
+    }
+
+    /// Under 50 MB at a boundary the recorder asks for the stop, once: a second boundary, which a recording the
+    /// shell has not stopped yet still crosses, says nothing again. The stop then files every part as any stop
+    /// does — a recording stopped for storage is not a failed one.
+    func testABoundaryUnder50MBAsksForTheStopOnce() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let events = RecorderEvents()
+        let disk = FakeDisk(free: 1_000_000_000)
+        let recorder = SegmentedRecorder(
+            core: bridge.core, segmentSec: 5, input: input, freeBytes: disk.read
+        ) { failures.record($0) }
+        recorder.onEvent = { events.record($0) }
+        _ = try await recorder.start(title: nil)
+        disk.set(40_000_000)
+
+        // Twelve seconds: two boundaries, each read once its part is filed.
+        XCTAssertTrue(input.push(frames: 192_000) { Self.sample($0) })
+        await waitUntil { disk.asked.count == 3 }
+        await waitUntil { events.all.contains(.storageLow) }
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(disk.asked.count, 3, "the start, then one reading per boundary")
+        XCTAssertTrue(
+            disk.asked.dropFirst().allSatisfy { $0.path.contains("/recordings/") },
+            "the recording's own volume"
+        )
+        XCTAssertEqual(events.all.filter { $0 == .storageLow }.count, 1)
+
+        let result = await recorder.stop(title: nil)
+        guard case .finalized(let outcome) = result else {
+            return XCTFail("expected a finalized stop, got \(result) (errors: \(failures.all))")
+        }
+        XCTAssertEqual(outcome.parts, 3, "both boundaries and the stop's own last part")
+        XCTAssertEqual(failures.all.count, 0, "\(failures.all)")
+        await waitUntil { events.all.last == .ended }
+        XCTAssertEqual(events.all.filter { $0 == .storageLow }.count, 1, "the stop's own last part reads nothing")
+    }
+
+    /// A write is the storage stop's when the platform refused it for want of space, wherever in the chain of
+    /// underlying errors it says so — and not otherwise.
+    func testAWriteOutOfSpaceIsToldApartFromAnyOtherFailure() {
+        XCTAssertTrue(FreeStorage.isOutOfSpace(NSError(domain: NSPOSIXErrorDomain, code: Int(ENOSPC))))
+        XCTAssertTrue(FreeStorage.isOutOfSpace(NSError(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)))
+        XCTAssertTrue(FreeStorage.isOutOfSpace(NSError(domain: NSOSStatusErrorDomain, code: -34)))
+        let wrapped = NSError(
+            domain: "com.apple.coreaudio.avfaudio", code: 1,
+            userInfo: [NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(ENOSPC))]
+        )
+        XCTAssertTrue(FreeStorage.isOutOfSpace(wrapped))
+        XCTAssertFalse(FreeStorage.isOutOfSpace(NSError(domain: NSPOSIXErrorDomain, code: Int(EIO))))
+        XCTAssertFalse(FreeStorage.isOutOfSpace(nil))
+    }
+
+    /// The platform's own figure for a directory that exists; −1, which refuses and stops nothing, for one the
+    /// platform cannot read.
+    func testTheFreeStorageReadingIsThePlatformsOrMinusOne() throws {
+        try FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
+        XCTAssertGreaterThan(FreeStorage.bytes(at: dataDirectory), 0)
+        XCTAssertEqual(FreeStorage.bytes(at: dataDirectory.appendingPathComponent("missing/deeper")), -1)
+        XCTAssertFalse(StorageFloor.shared.tooLow(freeBytes: -1, recording: false))
+    }
+
     // MARK: - The signal
 
     /// Seven seconds at 16 kHz, with the five-second boundary inside one of the pushed buffers.
@@ -675,6 +782,30 @@ final class Failures {
 
     var all: [RecorderError] { lock.withLock { errors } }
     var fatal: [RecorderError] { all.filter(\.fatal) }
+}
+
+/// A disk whose free space the test sets, read from whatever thread the recorder reads it on.
+final class FakeDisk {
+    private let lock = NSLock()
+    private var free: Int64
+    private var reads: [URL] = []
+
+    init(free: Int64) {
+        self.free = free
+    }
+
+    func set(_ bytes: Int64) {
+        lock.withLock { free = bytes }
+    }
+
+    func read(_ url: URL) -> Int64 {
+        lock.withLock {
+            reads.append(url)
+            return free
+        }
+    }
+
+    var asked: [URL] { lock.withLock { reads } }
 }
 
 /// What the recorder reported through `onEvent`, in order.

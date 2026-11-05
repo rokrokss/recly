@@ -570,6 +570,8 @@
   "Open Recly to check.": "เปิด Recly เพื่อตรวจสอบ",
   "No one has spoken for 10 minutes.": "ไม่มีใครพูดมา 10 นาทีแล้ว",
   "Recording stopped: battery low": "หยุดบันทึกเสียงแล้ว: แบตเตอรี่เหลือน้อย",
+  "Not enough storage to record": "พื้นที่จัดเก็บไม่พอสำหรับบันทึกเสียง",
+  "Recording stopped: storage full": "หยุดบันทึกเสียงแล้ว: พื้นที่จัดเก็บเต็ม",
   "Recording alerts": "การแจ้งเตือนการบันทึกเสียง",
   "Recording paused": "หยุดบันทึกเสียงชั่วคราว",
   "Open Recly to keep recording.": "เปิด Recly เพื่อบันทึกเสียงต่อ",

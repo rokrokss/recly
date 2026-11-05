@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">এখনও রেকর্ড হচ্ছে</string>
     <string name="rec_reminder_body">10 মিনিট ধরে কেউ কথা বলেনি।</string>
     <string name="rec_battery_stop_title">রেকর্ডিং থেমেছে: ব্যাটারি কম</string>
+    <string name="rec_storage_stop_title">রেকর্ডিং থেমেছে: স্টোরেজ পূর্ণ</string>
 </resources>

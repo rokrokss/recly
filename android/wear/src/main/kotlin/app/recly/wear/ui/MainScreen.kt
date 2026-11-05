@@ -273,6 +273,7 @@ private fun WearMessage.text(): String = when (this) {
     WearMessage.SaveDeferred -> stringResource(R.string.recording_save_deferred)
     WearMessage.Failed -> stringResource(R.string.recording_failed)
     is WearMessage.MicDenied -> stringResource(R.string.recording_mic_denied)
+    WearMessage.NotEnoughStorage -> stringResource(R.string.recording_storage_low)
 }
 
 /**

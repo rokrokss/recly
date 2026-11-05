@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Запись ещё идёт</string>
     <string name="rec_reminder_body">Уже 10 минут никто не говорит.</string>
     <string name="rec_battery_stop_title">Запись остановлена: низкий заряд батареи</string>
+    <string name="rec_storage_stop_title">Запись остановлена: хранилище заполнено</string>
 </resources>

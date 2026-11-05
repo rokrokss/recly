@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">เปิดได้ที่ การตั้งค่า → แอป → Recly → สิทธิ์</string>
     <string name="recording_save_deferred">บันทึกไม่เสร็จ จะกู้คืนในครั้งถัดไป</string>
     <string name="recording_failed">การบันทึกเสียงล้มเหลว</string>
+    <string name="recording_storage_low">พื้นที่จัดเก็บไม่พอสำหรับบันทึกเสียง</string>
     <string name="pending_badge">รอส่ง</string>
     <string name="sending_badge">กำลังส่ง</string>
     <string name="transfer_failed_badge">ถ่ายโอนไม่สำเร็จ</string>

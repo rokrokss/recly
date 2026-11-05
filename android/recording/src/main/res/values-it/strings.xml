@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Registrazione in corso</string>
     <string name="rec_reminder_body">Nessuno ha parlato negli ultimi 10 minuti.</string>
     <string name="rec_battery_stop_title">Registrazione interrotta: batteria scarica</string>
+    <string name="rec_storage_stop_title">Registrazione interrotta: spazio esaurito</string>
 </resources>

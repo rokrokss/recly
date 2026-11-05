@@ -10,4 +10,5 @@
     <string name="rec_reminder_title">Bado inarekodi</string>
     <string name="rec_reminder_body">Hakuna aliyezungumza kwa dakika 10.</string>
     <string name="rec_battery_stop_title">Kurekodi kumesimamishwa: betri iko chini</string>
+    <string name="rec_storage_stop_title">Kurekodi kumesimamishwa: hifadhi imejaa</string>
 </resources>

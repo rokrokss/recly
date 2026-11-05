@@ -570,6 +570,8 @@
   "Open Recly to check.": "برای بررسی، Recly را باز کنید.",
   "No one has spoken for 10 minutes.": "۱۰ دقیقه است که کسی صحبت نکرده است.",
   "Recording stopped: battery low": "ضبط متوقف شد: باتری کم است",
+  "Not enough storage to record": "فضای ذخیره‌سازی برای ضبط کافی نیست",
+  "Recording stopped: storage full": "ضبط متوقف شد: فضای ذخیره‌سازی پر است",
   "Recording alerts": "هشدارهای ضبط",
   "Recording paused": "ضبط موقتاً متوقف شد",
   "Open Recly to keep recording.": "برای ادامهٔ ضبط، Recly را باز کنید.",

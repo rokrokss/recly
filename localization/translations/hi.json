@@ -570,6 +570,8 @@
   "Open Recly to check.": "जाँचने के लिए Recly खोलें।",
   "No one has spoken for 10 minutes.": "10 मिनट से किसी ने कुछ नहीं बोला।",
   "Recording stopped: battery low": "रिकॉर्डिंग रुकी: बैटरी कम है",
+  "Not enough storage to record": "रिकॉर्ड करने के लिए पर्याप्त स्टोरेज नहीं है",
+  "Recording stopped: storage full": "रिकॉर्डिंग रुकी: स्टोरेज भर गया",
   "Recording alerts": "रिकॉर्डिंग अलर्ट",
   "Recording paused": "रिकॉर्डिंग रुकी हुई है",
   "Open Recly to keep recording.": "रिकॉर्डिंग जारी रखने के लिए Recly खोलें।",

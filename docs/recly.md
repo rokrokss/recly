@@ -176,6 +176,8 @@ Invariants:
 - Watch parts are not deleted before the phone's ack.
 - A `Job` is unique by `(recordingId, workflowId)`. Running a workflow again on the same recording does not create a new
   Job; it resumes the existing Job from its failed step.
+- A start needs 200 MB free on the device and a running recording 50 MB. Under the first nothing is created; under the second the
+  recording is stopped the normal way and handed over like any other (§3 "Free storage on the device").
 
 ### Long recordings — watchdog · reminders · battery stop · waiting to resume
 
@@ -615,6 +617,58 @@ The recording directory is stored in the DB as `recordings/{directory name}`, re
 changes the app container UUID, lookup · transcription · playback · renaming · deletion are handled from the current root. An absolute
 path left by a previous version is resolved to the current container only when it lies under the same app's
 `Containers/Data/Application/{UUID}/Library/Application Support/{app id}/recordings/`. Existing files are not moved or deleted, and external paths are left as they are.
+
+### Free storage on the device
+
+2026-11-05. A recording must neither fill the device nor break off when its disk is full. All six platforms follow one rule, the core's
+`StorageFloor` (§10 "Shared rules for the shells"). Each shell reads its own free-space figure, in bytes, and hands it to the rule. These
+are v1 constants, not settings. Megabytes are decimal, as the platforms' storage screens count them.
+
+| When | Floor | What happens |
+|---|---|---|
+| **Start** | under **200 MB** (`START_BYTES`) free on the volume that holds the app's data directory, the one `recordings/` is under | The start is refused before the microphone is opened or a row, directory or file is created, so no recording exists. The line under the record control says `Not enough storage to record`, and the iPhone's Siri and Shortcuts intents say the same (§9 "What a start or a stop says"). It is not a failure, and it is not `The recording failed` |
+| **While recording** | under **50 MB** (`RECORDING_BYTES`) free on the volume that holds the recording's directory | Read at every part boundary (nominally 300 s, §3 "Audio settings"), once that boundary's part is filed. A write that failed is read the same way. Under the floor the recording stops the way the battery stop does (§1 "Long recordings — watchdog · reminders · battery stop · waiting to resume"): the open part is filed, no title is asked, and the recording is handed over as it stands. It is queued and uploaded on a phone or desktop, and a watch's parts go to the phone as usual. Then `Recording stopped: storage full` is posted as a notice. This happens once per recording and is not a failure |
+
+- **Why these numbers**: 200 MB is still about 14 hours of one 32 kbps track, or about 4.6 hours of a desktop's three, so the margin
+  is the system's, not the recording's. 50 MB leaves room for the last part to be closed and for `meta.json`. A desktop part boundary
+  writes 3 × 3.6 MB, and the floors are the same for its three tracks as for one.
+- **An unreadable figure** (negative) refuses nothing and stops nothing, the same as an unreadable battery.
+- **A write that failed**: a write refused for lack of space is the storage stop, not `The recording failed`. Android cannot tell
+  why a `MediaRecorder` failed, and the Windows helper only dies (exit 1 after a fatal `error` event). So both decide by the reading
+  taken right after the failure: under 50 MB it is the storage stop, otherwise the failure it always was. Apple also takes the
+  error itself: `ENOSPC`, `NSFileWriteOutOfSpaceError` or Core Audio's `dskFulErr` anywhere in the chain of underlying errors means
+  out of space, whatever the reading says.
+- **Out of scope**: `NEEDS_SPACE` (the Drive or iCloud account out of space, §10 "Drive out of space — `NEEDS_SPACE`") is about the
+  destination and is unchanged. So is a full disk under a local folder destination, which stays an ordinary retryable failure (§3
+  "Storage location"). That folder may be on another volume, and nothing in it is being recorded.
+- **Log events**: `rec.recorder.storageRefused` (WARN, `freeBytes`) and `rec.recorder.storageStop` (WARN, `recordingId`, `freeBytes`,
+  `cause` `boundary` | `write`, with the write's error on Android and Apple). The recorder writes both, on every platform. A write
+  failure that became the storage stop is not also reported as a failure: the user never sees `The recording failed`, and Windows
+  logs no `rec.helper.died`. The helper's own `rec.helper.error` is still logged.
+
+| Platform | The figure | Where it is read | What says it |
+|---|---|---|---|
+| Galaxy Watch · Android phone | `StatFs.availableBytes` (the blocks an app may use) on the nearest existing directory | `:android:recording`'s `SegmentedRecorder`: in `start` before anything is created; after each boundary's part is filed; when `MediaRecorder` reports an error, reaches its size limit unarmed, or `setNextOutputFile` fails | The start refusal goes to the screen as `RecorderEvent.NotEnoughStorage`, and the phone's tile and widget start through the activity, as every Wear start does. The stop is the service's notification stop, then a notice on the recording alerts channel (vibration, no sound) |
+| iPhone · Mac | `volumeAvailableCapacityForImportantUsage`, which counts what the system would purge on the user's behalf, read from a fresh `URL` each time because a `URL` caches its resource values | RecKit's `SegmentedRecorder`: in `start` before the microphone is authorized; after each boundary's parts are filed; when a segment write or the next segment's open fails | `StopLine.notEnoughStorage` on the status line. The stop is `RecordingNotices`' stop that asks nothing, then the `recording.storage` notice, which is silent |
+| Apple Watch | `volumeAvailableCapacity`: watchOS does not have the important-usage key (`API_UNAVAILABLE(watchos)`) | as the iPhone | the status line, then the same notice with the default sound, since nothing is recording any more (§1 "Long recordings — …" "No sound") |
+| Windows | `FileStore.usableSpace` for the nearest existing directory. `File.usableSpace` is not used because it answers 0 for a path it cannot read, and 0 would refuse every start | `WindowsRecorder` in the app, not the helper: in `start` before the helper is spawned; at each `part_done`; when the helper's stdout ends without a stop | `Not enough storage to record` on the tray popup's status line. The stop is the tray's stop that asks nothing, then a balloon |
+
+Where a platform cannot follow the rule exactly:
+
+- **Apple Watch** reads the stricter figure, space free right now. It can refuse a start that the iPhone, which counts purgeable
+  space, would allow at the same fill.
+- **iPhone · Mac**: the important-usage figure can be higher than what a write gets at that moment, while the system has not purged
+  yet. So a write can fail for lack of space above 50 MB, and the error code is what makes it the storage stop.
+- **Android · Windows** have no error that says "out of space" (see "A write that failed" above). A disk that fills between the
+  failure and the reading reads as a failure, and the recording ends as a failed one.
+- **Windows**: the helper is unchanged. It still dies on a write that failed, and the parts it closed before dying are what the stop
+  files.
+
+Not verified on a device: none of this has run against a really full disk. That includes what `MediaRecorder` and the helper's ffmpeg do
+when it fills, what `volumeAvailableCapacityForImportantUsage` and `volumeAvailableCapacity` report on a device, and `FileStore` on an NTFS
+volume (only APFS on the development host). Unit tests cover the rule (`StorageFloorTest`), a refused start and a boundary stop with an
+injected figure (Android `NotEnoughStorageTest`, RecKit `SegmentedRecorderTests`, Windows `WindowsRecorderTest`), the helper dying on a full
+disk (Windows), the Apple error codes, and the notices (`RecordingNoticesTests`).
 
 ### Retention · deletion
 
@@ -2734,7 +2788,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      `Too short — skipped`, `Review recording settings to continue`, `The audio has already been cleaned up`, `Already handled`; a queue that
      refused it says `Could not create the job`, and a title that arrived after the upload took the folder name says `Too late to save the title —
      the upload has started`. The record control is disabled while `Starting` and while `Saving` — there is no Stop during a start. With the
-     microphone off, a start is refused with `The microphone permission is required.` and the platform's settings button.
+     microphone off, a start is refused with `The microphone permission is required.` and the platform's settings button. Under 200 MB
+     free, a start is refused with `Not enough storage to record`. A recording stopped under 50 MB says `Recording stopped: storage full`
+     in a notice, as the battery stop does, and its line says what any stop says (§3 "Free storage on the device").
    - The record screen's header is the app name only: the meta line `<source> · <first 8 characters of the device ID>`
      was removed from all four shells (2026-10-08, user decision — the device ID is in Settings → About). The device node, removed with the
      other two on 2026-11-04, said the source's name in the app language — `Phone` / `Desktop`.
@@ -3631,6 +3687,9 @@ memo alone matches is a hit; the file is read and kept the way the notes are, so
   being the reading at the start, true when that reading should stop the recording (≤ `STOP_PERCENT` 5 unplugged, not for a recording
   that started that low, −1 stops nothing); `CHECK_SEC` (60) is how often the shells that poll read it. Each shell hands it a whole percent
   of its own reading.
+- **`StorageFloor`** (2026-11-05, `recording/StorageFloor.kt`) — the device storage rule (§3 "Free storage on the device"):
+  `tooLow(freeBytes, recording)` is true under `START_BYTES` (200 MB) for a start and under `RECORDING_BYTES` (50 MB) for a running
+  recording. A negative figure is never too low. Each shell hands it its own platform's free bytes.
 
 ### Failures the user can fix, and their notices
 
@@ -3759,7 +3818,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
 | Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; a watch's recording organized part by part as it arrives, whichever of a part and its in-progress meta comes first, then filed by its final meta with one job, and a watch's own recording never organized on the watch; append-only items across parts, repeats and deletions; quote check; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again, which waiting notes do not hold up and which closes them |
 | Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
-| Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`, `SilenceReminderTest`, `BatteryStopTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT, the long-recording reminder (steady silence, conversation, gain, a fan, blips, digital zero) and the battery stop (start reading, charging, unreadable) |
+| Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`, `SilenceReminderTest`, `BatteryStopTest`, `StorageFloorTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT, the long-recording reminder (steady silence, conversation, gain, a fan, blips, digital zero) and the battery stop (start reading, charging, unreadable), the storage floors (either side of 200 MB and 50 MB, unreadable) |
 
 So that the `spec/` schemas and the core's serialization models do not drift apart, the tests parse the example JSON →
 serialize it → compare its structure with the original.

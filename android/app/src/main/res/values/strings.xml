@@ -54,6 +54,8 @@
     <string name="recording_title_too_late">Too late to save the title — the upload has started</string>
     <string name="recording_finish_deferred">Could not finish saving — it is recovered on the next run</string>
     <string name="recording_failed">The recording failed</string>
+    <!-- docs/03 "Free storage on the device": a start refused under 200 MB free; the six shells say the same. -->
+    <string name="recording_storage_low">Not enough storage to record</string>
 
     <!-- What the queue made of a finished recording (docs/02 trigger rules). -->
     <string name="enqueue_no_workflow">Review recording settings to continue</string>

@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">عنوان محفوظ کرنے میں دیر ہو گئی — اپ لوڈ شروع ہو چکا ہے</string>
     <string name="recording_finish_deferred">محفوظ کرنا مکمل نہیں ہو سکا — اگلی بار چلانے پر بحال ہو جائے گا</string>
     <string name="recording_failed">ریکارڈنگ ناکام ہو گئی</string>
+    <string name="recording_storage_low">ریکارڈ کرنے کے لیے کافی اسٹوریج نہیں ہے</string>
     <string name="enqueue_no_workflow">جاری رکھنے کے لیے ریکارڈنگ کی ترتیبات کا جائزہ لیں</string>
     <string name="enqueue_parts_purged">آڈیو پہلے ہی ہٹایا جا چکا ہے</string>
     <string name="enqueue_skipped_short">بہت مختصر — نظر انداز کیا گیا</string>

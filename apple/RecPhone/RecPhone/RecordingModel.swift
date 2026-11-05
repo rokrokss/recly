@@ -590,6 +590,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// - Returns: what refused the start, or nil when the recorder was asked for one.
     private func startRecording() async -> UiMessage? {
         guard let session, isReady else { return nil }
+        var refused: UiMessage?
         // docs/03: the gate is held across the start itself rather than merely read before it —
         // `session.start` suspends, and a disconnect that took the gate inside that wait would be
         // walking the recording directory while this capture wrote into it.
@@ -610,12 +611,17 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 // line above them stays empty rather than say it again.
                 note = "Waiting"
                 microphoneDenied = true
+            } catch let error as RecorderError where error.kind == .notEnoughStorage {
+                // docs/03 "Free storage on the device": the recorder logged the free bytes; Siri reads the refusal out.
+                note = "Waiting"
+                statusMessage = StopLine.notEnoughStorage
+                refused = StopLine.notEnoughStorage
             } catch {
                 note = "The recording failed"
                 logger.error("shell.recording.start.failed error=\(String(describing: error), privacy: .public)")
             }
         }
-        guard opened == nil else { return nil }
+        guard opened == nil else { return refused }
         // The gate was shut. By a disconnect — which is what to say — or by another start that is
         // already opening, which the session would have refused anyway and has nothing to add.
         let blocker = DisconnectGate.startBlocker()

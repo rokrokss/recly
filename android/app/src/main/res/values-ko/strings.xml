@@ -38,6 +38,7 @@
     <string name="recording_title_too_late">제목을 저장하기엔 이미 늦었습니다 — 업로드가 시작되었습니다</string>
     <string name="recording_finish_deferred">저장을 마무리하지 못했습니다 — 다음 실행 시 복구됩니다</string>
     <string name="recording_failed">녹음 실패</string>
+    <string name="recording_storage_low">저장 공간이 부족해 녹음할 수 없습니다</string>
 
     <string name="enqueue_no_workflow">계속하려면 녹음 처리 설정을 확인하세요</string>
     <string name="enqueue_parts_purged">파트가 이미 정리됨</string>

@@ -124,6 +124,34 @@ final class RecordingNoticesTests: XCTestCase {
         XCTAssertEqual(try delay(of: center.requests[before]), 1_800, accuracy: 1)
     }
 
+    /// docs/03 "Free storage on the device": the recorder's storage stop leaves the way the battery's does — the
+    /// stop that asks nothing, then the notice that says why, which the end it caused does not take down.
+    func testAStorageStopStopsTheRecordingAndSaysWhy() async throws {
+        let center = FakeAlertCenter()
+        let notices = RecordingNotices(stopKey: "Stop", logger: OSLogLogger(), center: center)
+        var stops = 0
+        notices.onStop = { stops += 1 }
+
+        notices.apply(.storageLow)
+        await notices.settled()
+        XCTAssertEqual(stops, 0, "no recording, nothing to stop")
+        XCTAssertTrue(center.posted.isEmpty)
+
+        notices.apply(.started(recordingId: "r1", segmentSec: 900))
+        notices.apply(.storageLow)
+        await notices.settled()
+        XCTAssertEqual(stops, 1)
+        XCTAssertEqual(center.posted, [RecordingNotices.deadManId, RecordingNotices.storageId])
+        let notice = try XCTUnwrap(center.requests.last)
+        XCTAssertNil(notice.trigger, "said now")
+        XCTAssertEqual(notice.content.title, RecKitStrings.localized("Recording stopped: storage full"))
+        XCTAssertEqual(notice.content.userInfo["recordingId"] as? String, "r1")
+
+        notices.apply(.ended)
+        await notices.settled()
+        XCTAssertFalse(center.withdrawn.joined().contains(RecordingNotices.storageId))
+    }
+
     private func delay(of request: UNNotificationRequest) throws -> TimeInterval {
         try XCTUnwrap(request.trigger as? UNTimeIntervalNotificationTrigger).timeInterval
     }

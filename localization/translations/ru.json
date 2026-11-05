@@ -570,6 +570,8 @@
   "Open Recly to check.": "Откройте Recly, чтобы проверить.",
   "No one has spoken for 10 minutes.": "Уже 10 минут никто не говорит.",
   "Recording stopped: battery low": "Запись остановлена: низкий заряд батареи",
+  "Not enough storage to record": "Недостаточно места для записи",
+  "Recording stopped: storage full": "Запись остановлена: хранилище заполнено",
   "Recording alerts": "Уведомления о записи",
   "Recording paused": "Запись приостановлена",
   "Open Recly to keep recording.": "Откройте Recly, чтобы продолжить запись.",

@@ -566,6 +566,10 @@ final class MenuModel: ObservableObject {
                 note = "System audio permission is needed"
                 logger.error("shell.recording.start.tap error=\(error.description, privacy: .public)")
                 presentSystemAudioUnavailable()
+            } catch let error as RecorderError where error.kind == .notEnoughStorage {
+                // docs/03 "Free storage on the device": the recorder logged the free bytes.
+                note = "Waiting"
+                message = StopLine.notEnoughStorage
             } catch {
                 note = "The recording failed"
                 logger.error("shell.recording.start.failed error=\(String(describing: error), privacy: .public)")

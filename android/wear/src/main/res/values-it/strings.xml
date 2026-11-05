@@ -11,6 +11,7 @@
     <string name="recording_mic_settings">Attivala in Impostazioni → App → Recly → Autorizzazioni.</string>
     <string name="recording_save_deferred">Salvataggio incompleto — recupero dopo</string>
     <string name="recording_failed">Registrazione non riuscita</string>
+    <string name="recording_storage_low">Spazio insufficiente per registrare</string>
     <string name="pending_badge">In attesa di invio</string>
     <string name="sending_badge">Invio in corso</string>
     <string name="transfer_failed_badge">Trasferimento non riuscito</string>

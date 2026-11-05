@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">برای ذخیره عنوان دیر است؛ بارگذاری شروع شده است</string>
     <string name="recording_finish_deferred">ذخیره کامل نشد؛ در اجرای بعدی بازیابی می‌شود</string>
     <string name="recording_failed">ضبط ناموفق بود</string>
+    <string name="recording_storage_low">فضای ذخیره‌سازی برای ضبط کافی نیست</string>
     <string name="enqueue_no_workflow">برای ادامه، تنظیمات ضبط را مرور کنید</string>
     <string name="enqueue_parts_purged">صدا قبلاً پاک شده است</string>
     <string name="enqueue_skipped_short">خیلی کوتاه؛ رد شد</string>

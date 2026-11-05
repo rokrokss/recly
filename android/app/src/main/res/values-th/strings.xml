@@ -33,6 +33,7 @@
     <string name="recording_title_too_late">สายเกินไปที่จะบันทึกชื่อ การอัปโหลดเริ่มแล้ว</string>
     <string name="recording_finish_deferred">บันทึกไม่เสร็จ จะกู้คืนเมื่อเปิดแอปครั้งถัดไป</string>
     <string name="recording_failed">การบันทึกเสียงล้มเหลว</string>
+    <string name="recording_storage_low">พื้นที่จัดเก็บไม่พอสำหรับบันทึกเสียง</string>
     <string name="enqueue_no_workflow">ตรวจสอบการตั้งค่าการบันทึกเสียงเพื่อดำเนินการต่อ</string>
     <string name="enqueue_parts_purged">เสียงถูกล้างออกไปแล้ว</string>
     <string name="enqueue_skipped_short">สั้นเกินไป ข้ามแล้ว</string>
