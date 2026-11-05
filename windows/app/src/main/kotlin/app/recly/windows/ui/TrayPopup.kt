@@ -308,6 +308,9 @@ private fun Ledger(
  *
  * The lines come and go with the queue: a reason nothing is blocked on any more is not in
  * [ShellModel.alerts], so its row is simply not drawn (docs/10 rule 3).
+ *
+ * docs/09 "Component measurements" (2026-11-05, user decision): every action on it is drawn at the status badge's size —
+ * the badge and the fix share the line, and two sizes on it read as two kinds of thing.
  */
 @Composable
 private fun AlertBanner(model: ShellModel, strings: Strings) {
@@ -331,9 +334,10 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
                         state = model.action,
                         strings = strings,
                         onClick = { model.fix(alert) },
+                        compact = true,
                     )
                 } else {
-                    BlueprintButton(strings[alert.reason.fix.label], { model.fix(alert) })
+                    BlueprintButton(strings[alert.reason.fix.label], { model.fix(alert) }, compact = true)
                 }
             },
         ) {

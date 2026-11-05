@@ -297,6 +297,8 @@ fun ProcessingButton(
     modifier: Modifier = Modifier,
     tone: ButtonTone = ButtonTone.ACCENT,
     enabled: Boolean = true,
+    /** [BlueprintButton]'s `compact`, in every phase: the banner's sign-in, beside the status badge (2026-11-05). */
+    compact: Boolean = false,
 ) {
     // Armed by this button's own click: several buttons on a window can share one operation state,
     // and only the one that was pressed owns a window.
@@ -341,6 +343,7 @@ fun ProcessingButton(
                 },
                 tone = tone,
                 enabled = enabled,
+                compact = compact,
             )
 
             ProcessingPhase.PROCESSING -> BlueprintButton(
@@ -348,6 +351,7 @@ fun ProcessingButton(
                 onClick = {},
                 tone = tone,
                 busy = true,
+                compact = compact,
             )
 
             ProcessingPhase.DONE -> BlueprintButton(
@@ -356,6 +360,7 @@ fun ProcessingButton(
                 tone = tone,
                 busy = true,
                 leading = strings[Str.ACTION_DONE],
+                compact = compact,
             )
         }
     }

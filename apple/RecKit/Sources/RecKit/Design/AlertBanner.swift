@@ -3,6 +3,9 @@ import SwiftUI
 /// docs/10 "Failures the user can fix, and their notices": one notice per reason above the recordings.
 /// Drive connection uses a neutral upload count and one action, without repeating the reason.
 ///
+/// docs/09 "Component measurements" (2026-11-05, user decision): every action on the banner is drawn at the status
+/// badge's size — the fix sits beside its badge, and two neighbours of two sizes read as two kinds of thing.
+///
 /// 2026-10-11 (N5): in a window narrower than a phone's 600pt every line gives its sentence the whole
 /// width, and the badge and the fix sit together under it at the end — as Android's banner does;
 /// beside the sentence they squeezed one such as the quota's to a word a line. A wider window keeps
@@ -34,7 +37,7 @@ public struct AlertBanner: View {
                             .font(blueprint.fonts.bodySmall)
                             .foregroundStyle(blueprint.palette.textMuted)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        let connect = BlueprintButton(RecKitStrings.localized("Connect Drive")) { fix(alert) }
+                        let connect = BlueprintButton(RecKitStrings.localized("Connect Drive"), compact: true) { fix(alert) }
                             .accessibilityIdentifier("alert-fix")
                         Group {
                             if stacks {
@@ -49,7 +52,7 @@ public struct AlertBanner: View {
                         ModelWaitLine(alert: alert, download: download, stacks: stacks, fix: fix)
                     } else {
                         AlertLine(alert: alert, line: alert.reason.label, stacks: stacks, fix: fix) {
-                            BlueprintButton(alert.reason.fix.label) { fix(alert) }
+                            BlueprintButton(alert.reason.fix.label, compact: true) { fix(alert) }
                         }
                     }
                 }
@@ -81,11 +84,11 @@ private struct ModelWaitLine: View {
     var body: some View {
         if download.downloading {
             AlertLine(alert: alert, line: ModelDownload.progressText(download.progress), stacks: stacks, fix: { _ in }) {
-                BlueprintButton(RecKitStrings.localized("Cancel download"), tone: .quiet) { download.cancel() }
+                BlueprintButton(RecKitStrings.localized("Cancel download"), tone: .quiet, compact: true) { download.cancel() }
             }
         } else {
             AlertLine(alert: alert, line: alert.reason.label, stacks: stacks, fix: fix) {
-                BlueprintButton(alert.reason.fix.label) { fix(alert) }
+                BlueprintButton(alert.reason.fix.label, compact: true) { fix(alert) }
                     .disabled(download.capturing)
             }
         }

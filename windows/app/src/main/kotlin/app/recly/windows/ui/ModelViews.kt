@@ -148,13 +148,15 @@ fun ModelBanner(model: ShellModel, strings: Strings, alert: JobAlert) {
     BannerRow(
         badge = alert.reason.badge().worded(strings),
         action = {
+            // At the badge's size, as every action on the banner (2026-11-05).
             if (download.running) {
-                BlueprintButton(strings[Str.PROCESSING_MODEL_CANCEL], download::cancel, tone = ButtonTone.QUIET)
+                BlueprintButton(strings[Str.PROCESSING_MODEL_CANCEL], download::cancel, tone = ButtonTone.QUIET, compact = true)
             } else {
                 BlueprintButton(
                     label = strings[Str.PROCESSING_PREPARE],
                     onClick = { model.downloadModel() },
                     enabled = model.modelDownloadAllowed && download.meteredPrompt == null,
+                    compact = true,
                 )
             }
         },

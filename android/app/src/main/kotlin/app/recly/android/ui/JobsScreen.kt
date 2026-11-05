@@ -283,6 +283,9 @@ fun JobsScreen(
  * docs/10 "Failures the user can fix, and their notices": the same lines the notifications carry, at the top
  * of the list where the recordings they are about are. One row per reason, however many jobs are
  * behind it, and the row is the way to the screen that fixes it.
+ *
+ * docs/09 "Component measurements" (2026-11-05, user decision): every action on it is drawn at the status badge's size —
+ * the fix sits beside its badge, and two neighbours of two sizes read as two kinds of thing.
  */
 @Composable
 private fun AlertBanner(
@@ -317,10 +320,10 @@ private fun AlertBanner(
                 ) {
                     if (download.active) {
                         BlueprintButton(stringResource(R.string.processing_cancel_download), onCancelDownload,
-                            tone = ButtonTone.QUIET, modifier = Modifier.testTag("alert-cancel-download"))
+                            tone = ButtonTone.QUIET, compact = true, modifier = Modifier.testTag("alert-cancel-download"))
                     } else {
                         BlueprintButton(modelDownloadLabel(download.info), onDownloadModel,
-                            modifier = Modifier.testTag("alert-download-model"))
+                            compact = true, modifier = Modifier.testTag("alert-download-model"))
                     }
                 }
                 return@forEach
@@ -340,6 +343,7 @@ private fun AlertBanner(
                         stringResource(R.string.drive_connect),
                         onClick = { onFix(alert) },
                         modifier = Modifier.testTag("alert-fix"),
+                        compact = true,
                     )
                 }
                 return@forEach
@@ -367,6 +371,7 @@ private fun AlertBanner(
                     stringResource(alert.reason.fix.label),
                     onClick = { onFix(alert) },
                     modifier = Modifier.testTag("alert-fix"),
+                    compact = true,
                 )
             }
         }
