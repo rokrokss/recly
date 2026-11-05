@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // BasePattern is Recly's recording base name, `{yyyyMMdd}T{HHmmss}Z_{source}_{first 8 of
@@ -104,6 +105,9 @@ type Recording struct {
 type Speaker struct {
 	ID   string  `json:"id"`
 	Name *string `json:"name"`
+	// Me is the transcript's `me`: the person who made the recording (docs/recly.md §8 "Me and
+	// others"). Only get_summary reads it (SpeakersOf), as ownerIsUser; get_transcript does not show it.
+	Me bool `json:"-"`
 }
 
 // Line is one rendered transcript line, `[HH:MM:SS] Name: text`.
@@ -208,9 +212,10 @@ type transcriptDoc struct {
 // lineSec is the longest a line runs before it is broken, as in the app's `.transcript.txt`.
 const lineSec = 60.0
 
-// FromJSON renders `{base}.transcript.json` (spec/transcript.schema.json) into lines the way the app
-// renders `.transcript.txt` (core TranscriptNormalizer.text): a new line when the speaker changes
-// or a line passes 60 seconds — with a speaker's name where the user gave one.
+// FromJSON renders `{base}.transcript.json` (spec/transcript.schema.json) into lines as the app
+// writes `.transcript.txt` (core TranscriptNormalizer.text): a new line when the speaker changes
+// or a line passes 60 seconds, with a speaker's name where the user gave one, and the segments of a
+// line joined by separator.
 func FromJSON(b []byte) (*Transcript, error) {
 	var doc transcriptDoc
 	if err := json.Unmarshal(b, &doc); err != nil {
@@ -232,6 +237,7 @@ func FromJSON(b []byte) (*Transcript, error) {
 		}
 	}
 	for i, seg := range doc.Segments {
+		text := oneLine(strings.TrimSpace(seg.Text))
 		if i == 0 || seg.Speaker != speaker || seg.End-lineStart > lineSec {
 			flush()
 			cur = &strings.Builder{}
@@ -245,15 +251,38 @@ func FromJSON(b []byte) (*Transcript, error) {
 				cur.WriteString(label + ": ")
 			}
 		} else {
-			cur.WriteByte(' ')
+			cur.WriteString(separator(cur.String(), text))
 		}
-		cur.WriteString(oneLine(strings.TrimSpace(seg.Text)))
+		cur.WriteString(text)
 	}
 	flush()
 	if t.Speakers == nil {
 		t.Speakers = []Speaker{}
 	}
 	return t, nil
+}
+
+// separator is what goes between two segments that run on in one line, as in the app's
+// `.transcript.txt` (core WritingSystem.separator, docs/recly.md §8 "Result files"): nothing where
+// both sides are Han, Kana or full-width punctuation — Japanese and Chinese are written without
+// spaces — and a space everywhere else, a mixed boundary such as Han next to Latin or digits too.
+func separator(before, after string) string {
+	last, _ := utf8.DecodeLastRuneInString(before)
+	first, _ := utf8.DecodeRuneInString(after)
+	if unspaced(last) && unspaced(first) {
+		return ""
+	}
+	return " "
+}
+
+// unspaced is Han, Kana (with half-width Katakana) or full-width punctuation, by the app's Unicode
+// blocks; an empty side decodes to U+FFFD, which is none of them.
+func unspaced(r rune) bool {
+	in := func(lo, hi rune) bool { return r >= lo && r <= hi }
+	han := in(0x2E80, 0x2FDF) || in(0x3400, 0x4DBF) || in(0x4E00, 0x9FFF) || in(0xF900, 0xFAFF) || in(0x20000, 0x3FFFF)
+	kana := in(0x3040, 0x30FF) || in(0x31F0, 0x31FF) || in(0xFF66, 0xFF9F)
+	punctuation := in(0x3000, 0x303F) || in(0xFF01, 0xFF65) || in(0xFFE0, 0xFFE6)
+	return han || kana || punctuation
 }
 
 // FromText reads `{base}.transcript.txt`, for a recording whose JSON transcript is not there.

@@ -345,7 +345,7 @@ func (t *Tools) summary(ctx context.Context, args json.RawMessage) (any, error) 
 	if err != nil {
 		return nil, describe(err, id)
 	}
-	return renderSummary(f), nil
+	return fitSummary(renderSummary(f)), nil
 }
 
 func (t *Tools) search(ctx context.Context, args json.RawMessage) (any, error) {

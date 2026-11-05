@@ -272,6 +272,20 @@ func (s *Source) Summary(ctx context.Context, id string) (*library.SummaryFiles,
 				*file.into = b
 			}
 		}
+		// Neither the meta nor the folder said whose folder this is: the summary and the notes do,
+		// as the transcript does for Transcript, so that a recording that shares the ID prefix does
+		// not answer for this one.
+		if r.want != "" && r.knownID == "" {
+			for _, b := range [][]byte{out.Notes, out.Memo} {
+				var d struct {
+					RecordingID string `json:"recordingId"`
+				}
+				if json.Unmarshal(b, &d) == nil && library.IsRecordingID(d.RecordingID) && d.RecordingID != r.want {
+					out = nil
+					return errOther
+				}
+			}
+		}
 		if f, ok := r.files[library.TranscriptJSONName(r.base.Name)]; ok && library.NeedsSpeakers(out.Notes) {
 			b, err := s.API.Download(ctx, f.ID, library.MaxTranscriptBytes)
 			if err != nil {

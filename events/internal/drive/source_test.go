@@ -262,3 +262,32 @@ func TestSourceReadsASummaryAndTheUsersNotes(t *testing.T) {
 		t.Fatalf("C: %+v %v", f, err)
 	}
 }
+
+func TestSourceSummaryOfAFolderWithoutAnIDIsCheckedByItsFiles(t *testing.T) {
+	src, fd := setupSource(t)
+	// D shares C's ID prefix and is newer, so it is looked at first. Neither its half-written meta
+	// nor its folder says whose it is; its summary and notes do.
+	const (
+		baseD = "20261006T000000Z_phone_01M3V3B6"
+		idD   = "01M3V3B6DDDDDDDDDDDDDDDDDD"
+	)
+	fd.files["fD"] = File{ID: "fD", Name: baseD, MimeType: "application/vnd.google-apps.folder"}
+	fd.files["metaD"] = File{ID: "metaD", Name: baseD + ".meta.json", Parents: []string{"fD"}}
+	fd.files["notesD"] = File{ID: "notesD", Name: baseD + ".notes.json", Parents: []string{"fD"}}
+	fd.files["memoD"] = File{ID: "memoD", Name: baseD + ".memo.json", Parents: []string{"fD"}}
+	fd.content["metaD"] = `{"recordingId":"01M3V3`
+	fd.content["notesD"] = `{"recordingId":"` + idD + `","overview":"D's summary.","items":[]}`
+	fd.content["memoD"] = `{"recordingId":"` + idD + `","text":"D's notes"}`
+	ctx := context.Background()
+	if f, err := src.Summary(ctx, idC); err != nil || f.RecordingID != idC || f.Notes != nil || f.Memo != nil {
+		t.Fatalf("C: %+v %v", f, err)
+	}
+	if f, err := src.Summary(ctx, idD); err != nil || f.RecordingID != idD || f.Notes == nil || f.Memo == nil {
+		t.Fatalf("D: %+v %v", f, err)
+	}
+	// The user's notes (the memo) alone tell as well.
+	delete(fd.files, "notesD")
+	if f, err := src.Summary(ctx, idC); err != nil || f.RecordingID != idC || f.Memo != nil {
+		t.Fatalf("C by D's notes: %+v %v", f, err)
+	}
+}

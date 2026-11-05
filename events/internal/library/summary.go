@@ -1,8 +1,10 @@
 package library
 
 import (
+	"cmp"
 	"encoding/json"
 	"slices"
+	"sort"
 	"strings"
 )
 
@@ -104,13 +106,21 @@ func NeedsSpeakers(notes []byte) bool {
 	return d != nil && slices.ContainsFunc(d.Items, func(i noteItem) bool { return i.Owner != "" })
 }
 
-// SpeakersOf reads the speakers of a JSON transcript.
+// SpeakersOf reads the speakers of a JSON transcript, with `me`.
 func SpeakersOf(transcript []byte) []Speaker {
 	var d struct {
-		Speakers []Speaker `json:"speakers"`
+		Speakers []struct {
+			ID   string  `json:"id"`
+			Name *string `json:"name"`
+			Me   bool    `json:"me"`
+		} `json:"speakers"`
 	}
 	_ = json.Unmarshal(transcript, &d)
-	return d.Speakers
+	var out []Speaker
+	for _, s := range d.Speakers {
+		out = append(out, Speaker{ID: s.ID, Name: s.Name, Me: s.Me})
+	}
+	return out
 }
 
 // summaryAnswer is get_summary's answer. The field names say who wrote what: aiSummary is the
@@ -129,6 +139,8 @@ type aiSummary struct {
 	Sections             []summarySection `json:"sections"`
 	Model                string           `json:"model,omitempty"`
 	UpdatedAt            string           `json:"updatedAt,omitempty"`
+	// Truncated says the items latest in the recording did not fit in the answer (fitSummary).
+	Truncated bool `json:"truncated,omitempty"`
 }
 
 type summarySection struct {
@@ -140,9 +152,12 @@ type summarySection struct {
 }
 
 type summaryItem struct {
-	Text         string  `json:"text"`
-	Owner        string  `json:"owner,omitempty"`
-	OwnerName    string  `json:"ownerName,omitempty"`
+	Text      string `json:"text"`
+	Owner     string `json:"owner,omitempty"`
+	OwnerName string `json:"ownerName,omitempty"`
+	// OwnerIsUser marks a to-do of the person who made the recording, the speaker the transcript
+	// marks `me`: the app shows them as "Me", which an agent could take for itself.
+	OwnerIsUser  bool    `json:"ownerIsUser,omitempty"`
 	Due          string  `json:"due,omitempty"`
 	AtSec        float64 `json:"atSec"`
 	Clock        string  `json:"clock"`
@@ -166,10 +181,12 @@ func renderSummary(f *SummaryFiles) summaryAnswer {
 		return out
 	}
 	names := map[string]string{}
+	me := map[string]bool{}
 	for _, s := range f.Speakers {
 		if s.Name != nil && strings.TrimSpace(*s.Name) != "" {
 			names[s.ID] = strings.TrimSpace(*s.Name)
 		}
+		me[s.ID] = s.Me
 	}
 	// The sections the notes were made with, then any group an item names that they do not.
 	var sections []summarySection
@@ -203,7 +220,7 @@ func renderSummary(f *SummaryFiles) summaryAnswer {
 			continue
 		}
 		item := summaryItem{
-			Text: it.words(), Owner: it.Owner, OwnerName: names[it.Owner], Due: it.Due,
+			Text: it.words(), Owner: it.Owner, OwnerName: names[it.Owner], OwnerIsUser: it.Owner != "" && me[it.Owner], Due: it.Due,
 			AtSec: it.Evidence.AtSec, Clock: Clock(it.Evidence.AtSec), EditedByUser: it.EditedAt != "",
 		}
 		sections[i].Items = append(sections[i].Items, item)
@@ -229,6 +246,55 @@ func renderSummary(f *SummaryFiles) summaryAnswer {
 	}
 	out.AISummary = ai
 	return out
+}
+
+// fitSummary keeps a get_summary answer within PageBytes, as search_recordings is kept: when the
+// items do not all fit, the latest in the recording are left out, from every section alike, and
+// aiSummary.truncated says so. The answer then covers the recording up to its last item's time,
+// and get_transcript has the rest. The overview and the user's notes are always given; they are a
+// few kilobytes at most.
+func fitSummary(out summaryAnswer) summaryAnswer {
+	if out.AISummary == nil || resultBytes(out) <= PageBytes {
+		return out
+	}
+	full := *out.AISummary
+	type ref struct{ section, item int }
+	var order []ref
+	for s, sec := range full.Sections {
+		for i := range sec.Items {
+			order = append(order, ref{s, i})
+		}
+	}
+	// Earliest first; items at the same time keep the order they are shown in.
+	slices.SortStableFunc(order, func(a, b ref) int {
+		return cmp.Compare(full.Sections[a.section].Items[a.item].AtSec, full.Sections[b.section].Items[b.item].AtSec)
+	})
+	keep := func(n int) summaryAnswer {
+		kept := map[ref]bool{}
+		for _, r := range order[:n] {
+			kept[r] = true
+		}
+		ai := full
+		ai.Sections, ai.Truncated = []summarySection{}, true
+		for s, sec := range full.Sections {
+			var items []summaryItem
+			for i, it := range sec.Items {
+				if kept[ref{s, i}] {
+					items = append(items, it)
+				}
+			}
+			if len(items) > 0 {
+				sec.Items = items
+				ai.Sections = append(ai.Sections, sec)
+			}
+		}
+		fitted := out
+		fitted.AISummary = &ai
+		return fitted
+	}
+	// The answer grows with every item kept: the first count that does not fit, less one.
+	n := sort.Search(len(order), func(n int) bool { return resultBytes(keep(n)) > PageBytes })
+	return keep(max(n-1, 0))
 }
 
 // summaryText is one searchable text of a summary: the overview, without a time, or an item.

@@ -316,9 +316,15 @@ gives the `recording` name as the `recordingId`, which `get_transcript` takes as
   from the transcript (`{recording}.notes.json`): `overview`, `sections` (`id`, `kind`, `name`,
   `description`, `items`), `model`, `updatedAt`. An item has `text`, `atSec` and `clock` (the time
   it rests on), `owner` (a speaker's id), `ownerName` and `due` for a to-do, and `editedByUser` when
-  the user changed it. `userNotes` (`text`, `updatedAt`) is the notes the user wrote in Recly
-  (`{recording}.memo.json`). Each is absent when there is none. It is not paged: a summary is a few
-  kilobytes.
+  the user changed it. `ownerIsUser: true` marks a to-do of the person who made the recording, the
+  speaker the transcript marks `me` and the app shows as "Me": the user, not the agent. It comes
+  with `ownerName` when that speaker has a name too. `userNotes` (`text`, `updatedAt`) is the notes
+  the user wrote in Recly (`{recording}.memo.json`). Each is absent when there is none.
+- **A summary answer is at most 24,000 bytes as well.** A summary is usually a few kilobytes, but an
+  all-day recording can have hundreds of items. When they do not all fit, the items latest in the
+  recording are left out, from every section alike, and `aiSummary` has `truncated: true`: the
+  answer covers the recording up to its last item's time, and `get_transcript` has the rest. The
+  overview and `userNotes` are always there.
 - Every answer is the JSON once, as the text of one text content block, without
   `structuredContent`. MCP 2026-07-28 asks for structured content only with an `outputSchema`, which
   no tool declares, and both together doubled every answer.

@@ -140,6 +140,27 @@ func TestFromJSONRendersLikeTheAppWithNames(t *testing.T) {
 	}
 }
 
+func TestFromJSONJoinsJapaneseAndChineseWithoutSpaces(t *testing.T) {
+	tr, err := FromJSON([]byte(`{"speakers":[{"id":"S1"},{"id":"S2"},{"id":"S3"}],"segments":[
+		{"start":0,"end":1,"speaker":"S1","text":"こんにちは。"},{"start":1,"end":2,"speaker":"S1","text":" 今日はカレーです "},
+		{"start":2,"end":3,"speaker":"S1","text":"ＯＫ！"},{"start":3,"end":4,"speaker":"S1","text":"Recly"},
+		{"start":5,"end":6,"speaker":"S2","text":"我们开始吧，"},{"start":6,"end":7,"speaker":"S2","text":"预算是"},
+		{"start":7,"end":8,"speaker":"S2","text":"100万"},{"start":8,"end":9,"speaker":"S2","text":"𠀀字"},
+		{"start":9,"end":10,"speaker":"S3","text":"회의를"},{"start":10,"end":11,"speaker":"S3","text":"시작합니다"}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, l := range tr.Lines {
+		got = append(got, l.Text)
+	}
+	// Han, Kana and full-width punctuation run on; Latin, digits and Hangul keep their space.
+	want := []string{"[00:00:00] S1: こんにちは。今日はカレーですＯＫ！ Recly", "[00:00:05] S2: 我们开始吧，预算是 100万𠀀字", "[00:00:09] S3: 회의를 시작합니다"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("lines = %q", got)
+	}
+}
+
 func TestFromTextReadsSpeakersAndTimes(t *testing.T) {
 	tr := FromText([]byte("[00:00:01] S1: hi\r\n\n[01:02:03] S2: there\n[00:00:09] S1: again\n"))
 	if len(tr.Lines) != 3 || tr.Lines[1].AtSec != 3723 || len(tr.Speakers) != 2 || tr.Speakers[1].ID != "S2" {
@@ -602,6 +623,87 @@ func TestSummarySaysWhoWroteWhat(t *testing.T) {
 		if msg := callErr(t, tools, "get_summary", c.args); !strings.Contains(msg, c.want) {
 			t.Errorf("%v: %s", c.args, msg)
 		}
+	}
+}
+
+func TestSummaryMarksTheUsersOwnToDos(t *testing.T) {
+	notes := []byte(`{"items":[{"kind":"todo","text":"Book the room.","owner":"S1","evidence":{"atSec":1}},
+		{"kind":"todo","text":"Send the deck.","owner":"S2","evidence":{"atSec":2}}]}`)
+	for _, c := range []struct{ transcript, want string }{
+		// The user who made the recording, unnamed: the app shows "Me".
+		{`{"speakers":[{"id":"S1","me":true},{"id":"S2","name":"Lee"}]}`,
+			`[{"text":"Book the room.","owner":"S1","ownerIsUser":true,"atSec":1,"clock":"00:00:01"},` +
+				`{"text":"Send the deck.","owner":"S2","ownerName":"Lee","atSec":2,"clock":"00:00:02"}]`},
+		// Named: both.
+		{`{"speakers":[{"id":"S1","name":"Kim","me":true},{"id":"S2"}]}`,
+			`[{"text":"Book the room.","owner":"S1","ownerName":"Kim","ownerIsUser":true,"atSec":1,"clock":"00:00:01"},` +
+				`{"text":"Send the deck.","owner":"S2","atSec":2,"clock":"00:00:02"}]`},
+	} {
+		out := renderSummary(&SummaryFiles{RecordingID: idA, Notes: notes, Speakers: SpeakersOf([]byte(c.transcript))})
+		if b, _ := Marshal(out.AISummary.Sections[0].Items); string(b) != c.want {
+			t.Errorf("%s: items = %s", c.transcript, b)
+		}
+	}
+	// get_transcript's speakers stay as they were.
+	if b, _ := Marshal(SpeakersOf([]byte(`{"speakers":[{"id":"S1","me":true}]}`))); string(b) != `[{"id":"S1","name":null}]` {
+		t.Fatalf("speakers = %s", b)
+	}
+}
+
+func TestSummaryStopsAtThePageCap(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, baseA)
+	write(t, filepath.Join(dir, baseA+".meta.json"), `{"recordingId":"`+idA+`"}`)
+	write(t, filepath.Join(dir, baseA+".memo.json"), `{"text":"안건: 가격"}`)
+	// An all-day recording: 300 Korean items of about 180 characters, the kinds taking turns, an hour
+	// in 12 items.
+	var items []string
+	kinds := []string{"point", "decision", "todo", "question"}
+	for i := range 300 {
+		items = append(items, fmt.Sprintf(`{"kind":%q,"text":%q,"evidence":{"atSec":%d}}`,
+			kinds[i%4], fmt.Sprintf("%03d ", i)+strings.Repeat("회의 내용을 ", 25), i*300))
+	}
+	write(t, filepath.Join(dir, baseA+".notes.json"), `{"overview":"하루 종일.","items":[`+strings.Join(items, ",")+`]}`)
+	tools := newTools(root)
+	args, _ := json.Marshal(map[string]any{"recordingId": idA})
+	res, _, err := tools.Call(context.Background(), "get_summary", args)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := resultBytes(res); n > PageBytes || n < PageBytes-2000 {
+		t.Fatalf("%d bytes", n)
+	}
+	b, _ := json.Marshal(res)
+	var got struct {
+		AISummary struct {
+			Overview  string
+			Truncated bool
+			Sections  []struct {
+				Kind  string
+				Items []struct{ AtSec float64 }
+			}
+		}
+		UserNotes *struct{ Text string }
+	}
+	_ = json.Unmarshal(b, &got)
+	ai := got.AISummary
+	if !ai.Truncated || ai.Overview != "하루 종일." || got.UserNotes == nil || len(ai.Sections) != 4 {
+		t.Fatalf("summary = %+v", got)
+	}
+	// The earliest items, from every section: none left out is earlier than one given.
+	kept, latest := 0, 0.0
+	for _, s := range ai.Sections {
+		kept += len(s.Items)
+		for _, it := range s.Items {
+			latest = max(latest, it.AtSec)
+		}
+	}
+	if kept == 0 || kept >= 300 || latest != float64((kept-1)*300) {
+		t.Fatalf("%d items kept, the latest at %v", kept, latest)
+	}
+	// A summary that fits is whole.
+	if got := call(t, newTools(fixture(t)), "get_summary", map[string]any{"recordingId": idA}); got["aiSummary"].(map[string]any)["truncated"] != nil {
+		t.Fatalf("fixture truncated: %v", got)
 	}
 }
 

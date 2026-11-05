@@ -112,7 +112,7 @@ ChatGPT 데스크톱 앱, Codex CLI, Codex IDE 확장이 이 설정을 함께 �
 |---|---|---|
 | `list_recordings` | `limit`(1–50, 기본 10), `cursor`, `from`, `to` | 최신순 녹음: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`, 그리고 `nextCursor` |
 | `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, 그리고 `[HH:MM:SS] 화자: 내용` 줄로 된 `transcript`(한 번에 최대 24,000바이트), 나머지는 `nextCursor`로 |
-| `get_summary` | `recordingId` | `aiSummary`: AI 요약(`overview`, `atSec`이 붙은 항목의 `sections`, `owner`·`ownerName`·`due`가 붙은 할 일), `userNotes`: 내가 쓴 메모 |
+| `get_summary` | `recordingId` | `aiSummary`: AI 요약(`overview`, `atSec`이 붙은 항목의 `sections`, `owner`·`ownerName`·`due`가 붙은 할 일과 내 할 일의 `ownerIsUser`, 24,000바이트에 다 들지 않아 가장 늦은 항목을 뺐으면 `truncated`), `userNotes`: 내가 쓴 메모 |
 | `search_recordings` | `query`, `limit`(1–50, 기본 10) | 제목, 녹취록, AI 요약, 내 메모에 검색어가 든 녹음(대소문자 무시): `matchedIn`(`title`, `transcript`, `summary`, `notes`)과 곳마다 최대 3개의 `snippets` |
 | `get_audio_files` | `recordingId` | 이 컴퓨터에 있는 녹음의 `.m4a` 파트 절대 경로와 트랙·시작 위치 |
 
