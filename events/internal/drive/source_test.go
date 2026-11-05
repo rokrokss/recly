@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/rokrokss/recly/events/internal/library"
 )
@@ -63,7 +64,7 @@ func setupSource(t *testing.T) (*Source, *fakeDrive) {
 func TestSourceListsRecordingsNewestFirstByPage(t *testing.T) {
 	src, _ := setupSource(t)
 	ctx := context.Background()
-	page, next, err := src.Recordings(ctx, 2, "")
+	page, next, err := src.Recordings(ctx, 2, "", library.Span{})
 	if err != nil || next == "" {
 		t.Fatalf("page 1: %v %q", err, next)
 	}
@@ -71,7 +72,7 @@ func TestSourceListsRecordingsNewestFirstByPage(t *testing.T) {
 	if len(page) != 1 || page[0].RecordingID != idC || page[0].Title != nil || page[0].HasTranscript || page[0].Source != "phone" {
 		t.Fatalf("page 1 = %+v", page)
 	}
-	page, next, err = src.Recordings(ctx, 2, next)
+	page, next, err = src.Recordings(ctx, 2, next, library.Span{})
 	if err != nil || next == "" || len(page) != 2 {
 		t.Fatalf("page 2: %v %q %+v", err, next, page)
 	}
@@ -83,7 +84,7 @@ func TestSourceListsRecordingsNewestFirstByPage(t *testing.T) {
 		t.Fatalf("A = %+v", a)
 	}
 	// The folder template's own folder starts with the year too; it is not a recording.
-	page, next, err = src.Recordings(ctx, 2, next)
+	page, next, err = src.Recordings(ctx, 2, next, library.Span{})
 	if err != nil || next != "" || len(page) != 0 {
 		t.Fatalf("page 3: %v %q %+v", err, next, page)
 	}
@@ -165,7 +166,7 @@ func TestSourceListsAnImportFromAnotherCentury(t *testing.T) {
 	var found bool
 	cursor := ""
 	for range 5 {
-		page, next, err := src.Recordings(ctx, 10, cursor)
+		page, next, err := src.Recordings(ctx, 10, cursor, library.Span{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -179,5 +180,85 @@ func TestSourceListsAnImportFromAnotherCentury(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("the 1999 import was not listed")
+	}
+}
+
+func TestSourceListsBetweenDates(t *testing.T) {
+	src, _ := setupSource(t)
+	ctx := context.Background()
+	day := func(s string) time.Time {
+		at, _ := time.Parse(time.RFC3339, s)
+		return at
+	}
+	span := library.Span{From: day("2026-10-01T00:00:00Z"), To: day("2026-10-05T23:59:59Z")}
+	// One at a time: each cursor goes on inside the same page of folders.
+	var got []string
+	cursor := ""
+	for range 5 {
+		page, next, err := src.Recordings(ctx, 1, cursor, span)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range page {
+			got = append(got, r.RecordingID)
+		}
+		if next == "" {
+			break
+		}
+		cursor = next
+	}
+	if strings.Join(got, ",") != idC+","+idB+","+idA {
+		t.Fatalf("listed %v", got)
+	}
+	// The first folder older than from ends the list.
+	page, next, err := src.Recordings(ctx, 10, "", library.Span{From: day("2026-10-02T00:00:00Z")})
+	if err != nil || next != "" || len(page) != 2 || page[0].RecordingID != idC || page[1].RecordingID != idB {
+		t.Fatalf("from only: %v %q %+v", err, next, page)
+	}
+	page, next, err = src.Recordings(ctx, 10, "", library.Span{To: day("2026-10-01T06:45:03Z")})
+	if err != nil || next != "" || len(page) != 1 || page[0].RecordingID != idA {
+		t.Fatalf("to only: %v %q %+v", err, next, page)
+	}
+	var te *library.ToolError
+	if _, _, err := src.Recordings(ctx, 10, "bm90IGEgY3Vyc29y", span); !errors.As(err, &te) {
+		t.Fatalf("bad cursor: %v", err)
+	}
+}
+
+func TestSourceReadsASummaryAndTheUsersNotes(t *testing.T) {
+	src, fd := setupSource(t)
+	fd.files["notesA"] = File{ID: "notesA", Name: baseA + ".notes.json", Parents: []string{"fA"}}
+	fd.files["memoA"] = File{ID: "memoA", Name: baseA + ".memo.json", Parents: []string{"fA"}}
+	fd.content["notesA"] = `{"recordingId":"` + idA + `","stage":"final","overview":"Hello said.",
+		"items":[{"kind":"todo","text":"Say hello again.","owner":"S1","evidence":{"atSec":0,"quote":"Hello."}}]}`
+	fd.content["memoA"] = `{"recordingId":"` + idA + `","text":"Ask about Friday","updatedAt":"2026-10-01T06:40:00Z"}`
+	ctx := context.Background()
+	for _, id := range []string{idA, baseA} {
+		f, err := src.Summary(ctx, id)
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		if f.RecordingID != idA || *f.Title != "Weekly sync" || f.Notes == nil || string(f.Memo) != fd.content["memoA"] ||
+			len(f.Speakers) != 1 || *f.Speakers[0].Name != "Kim" {
+			t.Fatalf("%s: %+v", id, f)
+		}
+	}
+	tools := &library.Tools{Source: src}
+	res, _, err := tools.Call(ctx, "get_summary", json.RawMessage(`{"recordingId":"`+idA+`"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := library.Marshal(res)
+	if !strings.Contains(string(b), `"ownerName":"Kim"`) || !strings.Contains(string(b), `"userNotes":{"text":"Ask about Friday"`) {
+		t.Fatalf("get_summary = %s", b)
+	}
+	// Neither file: the recording, and no summary or notes.
+	f, err := src.Summary(ctx, idB)
+	if err != nil || f.RecordingID != idB || f.Notes != nil || f.Memo != nil || f.Speakers != nil {
+		t.Fatalf("B: %+v %v", f, err)
+	}
+	// A recording that shares A's ID prefix is told apart, as for get_transcript.
+	if f, err := src.Summary(ctx, idC); err != nil || f.RecordingID != idC || f.Notes != nil {
+		t.Fatalf("C: %+v %v", f, err)
 	}
 }

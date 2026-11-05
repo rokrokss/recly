@@ -63,13 +63,16 @@ func TestLocalServerOverTheGoSDKClient(t *testing.T) {
 			t.Errorf("%s is not marked read-only", tool.Name)
 		}
 	}
-	if strings.Join(names, ",") != "get_audio_files,get_transcript,list_recordings,search_recordings" &&
-		strings.Join(names, ",") != "list_recordings,get_transcript,search_recordings,get_audio_files" {
+	if strings.Join(names, ",") != "get_audio_files,get_summary,get_transcript,list_recordings,search_recordings" &&
+		strings.Join(names, ",") != "list_recordings,get_transcript,get_summary,search_recordings,get_audio_files" {
 		t.Fatalf("tools = %v", names)
 	}
 	res, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "get_transcript", Arguments: map[string]any{"recordingId": recID}})
 	if err != nil || res.IsError {
 		t.Fatalf("get_transcript: %+v %v", res, err)
+	}
+	if res.StructuredContent != nil || len(res.Content) != 1 {
+		t.Fatalf("get_transcript carries the JSON more than once: %+v", res)
 	}
 	text := res.Content[0].(*mcp.TextContent).Text
 	if !strings.Contains(text, "<<<recly-transcript-n UNTRUSTED") || !strings.Contains(text, "[00:00:01] S1: Ship it on Friday.") {
@@ -121,7 +124,7 @@ func TestLocalServerAnswersAnInitializeHandshake(t *testing.T) {
 	send(`{"jsonrpc":"2.0","method":"notifications/initialized"}`)
 	send(`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_recordings","arguments":{}}}`)
 	call := read()
-	sc := call["result"].(map[string]any)["structuredContent"].(map[string]any)
+	sc := resultJSON(t, "list_recordings", call["result"].(map[string]any))
 	if recs := sc["recordings"].([]any); len(recs) != 1 || recs[0].(map[string]any)["recordingId"] != recID {
 		t.Fatalf("list_recordings = %v", call)
 	}

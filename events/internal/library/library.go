@@ -32,15 +32,22 @@ func MetaName(base string) string           { return base + ".meta.json" }
 func TranscriptJSONName(base string) string { return base + ".transcript.json" }
 func TranscriptTxtName(base string) string  { return base + ".transcript.txt" }
 
+// NotesName is the recording's summary and MemoName the user's own notes (docs/recly.md §8 "Organizing",
+// §8 "Memo"): the apps call them Summary and Notes, the files keep their older names.
+func NotesName(base string) string { return base + ".notes.json" }
+func MemoName(base string) string  { return base + ".memo.json" }
+
 // FolderPropertiesName is iCloud's stand-in for what Drive keeps on the folder, its description
 // (the title) among them (docs/recly.md §3 "Storage location").
 func FolderPropertiesName(base string) string { return base + ".folder.json" }
 
 // Size caps: a meta or a folder property file is a few kilobytes; a transcript with word timings
 // for a long meeting is a few megabytes. Variables, so tests can lower them.
+// A summary is items of at most 500 characters each, a memo at most 2,000 characters.
 var (
 	MaxMetaBytes       int64 = 1 << 20
 	MaxTranscriptBytes int64 = 32 << 20
+	MaxNotesBytes      int64 = 4 << 20
 )
 
 // Base is a parsed base name.
@@ -118,11 +125,24 @@ type Transcript struct {
 
 // Source is where recordings are read from.
 type Source interface {
-	// Recordings returns up to limit recordings, newest first, and the cursor of the next page
-	// ("" at the end).
-	Recordings(ctx context.Context, limit int, cursor string) ([]Recording, string, error)
+	// Recordings returns up to limit recordings that started within span, newest first, and the
+	// cursor of the next page ("" at the end).
+	Recordings(ctx context.Context, limit int, cursor string, span Span) ([]Recording, string, error)
 	// Transcript returns the transcript of a recording, named by its recordingId or its base name.
 	Transcript(ctx context.Context, id string) (*Transcript, error)
+	// Summary returns a recording's summary and the user's notes as stored, named like Transcript.
+	Summary(ctx context.Context, id string) (*SummaryFiles, error)
+}
+
+// Span bounds list_recordings by when a recording started, both ends included; a zero end is open.
+type Span struct{ From, To time.Time }
+
+// Bounded reports whether either end is set.
+func (s Span) Bounded() bool { return !s.From.IsZero() || !s.To.IsZero() }
+
+// Contains reports whether t is within the span.
+func (s Span) Contains(t time.Time) bool {
+	return (s.From.IsZero() || !t.Before(s.From)) && (s.To.IsZero() || !t.After(s.To))
 }
 
 // Meta is what the tools read from `{base}.meta.json` (spec/recording.meta.schema.json).

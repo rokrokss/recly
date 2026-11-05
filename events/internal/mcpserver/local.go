@@ -46,14 +46,12 @@ func LocalServer(tools *library.Tools, version string) (*mcp.Server, error) {
 			if err != nil {
 				return nil, err
 			}
+			// The JSON once, as library.Result does for the tunnel's handler.
 			out, err := library.Marshal(res)
 			if err != nil {
 				return nil, err
 			}
-			return &mcp.CallToolResult{
-				Content:           []mcp.Content{&mcp.TextContent{Text: string(out)}},
-				StructuredContent: json.RawMessage(out),
-			}, nil
+			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(out)}}}, nil
 		})
 	}
 	return s, nil

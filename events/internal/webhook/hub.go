@@ -268,6 +268,22 @@ func (h *Hub) Event(id string) (state.InboxEvent, bool) {
 	return out, found
 }
 
+// NoteAgentCall records when the agent last called tool, for status: a delivery that ChatGPT
+// accepted says nothing about whether the agent then read anything.
+func (h *Hub) NoteAgentCall(tool string) {
+	now := h.now().UTC()
+	err := h.Store.Update(func(s *state.State) error {
+		if s.AgentCalls == nil {
+			s.AgentCalls = map[string]time.Time{}
+		}
+		s.AgentCalls[tool] = now
+		return nil
+	})
+	if err != nil {
+		h.Log.Warn("agent.call.save.failed", "tool", tool, "error", err.Error())
+	}
+}
+
 // Acknowledge marks events processed; it returns how many were newly acknowledged and how
 // many remain pending.
 func (h *Hub) Acknowledge(ids []string) (acked, pending int, err error) {

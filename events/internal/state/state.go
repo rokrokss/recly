@@ -1,5 +1,6 @@
 // Package state keeps everything recly-events must remember across restarts in one JSON file:
-// the Drive change cursor, the event subscriptions, the event inbox and the delivery queue.
+// the Drive change cursor, the event subscriptions, the event inbox, the delivery queue and when the
+// agent last called the inbox tools.
 // One owner, tens of rows: a file written atomically is enough, and it can be read by
 // `recly-events status` while `serve` runs.
 package state
@@ -25,6 +26,9 @@ type State struct {
 	// SubscriptionEndedAt is when the last subscription went — unsubscribed, or refused with 410 —
 	// until a new one arrives, so the user can be told to ask the agent again.
 	SubscriptionEndedAt *time.Time `json:"subscriptionEndedAt,omitempty"`
+	// AgentCalls is when the agent last called get_pending_events, get_transcript and
+	// acknowledge_events, by tool name; a tool not in it was never called.
+	AgentCalls map[string]time.Time `json:"agentCalls,omitempty"`
 }
 
 // SubscriptionsEnded says there were subscriptions and none is left: the agent unsubscribed, or
