@@ -6,7 +6,7 @@ import recly.core.transcribe.TranscriptNormalizer
 /**
  * docs/08 "Organizing" — "Copy and share": a recording's notes as text, in the order the detail shows them — the
  * overview, then Key points, Decisions, To-dos, Questions and the user's sections, each item with its owner, due
- * date and `[HH:MM:SS]`, a to-do with its box (docs/08 "To-dos"). The headings are the app's ([NotesHeadings]), or the names the user gave a group ([NoteNames]).
+ * date and `[HH:MM:SS]`. The headings are the app's ([NotesHeadings]), or the names the user gave a group ([NoteNames]).
  */
 internal object NotesText {
     fun plain(notes: RecordingNotes, headings: NotesHeadings): String? {
@@ -18,7 +18,7 @@ internal object NotesText {
             groups.forEach { (heading, items) ->
                 if (isNotEmpty()) append('\n')
                 append(heading).append('\n')
-                items.forEach { append(bullet(it)).append(line(it)).append('\n') }
+                items.forEach { append("- ").append(line(it)).append('\n') }
             }
         }
     }
@@ -32,7 +32,7 @@ internal object NotesText {
             overview?.let { append(it.lines().joinToString("  \n")).append("\n\n") }
             groups.forEach { (heading, items) ->
                 append("### ").append(heading).append("\n\n")
-                items.forEach { append(bullet(it)).append(line(it)).append('\n') }
+                items.forEach { append("- ").append(line(it)).append('\n') }
                 append('\n')
             }
         }.trimEnd() + "\n"
@@ -47,12 +47,6 @@ internal object NotesText {
                 (notes.names.questions ?: headings.questions) to notes.questions,
             ) + notes.sections.map { it.name to it.items }
             ).filter { it.second.isNotEmpty() }
-
-    private fun bullet(item: NoteItem): String = when {
-        item.kind != NoteKind.TODO -> "- "
-        item.done -> "- [x] "
-        else -> "- [ ] "
-    }
 
     private fun line(item: NoteItem): String = buildString {
         append(item.text.trim())

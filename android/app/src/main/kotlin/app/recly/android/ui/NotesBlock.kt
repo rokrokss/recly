@@ -7,11 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -44,12 +42,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.withStyle
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
-import app.recly.android.ui.component.BlueprintCheckBox
 import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.LoadingText
@@ -61,7 +57,6 @@ import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
-import recly.core.notes.NoteKind
 import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 import recly.core.storage.StorageKind
@@ -156,24 +151,13 @@ internal data class NotesDraft(val original: RecordingNotes, val overview: Strin
 
 /**
  * A row's words: the item, its owner after a dash (`Send the quote — Minji`), then its deadline as it was said, [muted].
- * With [tint] — an item the answer on screen changed or added (docs/09 "Ask") — the item and its owner are on it. With
- * [done] — a checked to-do beside its box (docs/09 "To-dos view") — all of it is struck through in [muted].
+ * With [tint] — an item the answer on screen changed or added (docs/09 "Ask") — the item and its owner are on it.
  */
-internal fun noteText(item: NoteItem, muted: Color, tint: Color? = null, done: Boolean = false): AnnotatedString = buildAnnotatedString {
+internal fun noteText(item: NoteItem, muted: Color, tint: Color? = null): AnnotatedString = buildAnnotatedString {
     append(item.text.trim())
     item.owner?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" — "); append(it) }
     tint?.let { addStyle(SpanStyle(background = it), 0, length) }
     item.due?.trim()?.takeIf { it.isNotEmpty() }?.let { withStyle(SpanStyle(color = muted)) { append(" · "); append(it) } }
-    if (done) addStyle(SpanStyle(color = muted, textDecoration = TextDecoration.LineThrough), 0, length)
-}
-
-/** docs/09 "To-dos view": the box of a to-do's row, on the first line of its words, named by the item's words. */
-@Composable
-internal fun RowScope.TodoBox(item: NoteItem, onDone: (Boolean) -> Unit) {
-    val firstLine = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
-    Box(Modifier.align(Alignment.Top).height(firstLine), contentAlignment = Alignment.Center) {
-        BlueprintCheckBox(item.done, item.text.trim(), onDone, Modifier.testTag("todo-box-${item.id}"))
-    }
 }
 
 /**
@@ -201,8 +185,7 @@ private fun letters(text: String): String = text.lowercase().filter { it.isLette
  * [onSeek] makes the time a button that moves the playhead to it — a transcript time's way, playing or paused as it
  * was — where [canSeek] allows; without it (while recording) the time is a label. [scaleSec] picks the time format
  * ([clock]). [changed] — the items the answer on screen changed or added — and the overview when [overviewChanged] have the
- * transcript's tint behind their words (docs/09 "Ask"). [onDone] gives a to-do's row its box, and a done row its strike
- * (docs/09 "To-dos view"); without it (while recording) a row has neither.
+ * transcript's tint behind their words (docs/09 "Ask").
  */
 @Composable
 internal fun NotesBlock(
@@ -216,7 +199,6 @@ internal fun NotesBlock(
     onSeek: ((Double) -> Unit)? = null,
     changed: Set<String> = emptySet(),
     overviewChanged: Boolean = false,
-    onDone: ((NoteItem, Boolean) -> Unit)? = null,
 ) {
     val palette = blueprint
     val tint = palette.accent.copy(alpha = MATCH_TINT)
@@ -248,7 +230,6 @@ internal fun NotesBlock(
                         onDelete = onDelete,
                         lines = lines,
                         tint = tint.takeIf { item.id in changed },
-                        onDone = onDone?.takeIf { item.kind == NoteKind.TODO }?.let { check -> { done: Boolean -> check(item, done) } },
                     )
                 }
             }
@@ -267,7 +248,6 @@ private fun NoteRow(
     onDelete: (NoteItem) -> Unit,
     lines: suspend (Double) -> List<NoteLine>,
     tint: Color?,
-    onDone: ((Boolean) -> Unit)?,
 ) {
     val palette = blueprint
     val delete = stringResource(R.string.action_delete)
@@ -313,9 +293,8 @@ private fun NoteRow(
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                onDone?.let { TodoBox(item, it) }
                 Text(
-                    noteText(item, palette.textMuted, tint, done = onDone != null && item.done),
+                    noteText(item, palette.textMuted, tint),
                     Modifier.weight(1f).alignByBaseline(),
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
@@ -385,7 +364,6 @@ internal fun NotesPane(
     modifier: Modifier = Modifier,
     changed: Set<String> = emptySet(),
     overviewChanged: Boolean = false,
-    onDone: (NoteItem, Boolean) -> Unit = { _, _ -> },
 ) {
     val shown = notes?.takeIf { showsNotes(it, overview = true) }
     val failure = notes?.failure?.takeIf { !organizing }
@@ -409,7 +387,7 @@ internal fun NotesPane(
             }
             if (shown != null) {
                 NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, lines = lines, canSeek = canSeek, onSeek = onSeek,
-                    changed = changed, overviewChanged = overviewChanged, onDone = onDone)
+                    changed = changed, overviewChanged = overviewChanged)
                 CopyFooter(notesFooter(shown.model), text.orEmpty(), Modifier.testTag("notes-copy"))
             }
         }

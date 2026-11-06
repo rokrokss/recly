@@ -176,8 +176,6 @@ class DetailActions(
     /** docs/08 "Organizing": a note swiped away, for good, and the transcript around a note for its row. */
     val onDeleteNote: (String) -> Unit = {},
     val noteLines: suspend (Double) -> List<NoteLine> = { emptyList() },
-    /** docs/09 "To-dos view": a to-do's box in the notes, by its id. */
-    val onSetDone: (String, Boolean) -> Unit = { _, _ -> },
     /**
      * What the recording's list row used to offer under itself, now under the notice of a page with no transcript
      * (2026-10-28): Retry and where it is, Check the key, and the speech model's download for the row's language.
@@ -604,8 +602,7 @@ fun RecordingDetailScreen(
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()))
                 chips && view == DetailView.NOTES -> NotesPane(detail.notes, organizing, notesText, onRetry = organize, scaleSec = scale,
                     onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canSeek = canSeekTo, onSeek = seek,
-                    modifier = Modifier.fillMaxSize(), changed = askChanges?.items.orEmpty().toSet(), overviewChanged = askChanges?.overview == true,
-                    onDone = { item, done -> actions.onSetDone(item.id, done) })
+                    modifier = Modifier.fillMaxSize(), changed = askChanges?.items.orEmpty().toSet(), overviewChanged = askChanges?.overview == true)
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list — whatever
                 // the transcript's own state says, a step that never ran included.
                 transcript == null && detail.waitingForDrive -> Notice(

@@ -139,8 +139,6 @@ public struct NotesBlock: View {
     /// The transcript's lines around a moment (`notes.linesAround`).
     let lines: (Double) async -> [NoteLine]
     let delete: (NoteItem) -> Void
-    /// docs/09 "To-dos view": a to-do's row has a box that checks it — the detail; nil on the recording screen, which has none.
-    let toggleDone: ((NoteItem) -> Void)?
     /// docs/09 "Ask": the items the answer on screen changed or added, and whether it rewrote the overview — their
     /// words tinted as the transcript's are.
     let changed: Set<String>
@@ -160,7 +158,6 @@ public struct NotesBlock: View {
         onSeek: ((Double) -> Void)?,
         lines: @escaping (Double) async -> [NoteLine],
         delete: @escaping (NoteItem) -> Void,
-        toggleDone: ((NoteItem) -> Void)? = nil,
         changed: Set<String> = [],
         overviewChanged: Bool = false
     ) {
@@ -172,7 +169,6 @@ public struct NotesBlock: View {
         self.onSeek = onSeek
         self.lines = lines
         self.delete = delete
-        self.toggleDone = toggleDone
         self.changed = changed
         self.overviewChanged = overviewChanged
     }
@@ -204,9 +200,6 @@ public struct NotesBlock: View {
     private func row(_ item: NoteItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: Space.s) {
-                if item.kind == .todo, let toggleDone {
-                    TodoBox(item: item) { toggleDone(item) }
-                }
                 words(item)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentDirection(item.text)
@@ -226,8 +219,15 @@ public struct NotesBlock: View {
         .accessibilityIdentifier("note-\(item.id)")
     }
 
+    /// The item, its owner after a dash, and the deadline after them in the secondary colour.
     private func words(_ item: NoteItem) -> some View {
-        NoteWords(item: item, words: tinted(NoteGroups.text(item), changed.contains(item.id)), struck: item.done && toggleDone != nil)
+        var text = Text(tinted(NoteGroups.text(item), changed.contains(item.id))).foregroundStyle(blueprint.palette.text)
+        if let due = NoteGroups.due(item) {
+            text = text + Text(verbatim: " · \(due)").foregroundStyle(blueprint.palette.textMuted)
+        }
+        return text
+            .font(blueprint.fonts.bodySmall)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { toggle(item) }
             // docs/09 trend 4: the swipe's static alternative.
@@ -299,31 +299,6 @@ public struct NotesBlock: View {
             let found = await lines(item.atSec)
             if expanded == item.id { shownLines = found }
         }
-    }
-}
-
-/// A row's words: the item, its owner after a dash, and the deadline after them in the secondary colour. A done to-do is
-/// struck through in the secondary colour, all of it (docs/09 "To-dos view").
-struct NoteWords: View {
-    let item: NoteItem
-    /// The item's words with what the row marks on them; its plain words when nil.
-    var words: AttributedString?
-    /// A done to-do where its box is; the record screen has none, and no strike-through either.
-    var struck = false
-    @Environment(\.blueprint) private var blueprint
-
-    var body: some View {
-        text
-            .strikethrough(struck, color: blueprint.palette.textMuted)
-            .font(blueprint.fonts.bodySmall)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var text: Text {
-        let shown = Text(words ?? AttributedString(NoteGroups.text(item)))
-            .foregroundStyle(struck ? blueprint.palette.textMuted : blueprint.palette.text)
-        guard let due = NoteGroups.due(item) else { return shown }
-        return shown + Text(verbatim: " · \(due)").foregroundStyle(blueprint.palette.textMuted)
     }
 }
 

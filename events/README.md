@@ -315,8 +315,8 @@ gives the `recording` name as the `recordingId`, which `get_transcript` takes as
 - **`get_summary`** separates the AI's words from the user's. `aiSummary` is what Recly's AI wrote
   from the transcript (`{recording}.notes.json`): `overview`, `sections` (`id`, `kind`, `name`,
   `description`, `items`), `model`, `updatedAt`. An item has `text`, `atSec` and `clock` (the time
-  it rests on), `owner` (a speaker's id), `ownerName` and `due` for a to-do, `done: true` for a to-do
-  the user checked off, and `editedByUser` when the user changed it. `ownerIsUser: true` marks a to-do of the person who made the recording, the
+  it rests on), `owner` (a speaker's id), `ownerName` and `due` for a to-do, and `editedByUser` when
+  the user changed it. `ownerIsUser: true` marks a to-do of the person who made the recording, the
   speaker the transcript marks `me` and the app shows as "Me": the user, not the agent. It comes
   with `ownerName` when that speaker has a name too. `userNotes` (`text`, `updatedAt`) is the notes
   the user wrote in Recly (`{recording}.memo.json`). Each is absent when there is none.

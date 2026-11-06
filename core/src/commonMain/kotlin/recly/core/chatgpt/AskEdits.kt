@@ -184,10 +184,9 @@ internal data class AskProposal(
 
         private fun oneLine(text: String): String = text.replace(Regex("\\s*\\n\\s*"), " ").trim()
 
-        /** [text] without the `(owner: …; due: …)` a summary line gives this item, copied after its words, with or without `done`. */
+        /** [text] without the `(owner: …; due: …)` a summary line gives this item, copied after its words. */
         private fun withoutAbout(text: String, owner: String?, due: String?): String =
-            listOfNotNull(AskPrompts.about(owner, due, done = true), AskPrompts.about(owner, due))
-                .firstOrNull(text::endsWith)?.let { text.removeSuffix(it).trimEnd() } ?: text
+            AskPrompts.about(owner, due)?.let { text.removeSuffix(it).trimEnd() } ?: text
 
         private fun number(element: JsonElement?): Int? = (element as? JsonPrimitive)?.intOrNull
 
@@ -226,7 +225,7 @@ internal object AskEdits {
 internal object AskPrompts {
     const val TRANSCRIPT_HEADING = "TRANSCRIPT — one line per segment: #number [HH:MM:SS] speaker id: text"
     const val SPEAKERS_HEADING = "SPEAKERS"
-    const val SUMMARY_HEADING = "SUMMARY — its overview, then its items under their sections, one line per item: @number text (owner: …; due: …; done) [HH:MM:SS], the item's owner, due date, the user's check of a finished to-do and its time kept apart from its words"
+    const val SUMMARY_HEADING = "SUMMARY — its overview, then its items under their sections, one line per item: @number text (owner: …; due: …) [HH:MM:SS], the item's owner, due date and time kept apart from its words"
     const val REQUEST_HEADING = "REQUEST — what the user asks or wants changed, with anything they give to help"
 
     /** The built-in groups as the request names them, whatever the user calls them. */
@@ -294,11 +293,9 @@ internal object AskPrompts {
             append("Add only what the transcript says, each item with the line it comes from. For anything it does not say — something ")
             append("only in the request").append(if (memo) " or the memo" else "").append(" — add nothing, and say so in \"answer\".\n")
             append("Write the summary's words in the language the summary is in, in the style of its other items.\n")
-            append("An item's text is its words alone, never a time, owner or due date: the (owner: …; due: …; done) and the [HH:MM:SS] that end ")
+            append("An item's text is its words alone, never a time, owner or due date: the (owner: …; due: …) and the [HH:MM:SS] that end ")
             append("a summary line are kept apart and shown beside it; an added item's time is its line's, and its owner and due date go in ")
             append("\"owner\" and \"due\".\n")
-            append("The done that ends a to-do's line is the user's own check, which only they change: a request can neither set it nor clear ")
-            append("it, so leave the to-do's words alone and say so in \"answer\".\n")
             append("A name or term corrected in the transcript is corrected wherever the summary has it too, and the other way round.\n")
         }
         preferences.aboutMe.trim().takeIf { it.isNotEmpty() }?.let {
@@ -343,7 +340,7 @@ internal object AskPrompts {
                 if (items.isEmpty()) append("(none)\n")
                 for (item in items) {
                     append('@').append(numbered.getValue(item)).append(' ').append(item.text)
-                    about(item.owner, item.due, item.done)?.let { append(' ').append(it) }
+                    about(item.owner, item.due)?.let { append(' ').append(it) }
                     append(" [").append(clock(item.atSec)).append("]\n")
                 }
             }
@@ -352,9 +349,9 @@ internal object AskPrompts {
         append('\n').append(REQUEST_HEADING).append('\n').append(request.trim()).append('\n')
     }
 
-    /** What a summary line says after an item's words: `(owner: …; due: …; done)`, or null when it has none of them. */
-    fun about(owner: String?, due: String?, done: Boolean = false): String? =
-        listOfNotNull(owner?.let { "owner: $it" }, due?.let { "due: $it" }, "done".takeIf { done }).takeIf { it.isNotEmpty() }?.joinToString("; ", "(", ")")
+    /** What a summary line says after an item's words: `(owner: …; due: …)`, or null when it has neither. */
+    fun about(owner: String?, due: String?): String? =
+        listOfNotNull(owner?.let { "owner: $it" }, due?.let { "due: $it" }).takeIf { it.isNotEmpty() }?.joinToString("; ", "(", ")")
 
     private fun clock(seconds: Double): String {
         val total = seconds.coerceAtLeast(0.0).toLong()

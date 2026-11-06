@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
@@ -266,21 +265,6 @@ fun BlueprintCheckRow(
         mark = { if (enabled) SelectionMark(selected = checked, filled = true) else DisabledCheckMark(checked) },
         enabled = enabled,
     )
-}
-
-/**
- * docs/09 "To-dos view": [BlueprintCheckRow]'s box alone, before words that do something else when tapped. A check box
- * to accessibility, named [label]. It is laid out at the mark's size, so a row stays as tall as its words, and the touch
- * layer takes it to the touch minimum past that, as a notes row's time button (docs/09 "Component measurements").
- */
-@Composable
-fun BlueprintCheckBox(checked: Boolean, label: String, onCheckedChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .focusRing(blueprint, Radius.badge)
-            .toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange)
-            .semantics { contentDescription = label },
-    ) { SelectionMark(selected = checked, filled = true) }
 }
 
 @Composable

@@ -218,8 +218,6 @@ class MainActivity : ComponentActivity() {
                     // A recording's detail is a page inside the List tab, not a place the tab keeps:
                     // leaving the tab by any way closes it, so coming back is the list.
                     if (tab != Tab.JOBS) jobsModel.closeDetail()
-                    // So is the to-dos view (docs/09 "To-dos view").
-                    if (tab != Tab.JOBS) jobsModel.closeTodos()
                 }
 
                 // docs/10 "A tap goes to the screen that can fix it": the one mapping, shared by the list's
@@ -272,8 +270,6 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         if (entry == Tab.JOBS && tab == Tab.JOBS && jobs.detail != null) {
                                             leaveDetail { jobsModel.closeDetail() }
-                                        } else if (entry == Tab.JOBS && tab == Tab.JOBS) {
-                                            jobsModel.closeTodos()
                                         }
                                         goTo(entry)
                                     },
@@ -512,7 +508,6 @@ private fun JobsTab(
                 fill = state.fills.firstOrNull { it.recordingId == detail.recordingId },
                 onDeleteNote = { model.deleteNote(detail.recordingId, it) },
                 noteLines = { model.noteLines(detail.recordingId, it) },
-                onSetDone = { itemId, done -> model.setDone(detail.recordingId, itemId, done) },
                 retry = state.action,
                 onRetry = model::retry,
                 onCheckKey = onCheckKey,
@@ -539,11 +534,6 @@ private fun JobsTab(
             onDismissImport = model::dismissImportFailure,
             onSearch = model::search,
             onOpenHit = model::openHit,
-            onOpenTodos = model::openTodos,
-            onCloseTodos = model::closeTodos,
-            onOpenTodo = model::openTodo,
-            onCheckTodo = model::checkTodo,
-            onToggleDoneTodos = model::toggleDoneTodos,
         )
     }
 }

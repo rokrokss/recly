@@ -94,8 +94,6 @@ internal fun NotesPane(
     detail: RecordingDetail,
     canSeek: Boolean,
     onSeek: (Double) -> Unit,
-    /** docs/09 "To-dos view": a to-do's box was pressed. */
-    onDone: (NoteItem, Boolean) -> Unit,
     strings: Strings,
     modifier: Modifier = Modifier,
 ) {
@@ -117,7 +115,6 @@ internal fun NotesPane(
                 onSeek = onSeek,
                 linesAround = { atSec -> model.noteLines(detail.recordingId, atSec) },
                 onDelete = { item -> model.deleteNote(detail.recordingId, item.id) },
-                onDone = onDone,
                 strings = strings,
                 seekableDurationSec = detail.audio.totalSec,
                 spanSec = detail.spanSec,

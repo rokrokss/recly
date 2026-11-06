@@ -2414,21 +2414,21 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   `points`, `decisions`, `todos`, `questions` and `sections` (`NoteSectionItems(id, name, items)`, in the order the notes were made with),
   each newest first (latest time first); `organizing` while a part or a final pass of it is being worked on here; `failure`, the last
   `Summarize again` of it that failed here; and `model`, the plan's name for the model they were made with. `get(recordingId)` is the
-  same now. A `NoteItem` has `id`, `kind`, `text` (the user's words once edited), `owner`, `due`, `atSec`, `quote`, `provisional`,
-  `section` and `done` (§8 "To-dos"); `owner` comes resolved — the name the user gave that speaker in the transcript, the app's word for `Me` for an unnamed
+  same now. A `NoteItem` has `id`, `kind`, `text` (the user's words once edited), `owner`, `due`, `atSec`, `quote`, `provisional` and
+  `section`; `owner` comes resolved — the name the user gave that speaker in the transcript, the app's word for `Me` for an unnamed
   `me` (2026-10-30, §8 "Me and others"), or null when the speaker has none or the item is provisional, never `S1`. `deleteItem(recordingId, itemId)` removes an item for good (false when there is none).
   `linesAround(recordingId, atSec)` gives the transcript's lines from 20 seconds before to 40 seconds after (at most 12), for "show
   the transcript here" under an item — the recording's transcript once there is one, before that the parts' made while recording,
   since there is no playback while recording (`NoteLine`: `atSec`, `endSec`, `speakerId`, `speakerName`, `me`, `text`,
   `provisional`).
 - **Copy and share** (2026-10-28). `notes.text(recordingId)` is the notes as text — the overview, then `Key points`, `Decisions`,
-  `To-dos`, `Questions` and the user's sections, each a heading over `- ` items (a to-do `- [ ] `, or `- [x] ` once checked) with ` — owner`, ` · due` and `[HH:MM:SS]` — for `Copy
+  `To-dos`, `Questions` and the user's sections, each a heading over `- ` items with ` — owner`, ` · due` and `[HH:MM:SS]` — for `Copy
   all` and Share → `Summary` (§8 "Exports"); the Markdown transcript the share sheet gets carries the same as its own section. The headings
   are the app's: each shell passes its resources' words with `notes.setHeadings(NotesHeadings(…))` at start and whenever the app's
   language changes, as it passes the locale — except a built-in group the user renamed, which is headed by that name
   (`RecordingNotes.names`, `NoteNames`). With them goes the app's word for `Me` (`NotesHeadings.me`), an unnamed `me`'s as an owner.
 - **Storage.** `{base}.notes.v1.json` beside the parts (`spec/notes.schema.json`): the stage, the overview (and when the user edited it),
-  the items — each with its provisional flag, owner label, evidence, conversation, section, the user's words and a to-do's check — the tombstones of
+  the items — each with its provisional flag, owner label, evidence, conversation, section and the user's words — the tombstones of
   deleted items, the sections the notes were made with, the conversations' spans and summaries, the parts the provisional pass is done
   with, the model and its name, and the times. Final notes, and every change to them here — a pass, an edit, a deletion — also go to the
   recording's Drive or iCloud folder as `{base}.notes.json` with the folder's `notesAt` (§3 "Drive layout"), once the folder exists, so
@@ -2446,31 +2446,10 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   `no_key`, `engine`) and `organize.part.failed` (`stage` `transcribe`, `extract` or `internal`, and `reason`); after Stop
   `organize.final.start` (conversations, model), `organize.final.boundaries` (block, answered, kept), `organize.final.done`
   (conversations, items, tombstoned, dropped, overview), `organize.final.skipped` (`off`, `no_transcript`) and
-  `organize.final.failed` (`reason`); `organize.item.deleted`; `organize.item.done` (`done`); `organize.edited` (items, deleted, overview); `organize.again.start` and
+  `organize.final.failed` (`reason`); `organize.item.deleted`; `organize.edited` (items, deleted, overview); `organize.again.start` and
   `organize.again.failed` (`reason`); `organize.resumed` (jobs) after a sign-in; the storage's `remote.notes.pushed`,
   `remote.notes.push.failed`, `remote.notes.read` and `remote.notes.read.failed`. A sign-in hook that fails
   is `chatgpt.hook.failed`. Ids, counts and codes only — never a word of the transcript or of an item.
-
-### To-dos
-
-2026-11-06 (user decision). A to-do can be checked, and every recording's to-dos read in one place (§9 "To-dos view"). Nothing is
-reminded of, asked about or made in another app, and there is no filter or sort by owner or due date, which is free text as it was said.
-
-- **The check** (`notes.setDone(recordingId, itemId, done)`; false when there is no such to-do, or it already is so). `doneAt` on the
-  item in the notes file (`spec/notes.schema.json`), `NoteItem.done` to the shells. It is a change to the notes like any other: it goes
-  up with final notes to the recording's Drive or iCloud folder, the newer version wins (§8 "Organizing" — "Storage"), and in a local
-  folder it stays on this device. A provisional to-do can be checked too. A later pass keeps the check on an item that says the same (`SameItem.sameText`), as it
-  keeps an edit: by its moment alone a different to-do would be marked done, so one the model words anew comes open again, and one no pass
-  makes again goes as any model item does. Ask's `Undo` is not stopped by a check made since, which stays. A request cannot set or clear a check.
-- **The collection** (`notes.observeTodos()`, never failing; `notes.todos()` is the same now). `RecordingTodos(recordingId, title,
-  startedAt, items)`: every recording with a to-do among the notes on this device, newest recording first, each with its items as its
-  detail orders them, done or not, provisional or not. It goes to no network: a recording whose notes neither a pull nor opening it has
-  brought is not there yet, and an owner's name is read from the transcript on this device. Each recording's items are read once and kept
-  until its notes or transcript file changes (size or time) or the word for `Me` does, so a list of a thousand recordings answers from
-  memory, and a file that cannot be read now costs only its recording. It changes with a check, an edit, a pass, a pull, a named speaker, and with a recording added or deleted.
-- **Copy and share** carry the check (§8 "Organizing" — "Copy and share"), and so does a request's summary line — `(…; done)` — so that
-  `What's left?` is answered from it (§8 "Ask"); the mark copied after an item's words is dropped like its owner and due date.
-- **recly-events.** `get_summary` gives `done: true` on a checked to-do.
 
 ### Memo
 
@@ -3393,30 +3372,6 @@ says provisional or edited: the notes simply change when a pass lands.
   `shell.notes.organize.failed`, `shell.notes.edit.failed`; Apple `shell.notes.organize.failed`, `shell.notes.edit.failed`,
   `shell.notes.copy.failed`, `shell.notes.preferences.failed`, and `shell.chatgpt.summarize.failed` (kept by name) when granting the ChatGPT
   permission fails.
-
-### To-dos view
-
-2026-11-06 (§8 "To-dos", user decision). Android phone, iPhone, Mac and Windows. The Mac popover and the Windows tray popup are short
-lists of recent recordings and do not have it; the watches show no notes at all, so they have neither the view nor the check.
-
-- **Where it is.** Not a tab and not a row: a text button `To-dos` in the list's header (Android, iPhone, the Mac and Windows Details
-  lists), before the import button, shown only while a recording has a to-do. It turns the list's area into the view — the header says
-  `To-dos` with the number still open, its button says the list's own name (`Recordings` on the phones, `Details` on the desktops) and turns it back, and there is no search field. Android's Back turns
-  it back too. A view left with no to-do at all goes back by itself. Each header names the view it is on and the button the other, so no
-  word is on screen twice. Windows' list is 300 wide: where the title and its buttons do not fit on one line, the buttons go under the title, whose word is never broken, and
-  `To-dos` keeps to the touch minimum instead of a worded button's 88; on the view its import button gives way, and dragging a file in still imports.
-- **A group** is one recording: its header is its time, `MM-dd HH:mm` in mono, then its title as its row in the list says it, and a
-  tap opens the recording's detail on its `Summary` chip (the desktop's right pane), as a search hit found in the notes does; on the desktops a recording already open there turns to the chip, with nothing reloaded.
-- **A row** is the Blueprint check box, then the words of a row of the notes (§9 "Notes view"): `<item> — <owner> · <due>`, without the
-  time button. The box checks; a tap anywhere else on the row does what the group's header does. A row checked here stays where it is,
-  struck through in the secondary colour, until the view is left; so a slip can be undone where it happened (`TodoGroups(all, held)`).
-- **`Done`.** Under the open ones a quiet row, `Done` and the count in mono, opens and closes the rest, grouped the same way. With nothing
-  open the done rows are simply there, with no such row.
-- **An import** leaves the view, so that its row is seen coming in.
-- **In the detail** (§9 "Notes view") a to-do's row has the same box before its words, and a done row is struck through in the secondary
-  colour and stays in its place. The record screen's rows and the summary's editor have no box, and no strike-through either.
-- **The box** has the Blueprint selection mark's look (`BlueprintCheckRow`'s) and the platform's touch minimum around it. It is a check box to
-  accessibility, named by the item's words. A failed write leaves the row as it was: `shell.notes.done.failed`, never a dialog.
 
 ### Accessibility
 

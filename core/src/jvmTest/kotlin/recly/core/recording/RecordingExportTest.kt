@@ -69,10 +69,10 @@ class RecordingExportTest {
 
         val text = f.core.exportFile(meta.recordingId, ExportFormat.NOTES)!!.toPath()
         assertEquals("2026-08-26 Weekly.notes.txt", text.name)
-        assertEquals("We ship.\n\nDecisions\n- Ship on Friday [00:00:01]\n\nTo-dos\n- [ ] Send the deck · Monday [00:01:05]\n", f.fs.read(text) { readUtf8() })
+        assertEquals("We ship.\n\nDecisions\n- Ship on Friday [00:00:01]\n\nTo-dos\n- Send the deck · Monday [00:01:05]\n", f.fs.read(text) { readUtf8() })
         val md = f.fs.read(f.core.exportFile(meta.recordingId, ExportFormat.MD)!!.toPath()) { readUtf8() }
         assertTrue(
-            "\n## Notes\n\nWe ship.\n\n### Decisions\n\n- Ship on Friday [00:00:01]\n\n### To-dos\n\n- [ ] Send the deck · Monday [00:01:05]\n\n## Transcript\n\n[00:00:00] hello 1" in md,
+            "\n## Notes\n\nWe ship.\n\n### Decisions\n\n- Ship on Friday [00:00:01]\n\n### To-dos\n\n- Send the deck · Monday [00:01:05]\n\n## Transcript\n\n[00:00:00] hello 1" in md,
             md,
         )
 

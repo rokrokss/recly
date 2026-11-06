@@ -352,25 +352,6 @@ fun BlueprintCheckRow(
     )
 }
 
-/**
- * docs/09 "To-dos view": [BlueprintCheckRow]'s box alone, in a row whose words do something else: a check box to a reader,
- * named [label]. It takes only the mark's room, so a row stays as tall as its words, and a click finds it at Compose's
- * minimum touch target around it, as `BlueprintButton`'s `tight` does.
- */
-@Composable
-fun BlueprintCheckBox(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            // On the accent fill an accent ring would vanish, so a ticked box's ring is the ink on it, as a filled button's is.
-            .focusRing(RoundedCornerShape(Radius.badge), color = if (checked) blueprint.onAccent else null)
-            .pressCursor()
-            .toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange)
-            .semantics { contentDescription = label },
-    ) {
-        SelectionMark(selected = checked, filled = true)
-    }
-}
-
 @Composable
 private fun OptionRow(label: String, modifier: Modifier, mark: @Composable () -> Unit, enabled: Boolean = true) {
     Row(

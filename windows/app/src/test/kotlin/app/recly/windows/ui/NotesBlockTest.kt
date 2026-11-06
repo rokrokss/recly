@@ -128,7 +128,7 @@ class NotesBlockTest {
         val scene = ImageComposeScene(400, 300, Density(1f)) {
             ReclyDesktopTheme(dark = false, highContrast = false) {
                 Box(Modifier.onGloballyPositioned { height = it.size.height }) {
-                    NotesBlock(notes(), canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, onDone = { _, _ -> }, strings = StringTable.of(StringTable.BASE))
+                    NotesBlock(notes(), canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, strings = StringTable.of(StringTable.BASE))
                 }
             }
         }
@@ -208,7 +208,6 @@ class NotesBlockTest {
                         onSeek = { seeks += it },
                         linesAround = { at -> asked += at; listOf(line(74.0, "I'll send the quote")) },
                         onDelete = { deleted += it.id },
-                        onDone = { _, _ -> },
                         strings = strings,
                         spanSec = 600.0,
                     )
