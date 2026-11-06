@@ -5,7 +5,6 @@ package app.recly.android.work
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import recly.core.ReclyCore
 import recly.core.job.Job
@@ -42,7 +41,7 @@ class CoreJobFacade(
 
     override suspend fun runDueJobs(): RunSummary = withContext(core.deps.io) { core.runDueJobs() }
 
-    override suspend fun jobs(): List<Job> = withContext(core.deps.io) { core.jobs.observe().first() }
+    override suspend fun jobs(): List<Job> = withContext(core.deps.io) { core.jobs.list() }
 
     override suspend fun scheduleNext(delay: Duration) = scheduler.armNext(delay)
 }

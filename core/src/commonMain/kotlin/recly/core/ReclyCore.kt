@@ -7,10 +7,10 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.serialization.json.JsonObject
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.sync.withLock
 import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.missingTranscriptAvailability
@@ -435,8 +435,9 @@ class ReclyCore(
      * docs/03 "Recordings from other devices": reads the recordings other devices uploaded into this device's list,
      * and drops the ones they have since deleted. Every job pass does this too ([runDueJobs]); a
      * ledger that has just come on screen calls it itself, with [force] to skip the pass throttle.
-     * Never throws — a device without an account gets a summary that says so.
+     * A sync that fails does not throw — a device without an account gets a summary that says so.
      */
+    @Throws(Throwable::class)
     suspend fun pullRemoteRecordings(force: Boolean = false): PullSummary = remote.pull(force)
 
     /** A successful OAuth connection resumes only work belonging to this verified Drive owner. */
@@ -447,9 +448,10 @@ class ReclyCore(
      * docs/03 "Titles": the detail screen's rename. Written locally at once — the list shows it on
      * `recordings.observe()` — and pushed to Drive (the folder's `description` and `meta.json`)
      * right away when the account and the network allow, otherwise by the next job pass. Returns
-     * false when there is nothing to rename. Never throws: a push that fails is a pending write,
-     * not an error the screen has to show.
+     * false when there is nothing to rename. A push that fails is a pending write, not an error
+     * the screen has to show.
      */
+    @Throws(Throwable::class)
     suspend fun rename(recordingId: String, title: String?): Boolean {
         if (!recordings.rename(recordingId, title)) return false
         remote.pushTitles()
@@ -651,14 +653,19 @@ class ReclyCore(
 
     private val transcriptWriter = recly.core.transcribe.TranscriptWriter(deps)
 
-    /** Only result data changes: shells keep their player and reading position while collecting. */
-    fun observeResults(recordingId: String): Flow<RecordingResult> = combine(
+    /**
+     * Only result data changes: shells keep their player and reading position while collecting.
+     *
+     * Never fails: a read that fails is [TranscriptAvailability.UNAVAILABLE], and the next change reads again. Any one
+     * source wakes it, since one whose read keeps failing has nothing to emit and must not hold back the others.
+     */
+    fun observeResults(recordingId: String): Flow<RecordingResult> = merge(
         jobs.observe().map { all -> all.filter { it.recordingId == recordingId } }.distinctUntilChanged(),
         jobs.observeSteps(recordingId).distinctUntilChanged(),
-        recordings.observe().map { recordings.get(recordingId) }.distinctUntilChanged(),
+        recordings.observeRecord(recordingId).distinctUntilChanged(),
         localTranscription.changes,
         resultChanges,
-    ) { _, _, _, _, _ -> Unit }.map {
+    ).conflate().map {
         try {
             results(recordingId)
         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
@@ -666,9 +673,7 @@ class ReclyCore(
         } catch (e: Throwable) {
             RecordingResult(availability = TranscriptAvailability.UNAVAILABLE)
         }
-    }.distinctUntilChanged().catch {
-        emit(RecordingResult(availability = TranscriptAvailability.UNAVAILABLE))
-    }
+    }.distinctUntilChanged()
 
     private val audioImport = recly.core.recording.AudioImport(deps, recordings) { enqueue(it) }
 

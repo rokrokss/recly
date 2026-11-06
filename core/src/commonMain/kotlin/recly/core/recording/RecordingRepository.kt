@@ -6,10 +6,10 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToOne
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -179,6 +179,7 @@ class RecordingRepository(
             }
     }
 
+    @Throws(Throwable::class)
     suspend fun create(meta: RecordingMeta, dir: Path) {
         beforeCapture(meta)
         try {
@@ -593,6 +594,7 @@ class RecordingRepository(
         true
     }
 
+    @Throws(Throwable::class)
     suspend fun ids(): Set<String> = locked { queries.selectRecordingIds().executeAsList().toSet() }
 
     /**
@@ -621,17 +623,37 @@ class RecordingRepository(
     /**
      * Emits whenever the `recording` table changes. The ledgers watch the job table for progress;
      * this is for the rows a pull adds or drops without a job ever existing.
+     *
+     * It reads nothing, so it cannot fail — a Swift `for await` over a flow that throws ends the app — and the
+     * collector's own read says what it finds.
      */
-    fun observe(): Flow<Unit> = queries.countRecordings().asFlow().mapToOne(deps.io).map { }
+    fun observe(): Flow<Unit> = queries.countRecordings().asFlow().map { }
+
+    /**
+     * The row as it changes. Never fails, as [observe]: a read that fails emits nothing, so what a shell shows stays —
+     * a recording that will not be read is not one that is gone — and the next change reads again.
+     */
+    internal fun observeRecord(recordingId: String): Flow<RecordingRecord?> = observe().transform {
+        val record = try {
+            get(recordingId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            deps.logger.log(Logger.Level.WARN, "rec.observe.read.failed", mapOf("recordingId" to recordingId), e)
+            return@transform
+        }
+        emit(record)
+    }
 
     /** Audio inputs change independently of transcription; title-only edits keep playback intact. */
-    fun observeAudio(recordingId: String): Flow<RecordingRecord?> = observe().map { get(recordingId) }
+    fun observeAudio(recordingId: String): Flow<RecordingRecord?> = observeRecord(recordingId)
         .distinctUntilChanged { before, after ->
             before?.dir == after?.dir && before?.meta?.status == after?.meta?.status &&
                 before?.meta?.parts == after?.meta?.parts && before?.meta?.tracks == after?.meta?.tracks
         }
 
     /** Drops the row, its parts and the whole directory — the orphan purge, and nothing else. */
+    @Throws(Throwable::class)
     suspend fun delete(recordingId: String) {
         delete(recordingId, deleteDrive = false)
     }
@@ -661,6 +683,7 @@ class RecordingRepository(
      * still claim them — the files without leaving the locked pass, so that no cancellation can
      * strand a directory the rows no longer name.
      */
+    @Throws(Throwable::class)
     suspend fun delete(recordingId: String, deleteDrive: Boolean): DeleteResult {
         val executor = executor
         val remove: suspend () -> DeleteResult = {
@@ -758,6 +781,7 @@ class RecordingRepository(
                         .folderId
             }
 
+    @Throws(Throwable::class)
     suspend fun addPart(recordingId: String, part: Part) {
         locked {
             val record = requireRecord(recordingId)
@@ -812,6 +836,7 @@ class RecordingRepository(
      * keep — an empty one leaves whatever the meta already carries, so a recovery pass that knows
      * nothing about either does not erase what the recorder wrote.
      */
+    @Throws(Throwable::class)
     suspend fun finalize(
         recordingId: String,
         endedAt: Instant,
@@ -856,6 +881,7 @@ class RecordingRepository(
      * @param title the name to give it; null leaves the one it has (the dialog's "Skip").
      * @param participants the count the user picked; null is "Unknown" and leaves the meta alone.
      */
+    @Throws(Throwable::class)
     suspend fun updateTitle(recordingId: String, title: String?, participants: Int? = null): Boolean = locked {
         val record = record(recordingId) ?: return@locked false
         if (record.meta.status != RecordingStatus.FINALIZED) return@locked false
@@ -879,12 +905,15 @@ class RecordingRepository(
      * The status of every job of a recording. Callers use it to tell a recording that still needs
      * one from a recording whose job has already read the meta (docs/03).
      */
+    @Throws(Throwable::class)
     suspend fun jobStatuses(recordingId: String): List<JobStatus> = locked {
         queries.selectJobsByRecording(recordingId).executeAsList().map { JobStatus.valueOf(it.status) }
     }
 
+    @Throws(Throwable::class)
     suspend fun get(id: String): RecordingRecord? = locked { record(id) }
 
+    @Throws(Throwable::class)
     suspend fun list(limit: Int): List<RecordingRecord> = locked {
         queries.selectRecordings(limit.toLong()).executeAsList().map {
             RecordingRecord(

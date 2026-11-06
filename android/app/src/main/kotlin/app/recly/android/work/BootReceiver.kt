@@ -11,7 +11,6 @@ import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import recly.core.job.JobStatus
 import recly.core.platform.Logger
@@ -31,7 +30,7 @@ class BootReceiver : BroadcastReceiver() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val core = CoreModule.get(app).core
-                val jobs = core.jobs.observe().first()
+                val jobs = core.jobs.list()
                 val now = core.deps.clock.now()
                 val scheduler = WorkScheduler(app)
                 scheduler.armPeriodic()

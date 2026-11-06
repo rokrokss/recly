@@ -100,6 +100,7 @@ class JobService(
      * refill a retry budget forever. Everything else in [RETRYABLE] has actually stopped, and gets
      * a fresh budget — `state_json` survives either way, so a half-finished upload resumes.
      */
+    @Throws(Throwable::class)
     suspend fun retry(jobId: String): Boolean {
         if (store.disconnected(jobId)) return false
         val job = store.get(jobId) ?: return false
@@ -133,15 +134,17 @@ class JobService(
 
     /**
      * The queue as it stands, once. Every shell has to re-read it after a pass to arm the next run
-     * (docs/11 A5, docs/12 "Runner"); Android takes the first emission of [observe], and a shell whose
-     * Obj-C bridge does not carry `Flow` — the Apple one — has no way to do that.
+     * (docs/11 A5, docs/12 "Runner"). Not the first emission of [observe], which skips a read that
+     * fails: this says the failure.
      */
+    @Throws(Throwable::class)
     suspend fun list(): List<Job> = store.list()
 
     /**
      * Read-only, for the list screen: the failure reason a job shows is the last error of its
      * steps, and the Drive link it offers lives in the `drive.upload` step's output.
      */
+    @Throws(Throwable::class)
     suspend fun steps(jobId: String): List<StepRun> = store.stepsOf(jobId)
 
     fun observeSteps(recordingId: String): Flow<List<StepRun>> = store.observeSteps(recordingId)

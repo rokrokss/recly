@@ -2,12 +2,13 @@
 
 package recly.core.job
 
+import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -27,6 +28,7 @@ import recly.core.model.Workflow
 import recly.core.model.isoUtc
 import recly.core.model.recJson
 import recly.core.platform.CoreDeps
+import recly.core.platform.Logger
 import recly.core.storage.StorageKind
 
 /**
@@ -511,12 +513,25 @@ class JobStore(
         }
     }
 
-    fun observeJobs(): Flow<List<Job>> =
-        queries.selectJobs().asFlow().mapToList(deps.io).map { rows -> rows.map { it.toJob() } }
+    fun observeJobs(): Flow<List<Job>> = queries.selectJobs().observeRows { it.toJob() }
 
     fun observeSteps(recordingId: String): Flow<List<StepRun>> =
-        queries.selectStepRunsByRecording(recordingId).asFlow().mapToList(deps.io)
-            .map { rows -> rows.map { it.toStepRun() } }
+        queries.selectStepRunsByRecording(recordingId).observeRows { it.toStepRun() }
+
+    /**
+     * Never fails: a Swift `for await` over a flow that throws ends the app. A read that fails emits nothing, so what a
+     * shell shows stays, and the next change reads again. So a first value may never come: to read once, [list].
+     */
+    private fun <Row : Any, T> Query<Row>.observeRows(convert: (Row) -> T): Flow<List<T>> = asFlow().mapNotNull {
+        try {
+            withContext(deps.io) { executeAsList().map(convert) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            deps.logger.log(Logger.Level.WARN, "job.observe.read.failed", error = e)
+            null
+        }
+    }
 
     /**
      * True when the job's `drive.upload` steps all succeeded **and** between them they sent every

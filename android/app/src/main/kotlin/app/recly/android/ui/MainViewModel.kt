@@ -167,7 +167,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
         viewModelScope.launch {
             val graph = graph()
             if (graph.auth.account() == null) return@launch
-            val parked = graph.core.jobs.observe().first().any { it.status == JobStatus.NEEDS_AUTH }
+            val parked = graph.core.jobs.list().any { it.status == JobStatus.NEEDS_AUTH }
             if (parked) work { authorize(it, activity) }
         }
     }

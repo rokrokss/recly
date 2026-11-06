@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import recly.core.message.CoreMessage
@@ -172,7 +171,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val core = CoreModule.get(getApplication<Application>()).core
             applyNetworkSetting(
                 scheduler = WorkScheduler(getApplication()),
-                jobs = core.jobs.observe().first(),
+                jobs = core.jobs.list(),
                 now = core.deps.clock.now(),
             )
         }

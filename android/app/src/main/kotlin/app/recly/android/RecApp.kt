@@ -18,7 +18,6 @@ import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
@@ -50,7 +49,7 @@ class RecApp : Application(), RecorderHost {
             runCatching {
                 val scheduler = WorkScheduler(this@RecApp)
                 scheduler.armPeriodic()
-                NextRun.delay(core.jobs.observe().first(), core.deps.clock.now())
+                NextRun.delay(core.jobs.list(), core.deps.clock.now())
                     ?.let { scheduler.armNext(it) }
                 scheduler.runNow()
             }.onFailure { core.deps.logger.log(Logger.Level.ERROR, "job.schedule.failed", emptyMap(), it) }

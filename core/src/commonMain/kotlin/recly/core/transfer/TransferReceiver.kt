@@ -93,6 +93,7 @@ class TransferReceiver(
      * name. A part that is sent twice overwrites itself — the ack may have been lost, and the watch
      * is right to resend.
      */
+    @Throws(Throwable::class)
     suspend fun acceptPart(
         recordingId: String,
         part: Int,
@@ -165,6 +166,7 @@ class TransferReceiver(
      * watch's, and for a recording that is not a transfer in flight here: its final meta filed it already,
      * or it is one this device made. A late in-progress meta must never re-open a recording behind its job.
      */
+    @Throws(Throwable::class)
     suspend fun acceptProgress(recordingId: String, json: String): Boolean = locked {
         val meta = try {
             recJson.decodeFromString<RecordingMeta>(json)
@@ -211,6 +213,7 @@ class TransferReceiver(
      * disk with the hash the meta claims — a recording that says it has five parts and has four is
      * not a recording, it is a transfer that is still going.
      */
+    @Throws(Throwable::class)
     suspend fun acceptMeta(json: String): AcceptMetaResult = locked {
         val meta = try {
             recJson.decodeFromString<RecordingMeta>(json)
@@ -254,12 +257,14 @@ class TransferReceiver(
      * a watch is also the watch's own recording in progress — and the watches run the same recovery.
      * This is the receiver's own marker, so it is true only on the device a transfer is landing on.
      */
+    @Throws(Throwable::class)
     suspend fun receiving(recordingId: String): Boolean = locked { pending(recordingId) }
 
     /**
      * docs/03: parts without a meta 24 hours after the last of them arrived are rubbish — the watch gave up,
      * or was reset. Only rows this receiver opened and that never got their meta are candidates.
      */
+    @Throws(Throwable::class)
     suspend fun purgeOrphans(now: Instant): List<String> = locked {
         val purged = mutableListOf<String>()
         for (row in queries.kvSelectPrefix(PENDING_PREFIX).executeAsList()) {

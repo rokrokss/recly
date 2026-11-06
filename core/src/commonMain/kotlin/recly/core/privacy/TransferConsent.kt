@@ -3,7 +3,6 @@
 package recly.core.privacy
 
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
 import io.ktor.http.URLBuilder
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +23,7 @@ import recly.core.model.recJson
 import recly.core.platform.CoreDeps
 import recly.core.platform.HttpPlan
 import recly.core.platform.HttpResult
+import recly.core.platform.Logger
 import recly.core.platform.Transport
 import recly.core.transcribe.SttProviders
 
@@ -106,21 +106,21 @@ class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) 
     }
 
     fun observe(): Flow<List<TransferTarget>> = queries.kvSelectPrefix(PREFIX).asFlow()
-        .mapToList(deps.io).map { rows ->
+        .map {
             // A failure here cannot reach a shell: a Swift `for await` over this flow ends the app
-            // on it. A keychain that will not be read proves no grant, the same as `requireAllowed`
-            // acts on, and `approved()` is where the shells read — and report — the failure itself.
-            val proof = if (enabled) {
-                try {
-                    deviceProof()
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    null
+            // on it. A store or keychain that will not be read proves no grant, the same as
+            // `requireAllowed` acts on, and `approved()` is where the shells read — and report —
+            // the failure itself. The next change reads again.
+            try {
+                val proof = if (enabled) deviceProof() else null
+                if (proof == null) emptyList() else withContext(deps.io) { it.executeAsList() }.mapNotNull { row ->
+                    decode(row.value_, proof)?.takeIf { row.key == PREFIX + it.id }
                 }
-            } else null
-            if (proof == null) emptyList() else rows.mapNotNull { row ->
-                decode(row.value_, proof)?.takeIf { row.key == PREFIX + it.id }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                deps.logger.log(Logger.Level.WARN, "privacy.consents.read.failed", error = e)
+                emptyList()
             }
         }.distinctUntilChanged()
 

@@ -5,6 +5,7 @@ package recly.core.job
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -172,6 +173,25 @@ class TransferConsentTest {
         val consents = TransferConsents(f.db, testDeps(secureStore = locked, requireTransferConsent = true))
         assertFails { consents.approved() }
         assertEquals(emptyList(), consents.observe().first())
+    }
+
+    @Test
+    fun `a store that will not be read shows no grants, and the next change reads again`() = runBlocking {
+        val f = Fixture(emptyList(), requireTransferConsent = true)
+        val t = target(speech)
+        f.consents.grant(listOf(t))
+        f.driver.execute(null, "ALTER TABLE kv RENAME TO kv_away", 0)
+        val seen = kotlinx.coroutines.channels.Channel<List<TransferTarget>>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+        val watching = launch(kotlinx.coroutines.Dispatchers.Unconfined) { f.consents.observe().collect { seen.send(it) } }
+        try {
+            assertEquals(emptyList(), kotlinx.coroutines.withTimeout(5_000) { seen.receive() })
+            assertTrue("privacy.consents.read.failed" in f.logger.events)
+            assertFails { f.consents.approved() }
+
+            f.driver.execute(null, "ALTER TABLE kv_away RENAME TO kv", 0)
+            f.consents.grant(listOf(t))
+            assertEquals(listOf(t), kotlinx.coroutines.withTimeout(5_000) { seen.receive() })
+        } finally { watching.cancel() }
     }
 
     @Test
