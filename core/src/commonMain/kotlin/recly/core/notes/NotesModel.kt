@@ -42,8 +42,9 @@ enum class NotesStage {
  * edited it. [owner] is already resolved — the name the user gave the speaker it belongs to, [NotesHeadings.me] for
  * the person who made the recording when they have no name (docs/08 "Me and others"), or null when that speaker has
  * none, or while the notes are provisional; never a label like `S1`. [due] is the deadline as it was
- * said. [atSec] and [quote] are its evidence: where on the recording, and the words, verbatim. [section] is the id
- * of the user's section a [NoteKind.SECTION] item is in.
+ * said. [atSec] and [quote] are its evidence: where on the recording, and the words, verbatim; null and empty for an
+ * item no single line carries (2026-11-06, docs/08 "Organizing"). [section] is the id of the user's section a
+ * [NoteKind.SECTION] item is in.
  */
 data class NoteItem(
     val id: String,
@@ -51,7 +52,7 @@ data class NoteItem(
     val text: String,
     val owner: String?,
     val due: String?,
-    val atSec: Double,
+    val atSec: Double?,
     val quote: String,
     val provisional: Boolean,
     val section: String? = null,
@@ -89,7 +90,7 @@ data class NoteNames(
 
 /**
  * A recording's notes (`Notes.observe`): the [overview] once the final pass has written one, and the items by
- * kind, each list newest first (latest [NoteItem.atSec] first) — [points] (key points) after Stop only, and the
+ * kind, final ones in the order the pass wrote them and running ones newest first — [points] (key points) after Stop only, and the
  * user's [sections] in the order they were made with. [names] heads a built-in group the user renamed. [organizing]
  * is true while a part or the final pass is being worked on in this process. [failure] is the `CoreMessage` wire
  * code of the last Organize again of this recording that failed here, until the next one starts. [model] is the
@@ -255,7 +256,8 @@ internal data class StoredNote(
     val text: String,
     val owner: String? = null,
     val due: String? = null,
-    val evidence: NoteEvidence,
+    /** Null for an item no single line carries, which only the final pass writes (docs/08 "Organizing"). */
+    val evidence: NoteEvidence? = null,
     val provisional: Boolean,
     val conversation: Int? = null,
     val section: String? = null,
@@ -295,7 +297,7 @@ internal data class NoteEvidence(val atSec: Double, val quote: String)
 internal data class NoteTombstone(
     val kind: NoteKind,
     val text: String,
-    val atSec: Double,
+    val atSec: Double? = null,
     val deletedAt: String,
     val section: String? = null,
 )

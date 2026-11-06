@@ -160,16 +160,16 @@ internal object QuoteCheck {
 /**
  * docs/08 "Organizing": two notes are the same item — the evaluation's `same_item` — when they are of one kind and
  * their texts are alike ([TEXT_RATIO] after [NoteText.normalize]) or they cite the same moment (within
- * [SAME_MOMENT_SEC]). What a deletion and the final pass are matched by.
+ * [SAME_MOMENT_SEC]); an item with no moment goes by its text alone. What a deletion and the final pass are matched by.
  */
 internal object SameItem {
     const val TEXT_RATIO = 0.6
     const val SAME_MOMENT_SEC = 15.0
 
-    fun matches(kind: NoteKind, text: String, atSec: Double, otherKind: NoteKind, otherText: String, otherAtSec: Double): Boolean {
+    fun matches(kind: NoteKind, text: String, atSec: Double?, otherKind: NoteKind, otherText: String, otherAtSec: Double?): Boolean {
         if (kind != otherKind) return false
         if (sameText(text, otherText)) return true
-        return kotlin.math.abs(atSec - otherAtSec) <= SAME_MOMENT_SEC
+        return atSec != null && otherAtSec != null && kotlin.math.abs(atSec - otherAtSec) <= SAME_MOMENT_SEC
     }
 
     fun sameText(text: String, otherText: String): Boolean =

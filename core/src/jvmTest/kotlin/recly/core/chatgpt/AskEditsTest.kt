@@ -370,6 +370,8 @@ class AskEditsTest {
         assertTrue("S1: Mina\nS2: no name\nS3: Me — the person who made the recording" in input, input)
         assertTrue("Overview: Sync.\nSection decision — Decisions\n@1 Ship it. [00:00:00]\n" in input, input)
         assertTrue("@2 Write it. (owner: Mina; due: Friday) [00:00:01]" in input, input)
+        val noTime = AskSummary(summary.notes.copy(decisions = summary.notes.decisions.map { it.copy(atSec = null, quote = "") }), summary.sections)
+        assertTrue("@1 Ship it.\n" in AskPrompts.input(transcript, noTime, "", "Fix it."), "an item with no time says none")
         assertTrue("Section risks — Risks: What could go wrong\n(none)" in input, input)
         assertTrue("Agenda: launch" in input)
         assertTrue(input.endsWith("${AskPrompts.REQUEST_HEADING}\nFix it.\n"))

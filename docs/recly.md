@@ -2316,7 +2316,9 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   conclusion; after Stop only) and `section` (an item of one of the user's own sections, with that section's id). Each has its text, in
   the notes' language (§8 "AI requests" — `SummaryLanguage`),
   an owner for a to-do — the transcript's speaker label, never a name — a deadline only when one was said, and its evidence: the time
-  of the line it is on (`[HH:MM:SS]`, read back as seconds) and a quote copied from that line verbatim. The time is never in the text
+  of the line it is on (`[HH:MM:SS]`, read back as seconds) and a quote copied from that line verbatim. After Stop an item no single line
+  can carry — it runs through the whole conversation, or only the memo says it — has neither, and so no time (2026-11-06, user decision); one
+  said over a few lines in a row takes the line that says the most of it, an item that gives only one of the two is dropped, and running notes always have both. The time is never in the text
   (2026-11-04): the shells show it beside the item, so the request asks for none and a time copied in anyway is dropped (`NoteText.withoutTimes`). Only the owner carries a label
   (2026-10-28): the requests that write words ask for no speaker label in them — an item's text, a summary, the overview — and for a
   person only as the transcript names them or their role, since a label left in the text stays after the user names that speaker,
@@ -2345,7 +2347,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   digits dropped), matches at least 0.8 (difflib's partial ratio) the transcript's text whose words overlap ±10 s of its time —
   running on past the window by as many words as the quote has; a segment without word timings counts whole. The rule is the
   long-recording evaluation's `quote_check` (`scripts/long-recording-eval`), ported as it was measured. An item that fails it is
-  dropped.
+  dropped, and is not kept as an item with no evidence. An item with no evidence has no quote to check, so nothing holds it to the recording.
 - **What is sent.** The transcript's lines, `[00:12:03] S1: …` — the speaker's label, never a name the user gave — at most about
   20 seconds each (a longer segment with word timings is split, as in the evaluation). Phone numbers, e-mail addresses and runs of
   eight digits or more become `[phone#1]`, `[email#1]` and `[number#1]` — the same value the same placeholder within a request — and
@@ -2382,7 +2384,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
 - **Reconciliation.** The final items replace the provisional ones, and those of an earlier final pass: an item not made again
   disappears without notice, and one made again keeps its id. An item the user deleted (`deleteItem`, or emptied in Edit summary) never
   comes back — not from a later part, a final pass, `Summarize again` or a transcription again — by the evaluation's matching rule: the
-  same kind (and section), and the model's texts at least 0.6 alike (difflib's ratio after normalizing) or the same moment within
+  same kind (and section), and the model's texts at least 0.6 alike (difflib's ratio after normalizing) or, when both have a time, the same moment within
   15 seconds. An item the user edited keeps their words: made again — matched by the texts alone, since by its moment a different item
   would be hidden behind them — it keeps its id and their text over the model's new one; not made again, it stays (one from a part
   loses its owner, a part's label being its own). An overview the user edited stays theirs.
@@ -2414,7 +2416,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   `points`, `decisions`, `todos`, `questions` and `sections` (`NoteSectionItems(id, name, items)`, in the order the notes were made with),
   final notes in the order the pass wrote them, which an item Ask or a pass adds later follows, and provisional ones newest first (latest time first, 2026-11-06); `organizing` while a part or a final pass of it is being worked on here; `failure`, the last
   `Summarize again` of it that failed here; and `model`, the plan's name for the model they were made with. `get(recordingId)` is the
-  same now. A `NoteItem` has `id`, `kind`, `text` (the user's words once edited), `owner`, `due`, `atSec`, `quote`, `provisional` and
+  same now. A `NoteItem` has `id`, `kind`, `text` (the user's words once edited), `owner`, `due`, `atSec` (null with no evidence), `quote` (empty then), `provisional` and
   `section`; `owner` comes resolved — the name the user gave that speaker in the transcript, the app's word for `Me` for an unnamed
   `me` (2026-10-30, §8 "Me and others"), or null when the speaker has none or the item is provisional, never `S1`. `deleteItem(recordingId, itemId)` removes an item for good (false when there is none).
   `linesAround(recordingId, atSec)` gives the transcript's lines from 20 seconds before to 40 seconds after (at most 12), for "show
@@ -2422,7 +2424,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   since there is no playback while recording (`NoteLine`: `atSec`, `endSec`, `speakerId`, `speakerName`, `me`, `text`,
   `provisional`).
 - **Copy and share** (2026-10-28). `notes.text(recordingId)` is the notes as text — the overview, then `Decisions`, `To-dos`,
-  `Key points`, `Questions` and the user's sections, each a heading over `- ` items with ` — owner`, ` · due` and `[HH:MM:SS]` — for `Copy
+  `Key points`, `Questions` and the user's sections, each a heading over `- ` items with ` — owner`, ` · due` and, when the item has a time, `[HH:MM:SS]` — for `Copy
   all` and Share → `Summary` (§8 "Exports"); the Markdown transcript the share sheet gets carries the same as its own section. The headings
   are the app's: each shell passes its resources' words with `notes.setHeadings(NotesHeadings(…))` at start and whenever the app's
   language changes, as it passes the locale — except a built-in group the user renamed, which is headed by that name
@@ -2445,7 +2447,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   dropped, matched a deletion or repeated), `organize.part.skipped` (`reason`: `short`, `not_offered`, `consent`, `provider`,
   `no_key`, `engine`) and `organize.part.failed` (`stage` `transcribe`, `extract` or `internal`, and `reason`); after Stop
   `organize.final.start` (conversations, model), `organize.final.boundaries` (block, answered, kept), `organize.final.done`
-  (conversations, items, tombstoned, dropped, overview), `organize.final.skipped` (`off`, `no_transcript`) and
+  (conversations, items, tombstoned, dropped, overview, withoutTime), `organize.final.skipped` (`off`, `no_transcript`) and
   `organize.final.failed` (`reason`); `organize.item.deleted`; `organize.edited` (items, deleted, overview); `organize.again.start` and
   `organize.again.failed` (`reason`); `organize.resumed` (jobs) after a sign-in; the storage's `remote.notes.pushed`,
   `remote.notes.push.failed`, `remote.notes.read` and `remote.notes.read.failed`. A sign-in hook that fails
@@ -2488,8 +2490,10 @@ nothing rewrites it, and it is never shown inside the notes.
   or the evidence rules. It is not part of the recording: every item still needs a line of the transcript.
   ```
 
-  The quote check is unchanged, so something only the memo says never becomes an item (2026-10-30, user decision): every item keeps a
-  moment of the recording. A try after a wait asks again from the start when the memo changed meanwhile, as when Settings did. Changing
+  The final pass, the only one that may write an item with no line, ends it `It is not part of the recording: what only it says has no line
+  of the transcript.` instead. So a fact only the memo has is an item with no time there (2026-11-06, user decision; from 2026-10-30 every
+  item kept a moment of the recording), and running notes still hold every item to a line. The quote check reads the quote and not the item's
+  words, so such a fact can also land in an item's text or the overview, and it stays there (2026-11-06, user decision). A try after a wait asks again from the start when the memo changed meanwhile, as when Settings did. Changing
   the memo after the notes are written runs nothing and marks nothing: the next `Summarize again` reads it.
 - **Shells.** The recording screens of the phones, the Mac's popover and the Windows tray popup have a `Notes` row while recording; the
   detail has a `Notes` view beside the transcript and the notes, and More → `Notes` while there is none (§9 "AI view"). Every memo editor
@@ -3340,13 +3344,15 @@ says provisional or edited: the notes simply change when a pass lands.
   present, the due date muted. Last comes the item's time at the end of the sentence (2026-11-06, user decision; until then a button in a column of its own), in
   the recording's time format, monospace and muted. No-break spaces hold the owner, the due date and the time together, so they wrap
   as one block after the item's words and no dash or dot ends a line; with neither, the time holds to the last word (`NoteItem.rowOwner`, `rowDue`).
+  An item with no time (§8 "Organizing") ends at its words, and stays where the pass wrote it among the others (2026-11-06, user decision).
   The time is a target over its words, at least the touch minimum each way and taking no room, as an answer's citation is (§9 "AI view"):
   a tap moves the playhead and leaves playing or paused as it was, as the transcript's does (2026-10-28; until then it also played, the
   citation path), accessibility `Go to 00:12:34`, and on Windows a stop for Tab that Enter or Space seeks with. While the recording records, when its audio is not
   held, or past the held audio it is only words, and a tap on it is the row's.
 - **A tap on the row** opens the `linesAround` lines under it — the speaker's name only when there is one (`Me` for an unnamed me, part
   labels never), then the text — with the reader's accent start-edge bar on the note's own line: the line containing the quote, else the
-  one covering its time, else the nearest. One row open at a time; Expand and Collapse are accessibility actions.
+  one covering its time, else the nearest. One row open at a time; Expand and Collapse are accessibility actions. A row with no time has
+  no line to open, so it does not respond to a tap and has no such action; it still deletes as any row does, and on Windows stays a stop for Tab for its menu keys.
 - **Delete**, no confirmation, and a deleted item never comes back (the core keeps a tombstone). Phones: swipe the row end-to-start
   (Android `SwipeToDismissBox` past 96; iPhone a leading drag of 88 or more — two touch targets each), uncovering, only while pulled, a danger strip
   as wide as the pull, with `Delete` in `onDanger` once it is past that; the row carries
@@ -3859,7 +3865,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Import (`AudioImportTest`) | the importing row, staging, parts named and finalized at once, the plan queued; unreadable · unsupported · cancelled leave nothing; recovery leaves an import in progress alone and drops an abandoned one |
 | Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next, no retry on the old plan with transcription off, a failed folder stamp fails and is retried, `Started` after a cancellation once queued |
 | Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
-| Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; a watch's recording organized part by part as it arrives, whichever of a part and its in-progress meta comes first, then filed by its final meta with one job, and a watch's own recording never organized on the watch; append-only items across parts, repeats and deletions; quote check; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again, which waiting notes do not hold up and which closes them |
+| Organizing (`NotesTest`, `NoteTextTest`) | consent before anything is sent and cleared by a sign-out; a part filed while recording transcribed alone on the device and through an external provider's submit and polls; a watch's recording organized part by part as it arrives, whichever of a part and its in-progress meta comes first, then filed by its final meta with one job, and a watch's own recording never organized on the watch; append-only items across parts, repeats and deletions; quote check; an item no line carries, after Stop only, with half of its evidence dropped; placeholders out and back; short parts; an error leaving the part out; the final pass's 10-minute cut, boundary request only for a long stretch, notes per conversation, overview, reconciliation with deletions and kept ids, a written file valid against `spec/notes.schema.json`; a usage limit waiting through the job's retries and asking only what is left; a no-op signed out or without consent; an ended sign-in resumed by signing in; a transcription again, which waiting notes do not hold up and which closes them |
 | Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
 | Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`, `SilenceReminderTest`, `BatteryStopTest`, `StorageFloorTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT, the long-recording reminder (steady silence, conversation, gain, a fan, blips, digital zero) and the battery stop (start reading, charging, unreadable), the storage floors (either side of 200 MB and 50 MB, unreadable) |
 

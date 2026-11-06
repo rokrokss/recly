@@ -1,7 +1,9 @@
 """Unit tests of the notes-eval scorer, on canned answers: python3 -I scripts/notes-eval/test_notes_eval.py"""
 import json
 from pathlib import Path
+import shutil
 import sys
+import tempfile
 import unittest
 
 HERE = Path(__file__).resolve().parent
@@ -66,6 +68,14 @@ class Reading(unittest.TestCase):
         broken = [item(text=""), item(text=None), item(text="[00:00:10]"), item(at="soon"), item(at="00:61:00"),
                   item(quote="  "), item(at=True), item(at=-3)]
         self.assertEqual([], read(answer(*broken))["items"])
+
+    def test_an_item_may_have_neither_a_time_nor_a_quote_but_not_one_of_them(self):
+        reading = read(answer(item(at=None, quote=None), item(at=None), item(quote=None)))
+        self.assertEqual(3, reading["offered"])
+        self.assertEqual([(None, None, True)], [(i["atSec"], i["quote"], i["kept"]) for i in reading["items"]])
+
+    def test_only_the_final_pass_takes_an_item_without_a_time(self):
+        self.assertEqual([], scoring.items({"items": [item(at=None, quote=None)]}, {}, points=False))
 
     def test_times_are_read_as_the_app_reads_them(self):
         self.assertEqual(3723.0, scoring.seconds("01:02:03"))
@@ -132,6 +142,47 @@ class Cases(unittest.TestCase):
                 self.assertIn(value, text)
 
 
+class Memo(unittest.TestCase):
+    """A fact only the memo has: where the answer put it, which no other count shows."""
+    NAME = "ko-memo-pilot"
+
+    def grade(self, *items, summary="A summary."):
+        case = scoring.load_case(CASES / self.NAME)
+        return scoring.grade(case, scoring.read_answer(answer(*items, summary=summary), {}, case["segments"], case["speakers"]), 5.0)
+
+    def test_the_good_answer_puts_every_memo_fact_on_a_row_with_no_time(self):
+        case = scoring.load_case(CASES / self.NAME)
+        result = scoring.grade(case, scoring.read_answer(canned("good", self.NAME), {}, case["segments"], case["speakers"]), 5.0)
+        self.assertEqual({"correct": result["planted"]}, {k: v for k, v in result["counts"].items() if v})
+        self.assertEqual(result["time"]["checked"], result["time"]["within"])
+        self.assertEqual(0, result["dropped"])
+        self.assertEqual(3, result["withoutTime"])
+        self.assertEqual({"budget": ["row"], "successor": ["row"], "competitor": ["row"]}, result["memo"])
+        self.assertEqual(3, sum(line["category"] == "memo" for line in result["items"]))
+
+    def test_each_place_a_memo_fact_can_land_is_told_apart(self):
+        result = self.grade(
+            item(text="파일럿 예산 3천만 원이 승인되었다.", at="00:00:31", quote="그럼 계약서 초안은 제가 이번 주 금요일까지 고객사에 보낼게요."),
+            item(text="이수진 과장의 후임을 확인한다.", at="00:00:31", quote="나오지 않은 말을 지어낸 인용입니다."),
+            summary="경쟁사 B사도 제안했다고 한다.")
+        self.assertEqual({"budget": ["timed"], "successor": ["dropped"], "competitor": ["overview"]}, result["memo"])
+        self.assertEqual(1, result["dropped"])
+        self.assertEqual(0, result["counts"]["fabricated"], "a fact the memo gave is not made up")
+
+    def test_a_fact_nobody_put_anywhere_is_left_out(self):
+        self.assertEqual({"budget": [], "successor": [], "competitor": []}, self.grade(item())["memo"])
+
+    def test_a_case_cannot_call_a_fact_memo_only_when_it_was_said(self):
+        with tempfile.TemporaryDirectory() as folder:
+            case = Path(folder) / "said"
+            shutil.copytree(CASES / self.NAME, case)
+            truth = json.loads((case / "truth.json").read_text())
+            truth["memoOnly"].append({"id": "seats", "topic": [["20석"]]})
+            (case / "truth.json").write_text(json.dumps(truth))
+            with self.assertRaises(ValueError):
+                scoring.load_case(case)
+
+
 class Scoring(unittest.TestCase):
     def counts(self, result):
         return {k: v for k, v in result["counts"].items() if v}
@@ -179,6 +230,16 @@ class Scoring(unittest.TestCase):
         self.assertEqual({"checked": 7, "within": 5}, strict["time"])  # launch-mail 7 s off, ad-budget 6 s off
         self.assertEqual({"checked": 7, "within": 7}, loose["time"])
         self.assertEqual({"checked": 6, "within": 4}, grade("en-trade-fair", canned("bad", "en-trade-fair"))["time"])
+
+    def test_a_planted_item_without_a_time_misses_it_and_is_listed_as_such(self):
+        good = json.loads(canned("good", "en-trade-fair"))
+        whole = grade("en-trade-fair", canned("good", "en-trade-fair"))
+        good["items"][0].update(at=None, quote=None)
+        without = grade("en-trade-fair", json.dumps(good))
+        self.assertEqual(0, whole["withoutTime"])
+        self.assertEqual(1, without["withoutTime"])
+        self.assertEqual(whole["time"]["checked"], without["time"]["checked"])
+        self.assertEqual(whole["time"]["within"] - 1, without["time"]["within"])
 
     def test_an_unreadable_answer_misses_everything(self):
         result = grade("en-trade-fair", "I could not find any decisions.")

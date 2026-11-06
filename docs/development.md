@@ -110,7 +110,7 @@ cd spec && npm ci && npm run validate            # validate the examples against
 ```
 
 **Notes extraction bench** (Python, standard library) — scores the decisions, to-dos and open
-questions ChatGPT draws from three synthetic meetings, sent as the app's own code builds them
+questions ChatGPT draws from four synthetic meetings, sent as the app's own code builds them
 (`scripts/notes-eval/README.md`). `make test` compiles its renderer and never runs it; nothing is
 sent without `--send`:
 

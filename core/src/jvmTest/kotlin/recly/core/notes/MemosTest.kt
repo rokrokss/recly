@@ -72,6 +72,9 @@ class MemosTest {
 
     private fun block(memo: String) = NotesPrompts.MEMO + "\n" + memo + "\n\n"
 
+    /** In the final pass's input, where an item can come from the memo alone (2026-11-06). */
+    private fun finalBlock(memo: String) = NotesPrompts.MEMO_FINAL + "\n" + memo + "\n\n"
+
     @Test
     fun `a memo is kept as typed, at most 2000 characters, and an emptied one stays as an empty text`() = runBlocking {
         val meta = f.record()
@@ -136,9 +139,12 @@ class MemosTest {
 
         assertEquals(JobStatus.DONE, f.core.jobs.list().single().status)
         assertEquals(3, responses().size)
-        assertTrue(input(0).startsWith(block("Agenda: alpha, bravo") + NotesPrompts.TRANSCRIPT) && "alpha1" in input(0), input(0))
-        assertTrue(input(1).startsWith(block("Agenda: alpha, bravo") + NotesPrompts.TRANSCRIPT) && "bravo1" in input(1), input(1))
+        assertTrue(input(0).startsWith(finalBlock("Agenda: alpha, bravo") + NotesPrompts.TRANSCRIPT) && "alpha1" in input(0), input(0))
+        assertTrue(input(1).startsWith(finalBlock("Agenda: alpha, bravo") + NotesPrompts.TRANSCRIPT) && "bravo1" in input(1), input(1))
         assertTrue(input(2).startsWith(block("Agenda: alpha, bravo") + NotesPrompts.CONVERSATIONS), input(2))
+        // What only the memo says can be an item of its own, with no time (2026-11-06).
+        val asked = responses()[0].json()["instructions"]!!.jsonPrimitive.content
+        assertTrue("or only the memo says it" in asked && "neither the transcript nor the memo" in asked, asked)
         val fillRequest = chatGpt.server.requests.first(chatGpt::isFill)
         val fill = text(fillRequest)
         assertTrue(fill.endsWith("\n" + block("Agenda: alpha, bravo")), fill)
@@ -180,7 +186,7 @@ class MemosTest {
 
         assertEquals(JobStatus.DONE, f.core.jobs.list().single().status)
         assertEquals(5, responses().size, "the conversation already done is asked again, with the memo as it is now")
-        assertTrue(input(2).startsWith(block("second")) && "alpha1" in input(2), input(2))
+        assertTrue(input(2).startsWith(finalBlock("second")) && "alpha1" in input(2), input(2))
         assertTrue(input(4).startsWith(block("second") + NotesPrompts.CONVERSATIONS), input(4))
     }
 

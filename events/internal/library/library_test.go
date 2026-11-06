@@ -650,6 +650,20 @@ func TestSummaryMarksTheUsersOwnToDos(t *testing.T) {
 	}
 }
 
+func TestAnItemWithNoTimeSaysSoAndComesFirst(t *testing.T) {
+	notes := []byte(`{"items":[{"kind":"point","text":"Later.","evidence":{"atSec":0}},
+		{"kind":"point","text":"The whole meeting ran on one assumption."}]}`)
+	out := renderSummary(&SummaryFiles{RecordingID: idA, Notes: notes})
+	want := `[{"text":"The whole meeting ran on one assumption."},{"text":"Later.","atSec":0,"clock":"00:00:00"}]`
+	if b, _ := Marshal(out.AISummary.Sections[0].Items); string(b) != want {
+		t.Fatalf("items = %s", b)
+	}
+	texts := summaryTexts(notes)
+	if len(texts) != 2 || texts[0].AtSec == nil || *texts[0].AtSec != 0 || texts[1].AtSec != nil {
+		t.Fatalf("texts = %+v", texts)
+	}
+}
+
 func TestSummaryStopsAtThePageCap(t *testing.T) {
 	root := t.TempDir()
 	dir := filepath.Join(root, baseA)

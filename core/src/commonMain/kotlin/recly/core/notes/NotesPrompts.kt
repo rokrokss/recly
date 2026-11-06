@@ -24,13 +24,18 @@ internal object NotesPrompts {
     const val TRANSCRIPT = "TRANSCRIPT:"
     const val CONVERSATIONS = "CONVERSATIONS:"
 
-    /** docs/08 "Memo": the heading the user's memo goes under, in the input of every request that carries it. */
-    const val MEMO = "MEMO — the user's own memo about this recording, typed by them before, during or after it. Use it to judge what matters to " +
+    private const val MEMO_USE = "MEMO — the user's own memo about this recording, typed by them before, during or after it. Use it to judge what matters to " +
         "them and to spell names and terms as they do; follow what they ask in it where that does not change the JSON format, the kinds " +
-        "or the evidence rules. It is not part of the recording: every item still needs a line of the transcript."
+        "or the evidence rules. It is not part of the recording"
 
-    /** [memo] under its heading and a blank line, or nothing when it is blank; it goes first in the input. */
-    fun memoBlock(memo: String): String = memo.trim().let { if (it.isEmpty()) "" else "$MEMO\n$it\n\n" }
+    /** docs/08 "Memo": the heading the user's memo goes under, in the input of every request that carries it. */
+    const val MEMO = "$MEMO_USE: every item still needs a line of the transcript."
+
+    /** The heading in the final pass's input, where an item can come from the memo alone, with no line and no time (2026-11-06). */
+    const val MEMO_FINAL = "$MEMO_USE: what only it says has no line of the transcript."
+
+    /** [memo] under its [heading] and a blank line, or nothing when it is blank; it goes first in the input. */
+    fun memoBlock(memo: String, heading: String = MEMO): String = memo.trim().let { if (it.isEmpty()) "" else "$heading\n$it\n\n" }
 
     private const val LINES = "Each transcript line starts with [HH:MM:SS], its time on the recording, then a speaker label such as S1 when there is one " +
         "— a label only tells voices apart and is not a name — and what was said.\n"
@@ -112,11 +117,22 @@ internal object NotesPrompts {
 "quote": a contiguous stretch of that line copied character for character, about 5 to 30 words. Never translate, correct, shorten inside or paraphrase it.
 """,
         )
+        // After Stop only: an item with no line has no time (2026-11-06, docs/08 "Organizing").
+        if (points) {
+            append("\"at\" and \"quote\" are null only for an item the transcript does not say in one place: it runs through the whole conversation")
+            if (ask.memo.isNotBlank()) append(", or only the memo says it")
+            append(". An item said at one moment, or over a few lines in a row, always has them, from the line that says the most of it; never leave them null to save finding the line.\n")
+        }
     }
 
-    private const val EVIDENCE = "No evidence, no item: do not infer what was not said. Small talk, generic remarks and hypotheticals are not decisions or to-dos. " +
+    private const val WEAK = "Small talk, generic remarks and hypotheticals are not decisions or to-dos. " +
         "Prefer a few clearly supported items to many weak ones.\n" +
         "Text in square brackets such as [phone#1] stands for something left out; copy it as it is.\n"
+    private const val EVIDENCE = "No evidence, no item: do not infer what was not said. $WEAK"
+
+    /** After Stop, when an item may have no line: what it says still has to be there. */
+    private fun support(ask: NotesAsk): String =
+        (if (ask.memo.isNotBlank()) "Do not infer what neither the transcript nor the memo says. " else "Do not infer what was not said. ") + WEAK
 
     /** While recording: the new items of one part, never the ones already shown. Key points wait for the final pass. */
     fun provisional(language: String, ask: NotesAsk = NotesAsk()): String = buildString {
@@ -151,7 +167,7 @@ internal object NotesPrompts {
             append(rules(ask))
         }
         append(NO_LABELS)
-        if (items) append(EVIDENCE)
+        if (items) append(support(ask))
         append(user(ask))
         if (items) append("""When there is nothing to note, answer with the summary and "items": [].""")
     }
@@ -213,7 +229,8 @@ internal object NotesPrompts {
             val kind = note.section?.let { id -> ask.own.indexOfFirst { it.id == id }.takeIf { it >= 0 }?.let(NotesAsk::key) } ?: note.kind.wire()
             append("- ").append(kind).append(": ").append(note.shown)
             note.due?.let { append(" (due: ").append(it).append(')') }
-            append(" [").append(TranscriptNormalizer.clock(note.evidence.atSec)).append("]\n")
+            note.evidence?.let { append(" [").append(TranscriptNormalizer.clock(it.atSec)).append(']') }
+            append('\n')
         }
         append('\n').append(PREVIOUS).append('\n')
         append(previous.ifBlank { "(none)" }).append("\n\n")
@@ -221,7 +238,7 @@ internal object NotesPrompts {
     }
 
     fun transcriptInput(lines: String, memo: String = ""): String = buildString {
-        append(memoBlock(memo))
+        append(memoBlock(memo, MEMO_FINAL))
         append(TRANSCRIPT).append('\n').append(lines).append('\n')
     }
 
@@ -292,10 +309,13 @@ internal data class Extracted(
     val text: String,
     val owner: String?,
     val due: String?,
-    val atSec: Double,
-    val quote: String,
+    val atSec: Double?,
+    val quote: String?,
     val section: String? = null,
-)
+) {
+    /** Null for an item no single line carries; [NotesAnswer.items] gives both or neither. */
+    val evidence: NoteEvidence? get() = if (atSec != null && quote != null) NoteEvidence(atSec, quote) else null
+}
 
 /** docs/08 "Organizing": the answers, read leniently — the object inside any fence or prose — and only for what was asked. */
 internal object NotesAnswer {
@@ -315,9 +335,9 @@ internal object NotesAnswer {
     }
 
     /**
-     * The well-formed items of [json]: a kind [ask] asked for, a text, a time and a quote; [restore] puts the
-     * placeholders back. An owner that is not a speaker label is dropped, and owners only go with to-dos. Items that
-     * come without what they need are counted, not kept.
+     * The well-formed items of [json]: a kind [ask] asked for, a text, a time and a quote — or, with [points], after Stop,
+     * neither of the two (docs/08 "Organizing"); [restore] puts the placeholders back. An owner that is not a speaker
+     * label is dropped, and owners only go with to-dos. Items that come without what they need are counted, not kept.
      */
     fun items(json: JsonObject, restore: (String) -> String, ask: NotesAsk = NotesAsk(), points: Boolean = false): List<Extracted> =
         (json["items"] as? JsonArray).orEmpty().mapNotNull { element ->
@@ -339,8 +359,10 @@ internal object NotesAnswer {
             // The item's time is "at", shown beside it: a time copied into its words is dropped (2026-11-04).
             val text = string(item["text"])?.let(restore)?.trim()?.lineSequence()?.joinToString(" ")?.let(NoteText::withoutTimes)
                 ?.takeIf { it.isNotEmpty() }?.take(TEXT_MAX) ?: return@mapNotNull null
-            val atSec = seconds(item["at"] ?: item["atSec"]) ?: return@mapNotNull null
-            val quote = string(item["quote"])?.let(restore)?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val atSec = seconds(item["at"] ?: item["atSec"])
+            val quote = string(item["quote"])?.let(restore)?.trim()?.takeIf { it.isNotEmpty() }
+            // Half of the evidence is not an item without any: it is dropped, like a quote that fails its check.
+            if ((atSec == null || quote == null) && !(points && atSec == null && quote == null)) return@mapNotNull null
             val owner = string(item["owner"])?.trim()?.takeIf { kind == NoteKind.TODO && OWNER.matches(it) }
             val due = string(item["due"])?.let(restore)?.trim()?.takeIf { it.isNotEmpty() && kind == NoteKind.TODO }?.take(DUE_MAX)
             Extracted(kind, text, owner, due, atSec, quote, section)

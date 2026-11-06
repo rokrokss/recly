@@ -341,7 +341,8 @@ internal object AskPrompts {
                 for (item in items) {
                     append('@').append(numbered.getValue(item)).append(' ').append(item.text)
                     about(item.owner, item.due)?.let { append(' ').append(it) }
-                    append(" [").append(clock(item.atSec)).append("]\n")
+                    item.atSec?.let { append(" [").append(clock(it)).append(']') }
+                    append('\n')
                 }
             }
         }

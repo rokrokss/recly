@@ -1,0 +1,212 @@
+{
+ "about": "Korean pilot review with a memo: the seats go from 50 to 20 (old value), the term is three months against a suggested two (near value), a video is only floated (hedge), who answers questions is asked and answered at once, lunch talk. Its memo repeats one fact that was said and holds three that were not: a budget approved in the hallway after the meeting, a contact's leave and successor, a competitor's bid. Those three have no line, so they are where a row with no time belongs.",
+ "appLocale": "ko-KR",
+ "items": [
+  {
+   "id": "seats",
+   "kind": "decision",
+   "topic": [
+    [
+     "좌석",
+     "20석",
+     "50석",
+     "seat"
+    ]
+   ],
+   "value": [
+    "20석",
+    "스무석",
+    "20seats"
+   ],
+   "old": [
+    "50석",
+    "오십석"
+   ],
+   "at": [
+    "00:00:17",
+    "00:00:25"
+   ],
+   "oldAt": [
+    "00:00:05",
+    "00:00:13"
+   ]
+  },
+  {
+   "id": "term",
+   "kind": "decision",
+   "topic": [
+    [
+     "기간",
+     "석달",
+     "세달",
+     "3개월",
+     "3달",
+     "두달",
+     "2개월"
+    ]
+   ],
+   "value": [
+    "석달",
+    "세달",
+    "3개월",
+    "3달"
+   ],
+   "wrong": [
+    "두달",
+    "2개월",
+    "2달"
+   ],
+   "at": [
+    "00:00:48"
+   ],
+   "oldAt": [
+    "00:00:42"
+   ]
+  },
+  {
+   "id": "contract-draft",
+   "kind": "todo",
+   "topic": [
+    [
+     "계약"
+    ]
+   ],
+   "owner": "S2",
+   "due": [
+    "금요일",
+    "friday"
+   ],
+   "at": [
+    "00:00:31"
+   ]
+  },
+  {
+   "id": "data-link",
+   "kind": "todo",
+   "topic": [
+    [
+     "연동",
+     "테스트환경"
+    ]
+   ],
+   "owner": "S3",
+   "due": [
+    "수요일",
+    "wednesday"
+   ],
+   "at": [
+    "00:00:54"
+   ]
+  },
+  {
+   "id": "contact-window",
+   "kind": "todo",
+   "kinds": [
+    "todo",
+    "decision"
+   ],
+   "topic": [
+    [
+     "문의",
+     "창구"
+    ]
+   ],
+   "owner": "S2",
+   "due": null,
+   "at": [
+    "00:02:05"
+   ]
+  },
+  {
+   "id": "security-review",
+   "kind": "question",
+   "topic": [
+    [
+     "보안"
+    ]
+   ],
+   "at": [
+    "00:01:02",
+    "00:01:06"
+   ]
+  }
+ ],
+ "traps": [
+  {
+   "id": "training-video",
+   "type": "hedge",
+   "topic": [
+    [
+     "영상"
+    ]
+   ],
+   "at": [
+    "00:01:38",
+    "00:01:44"
+   ]
+  },
+  {
+   "id": "who-answers",
+   "type": "answered",
+   "topic": [
+    [
+     "누가"
+    ],
+    [
+     "문의",
+     "창구"
+    ]
+   ],
+   "at": [
+    "00:02:01"
+   ]
+  },
+  {
+   "id": "lunch",
+   "type": "smalltalk",
+   "topic": [
+    [
+     "점심",
+     "국밥"
+    ]
+   ],
+   "at": [
+    "00:01:50",
+    "00:01:56"
+   ]
+  }
+ ],
+ "memoOnly": [
+  {
+   "id": "budget",
+   "topic": [
+    [
+     "예산",
+     "3천만",
+     "3000만",
+     "삼천만"
+    ]
+   ]
+  },
+  {
+   "id": "successor",
+   "topic": [
+    [
+     "이수진",
+     "육아휴직",
+     "휴직",
+     "후임"
+    ]
+   ]
+  },
+  {
+   "id": "competitor",
+   "topic": [
+    [
+     "경쟁사",
+     "B사"
+    ]
+   ]
+  }
+ ]
+}

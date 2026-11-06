@@ -57,6 +57,11 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def memo(name):
+    path = CASES / name / "memo.txt"
+    return path.read_text().strip() if path.is_file() else ""
+
+
 def request(name):
     """The rendered request of a case, refusing one rendered from an older transcript."""
     folder = REQUESTS / name
@@ -64,7 +69,8 @@ def request(name):
         sys.exit(f"{name}: no request in {folder}. Render first: python3 -I scripts/notes-eval/notes_eval.py render")
     meta = json.loads((folder / "request.json").read_text())
     truth = json.loads((CASES / name / "truth.json").read_text())
-    if meta["transcriptSha256"] != sha256(CASES / name / "transcript.json") or meta["appLocale"] != truth["appLocale"]:
+    if (meta["transcriptSha256"] != sha256(CASES / name / "transcript.json") or meta["appLocale"] != truth["appLocale"]
+            or meta["memo"] != memo(name)):
         sys.exit(f"{name}: the case changed since its request was rendered. Render again.")
     return {"dir": folder, "meta": meta, "instructions": (folder / "instructions.txt").read_text(),
             "input": (folder / "input.txt").read_text()}
@@ -101,10 +107,14 @@ def codex_command(folder, answer, model, effort, workdir):
 
 def run(args):
     names = case_names()
+    if args.case:
+        if args.case not in names:
+            sys.exit(f"no case {args.case}: {', '.join(names)}")
+        names = [args.case]
     requests = {name: request(name) for name in names}
     run_dir = RUNS / (args.run_id or datetime.now().strftime("%Y%m%dT%H%M%S"))
     model = args.model or "MODEL"
-    print(f"{len(names)} cases ({', '.join(names)}): a real run makes {len(names)} calls, one per case, "
+    print(f"{len(names)} case(s) ({', '.join(names)}): a real run makes {len(names)} call(s), one per case, "
           f"to {model} through `codex exec` on the signed-in ChatGPT plan.")
     print(f"Answers go to {run_dir}/<case>.txt, codex's output to <case>.log, timings to run.json.")
     example = codex_command(REQUESTS / names[0], run_dir / f"{names[0]}.txt", model, args.effort, "<empty temp dir>")
@@ -177,16 +187,17 @@ def score(args):
 
 
 def report(results, verbose, tolerance):
-    columns = ("planted",) + scoring.CATEGORIES + ("dropped", "points")
+    columns = ("planted",) + scoring.CATEGORIES + ("dropped", "points", "no time")
     rows = [(r["case"], {"planted": r["planted"], **r["counts"], "dropped": r["dropped"], "points": r["points"],
-                         "time": (r["time"]["within"], r["time"]["checked"])}) for r in results]
+                         "no time": r["withoutTime"], "time": (r["time"]["within"], r["time"]["checked"])}) for r in results]
     total = {c: sum(row[c] for _, row in rows) for c in columns}
     total["time"] = tuple(sum(row["time"][i] for _, row in rows) for i in (0, 1))
     print(f"{'case':<17}" + "".join(f"{c:>{len(c) + 2}}" for c in columns) + f"{'time ok':>9}")
     for name, row in rows + [("total", total)]:
         print(f"{name:<17}" + "".join(f"{row[c]:>{len(c) + 2}}" for c in columns) + f"{'%d/%d' % row['time']:>9}")
     print(f"(time ok: evidence within {tolerance:g} s of a ground-truth line; dropped: items the app would not keep "
-          "— malformed, or a quote not found near its time; points: key points, not scored)")
+          "— malformed, or a quote not found near its time; points: key points, not scored; no time: items kept "
+          "without a time or a quote, always listed: nothing checks them)")
     for r in results:
         print(f"\n{r['case']}: parser {r['parser']}")
         for difference in r.get("parserDifferences", []):
@@ -194,17 +205,21 @@ def report(results, verbose, tolerance):
         if not r["readable"]:
             print("  unreadable answer: no JSON object")
         for line in r["items"]:
-            quiet = line["category"] == "point" or (line["category"] == "correct" and line["timeOff"] <= tolerance)
+            timed = line["atSec"] is not None
+            quiet = timed and (line["category"] == "point" or (line["category"] == "correct" and line["timeOff"] <= tolerance))
             if quiet and not verbose:
                 continue
-            clock = f"{int(line['atSec']) // 3600:02d}:{int(line['atSec']) % 3600 // 60:02d}:{int(line['atSec']) % 60:02d}"
+            clock = (f"{int(line['atSec']) // 3600:02d}:{int(line['atSec']) % 3600 // 60:02d}:{int(line['atSec']) % 60:02d}"
+                     if timed else "no time ")
             detail = ", ".join(line["reasons"])
-            if line.get("timeOff", 0) > tolerance:
+            if timed and line.get("timeOff", 0) > tolerance:
                 detail = ", ".join(filter(None, [detail, f"evidence {line['timeOff']:g} s off"]))
             print(f"  {line['category']:<10} {line['kind']:<8} {clock}  {line['text']}"
                   + (f"  [{line['entry']}]" if line["entry"] else "") + (f"  ({detail})" if detail else ""))
         for missing in r["missing"]:
             print(f"  {'missing':<10} {missing}")
+        for fact, places in r["memo"].items():
+            print(f"  {'memo only':<10} {fact}: {', '.join(places) or 'left out'}")
 
 
 def main():
@@ -217,6 +232,7 @@ def main():
     p.add_argument("--effort", choices=["low", "medium", "high"],
                    help="reasoning effort (the app sends none for notes; default: codex's default for the model)")
     p.add_argument("--run-id", help="the run folder's name under build/notes-eval/runs (default: the time)")
+    p.add_argument("--case", help="only this case (default: every case)")
     p.add_argument("--send", action="store_true", help="really send the transcripts, on your ChatGPT plan")
     p = sub.add_parser("score", help="grade answers against the ground truth")
     p.add_argument("--answers", required=True, help="a folder with <case>.txt answers")

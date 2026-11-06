@@ -189,10 +189,9 @@ def items(found, placeholders, points=True):
         if not text:
             continue
         at_sec = seconds(element["at"] if "at" in element else element.get("atSec"))
-        if at_sec is None:
-            continue
-        quote = restore(_string(element.get("quote")) or "", placeholders).strip()
-        if not quote:
+        quote = restore(_string(element.get("quote")) or "", placeholders).strip() or None
+        # Both or neither, and neither only where key points are asked: the final pass.
+        if (at_sec is None or quote is None) and not (points and at_sec is None and quote is None):
             continue
         owner = (_string(element.get("owner")) or "").strip()
         owner = owner if kind == "todo" and _OWNER.fullmatch(owner) else None
@@ -212,7 +211,7 @@ def read_answer(text, placeholders, segments, speakers):
     kept = []
     for item in items(found, placeholders):
         item["owner"] = item["owner"] if item["owner"] in speakers else None
-        item["kept"] = quote_passes(item["quote"], item["atSec"], segments)
+        item["kept"] = item["quote"] is None or quote_passes(item["quote"], item["atSec"], segments)
         kept.append(item)
     offered = len(found["items"]) if isinstance(found.get("items"), list) else 0
     return {"readable": True, "summary": summary, "offered": offered, "items": kept}
@@ -276,8 +275,14 @@ def load_case(folder):
         for t in entry["times"] + entry["oldTimes"]:
             if t not in lines:
                 raise ValueError(f"{folder.name}/{entry['id']}: no line starts at {t:.0f} s")
+    memo_file = folder / "memo.txt"
+    memo = memo_file.read_text().strip() if memo_file.is_file() else ""
+    memo_only = truth.get("memoOnly", [])
+    for fact in memo_only:
+        if not _topic(memo, fact["topic"]) or _topic(" ".join(lines.values()), fact["topic"]):
+            raise ValueError(f"{folder.name}/{fact['id']}: a memo-only fact must be in the memo and not in the transcript")
     return {"name": folder.name, "transcript": transcript, "segments": segments, "lines": lines,
-            "speakers": speakers, "entries": entries, "appLocale": truth["appLocale"]}
+            "speakers": speakers, "entries": entries, "appLocale": truth["appLocale"], "memo": memo, "memoOnly": memo_only}
 
 
 # ---------------------------------------------------------------- grading
@@ -326,12 +331,13 @@ def identify(item, case):
         if item["kind"] == "point" and entry.get("type") != "smalltalk":
             continue
         times = entry["times"] + entry["oldTimes"]
-        quoted = any(partial_ratio(chars(item["quote"]), chars(case["lines"][t])) >= QUOTE_THRESHOLD for t in times)
+        quoted = item["quote"] is not None and any(
+            partial_ratio(chars(item["quote"]), chars(case["lines"][t])) >= QUOTE_THRESHOLD for t in times)
         named = _topic(item["text"], entry["topic"])
         if not (quoted or named):
             continue
         rank = (2 * (item["kind"] in entry["kinds"]) + 2 * quoted + named, entry["truth"],
-                -min(abs(item["atSec"] - t) for t in times))
+                0 if item["atSec"] is None else -min(abs(item["atSec"] - t) for t in times))
         if best is None or rank > best[0]:
             best = (rank, entry)
     return best[1] if best else None
@@ -373,21 +379,41 @@ def judge(item, entry):
     return ("wrong", reasons) if reasons else ("correct", [])
 
 
+def memo_places(case, reading):
+    """Where each fact only the memo has landed: `row`, an item with no time, which is where it belongs; `timed`, an
+    item held to a moment that does not say it; `dropped`, an item whose quote failed, which the app does not keep;
+    `overview`. No place at all means the answer left it out."""
+    places = {}
+    for fact in case["memoOnly"]:
+        found = ["dropped" if not item["kept"] else "row" if item["atSec"] is None else "timed"
+                 for item in reading["items"] if _topic(item["text"], fact["topic"])]
+        if reading["summary"] and _topic(reading["summary"], fact["topic"]):
+            found.append("overview")
+        places[fact["id"]] = found
+    return places
+
+
 def grade(case, reading, tolerance):
     """The verdict on one answer: each kept item's category, the truths it missed, the evidence times."""
     result = {"case": case["name"], "readable": reading.get("readable", False),
               "planted": sum(1 for e in case["entries"] if e["truth"]),
               "counts": dict.fromkeys(CATEGORIES, 0), "time": {"checked": 0, "within": 0},
-              "offered": reading.get("offered", 0), "dropped": 0, "points": 0, "items": [], "missing": []}
+              "offered": reading.get("offered", 0), "dropped": 0, "points": 0, "withoutTime": 0, "memo": {}, "items": [], "missing": []}
     if not result["readable"]:
         result["missing"] = [e["id"] for e in case["entries"] if e["truth"]]
         result["counts"]["missing"] = len(result["missing"])
         return result
     kept = [item for item in reading["items"] if item["kept"]]
     result["dropped"] = reading["offered"] - len(kept)
+    result["withoutTime"] = sum(item["atSec"] is None for item in kept)
+    result["memo"] = memo_places(case, reading)
     answered = set()
     for item in kept:
         entry = identify(item, case)
+        if entry is None and any(_topic(item["text"], fact["topic"]) for fact in case["memoOnly"]):
+            result["items"].append({"category": "memo", "kind": item["kind"], "atSec": item["atSec"], "text": item["text"],
+                                    "owner": item["owner"], "due": item["due"], "entry": None, "reasons": []})
+            continue
         category, reasons = judge(item, entry)
         line = {"category": category, "kind": item["kind"], "atSec": item["atSec"], "text": item["text"],
                 "owner": item["owner"], "due": item["due"], "entry": entry["id"] if entry else None, "reasons": reasons}
@@ -397,9 +423,10 @@ def grade(case, reading, tolerance):
             if category == "correct":
                 answered.add(entry["id"])
             times = entry["times"] + (entry["oldTimes"] if category == "old" else [])
-            line["timeOff"] = min(abs(item["atSec"] - t) for t in times)
+            # Every planted item was said at a moment, so one written without a time misses it.
+            line["timeOff"] = None if item["atSec"] is None else min(abs(item["atSec"] - t) for t in times)
             result["time"]["checked"] += 1
-            result["time"]["within"] += line["timeOff"] <= tolerance
+            result["time"]["within"] += line["timeOff"] is not None and line["timeOff"] <= tolerance
         if category == "point":
             result["points"] += 1
         else:

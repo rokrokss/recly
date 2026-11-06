@@ -41,7 +41,7 @@ import recly.core.notes.RecordingNotes
  */
 class NotesBlockTest {
 
-    private fun item(id: String, kind: NoteKind, atSec: Double = 75.0, owner: String? = null, due: String? = null, quote: String = "") =
+    private fun item(id: String, kind: NoteKind, atSec: Double? = 75.0, owner: String? = null, due: String? = null, quote: String = "") =
         NoteItem(id, kind, "Send the quote", owner, due, atSec, quote, provisional = false)
 
     private val base = StringTable.of(StringTable.BASE)
@@ -150,6 +150,11 @@ class NotesBlockTest {
     }
 
     @Test
+    fun `a row with no time ends at its words, with no space left for one`() {
+        assertEquals("Send the quote", noteText(item("a", NoteKind.POINT, atSec = null), null, Color.Gray).text)
+    }
+
+    @Test
     fun `a line under an opened row names who said it only when they have a name`() {
         assertEquals("Minji  Hello", noteLineText(line(1.0, "Hello", name = "Minji"), "Me", Color.Gray).text)
         assertEquals("Me  Hello", noteLineText(line(1.0, "Hello", me = true), "Me", Color.Gray).text)
@@ -215,14 +220,7 @@ class NotesBlockTest {
                 }
             }
         }
-        fun click(at: Offset, button: PointerButton = PointerButton.Primary) {
-            val down = if (button == PointerButton.Secondary) PointerButtons(isSecondaryPressed = true) else PointerButtons(isPrimaryPressed = true)
-            scene.sendPointerEvent(PointerEventType.Move, at)
-            scene.sendPointerEvent(PointerEventType.Press, at, buttons = down, button = button)
-            scene.sendPointerEvent(PointerEventType.Release, at, buttons = PointerButtons(), button = button)
-            scene.render()
-            scene.render()
-        }
+        fun click(at: Offset, button: PointerButton = PointerButton.Primary) = click(scene, at, button)
         try {
             scene.render()
             // On the text: the row opens and asks for its lines once.
@@ -263,6 +261,53 @@ class NotesBlockTest {
         } finally {
             scene.close()
         }
+    }
+
+    /** An item no single line carries: there is no line to open, and its context menu still deletes it. */
+    @Test
+    fun `a row with no time opens nothing and deletes from its context menu`() {
+        val deleted = mutableListOf<String>()
+        var toggles = 0
+        val strings = StringTable.of(StringTable.BASE)
+        val scene = ImageComposeScene(WIDTH, 400, Density(1f)) {
+            ReclyDesktopTheme(dark = false, highContrast = false) {
+                Column {
+                    NoteRow(
+                        item = item("n1", NoteKind.POINT, atSec = null),
+                        expanded = false,
+                        onToggle = { toggles++ },
+                        seekable = true,
+                        onSeek = { error("there is no time to seek to") },
+                        linesAround = { error("there is no time to ask lines around") },
+                        onDelete = { deleted += it.id },
+                        strings = strings,
+                        spanSec = 600.0,
+                    )
+                }
+            }
+        }
+        try {
+            scene.render()
+            click(scene, Offset(40f, ROW_MIDDLE))
+            click(scene, Offset(WIDTH - 6f, ROW_MIDDLE))
+            assertEquals(0, toggles)
+            val at = Offset(60f, ROW_MIDDLE)
+            click(scene, at, PointerButton.Secondary)
+            click(scene, Offset(at.x + 30f, at.y + 22f))
+            assertEquals(listOf("n1"), deleted)
+            assertEquals(0, toggles)
+        } finally {
+            scene.close()
+        }
+    }
+
+    private fun click(scene: ImageComposeScene, at: Offset, button: PointerButton = PointerButton.Primary) {
+        val down = if (button == PointerButton.Secondary) PointerButtons(isSecondaryPressed = true) else PointerButtons(isPrimaryPressed = true)
+        scene.sendPointerEvent(PointerEventType.Move, at)
+        scene.sendPointerEvent(PointerEventType.Press, at, buttons = down, button = button)
+        scene.sendPointerEvent(PointerEventType.Release, at, buttons = PointerButtons(), button = button)
+        scene.render()
+        scene.render()
     }
 
     private companion object {

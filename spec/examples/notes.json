@@ -55,6 +55,14 @@
       "createdAt": "2026-08-26T02:10:00.000Z"
     },
     {
+      "id": "01J9ABCDEG0000000000000006",
+      "kind": "point",
+      "text": "The renewal price came up throughout the call.",
+      "provisional": false,
+      "conversation": 1,
+      "createdAt": "2026-08-26T02:10:00.000Z"
+    },
+    {
       "id": "01J9ABCDEG0000000000000005",
       "kind": "section",
       "text": "Customers asked for a dark theme.",

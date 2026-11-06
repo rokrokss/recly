@@ -24,8 +24,8 @@ import recly.core.transcribe.Transcript
  * Each folder under <cases> holds a transcript in Recly's format (`transcript.json`) and its ground truth
  * (`truth.json`, of which only `appLocale` is read here). For each, <out>/<case>/ gets `instructions.txt` and
  * `input.txt` — what [Notes]' final pass sends for a recording of one conversation, with Settings → Notes as they
- * come and no memo — and `request.json`: the language the notes are asked in, the placeholders the input hides and
- * the transcript's hash. With <answers>, `<answers>/<case>.txt` is read as [Notes] reads an answer, and what it
+ * come and the case's `memo.txt`, if it has one, as the memo — and `request.json`: the language the notes are asked
+ * in, the placeholders the input hides, the memo and the transcript's hash. With <answers>, `<answers>/<case>.txt` is read as [Notes] reads an answer, and what it
  * would keep goes to <out>/<case>/app-items-<hash>.json, for the scorer to check its own reading against.
  */
 fun main(args: Array<String>) {
@@ -61,7 +61,7 @@ internal object NotesEval {
         val lines = ConversationSplit.assign(segments, spans).single()
         // Notes.conversation: below this nothing is asked.
         check(NoteText.words(lines.joinToString(" ") { it.text }) >= Notes.MIN_WORDS) { "${folder.name}: too few words to be asked about" }
-        val ask = NotesAsk()
+        val ask = NotesAsk(memo = File(folder, "memo.txt").takeIf { it.isFile }?.readText()?.trim().orEmpty())
         val language = SummaryLanguage.of(transcript.language, appLocale)
         val placeholders = Placeholders()
         val instructions = NotesPrompts.conversation(language, ask)
@@ -78,6 +78,7 @@ internal object NotesEval {
             put("appLocale", appLocale)
             put("language", language)
             put("transcriptSha256", sha256(bytes))
+            put("memo", ask.memo)
             putJsonObject("placeholders") { hidden.forEach { (token, value) -> put(token, value) } }
         }
         File(out, "request.json").writeText(pretty.encodeToString(JsonObject.serializer(), request) + "\n")
@@ -109,7 +110,7 @@ internal object NotesEval {
                             put("due", item.due)
                             put("atSec", item.atSec)
                             put("quote", item.quote)
-                            put("kept", QuoteCheck.passes(item.quote, item.atSec, transcript.segments))
+                            put("kept", item.evidence?.let { QuoteCheck.passes(it.quote, it.atSec, transcript.segments) } ?: true)
                         }
                     }
                 }

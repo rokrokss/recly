@@ -919,6 +919,61 @@ class NotesTest {
         assertEquals(listOf("Said later", "Said first"), notes.get(meta.recordingId).decisions.map { it.text })
     }
 
+    private fun noLine(kind: String, text: String) = """{"kind":"$kind","text":"$text","at":null,"quote":null}"""
+
+    private fun assertSchemaValid(meta: RecordingMeta) {
+        val schema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
+            .getSchema(File("../spec/notes.schema.json").readText(), SchemaValidatorsConfig.builder().formatAssertionsEnabled(true).build())
+        assertEquals(emptySet(), schema.validate(f.fs.read(notesFile(meta)) { readUtf8() }, InputFormat.JSON).map { it.message }.toSet())
+    }
+
+    @Test
+    fun `after Stop an item no line carries has no time, and a quote that fails is not kept as one`() = runBlocking {
+        ready()
+        engine.answer = { meeting }
+        answer(
+            conversation(
+                "Alpha.",
+                item("decision", "Said at a moment", "00:00:00", "alpha1 alpha2 alpha3"),
+                noLine("point", "It ran through the whole talk"),
+                item("todo", "Made up", "00:00:00", "nobody said anything like this at all"),
+            ),
+        )
+        val meta = f.recordAndRun()
+
+        val shown = notes.get(meta.recordingId)
+        assertEquals(listOf("Said at a moment"), shown.decisions.map { it.text })
+        assertEquals(emptyList(), shown.todos, "a failed quote is dropped, not kept without a time")
+        val point = shown.points.single()
+        assertEquals("It ran through the whole talk", point.text)
+        assertNull(point.atSec)
+        assertEquals("", point.quote)
+        assertNull(stored(meta).items.single { it.text == point.text }.evidence)
+        assertTrue("\"at\" and \"quote\" are null only for an item the transcript does not say in one place" in instructions(0), instructions(0))
+        assertFalse("only the memo says it" in instructions(0), "not without a memo: ${instructions(0)}")
+        assertSchemaValid(meta)
+    }
+
+    @Test
+    fun `an item with no time that was deleted stays deleted, by its words`() = runBlocking {
+        ready()
+        engine.answer = { meeting }
+        answer(conversation("Alpha.", noLine("todo", "Send the contract to Mina"), noLine("point", "A long talk")))
+        val meta = f.recordAndRun()
+        val first = notes.get(meta.recordingId)
+        assertTrue(notes.deleteItem(meta.recordingId, first.todos.single().id))
+        assertNull(stored(meta).tombstones.single().atSec)
+
+        answer(conversation("Alpha again.", noLine("todo", "Send the contract to Mina"), noLine("point", "A long talk")))
+        assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
+        f.drain()
+
+        val again = notes.get(meta.recordingId)
+        assertEquals(emptyList(), again.todos)
+        assertEquals(first.points.single().id, again.points.single().id, "one that says the same keeps its id")
+        assertSchemaValid(meta)
+    }
+
     @Test
     fun `with every group removed, the final pass asks for the summary alone`() = runBlocking {
         ready()
@@ -978,6 +1033,8 @@ class NotesTest {
 
         val decisionsOnly = RecordingNotes("01J9ABCDEF0123456789ABCDEF", NotesStage.PROVISIONAL, null, all.decisions, emptyList(), emptyList(), false)
         assertEquals("Decisions\n- Ship on Friday [00:00:01]\n", NotesText.plain(decisionsOnly, NotesHeadings()))
+        val noTime = decisionsOnly.copy(decisions = listOf(noteItem(NoteKind.DECISION, "Ship on Friday", 1.0).copy(atSec = null, quote = "")))
+        assertEquals("Decisions\n- Ship on Friday\n", NotesText.plain(noTime, NotesHeadings()), "an item with no time says none")
         val nothing = decisionsOnly.copy(decisions = emptyList(), sections = all.sections.drop(1))
         assertNull(NotesText.plain(nothing, NotesHeadings()))
         assertNull(NotesText.markdown(nothing, NotesHeadings()))

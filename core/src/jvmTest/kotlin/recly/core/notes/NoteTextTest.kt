@@ -160,6 +160,31 @@ class NoteTextTest {
     }
 
     @Test
+    fun `an item with neither a time nor a quote is read after Stop only, and half of the evidence is no item`() {
+        val json = NotesAnswer.parse(
+            """{"items":[
+              {"kind":"todo","text":"From the memo","at":null,"quote":null},
+              {"kind":"point","text":"Nothing at all"},
+              {"kind":"todo","text":"Blank","at":"","quote":"  "},
+              {"kind":"todo","text":"No time","at":null,"quote":"we said so"},
+              {"kind":"todo","text":"No quote","at":"00:00:01","quote":null}
+            ]}""",
+        )
+        val final = NotesAnswer.items(json, { it }, points = true)
+        assertEquals(listOf("From the memo", "Nothing at all", "Blank"), final.map { it.text })
+        assertTrue(final.all { it.evidence == null })
+        assertEquals(emptyList(), NotesAnswer.items(json, { it }).map { it.text }, "running notes keep to a line")
+    }
+
+    @Test
+    fun `an item with no moment is the same item by its words alone`() {
+        assertTrue(SameItem.matches(NoteKind.TODO, "Book a room", null, NoteKind.TODO, "book a room", 100.0))
+        assertFalse(SameItem.matches(NoteKind.TODO, "Book a room", null, NoteKind.TODO, "Order lunch", 100.0))
+        assertFalse(SameItem.matches(NoteKind.TODO, "Book a room", 100.0, NoteKind.TODO, "Order lunch", null))
+        assertFalse(SameItem.matches(NoteKind.TODO, "Book a room", null, NoteKind.TODO, "Order lunch", null))
+    }
+
+    @Test
     fun `key points are read after Stop only, and a section kind only for a section the user has`() {
         val json = NotesAnswer.parse(
             """{"items":[

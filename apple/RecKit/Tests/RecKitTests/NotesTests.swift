@@ -147,6 +147,12 @@ final class NoteGroupsTests: XCTestCase {
         XCTAssertNil(NoteGroups.emphasized([], for: between))
     }
 
+    /// An item no single line carries: it has no time, and no line to mark.
+    func testAnItemWithNoTimeHasNoLine() {
+        let lines = [Self.line(at: 100, end: 110, "We could try Thursday.")]
+        XCTAssertNil(NoteGroups.emphasized(lines, for: Self.item("p1", .point, atSec: nil)))
+    }
+
     /// A speaker the user named by that name, the recording's maker as `Me`, and a bare label as nothing.
     func testALineNamesItsSpeakerOnlyByAName() {
         XCTAssertEqual(NoteGroups.speaker(Self.line(at: 0, end: 1, "Hi", id: "S1", name: "Minji")), "Minji")
@@ -190,11 +196,11 @@ final class NoteGroupsTests: XCTestCase {
         text: String = "Something",
         owner: String? = nil,
         due: String? = nil,
-        atSec: Double = 0,
+        atSec: Double? = 0,
         quote: String = "",
         section: String? = nil
     ) -> NoteItem {
-        NoteItem(id: id, kind: kind, text: text, owner: owner, due: due, atSec: atSec, quote: quote, provisional: true, section: section)
+        NoteItem(id: id, kind: kind, text: text, owner: owner, due: due, atSec: atSec.map { KotlinDouble(value: $0) }, quote: quote, provisional: true, section: section)
     }
 
     static func line(at start: Double, end: Double, _ text: String, id: String? = nil, name: String? = nil, me: Bool = false) -> NoteLine {
@@ -382,7 +388,7 @@ final class RecordingNotesTests: XCTestCase {
         XCTAssertEqual(NoteGroups.text(todo), "Send the release notes —\u{00A0}Minji", "the owner comes resolved to the name given")
         XCTAssertEqual(NoteGroups.due(todo), "Thursday")
 
-        let lines = await model.noteLines(atSec: todo.atSec)
+        let lines = await model.noteLines(atSec: try XCTUnwrap(todo.atSec?.doubleValue))
         XCTAssertEqual(lines.map(\.text), ["Let's move the launch to Friday then.", "I'll send the release notes by Thursday."])
         XCTAssertEqual(NoteGroups.emphasized(lines, for: todo), 1)
         XCTAssertEqual(lines.compactMap(NoteGroups.speaker), ["Me", "Minji"])

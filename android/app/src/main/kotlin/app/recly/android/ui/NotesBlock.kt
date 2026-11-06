@@ -151,13 +151,15 @@ internal data class NotesDraft(val original: RecordingNotes, val overview: Strin
  * [muted], and last its time [stamp], in [monospace] and [muted], after a no-break space. With [tint] — an item the answer
  * on screen changed or added (docs/09 "Ask") — the item and its owner are on it.
  */
-internal fun noteText(item: NoteItem, stamp: String, muted: Color, monospace: FontFamily? = null, tint: Color? = null): AnnotatedString = buildAnnotatedString {
+internal fun noteText(item: NoteItem, stamp: String?, muted: Color, monospace: FontFamily? = null, tint: Color? = null): AnnotatedString = buildAnnotatedString {
     append(item.text.trim())
     append(item.rowOwner)
     tint?.let { addStyle(SpanStyle(background = it), 0, length) }
     withStyle(SpanStyle(color = muted)) { append(item.rowDue) }
-    append('\u00A0')
-    withStyle(SpanStyle(fontFamily = monospace, color = muted)) { append(stamp) }
+    stamp?.let {
+        append('\u00A0')
+        withStyle(SpanStyle(fontFamily = monospace, color = muted)) { append(it) }
+    }
 }
 
 /**
@@ -277,21 +279,28 @@ private fun NoteRow(
         },
     ) {
         Column(Modifier.fillMaxWidth()) {
-            val stamp = clock(item.atSec.toLong(), scaleSec)
+            // An item no single line carries has no time, and no transcript to open (docs/09 "Notes view").
+            val atSec = item.atSec
+            val stamp = atSec?.let { clock(it.toLong(), scaleSec) }
             val text = noteText(item, stamp, palette.textMuted, mono.body.fontFamily, tint)
             // The time moves the playhead, as a transcript time does (2026-10-28); a tap anywhere else is the row's.
             TargetedText(
                 text,
-                listOf(TextRun(text.length - stamp.length, text.length, SummaryCitation(text.length - stamp.length, stamp.length, item.atSec))),
+                if (atSec != null && stamp != null) {
+                    listOf(TextRun(text.length - stamp.length, text.length, SummaryCitation(text.length - stamp.length, stamp.length, atSec)))
+                } else {
+                    emptyList()
+                },
                 canSeek = { onSeek != null && canSeek(it) },
                 onSeek = { onSeek?.invoke(it) },
-                label = { stringResource(R.string.transcript_seek, hms(item.atSec.toLong())) },
+                label = { stringResource(R.string.transcript_seek, hms(it.atSec.toLong())) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRing(palette)
-                    .clickable(onClick = onToggle)
-                    .semantics {
-                        if (expanded) collapse(label = toggle) { onToggle(); true } else expand(label = toggle) { onToggle(); true }
+                    .then(if (atSec != null) Modifier.focusRing(palette).clickable(onClick = onToggle) else Modifier)
+                    .semantics(mergeDescendants = true) {
+                        if (atSec != null) {
+                            if (expanded) collapse(label = toggle) { onToggle(); true } else expand(label = toggle) { onToggle(); true }
+                        }
                         customActions = listOf(CustomAccessibilityAction(delete) { onDelete(item); true })
                     },
                 // As tall as its words, 16 at the sides and 8 above and below (2026-10-31): the touch minimum made a list
@@ -299,18 +308,18 @@ private fun NoteRow(
                 horizontal = Space.m,
                 vertical = Space.s,
             )
-            if (expanded) NoteLines(item, lines)
+            if (expanded && atSec != null) NoteLines(item, atSec, lines)
         }
     }
 }
 
 /** The transcript around a note, under its row: who spoke when there is a name, what was said, the note's line marked. */
 @Composable
-private fun NoteLines(item: NoteItem, lines: suspend (Double) -> List<NoteLine>) {
+private fun NoteLines(item: NoteItem, atSec: Double, lines: suspend (Double) -> List<NoteLine>) {
     val palette = blueprint
-    val around by produceState<List<NoteLine>>(emptyList(), item.id, item.atSec) { value = lines(item.atSec) }
+    val around by produceState<List<NoteLine>>(emptyList(), item.id, atSec) { value = lines(atSec) }
     if (around.isEmpty()) return
-    val at = noteLineIndex(around, item.atSec, item.quote)
+    val at = noteLineIndex(around, atSec, item.quote)
     val me = stringResource(R.string.speaker_me)
     Column(
         Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, bottom = Space.sm).testTag("note-lines"),

@@ -42,7 +42,8 @@ type noteItem struct {
 	Due      string `json:"due"`
 	Section  string `json:"section"`
 	EditedAt string `json:"editedAt"`
-	Evidence struct {
+	// Evidence is missing on an item no single line of the transcript carries.
+	Evidence *struct {
 		AtSec float64 `json:"atSec"`
 	} `json:"evidence"`
 }
@@ -157,11 +158,12 @@ type summaryItem struct {
 	OwnerName string `json:"ownerName,omitempty"`
 	// OwnerIsUser marks a to-do of the person who made the recording, the speaker the transcript
 	// marks `me`: the app shows them as "Me", which an agent could take for itself.
-	OwnerIsUser  bool    `json:"ownerIsUser,omitempty"`
-	Due          string  `json:"due,omitempty"`
-	AtSec        float64 `json:"atSec"`
-	Clock        string  `json:"clock"`
-	EditedByUser bool    `json:"editedByUser,omitempty"`
+	OwnerIsUser bool   `json:"ownerIsUser,omitempty"`
+	Due         string `json:"due,omitempty"`
+	// AtSec and Clock are left out for an item no single line of the transcript carries.
+	AtSec        *float64 `json:"atSec,omitempty"`
+	Clock        string   `json:"clock,omitempty"`
+	EditedByUser bool     `json:"editedByUser,omitempty"`
 }
 
 type userNotes struct {
@@ -221,7 +223,11 @@ func renderSummary(f *SummaryFiles) summaryAnswer {
 		}
 		item := summaryItem{
 			Text: it.words(), Owner: it.Owner, OwnerName: names[it.Owner], OwnerIsUser: it.Owner != "" && me[it.Owner], Due: it.Due,
-			AtSec: it.Evidence.AtSec, Clock: Clock(it.Evidence.AtSec), EditedByUser: it.EditedAt != "",
+			EditedByUser: it.EditedAt != "",
+		}
+		if it.Evidence != nil {
+			at := it.Evidence.AtSec
+			item.AtSec, item.Clock = &at, Clock(at)
 		}
 		sections[i].Items = append(sections[i].Items, item)
 	}
@@ -233,26 +239,32 @@ func renderSummary(f *SummaryFiles) summaryAnswer {
 		if len(s.Items) == 0 {
 			continue
 		}
-		slices.SortStableFunc(s.Items, func(a, b summaryItem) int {
-			switch {
-			case a.AtSec < b.AtSec:
-				return -1
-			case a.AtSec > b.AtSec:
-				return 1
-			}
-			return 0
-		})
+		slices.SortStableFunc(s.Items, func(a, b summaryItem) int { return compareAt(a.AtSec, b.AtSec) })
 		ai.Sections = append(ai.Sections, s)
 	}
 	out.AISummary = ai
 	return out
 }
 
+// compareAt orders by time, an item with no time first: it speaks for the whole recording, as the
+// overview does.
+func compareAt(a, b *float64) int {
+	switch {
+	case a == nil && b == nil:
+		return 0
+	case a == nil:
+		return -1
+	case b == nil:
+		return 1
+	}
+	return cmp.Compare(*a, *b)
+}
+
 // fitSummary keeps a get_summary answer within PageBytes, as search_recordings is kept: when the
 // items do not all fit, the latest in the recording are left out, from every section alike, and
 // aiSummary.truncated says so. The answer then covers the recording up to its last item's time,
 // and get_transcript has the rest. The overview and the user's notes are always given; they are a
-// few kilobytes at most.
+// few kilobytes at most. Items with no time go first, so they are the last to be left out.
 func fitSummary(out summaryAnswer) summaryAnswer {
 	if out.AISummary == nil || resultBytes(out) <= PageBytes {
 		return out
@@ -267,7 +279,7 @@ func fitSummary(out summaryAnswer) summaryAnswer {
 	}
 	// Earliest first; items at the same time keep the order they are shown in.
 	slices.SortStableFunc(order, func(a, b ref) int {
-		return cmp.Compare(full.Sections[a.section].Items[a.item].AtSec, full.Sections[b.section].Items[b.item].AtSec)
+		return compareAt(full.Sections[a.section].Items[a.item].AtSec, full.Sections[b.section].Items[b.item].AtSec)
 	})
 	keep := func(n int) summaryAnswer {
 		kept := map[ref]bool{}
@@ -313,8 +325,12 @@ func summaryTexts(notes []byte) []summaryText {
 		out = append(out, summaryText{Text: d.Overview})
 	}
 	for _, it := range d.Items {
-		at := it.Evidence.AtSec
-		out = append(out, summaryText{AtSec: &at, Text: it.words()})
+		text := summaryText{Text: it.words()}
+		if it.Evidence != nil {
+			at := it.Evidence.AtSec
+			text.AtSec = &at
+		}
+		out = append(out, text)
 	}
 	return out
 }

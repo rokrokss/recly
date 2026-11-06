@@ -6,7 +6,7 @@ import recly.core.transcribe.TranscriptNormalizer
 /**
  * docs/08 "Organizing" — "Copy and share": a recording's notes as text, in the order the detail shows them — the
  * overview, then Decisions, To-dos, Key points, Questions and the user's sections, each item with its owner, due
- * date and `[HH:MM:SS]`. The headings are the app's ([NotesHeadings]), or the names the user gave a group ([NoteNames]).
+ * date and, when it has one, `[HH:MM:SS]`. The headings are the app's ([NotesHeadings]), or the names the user gave a group ([NoteNames]).
  */
 internal object NotesText {
     fun plain(notes: RecordingNotes, headings: NotesHeadings): String? {
@@ -52,7 +52,7 @@ internal object NotesText {
         append(item.text.trim())
         item.owner?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" — ").append(it) }
         item.due?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" · ").append(it) }
-        append(" [").append(TranscriptNormalizer.clock(item.atSec)).append(']')
+        item.atSec?.let { append(" [").append(TranscriptNormalizer.clock(it)).append(']') }
     }
 }
 

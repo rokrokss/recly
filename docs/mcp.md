@@ -112,7 +112,7 @@ the decisions, and the action items with owners.
 |---|---|---|
 | `list_recordings` | `limit` (1–50, default 10), `cursor`, `from`, `to` | Recordings, newest first: `recordingId`, `title`, `startedAt`, `durationSec`, `source`, `hasTranscript`; `nextCursor` |
 | `get_transcript` | `recordingId`, `cursor` | `title`, `startedAt`, `language`, `speakers`, and `transcript` as `[HH:MM:SS] Speaker: text` lines, at most 24,000 bytes per answer; `nextCursor` for the rest |
-| `get_summary` | `recordingId` | `aiSummary`: the AI summary (`overview`, `sections` of items with `atSec`, to-dos with `owner`, `ownerName`, `ownerIsUser` on your own, `due`; `truncated` when the latest items did not fit in 24,000 bytes); `userNotes`: the notes you wrote |
+| `get_summary` | `recordingId` | `aiSummary`: the AI summary (`overview`, `sections` of items with `atSec`, or without it where no single line carries the item, to-dos with `owner`, `ownerName`, `ownerIsUser` on your own, `due`; `truncated` when the latest items did not fit in 24,000 bytes); `userNotes`: the notes you wrote |
 | `search_recordings` | `query`, `limit` (1–50, default 10) | Recordings whose title, transcript, AI summary or your notes contain the query, ignoring case: `matchedIn` (`title`, `transcript`, `summary`, `notes`) and up to 3 `snippets` from each place |
 | `get_audio_files` | `recordingId` | The absolute paths of the recording's `.m4a` parts on this computer, with track and offset |
 

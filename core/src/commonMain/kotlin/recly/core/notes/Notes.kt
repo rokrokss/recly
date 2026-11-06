@@ -332,7 +332,7 @@ class Notes internal constructor(
         return changed
     }
 
-    private fun tombstone(note: StoredNote, now: String) = NoteTombstone(note.kind, note.text, note.evidence.atSec, now, note.section)
+    private fun tombstone(note: StoredNote, now: String) = NoteTombstone(note.kind, note.text, note.evidence?.atSec, now, note.section)
 
     // --- Ask (docs/08 "Ask") ---
 
@@ -518,14 +518,14 @@ class Notes internal constructor(
             emptyMap()
         }
         // Final notes as the pass wrote them, to read through; running ones newest first, the new one on top (docs/09 "Notes view").
-        val ordered = if (file.isFinal) file.items else file.items.sortedWith(compareByDescending<StoredNote> { it.evidence.atSec }.thenByDescending { it.createdAt })
+        val ordered = if (file.isFinal) file.items else file.items.sortedWith(compareByDescending<StoredNote> { it.evidence?.atSec }.thenByDescending { it.createdAt })
         val items = ordered
             .map { note ->
                 NoteItem(
                     id = note.id, kind = note.kind, text = note.shown,
                     // A part's own label names nobody the user can see; only a named speaker of the transcript is shown.
                     owner = note.owner?.takeUnless { note.provisional }?.let(names::get),
-                    due = note.due, atSec = note.evidence.atSec, quote = note.evidence.quote, provisional = note.provisional,
+                    due = note.due, atSec = note.evidence?.atSec, quote = note.evidence?.quote.orEmpty(), provisional = note.provisional,
                     section = note.section,
                 )
             }
@@ -777,7 +777,7 @@ class Notes internal constructor(
         val start = part.startOffsetSec - EDGE_SEC
         val end = part.startOffsetSec + part.durationSec + EDGE_SEC
         val checked = NotesAnswer.items(json, placeholders::restore, ask)
-            .filter { it.atSec in start..end && QuoteCheck.passes(it.quote, it.atSec, evidence) }
+            .filter { item -> item.evidence?.let { it.atSec in start..end && QuoteCheck.passes(it.quote, it.atSec, evidence) } == true }
             .map { if (it.owner != null && it.owner !in speakers) it.copy(owner = null) else it }
         val now = deps.clock.now().isoUtc()
         var added = 0
@@ -798,7 +798,7 @@ class Notes internal constructor(
             file.copy(
                 items = file.items + kept.map { item ->
                     StoredNote(
-                        ulid(), item.kind, item.text, item.owner, item.due, NoteEvidence(item.atSec, item.quote), provisional = true,
+                        ulid(), item.kind, item.text, item.owner, item.due, item.evidence, provisional = true,
                         section = item.section, createdAt = now,
                     )
                 },
@@ -823,8 +823,10 @@ class Notes internal constructor(
     private fun repeats(item: Extracted, shown: StoredNote): Boolean {
         if (item.kind != shown.kind || item.section != shown.section) return false
         if (NoteText.ratio(NoteText.normalize(item.text), NoteText.normalize(shown.text)) >= REPEAT_RATIO) return true
-        return kotlin.math.abs(item.atSec - shown.evidence.atSec) <= SameItem.SAME_MOMENT_SEC &&
-            NoteText.ratio(NoteText.chars(item.quote), NoteText.chars(shown.evidence.quote)) >= QuoteCheck.THRESHOLD
+        val said = item.evidence ?: return false
+        val there = shown.evidence ?: return false
+        return kotlin.math.abs(said.atSec - there.atSec) <= SameItem.SAME_MOMENT_SEC &&
+            NoteText.ratio(NoteText.chars(said.quote), NoteText.chars(there.quote)) >= QuoteCheck.THRESHOLD
     }
 
     /** The part is done with — notes or not — and is not asked again; [event] says how it went. */
@@ -995,13 +997,13 @@ class Notes internal constructor(
                     item.section == it.section && if (it.editedAt != null) {
                         item.kind == it.kind && SameItem.sameText(item.text, it.text)
                     } else {
-                        SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.evidence.atSec)
+                        SameItem.matches(item.kind, item.text, item.atSec, it.kind, it.text, it.evidence?.atSec)
                     }
                 }
                     ?.also { earlier.remove(it) }
                 StoredNote(
                     id = same?.id ?: ulid(), kind = item.kind, text = item.text, owner = item.owner, due = item.due,
-                    evidence = NoteEvidence(item.atSec, item.quote), provisional = false, conversation = conversation,
+                    evidence = item.evidence, provisional = false, conversation = conversation,
                     section = item.section, userText = same?.userText, editedAt = same?.editedAt, createdAt = same?.createdAt ?: now,
                 )
             }
@@ -1029,6 +1031,7 @@ class Notes internal constructor(
             mapOf(
                 "recordingId" to recordingId, "conversations" to spans.size, "items" to kept, "tombstoned" to tombstoned,
                 "dropped" to results.sumOf { it?.dropped ?: 0 }, "overview" to (overview != null),
+                "withoutTime" to finals.count { (_, item) -> item.evidence == null },
             ),
         )
         return StepOutcome.Done(StepOutput(buildJsonObject {
@@ -1055,7 +1058,8 @@ class Notes internal constructor(
         val json = NotesAnswer.parse(answer)
         val items = NotesAnswer.items(json, placeholders::restore, ask, points = true)
         val speakers = transcript.speakers.map { it.id }.toSet()
-        val kept = items.filter { QuoteCheck.passes(it.quote, it.atSec, transcript.segments) }
+        // An item with no line has no quote to check; one that gives a quote keeps to it.
+        val kept = items.filter { item -> item.evidence?.let { QuoteCheck.passes(it.quote, it.atSec, transcript.segments) } ?: true }
             .map { if (it.owner != null && it.owner !in speakers) it.copy(owner = null) else it }
         return ConversationResult(NotesAnswer.summary(json, placeholders::restore), kept, dropped = NotesAnswer.offered(json) - kept.size)
     }

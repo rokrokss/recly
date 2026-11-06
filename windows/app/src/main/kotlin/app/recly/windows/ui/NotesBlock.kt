@@ -2,6 +2,7 @@ package app.recly.windows.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -108,7 +109,7 @@ internal fun NotesBlock(
                     item = item,
                     expanded = open == item.id,
                     onToggle = { open = if (open == item.id) null else item.id },
-                    seekable = canSeek && item.atSec < seekableDurationSec,
+                    seekable = canSeek && item.atSec?.let { it < seekableDurationSec } == true,
                     onSeek = onSeek,
                     linesAround = linesAround,
                     onDelete = onDelete,
@@ -155,7 +156,9 @@ internal fun NoteRow(
     // Where the context menu hangs: the click, or the row's foot for a key.
     var menuAt by remember(item.id) { mutableStateOf<Offset?>(null) }
     var size by remember { mutableStateOf(IntSize.Zero) }
-    val stamp = LedgerFormat.clock(item.atSec, spanSec)
+    // An item no single line carries has no time, and no transcript to open (docs/09 "Notes view").
+    val atSec = item.atSec
+    val stamp = atSec?.let { LedgerFormat.clock(it, spanSec) }
     var pressed by remember(item.id) { mutableStateOf(false) }
     var layout by remember(item.id) { mutableStateOf<TextLayoutResult?>(null) }
     val text = noteText(
@@ -184,9 +187,9 @@ internal fun NoteRow(
                         (event.type == KeyEventType.KeyDown && opensContextMenu(event.key, event.isShiftPressed))
                             .also { if (it) menuAt = Offset(0f, size.height.toFloat()) }
                     }
+                    // Still a stop for Tab without a click, for the context menu's key.
                     .focusRing()
-                    .pressCursor()
-                    .clickable(role = Role.Button, onClick = onToggle)
+                    .then(if (atSec != null) Modifier.pressCursor().clickable(role = Role.Button, onClick = onToggle) else Modifier.focusable())
                     // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line
                     // items read double-spaced.
                     .padding(vertical = Space.s),
@@ -200,15 +203,17 @@ internal fun NoteRow(
                 )
                 // The time only moves the playhead, as the transcript's does (2026-10-28): playing or paused stays as it
                 // was. An answer's time still plays. A time it cannot reach is only words, whose click is the row's.
-                layout?.takeIf { seekable }?.let { lines ->
-                    val label = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((item.atSec * 1000).toLong())]
-                    CitationBoxes(
-                        citationTargets(lines, 0, text.length - stamp.length, text.length),
-                        label = { label },
-                        onPressed = { pressed = it != null },
-                        onPlay = { onSeek(item.atSec) },
-                        keys = true,
-                    )
+                if (atSec != null && stamp != null) {
+                    layout?.takeIf { seekable }?.let { lines ->
+                        val label = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((atSec * 1000).toLong())]
+                        CitationBoxes(
+                            citationTargets(lines, 0, text.length - stamp.length, text.length),
+                            label = { label },
+                            onPressed = { pressed = it != null },
+                            onPlay = { onSeek(atSec) },
+                            keys = true,
+                        )
+                    }
                 }
             }
             menuAt?.let { at ->
@@ -230,18 +235,18 @@ internal fun NoteRow(
                 }
             }
         }
-        if (expanded) NoteLines(item, linesAround, strings)
+        if (expanded && atSec != null) NoteLines(item, atSec, linesAround, strings)
     }
 }
 
 /** The transcript's lines around [item], the one it is on marked the way the transcript marks the playing group. */
 @Composable
-private fun NoteLines(item: NoteItem, linesAround: suspend (Double) -> List<NoteLine>, strings: Strings) {
+private fun NoteLines(item: NoteItem, atSec: Double, linesAround: suspend (Double) -> List<NoteLine>, strings: Strings) {
     val palette = blueprint
     var lines by remember(item.id) { mutableStateOf<List<NoteLine>?>(null) }
-    LaunchedEffect(item.id, item.atSec) { lines = linesAround(item.atSec) }
+    LaunchedEffect(item.id, atSec) { lines = linesAround(atSec) }
     val shown = lines ?: return
-    val marked = notedLine(shown, item.atSec, item.quote)
+    val marked = notedLine(shown, atSec, item.quote)
     Column(Modifier.fillMaxWidth().padding(bottom = Space.s), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
         shown.forEachIndexed { index, line ->
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
@@ -264,7 +269,7 @@ private fun NoteLines(item: NoteItem, linesAround: suspend (Double) -> List<Note
  */
 internal fun noteText(
     item: NoteItem,
-    stamp: String,
+    stamp: String?,
     muted: Color,
     monospace: FontFamily? = null,
     tint: Color? = null,
@@ -273,8 +278,10 @@ internal fun noteText(
     val words = item.text + item.rowOwner
     if (tint != null) withStyle(SpanStyle(background = tint)) { append(words) } else append(words)
     withStyle(SpanStyle(color = muted)) { append(item.rowDue) }
-    append('\u00A0')
-    withStyle(SpanStyle(fontFamily = monospace, color = time)) { append(stamp) }
+    stamp?.let {
+        append('\u00A0')
+        withStyle(SpanStyle(fontFamily = monospace, color = time)) { append(it) }
+    }
 }
 
 /** [text] on [tint] whole: the overview an answer rewrote (docs/09 "Ask"). */

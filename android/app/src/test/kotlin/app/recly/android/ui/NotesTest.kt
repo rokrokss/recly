@@ -257,6 +257,12 @@ class NotesTest {
     }
 
     @Test
+    fun `a row with no time ends at its words, with no space left for one`() {
+        assertEquals("Send the quote", noteText(item("t", NoteKind.TODO, text = "Send the quote"), null, Color.Gray).text)
+        assertEquals("Send the quote ·\u00A0Friday", noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), null, Color.Gray).text)
+    }
+
+    @Test
     fun `the note's line is the one its quote is in, whatever the case and punctuation`() {
         val lines = listOf(line(300.0, 305.0, "So, the release."), line(305.0, 312.0, "Let's move the launch to Friday, then!"), line(312.0, 318.0, "Fine."))
 
