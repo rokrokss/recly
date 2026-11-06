@@ -219,10 +219,10 @@ settings come from the repository's Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_I
 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`; if they are missing, packaging stops. See
 [`windows/README.md`](https://github.com/rokrokss/recly/blob/main/windows/README.md) for details.
 
-The display version of the current release is `0.3.3` on every platform. The build is `45` for the
-Apple apps, the embedded Watch app, the widgets and the share extension, `51` for Android and
-`1,000,051` for Wear OS. The Windows MSI install version is set apart from the display version
-(`installerVersion`): it is `0.3.4`, above build 44's `0.3.3`, since Windows upgrades and the apps
+The display version of the current release is `0.3.3` on every platform. The build is `46` for the
+Apple apps, the embedded Watch app, the widgets and the share extension, `52` for Android and
+`1,000,052` for Wear OS. The Windows MSI install version is set apart from the display version
+(`installerVersion`): it is `0.3.5`, above build 45's `0.3.4`, since Windows upgrades and the apps
 offer an update only by it. During `0.1.x` its third field had to keep rising — it reached
 `0.1.32`, above the lower `0.1.3` — and every `0.2.0` and later is above all of those, so it upgrades
 every earlier MSI.
