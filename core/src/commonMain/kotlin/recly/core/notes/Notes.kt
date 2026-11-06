@@ -74,7 +74,6 @@ import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptNormalizer
 import recly.core.transcribe.TranscriptProvider
 import recly.core.transcribe.TranscriptSegment
-import recly.core.transcribe.TranscriptSpeaker
 
 /**
  * docs/08 "Organizing": a recording's notes — its overview, key points, decisions, to-dos, open questions and the
@@ -493,20 +492,6 @@ class Notes internal constructor(
     private suspend fun ask(recordingId: String, current: NotesFile?): NotesAsk =
         ask(recordingId).let { asked -> if (current?.sections?.isNotEmpty() == true) asked.copy(sections = current.sections.map { it.section() }) else asked }
 
-    /**
-     * The transcript's lines around [atSec] — from [BEFORE_SEC] before it to [AFTER_SEC] after, at most [MAX_LINES] —
-     * for "show the transcript here" under an item: the recording's transcript once there is one, the parts'
-     * made while recording before that (there is no playback while recording).
-     */
-    @Throws(Throwable::class)
-    suspend fun linesAround(recordingId: String, atSec: Double): List<NoteLine> {
-        val record = recordings.get(recordingId) ?: return emptyList()
-        val whole = if (record.meta.status == RecordingStatus.FINALIZED) readTranscript(recordingId) else null
-        if (whole != null) return around(whole.segments, whole.speakers, atSec, provisional = false)
-        val parts = provisionalTranscripts(record)
-        return around(parts.flatMap { it.segments }, emptyList(), atSec, provisional = true)
-    }
-
     private suspend fun view(recordingId: String, organizing: Boolean, failure: String?): RecordingNotes {
         val file = readNotes(recordingId) ?: fetched(recordingId) ?: return empty(recordingId, organizing, failure)
         val names = if (file.items.any { !it.provisional && it.owner != null }) {
@@ -574,26 +559,6 @@ class Notes internal constructor(
     /** A pull wrote newer notes from a folder: whoever shows them reads them again. */
     internal fun changed() {
         changes.value++
-    }
-
-    private fun around(segments: List<TranscriptSegment>, speakers: List<TranscriptSpeaker>, atSec: Double, provisional: Boolean): List<NoteLine> {
-        val byId = speakers.associateBy { it.id }
-        return segments.filter { it.text.isNotBlank() && it.end >= atSec - BEFORE_SEC && it.start <= atSec + AFTER_SEC }
-            .sortedBy { kotlin.math.abs(it.start - atSec) }
-            .take(MAX_LINES)
-            .sortedBy { it.start }
-            .map { segment ->
-                val speaker = byId[segment.speaker]
-                NoteLine(
-                    atSec = segment.start,
-                    endSec = segment.end,
-                    speakerId = segment.speaker.takeIf { it.isNotEmpty() },
-                    speakerName = speaker?.name?.trim()?.takeIf { it.isNotEmpty() },
-                    me = speaker?.me == true,
-                    text = segment.text.trim(),
-                    provisional = provisional,
-                )
-            }
     }
 
     // --- While recording ---
@@ -1122,11 +1087,6 @@ class Notes internal constructor(
             runCatching { recJson.decodeFromString(Transcript.serializer(), json) }.getOrNull()
         }
 
-    private suspend fun provisionalTranscripts(record: RecordingRecord): List<Transcript> {
-        val track = track(record.meta.tracks)
-        return record.meta.parts.filter { it.track == track }.map { it.part }.distinct().sorted().mapNotNull { readProvisional(record.id, it) }
-    }
-
     /** The recording's transcript, or null when it has none or it cannot be read now. */
     private suspend fun readTranscript(recordingId: String): Transcript? = try {
         transcript(recordingId)
@@ -1175,10 +1135,6 @@ class Notes internal constructor(
         const val USAGE_WAIT_SEC = 5 * 3600L
         const val PLAN_WAIT_SEC = 24 * 3600L
         const val SIGN_IN_WAIT_SEC = 6 * 3600L
-
-        const val BEFORE_SEC = 20.0
-        const val AFTER_SEC = 40.0
-        const val MAX_LINES = 12
 
         /** `.provisional-p001.json`: one part transcribed while recording, on the recording's axis. */
         fun provisionalName(part: Int): String = ".provisional-p${part.toString().padStart(3, '0')}.json"

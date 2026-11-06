@@ -129,8 +129,6 @@
     <string name="jobs_column_status">Status</string>
     <string name="jobs_summary_waiting">%1$d naghihintay</string>
     <string name="jobs_summary_failed">%1$d nabigo</string>
-    <string name="jobs_row_expand">I-expand</string>
-    <string name="jobs_row_collapse">I-collapse</string>
     <string name="jobs_row_description">%1$s, na-record %2$s, haba %3$s, %4$s</string>
     <string name="detail_rename">Palitan ang pangalan</string>
     <string name="detail_loading">Naglo-load…</string>

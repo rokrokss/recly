@@ -129,8 +129,6 @@
     <string name="jobs_column_status">الحالة</string>
     <string name="jobs_summary_waiting">%1$d منتظر</string>
     <string name="jobs_summary_failed">%1$d فاشل</string>
-    <string name="jobs_row_expand">توسيع</string>
-    <string name="jobs_row_collapse">طي</string>
     <string name="jobs_row_description">%1$s، سُجّل %2$s، المدة %3$s، %4$s</string>
     <string name="detail_rename">إعادة التسمية</string>
     <string name="detail_loading">جارٍ التحميل…</string>

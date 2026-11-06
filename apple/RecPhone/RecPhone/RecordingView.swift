@@ -178,7 +178,6 @@ struct RecordingView: View {
             playable: false,
             seekableSec: 0,
             onSeek: nil,
-            lines: model.liveNoteLines(atSec:),
             delete: model.deleteLiveNote
         )
         .padding(.horizontal, Space.m)

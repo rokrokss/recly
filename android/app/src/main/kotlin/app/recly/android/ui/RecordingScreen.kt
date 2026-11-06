@@ -112,9 +112,8 @@ fun RecordingSection(
     onQuickStart: () -> Unit = onStart,
     /** docs/08 "Organizing": Continue (true) or Sign out (false) to the question before a start. */
     onNotesConsentAnswered: (Boolean) -> Unit = {},
-    /** docs/08 "Organizing": a note of the running recording swiped away, and the lines around one. */
+    /** docs/08 "Organizing": a note of the running recording swiped away. */
     onDeleteNote: (String) -> Unit = {},
-    noteLines: suspend (Double) -> List<recly.core.notes.NoteLine> = { emptyList() },
     /** docs/08 "Memo": the memo editor's save, for the recording it was opened on. */
     onSaveMemo: (recordingId: String, text: String) -> Unit = { _, _ -> },
 ) {
@@ -177,7 +176,7 @@ fun RecordingSection(
                 // nothing while there are none. The rest of the room scrolls, unless the whole screen already does.
                 state.notes?.takeIf { showsNotes(it, overview = false) }?.let { notes ->
                     NotesBlock(
-                        notes, overview = false, scaleSec = elapsed, onDelete = { onDeleteNote(it.id) }, lines = noteLines,
+                        notes, overview = false, scaleSec = elapsed, onDelete = { onDeleteNote(it.id) },
                         modifier = if (scrollDashboard) Modifier else Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                     )
                 }

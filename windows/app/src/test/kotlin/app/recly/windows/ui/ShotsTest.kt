@@ -319,7 +319,7 @@ class ShotsTest {
             shot("notes-changed-$lang", 700, 620, ko) {
                 Column(androidx.compose.ui.Modifier.fillMaxSize().background(blueprint.background).padding(16.dp)) {
                     NotesBlock(
-                        notes, canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, strings = strings,
+                        notes, canSeek = true, onSeek = {}, onDelete = {}, strings = strings,
                         changed = setOf(notes.decisions.first().id), overviewChanged = true,
                     )
                 }
@@ -554,15 +554,15 @@ class ShotsTest {
         // Where the controls are in the 1000×680 window, in dp — read off the plain shot.
         val EXPORT = Offset(910f, 38f)
         val MORE = Offset(966f, 38f)
-        val SPEED = Offset(560f, 150f)
-        val BADGE = Offset(420f, 215f)
+        val SPEED = Offset(560f, 186f)
+        val BADGE = Offset(420f, 247f)
         val MORE_EDIT = Offset(835f, 130f)
-        val EDIT_FIELD = Offset(700f, 250f)
-        val BADGE_CHANGE = Offset(534f, 307f)
+        val EDIT_FIELD = Offset(700f, 286f)
+        val BADGE_CHANGE = Offset(534f, 339f)
         val SEARCH = Offset(150f, 103f)
-        val FIND_NEXT = Offset(900f, 210f)
-        // Edit summary, under Summarize again and its reason — below Version history and Notes in the first group (2026-11-04).
-        val MORE_EDIT_NOTES = Offset(835f, 359f)
+        val FIND_NEXT = Offset(900f, 246f)
+        // Edit summary, under Summarize again and its reason — below Version history in the first group (2026-11-06).
+        val MORE_EDIT_NOTES = Offset(835f, 315f)
         // The Ask field in its 460-wide shot, where a click gives it the cursor.
         val ASK_FIELD = Offset(120f, 38f)
         // The tray popup's Memo row while recording, in the 520×560 popup.

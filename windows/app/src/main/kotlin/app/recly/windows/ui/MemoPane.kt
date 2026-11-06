@@ -37,7 +37,6 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlinx.coroutines.delay
 import recly.core.notes.Memos
-import recly.core.notes.RecordingNotes
 
 /** Which of the detail's chips is on show (docs/09 "AI view"): the transcript, the notes, or the memo. */
 internal enum class DetailView { TRANSCRIPT, NOTES, MEMO }
@@ -49,15 +48,8 @@ internal val RecordingDetail.view: DetailView
         else -> DetailView.TRANSCRIPT
     }
 
-/** docs/08 "Memo": a blank memo shows nothing anywhere. */
+/** docs/08 "Memo": a blank memo is as good as none. */
 internal fun hasMemo(memo: String?): Boolean = !memo.isNullOrBlank()
-
-/** The Memo chip: while there is a memo, or while it is the chosen one — emptying it there does not take the view away. */
-internal fun showsMemoChip(memo: String?, memoChosen: Boolean): Boolean = memoChosen || hasMemo(memo)
-
-/** The chips' row: the notes' rule ([showsNotesChips]) or the memo's — never over the transcript's editor. */
-internal fun showsDetailChips(notes: RecordingNotes?, notesChosen: Boolean, memo: String?, memoChosen: Boolean, editing: Boolean): Boolean =
-    !editing && (showsNotesChips(notes, notesChosen, editing = false) || showsMemoChip(memo, memoChosen))
 
 /** The tray row's line: the memo's first line that says something, trimmed; nothing for a blank memo. */
 internal fun memoPreview(memo: String?): String? = memo?.lineSequence()?.map(String::trim)?.firstOrNull(String::isNotEmpty)
@@ -117,7 +109,7 @@ internal fun MemoField(
     )
 }
 
-/** docs/09 "AI view": the Memo chip's body — the field, always editable, and the line under it; [focus] from More's `Memo`. */
+/** docs/09 "AI view": the Memo chip's body — the field, always editable, and the line under it; [focus] when the chip opened an empty memo. */
 @Composable
 internal fun MemoPane(model: ShellModel, detail: RecordingDetail, focus: Boolean, strings: Strings, modifier: Modifier = Modifier) {
     val requester = remember { FocusRequester() }

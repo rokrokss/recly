@@ -129,8 +129,6 @@
     <string name="jobs_column_status">Hali</string>
     <string name="jobs_summary_waiting">zinazosubiri: %1$d</string>
     <string name="jobs_summary_failed">zilizoshindwa: %1$d</string>
-    <string name="jobs_row_expand">Panua</string>
-    <string name="jobs_row_collapse">Kunja</string>
     <string name="jobs_row_description">%1$s, ilirekodiwa %2$s, muda %3$s, %4$s</string>
     <string name="detail_rename">Badilisha jina</string>
     <string name="detail_loading">Inapakia…</string>

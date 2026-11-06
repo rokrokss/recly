@@ -35,7 +35,6 @@ struct NotesPane: View {
                         playable: true,
                         seekableSec: seekableSec,
                         onSeek: onSeek,
-                        lines: model.noteLines(atSec:),
                         delete: model.deleteNote,
                         changed: Set(model.askChanges?.items ?? []),
                         overviewChanged: model.askChanges?.overview == true

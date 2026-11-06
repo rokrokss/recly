@@ -37,7 +37,6 @@ import recly.core.ReclyCore
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.job.EnqueueResult
 import recly.core.job.JobStatus
-import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
@@ -257,13 +256,6 @@ class RecordingViewModel @JvmOverloads constructor(
             runCatching { core.memos.set(recordingId, text) }
                 .onFailure { core.deps.logger.log(Logger.Level.ERROR, "shell.memo.save.failed", mapOf("recordingId" to recordingId), it) }
         }
-    }
-
-    /** docs/08 "Organizing": the parts' lines around a note, for its row's expansion. */
-    suspend fun noteLines(atSec: Double): List<NoteLine> {
-        val recordingId = _state.value.notes?.recordingId ?: return emptyList()
-        val core = core()
-        return runCatching { withContext(core.deps.io) { core.notes.linesAround(recordingId, atSec) } }.getOrDefault(emptyList())
     }
 
     /**

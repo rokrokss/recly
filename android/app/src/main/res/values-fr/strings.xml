@@ -129,8 +129,6 @@
     <string name="jobs_column_status">Statut</string>
     <string name="jobs_summary_waiting">%1$d en attente</string>
     <string name="jobs_summary_failed">%1$d en échec</string>
-    <string name="jobs_row_expand">Développer</string>
-    <string name="jobs_row_collapse">Réduire</string>
     <string name="jobs_row_description">%1$s, enregistré le %2$s, durée %3$s, %4$s</string>
     <string name="detail_rename">Renommer</string>
     <string name="detail_loading">Chargement…</string>

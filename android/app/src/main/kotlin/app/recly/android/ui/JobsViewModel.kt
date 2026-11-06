@@ -44,7 +44,6 @@ import recly.core.job.StepStatus
 import recly.core.model.Step
 import recly.core.model.RecordingStatus
 import recly.core.notes.NoteEdit
-import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
@@ -688,12 +687,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     /** docs/08 "Organizing": a swipe deletes a note for good; the page follows on [DetailState.notes]. */
     fun deleteNote(recordingId: String, itemId: String) = launch {
         runCatching { core().notes.deleteItem(recordingId, itemId) }
-    }
-
-    /** docs/08 "Organizing": the transcript around a note, for its row's expansion; none when it cannot be read. */
-    suspend fun noteLines(recordingId: String, atSec: Double): List<NoteLine> {
-        val core = core()
-        return runCatching { withContext(core.deps.io) { core.notes.linesAround(recordingId, atSec) } }.getOrDefault(emptyList())
     }
 
     /** docs/08 "Memo": the memo view's save, in this ViewModel's scope so leaving the page does not cancel it. */

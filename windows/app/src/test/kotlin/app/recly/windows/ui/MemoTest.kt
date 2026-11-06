@@ -30,8 +30,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import recly.core.notes.NotesStage
-import recly.core.notes.RecordingNotes
 import recly.core.recording.NotesMatch
 import recly.core.recording.SearchHit
 import recly.core.recording.SearchRange
@@ -40,21 +38,11 @@ import recly.core.recording.SearchSnippet
 /** docs/08 "Memo": where the detail shows a recording's memo, what the tray's row says of it, and how its field saves. */
 class MemoTest {
     private val base = StringTable.of(StringTable.BASE)
-    private val noNotes = RecordingNotes("r1", NotesStage.FINAL, null, emptyList(), emptyList(), emptyList(), organizing = false)
 
     @Test
-    fun `the chips are there for a memo or its view, the Memo chip stays while chosen, and never over the transcript's editor`() {
-        assertFalse(showsDetailChips(noNotes, notesChosen = false, memo = "", memoChosen = false, editing = false))
-        assertFalse(showsDetailChips(null, notesChosen = false, memo = " \n ", memoChosen = false, editing = false), "a blank memo is none")
-        assertTrue(showsDetailChips(null, notesChosen = false, memo = "Agenda", memoChosen = false, editing = false))
-        assertTrue(showsDetailChips(null, notesChosen = false, memo = "", memoChosen = true, editing = false))
-        assertTrue(showsDetailChips(null, notesChosen = true, memo = null, memoChosen = false, editing = false))
-        assertFalse(showsDetailChips(null, notesChosen = false, memo = "Agenda", memoChosen = false, editing = true))
-
-        assertFalse(showsMemoChip(null, memoChosen = false))
-        assertTrue(showsMemoChip("Agenda", memoChosen = false))
-        assertTrue(showsMemoChip("", memoChosen = true), "emptied while on it: the view stays")
-        assertFalse(hasMemo(""))
+    fun `a blank memo is none, and the detail's view is the one chosen`() {
+        assertFalse(hasMemo(null))
+        assertFalse(hasMemo(" \n "))
         assertTrue(hasMemo(" a "))
 
         val detail = RecordingDetail("r1", UiMessage.Text("Weekly"))

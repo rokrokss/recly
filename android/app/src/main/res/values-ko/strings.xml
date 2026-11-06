@@ -148,8 +148,6 @@
     <string name="jobs_column_status">상태</string>
     <string name="jobs_summary_waiting">대기 %1$d</string>
     <string name="jobs_summary_failed">실패 %1$d</string>
-    <string name="jobs_row_expand">펼치기</string>
-    <string name="jobs_row_collapse">접기</string>
     <string name="jobs_row_description">%1$s, %2$s 녹음, 길이 %3$s, %4$s</string>
 
     <string name="detail_rename">이름 바꾸기</string>

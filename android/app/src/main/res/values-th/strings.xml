@@ -129,8 +129,6 @@
     <string name="jobs_column_status">สถานะ</string>
     <string name="jobs_summary_waiting">รอ %1$d</string>
     <string name="jobs_summary_failed">ล้มเหลว %1$d</string>
-    <string name="jobs_row_expand">ขยาย</string>
-    <string name="jobs_row_collapse">ยุบ</string>
     <string name="jobs_row_description">%1$s, บันทึกเมื่อ %2$s, ความยาว %3$s, %4$s</string>
     <string name="detail_rename">เปลี่ยนชื่อ</string>
     <string name="detail_loading">กำลังโหลด…</string>

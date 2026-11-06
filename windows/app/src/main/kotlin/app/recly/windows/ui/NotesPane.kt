@@ -67,18 +67,18 @@ import recly.core.notes.NotesHeadings
 import recly.core.notes.RecordingNotes
 
 /**
- * docs/09 "AI view": Transcript · Notes · Memo, under the detail's header — Notes by [showsNotesChips]' rule and Memo by
- * [showsMemoChip]'s. One is always chosen.
+ * docs/09 "AI view": Transcript · Notes · Memo, under the detail's header — Notes by [showsNotesChips]' rule, Memo always.
+ * One is always chosen.
  */
 @Composable
-internal fun NotesChips(view: DetailView, notes: Boolean, memo: Boolean, onView: (DetailView) -> Unit, strings: Strings) {
+internal fun NotesChips(view: DetailView, notes: Boolean, onView: (DetailView) -> Unit, strings: Strings) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         BlueprintChip(strings[Str.EXPORT_TRANSCRIPT], selected = view == DetailView.TRANSCRIPT, onClick = { onView(DetailView.TRANSCRIPT) }, compact = true)
         if (notes) BlueprintChip(strings[Str.NOTES_TAB], selected = view == DetailView.NOTES, onClick = { onView(DetailView.NOTES) }, compact = true)
-        if (memo) BlueprintChip(strings[Str.MEMO_TITLE], selected = view == DetailView.MEMO, onClick = { onView(DetailView.MEMO) }, compact = true)
+        BlueprintChip(strings[Str.MEMO_TITLE], selected = view == DetailView.MEMO, onClick = { onView(DetailView.MEMO) }, compact = true)
     }
     HairLine()
 }
@@ -113,7 +113,6 @@ internal fun NotesPane(
                 notes = notes,
                 canSeek = canSeek,
                 onSeek = onSeek,
-                linesAround = { atSec -> model.noteLines(detail.recordingId, atSec) },
                 onDelete = { item -> model.deleteNote(detail.recordingId, item.id) },
                 strings = strings,
                 seekableDurationSec = detail.audio.totalSec,

@@ -88,7 +88,6 @@ import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.FillResult
 import recly.core.chatgpt.FillRun
 import recly.core.notes.NoteEdit
-import recly.core.notes.NoteLine
 import recly.core.processing.ProcessingTranscription
 import recly.core.recording.ExportFormat
 import recly.core.recording.SilenceRanges
@@ -173,9 +172,8 @@ class DetailActions(
      * `Filling in…`, and the line under the header says what is being filled in.
      */
     val fill: FillRun? = null,
-    /** docs/08 "Organizing": a note swiped away, for good, and the transcript around a note for its row. */
+    /** docs/08 "Organizing": a note swiped away, for good. */
     val onDeleteNote: (String) -> Unit = {},
-    val noteLines: suspend (Double) -> List<NoteLine> = { emptyList() },
     /**
      * What the recording's list row used to offer under itself, now under the notice of a page with no transcript
      * (2026-10-28): Retry and where it is, Check the key, and the speech model's download for the row's language.
@@ -351,7 +349,7 @@ fun RecordingDetailScreen(
     var view by remember(detail.recordingId) {
         mutableStateOf(if (detail.openNotes) DetailView.NOTES else if (detail.openMemo) DetailView.MEMO else DetailView.TRANSCRIPT)
     }
-    // More's `Memo` opens the memo to be written in, its field focused; its chip only shows it.
+    // The memo's chip on an empty memo opens it to be written in, its field focused; on one with something in it, to be read.
     var memoFocus by remember(detail.recordingId) { mutableStateOf(false) }
     var askedNotes by remember(detail.recordingId) { mutableStateOf(false) }
     // Organize asked from this page and not back yet: its `Organizing…` from the tap, before the core says so.
@@ -403,11 +401,10 @@ fun RecordingDetailScreen(
     }
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val organizing = organizingHere || detail.notes?.organizing == true
-    // docs/08 "Memo": a memo is a view of its own, as the notes are — once it says something, or while it is open.
-    val memoChip = !detail.memo.isNullOrBlank() || view == DetailView.MEMO
-    val notesChip = hasNotes(detail.notes) || askedNotes
-    val chips = showsNotesChips(notesChip || memoChip, asked = false, editing = draft != null,
-        typing = keyboardVisible && (notesDraft != null || view == DetailView.MEMO))
+    val notesChip = hasNotes(detail.notes) || askedNotes || view == DetailView.NOTES
+    // docs/09 "AI view": the chips are always there — never while the transcript is edited, nor while the notes editor or
+    // the memo has the keyboard up (N6): the fields keep that room, and the chips are back when the keyboard goes.
+    val chips = draft == null && !(keyboardVisible && (notesDraft != null || view == DetailView.MEMO))
     val notesText by produceState<String?>(null, detail.notes) { value = actions.notesText() }
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
@@ -519,10 +516,6 @@ fun RecordingDetailScreen(
                                 onEditNotes = {
                                     detail.notes?.takeIf(::hasNotes)?.let { notesDraft = NotesDraft.of(it); view = DetailView.NOTES }
                                 },
-                                onMemo = {
-                                    memoFocus = true
-                                    view = DetailView.MEMO
-                                },
                                 onFill = { half ->
                                     scope.launch {
                                         when (val notice = fillNotice(actions.onFill(half), half, detail.busyReason)) {
@@ -578,14 +571,12 @@ fun RecordingDetailScreen(
                     BlueprintChip(stringResource(R.string.notes_title), view == DetailView.NOTES, { view = DetailView.NOTES },
                         modifier = Modifier.testTag("view-notes"), compact = true)
                 }
-                if (memoChip) {
-                    BlueprintChip(stringResource(R.string.memo_title), view == DetailView.MEMO,
-                        {
-                            memoFocus = false
-                            if (notesDraft != null) leaveNotesEditor(DetailView.MEMO) else view = DetailView.MEMO
-                        },
-                        modifier = Modifier.testTag("view-memo"), compact = true)
-                }
+                BlueprintChip(stringResource(R.string.memo_title), view == DetailView.MEMO,
+                    {
+                        memoFocus = detail.memo.isNullOrBlank()
+                        if (notesDraft != null) leaveNotesEditor(DetailView.MEMO) else view = DetailView.MEMO
+                    },
+                    modifier = Modifier.testTag("view-memo"), compact = true)
             }
         }
 
@@ -601,7 +592,7 @@ fun RecordingDetailScreen(
                 view == DetailView.MEMO -> MemoPane(detail.recordingId, detail.memo.orEmpty(), actions.notesAgreed, actions.onSaveMemo, memoFocus,
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()))
                 chips && view == DetailView.NOTES -> NotesPane(detail.notes, organizing, notesText, onRetry = organize, scaleSec = scale,
-                    onDelete = { actions.onDeleteNote(it.id) }, lines = actions.noteLines, canSeek = canSeekTo, onSeek = seek,
+                    onDelete = { actions.onDeleteNote(it.id) }, canSeek = canSeekTo, onSeek = seek,
                     modifier = Modifier.fillMaxSize(), changed = askChanges?.items.orEmpty().toSet(), overviewChanged = askChanges?.overview == true)
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list — whatever
                 // the transcript's own state says, a step that never ran included.

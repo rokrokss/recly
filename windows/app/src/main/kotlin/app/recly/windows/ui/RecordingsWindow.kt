@@ -566,7 +566,7 @@ private fun ColumnScope.Detail(
     var saving by remember(detail.recordingId) { mutableStateOf(mapOf<Int, InlineSave>()) }
     var editSave by remember { mutableStateOf<InlineSave?>(null) }
     var editRefused by remember(draft) { mutableStateOf(false) }
-    // More's `Memo` opens the memo to be written in, its field focused; its chip only shows it.
+    // The memo's chip on an empty memo opens it to be written in, its field focused; on one with something in it, to be read.
     var memoFocus by remember(detail.recordingId) { mutableStateOf(false) }
     // docs/09 "Ask": what the composer holds, empty again on another recording — and the answer closed on leaving one, the
     // window closing too.
@@ -664,10 +664,6 @@ private fun ColumnScope.Detail(
                                     onNotesDraft(NotesDraft(detail.recordingId, it))
                                 }
                             },
-                            {
-                                memoFocus = true
-                                model.showMemo()
-                            },
                             strings,
                         )
                     }
@@ -693,25 +689,23 @@ private fun ColumnScope.Detail(
             }
         }
     }
-    // docs/09 "AI view": Transcript · Notes · Memo, once there are notes or Organize was chosen, or there is a memo or it
-    // was chosen — never over the transcript's editor. Over the notes' they stay, and going to the transcript or the memo
-    // leaves it the way leaving any editor does.
-    val chips = !detail.loading &&
-        showsDetailChips(detail.notes, detail.showingNotes, detail.memo, detail.showingMemo, editing = draft != null)
+    // docs/09 "AI view": Transcript · Notes · Memo, the Notes one once there are notes or Organize was chosen — never over
+    // the transcript's editor. Over the notes' they stay, and going to the transcript or the memo leaves it the way
+    // leaving any editor does.
+    val chips = !detail.loading && draft == null
     val notesShown = chips && detail.view == DetailView.NOTES
     val memoShown = chips && detail.view == DetailView.MEMO
     if (chips) {
         NotesChips(
             detail.view,
             notes = showsNotesChips(detail.notes, detail.showingNotes, editing = false),
-            memo = showsMemoChip(detail.memo, detail.showingMemo),
             onView = { view ->
                 val go = {
                     when (view) {
                         DetailView.TRANSCRIPT -> model.showNotes(false)
                         DetailView.NOTES -> model.showNotes(true)
                         DetailView.MEMO -> {
-                            memoFocus = false
+                            memoFocus = !hasMemo(detail.memo)
                             model.showMemo()
                         }
                     }

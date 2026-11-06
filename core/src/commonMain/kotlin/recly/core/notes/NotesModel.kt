@@ -190,22 +190,6 @@ data class NotesHeadings(
 )
 
 /**
- * One line of the transcript around a note (`Notes.linesAround`): the final transcript's once there is one, the
- * parts' made while recording before that. [speakerName] is the name the user gave [speakerId], or null; [me]
- * marks the person who made the recording (docs/08 "Me and others"). A line made while recording has its part's
- * own label, which does not carry over to the next part.
- */
-data class NoteLine(
-    val atSec: Double,
-    val endSec: Double,
-    val speakerId: String?,
-    val speakerName: String?,
-    val me: Boolean,
-    val text: String,
-    val provisional: Boolean,
-)
-
-/**
  * `{base}.notes.v1.json` beside the recording's parts (`spec/notes.schema.json`); once final, it also goes to the
  * recording's Drive or iCloud folder as `{base}.notes.json` ([NotesFolder]). [sections] are the sections the items
  * were made with — the built-in groups asked for, then the user's own; [overviewEditedAt] is set once the user changed

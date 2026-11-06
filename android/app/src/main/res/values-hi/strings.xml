@@ -129,8 +129,6 @@
     <string name="jobs_column_status">स्थिति</string>
     <string name="jobs_summary_waiting">%1$d प्रतीक्षारत</string>
     <string name="jobs_summary_failed">%1$d विफल</string>
-    <string name="jobs_row_expand">फैलाएँ</string>
-    <string name="jobs_row_collapse">समेटें</string>
     <string name="jobs_row_description">%1$s, रिकॉर्ड किया %2$s, अवधि %3$s, %4$s</string>
     <string name="detail_rename">नाम बदलें</string>
     <string name="detail_loading">लोड हो रहा है…</string>

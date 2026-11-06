@@ -443,7 +443,6 @@ private fun RecordTab(
         onConsentAnswered = model::consentAnswered,
         onNotesConsentAnswered = model::notesConsentAnswered,
         onDeleteNote = model::deleteNote,
-        noteLines = model::noteLines,
         onSaveMemo = model::saveMemo,
         modifier = modifier,
         prompt = {
@@ -507,7 +506,6 @@ private fun JobsTab(
                 onFill = { half -> model.fill(detail.recordingId, half) },
                 fill = state.fills.firstOrNull { it.recordingId == detail.recordingId },
                 onDeleteNote = { model.deleteNote(detail.recordingId, it) },
-                noteLines = { model.noteLines(detail.recordingId, it) },
                 retry = state.action,
                 onRetry = model::retry,
                 onCheckKey = onCheckKey,

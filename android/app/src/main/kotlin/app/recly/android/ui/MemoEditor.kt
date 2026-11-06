@@ -149,7 +149,7 @@ internal fun MemoDialog(recordingId: String, memo: String, agreed: Boolean, onSa
     }
 }
 
-/** docs/09 "AI view": the detail's `Memo` view — the field always open, filling the page; [focus] from More's `Memo`. */
+/** docs/09 "AI view": the detail's `Memo` view — the field always open, filling the page; [focus] when the chip opened an empty memo. */
 @Composable
 internal fun MemoPane(recordingId: String, memo: String, agreed: Boolean, onSave: (String) -> Unit, focus: Boolean, modifier: Modifier = Modifier) {
     MemoField(

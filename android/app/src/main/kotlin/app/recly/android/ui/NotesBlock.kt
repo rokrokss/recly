@@ -2,7 +2,6 @@ package app.recly.android.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -19,12 +19,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,9 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -47,7 +40,6 @@ import app.recly.android.R
 import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.component.SectionHeader
-import app.recly.android.ui.component.focusRing
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -55,7 +47,6 @@ import app.recly.android.ui.theme.mono
 import recly.core.chatgpt.SummaryCitation
 import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
-import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 import recly.core.storage.StorageKind
 
@@ -93,16 +84,8 @@ internal fun noteOverview(notes: RecordingNotes): String? = notes.overview?.trim
 internal fun showsNotes(notes: RecordingNotes?, overview: Boolean): Boolean =
     notes != null && ((overview && noteOverview(notes) != null) || noteGroups(notes, keyPoints = overview).isNotEmpty())
 
-/** docs/09 "AI view": the recording has notes — Organize says `again`, Edit notes is offered and the chips are there. */
+/** docs/09 "AI view": the recording has notes — Organize says `again`, Edit notes is offered and their chip is there. */
 internal fun hasNotes(notes: RecordingNotes?): Boolean = showsNotes(notes, overview = true)
-
-/**
- * Transcript | Notes, once the recording has notes or the user has just asked for them — never while the transcript
- * is edited, nor while the notes editor has the keyboard up ([typing], N6): the fields keep that room, and the chips
- * are back when the keyboard goes.
- */
-internal fun showsNotesChips(notes: Boolean, asked: Boolean, editing: Boolean, typing: Boolean = false): Boolean =
-    !editing && !typing && (asked || notes)
 
 /** The line under the notes: `ChatGPT · <model>`, or ChatGPT alone for notes that do not say which. */
 @Composable
@@ -163,26 +146,10 @@ internal fun noteText(item: NoteItem, stamp: String?, muted: Color, monospace: F
 }
 
 /**
- * Which of [lines] the note is on, for its emphasis: the line its quote is in, else the line its time falls in, else the
- * line nearest it — -1 for no lines. The quote is compared as letters and digits only, so case and punctuation the
- * transcript and the quote write differently do not hide it.
- */
-internal fun noteLineIndex(lines: List<NoteLine>, atSec: Double, quote: String): Int {
-    if (lines.isEmpty()) return -1
-    val said = letters(quote)
-    if (said.isNotEmpty()) lines.indexOfFirst { letters(it.text).contains(said) }.takeIf { it >= 0 }?.let { return it }
-    lines.indexOfFirst { atSec >= it.atSec && atSec <= it.endSec }.takeIf { it >= 0 }?.let { return it }
-    return lines.indices.minBy { kotlin.math.abs(lines[it].atSec - atSec) }
-}
-
-private fun letters(text: String): String = text.lowercase().filter { it.isLetterOrDigit() }
-
-/**
  * docs/08 "Organizing" · docs/09: a recording's notes — on the detail, the overview and then the groups; on the record
  * screen, the groups alone, without key points. Each group is its section header over rows of one sentence: the item's words, and at the end
- * its time in monospace. A tap on a row opens the transcript around it under the row, the note's own line marked as the
- * reader marks the line it plays; a second tap closes it, and opening another closes the first. A swipe from the end
- * deletes the item for good, with no question; a screen reader has the same Delete as an action of the row.
+ * its time in monospace. All of it is one selection, as the transcript is. A swipe from the end deletes the item for
+ * good, with no question; a screen reader has the same Delete as an action of the row.
  *
  * [onSeek] makes the time a target that moves the playhead to it — a transcript time's way, playing or paused as it
  * was — where [canSeek] allows; without it (while recording) the time is only text. [scaleSec] picks the time format
@@ -195,7 +162,6 @@ internal fun NotesBlock(
     overview: Boolean,
     scaleSec: Long?,
     onDelete: (NoteItem) -> Unit,
-    lines: suspend (Double) -> List<NoteLine>,
     modifier: Modifier = Modifier,
     canSeek: (Double) -> Boolean = { false },
     onSeek: ((Double) -> Unit)? = null,
@@ -204,35 +170,33 @@ internal fun NotesBlock(
 ) {
     val palette = blueprint
     val tint = palette.accent.copy(alpha = MATCH_TINT)
-    var open by remember(notes.recordingId) { mutableStateOf<String?>(null) }
-    Column(modifier.fillMaxWidth().testTag("notes")) {
-        // On the page, as the iPhone has them: no table rows and no lines between them — the section headers part the groups.
-        if (overview) noteOverview(notes)?.let { text ->
-            Text(
-                buildAnnotatedString {
-                    append(text)
-                    if (overviewChanged) addStyle(SpanStyle(background = tint), 0, text.length)
-                },
-                Modifier.fillMaxWidth().padding(horizontal = Space.m).testTag("notes-overview"),
-                style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
-                color = palette.text,
-            )
-        }
-        noteGroups(notes, keyPoints = overview).forEach { group ->
-            SectionHeader(group.title(), Modifier.padding(horizontal = Space.m))
-            group.items.forEach { item ->
-                key(item.id) {
-                    NoteRow(
-                        item = item,
-                        expanded = open == item.id,
-                        onToggle = { open = if (open == item.id) null else item.id },
-                        scaleSec = scaleSec,
-                        canSeek = canSeek,
-                        onSeek = onSeek,
-                        onDelete = onDelete,
-                        lines = lines,
-                        tint = tint.takeIf { item.id in changed },
-                    )
+    SelectionContainer(modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().testTag("notes")) {
+            // On the page, as the iPhone has them: no table rows and no lines between them — the section headers part the groups.
+            if (overview) noteOverview(notes)?.let { text ->
+                Text(
+                    buildAnnotatedString {
+                        append(text)
+                        if (overviewChanged) addStyle(SpanStyle(background = tint), 0, text.length)
+                    },
+                    Modifier.fillMaxWidth().padding(horizontal = Space.m).testTag("notes-overview"),
+                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                    color = palette.text,
+                )
+            }
+            noteGroups(notes, keyPoints = overview).forEach { group ->
+                SectionHeader(group.title(), Modifier.padding(horizontal = Space.m))
+                group.items.forEach { item ->
+                    key(item.id) {
+                        NoteRow(
+                            item = item,
+                            scaleSec = scaleSec,
+                            canSeek = canSeek,
+                            onSeek = onSeek,
+                            onDelete = onDelete,
+                            tint = tint.takeIf { item.id in changed },
+                        )
+                    }
                 }
             }
         }
@@ -242,18 +206,14 @@ internal fun NotesBlock(
 @Composable
 private fun NoteRow(
     item: NoteItem,
-    expanded: Boolean,
-    onToggle: () -> Unit,
     scaleSec: Long?,
     canSeek: (Double) -> Boolean,
     onSeek: ((Double) -> Unit)?,
     onDelete: (NoteItem) -> Unit,
-    lines: suspend (Double) -> List<NoteLine>,
     tint: Color?,
 ) {
     val palette = blueprint
     val delete = stringResource(R.string.action_delete)
-    val toggle = stringResource(if (expanded) R.string.jobs_row_collapse else R.string.jobs_row_expand)
     // The iPhone's: the row goes once it has been pulled two touch targets, and `Delete` shows from there.
     val threshold = with(LocalDensity.current) { (MinTouch * 2).toPx() }
     val swipe = rememberSwipeToDismissBoxState(positionalThreshold = { threshold })
@@ -278,59 +238,31 @@ private fun NoteRow(
             }
         },
     ) {
-        Column(Modifier.fillMaxWidth()) {
-            // An item no single line carries has no time, and no transcript to open (docs/09 "Notes view").
-            val atSec = item.atSec
-            val stamp = atSec?.let { clock(it.toLong(), scaleSec) }
-            val text = noteText(item, stamp, palette.textMuted, mono.body.fontFamily, tint)
-            // The time moves the playhead, as a transcript time does (2026-10-28); a tap anywhere else is the row's.
-            TargetedText(
-                text,
-                if (atSec != null && stamp != null) {
-                    listOf(TextRun(text.length - stamp.length, text.length, SummaryCitation(text.length - stamp.length, stamp.length, atSec)))
-                } else {
-                    emptyList()
+        // An item no single line carries has no time (docs/09 "Notes view").
+        val atSec = item.atSec
+        val stamp = atSec?.let { clock(it.toLong(), scaleSec) }
+        val text = noteText(item, stamp, palette.textMuted, mono.body.fontFamily, tint)
+        // The time moves the playhead, as a transcript time does (2026-10-28).
+        TargetedText(
+            text,
+            if (atSec != null && stamp != null) {
+                listOf(TextRun(text.length - stamp.length, text.length, SummaryCitation(text.length - stamp.length, stamp.length, atSec)))
+            } else {
+                emptyList()
+            },
+            canSeek = { onSeek != null && canSeek(it) },
+            onSeek = { onSeek?.invoke(it) },
+            label = { stringResource(R.string.transcript_seek, hms(it.atSec.toLong())) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics(mergeDescendants = true) {
+                    customActions = listOf(CustomAccessibilityAction(delete) { onDelete(item); true })
                 },
-                canSeek = { onSeek != null && canSeek(it) },
-                onSeek = { onSeek?.invoke(it) },
-                label = { stringResource(R.string.transcript_seek, hms(it.atSec.toLong())) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (atSec != null) Modifier.focusRing(palette).clickable(onClick = onToggle) else Modifier)
-                    .semantics(mergeDescendants = true) {
-                        if (atSec != null) {
-                            if (expanded) collapse(label = toggle) { onToggle(); true } else expand(label = toggle) { onToggle(); true }
-                        }
-                        customActions = listOf(CustomAccessibilityAction(delete) { onDelete(item); true })
-                    },
-                // As tall as its words, 16 at the sides and 8 above and below (2026-10-31): the touch minimum made a list
-                // of one-line items read double-spaced. The time's target reaches past its words without the room.
-                horizontal = Space.m,
-                vertical = Space.s,
-            )
-            if (expanded && atSec != null) NoteLines(item, atSec, lines)
-        }
-    }
-}
-
-/** The transcript around a note, under its row: who spoke when there is a name, what was said, the note's line marked. */
-@Composable
-private fun NoteLines(item: NoteItem, atSec: Double, lines: suspend (Double) -> List<NoteLine>) {
-    val palette = blueprint
-    val around by produceState<List<NoteLine>>(emptyList(), item.id, atSec) { value = lines(atSec) }
-    if (around.isEmpty()) return
-    val at = noteLineIndex(around, atSec, item.quote)
-    val me = stringResource(R.string.speaker_me)
-    Column(
-        Modifier.fillMaxWidth().padding(start = Space.m, end = Space.m, bottom = Space.sm).testTag("note-lines"),
-        verticalArrangement = Arrangement.spacedBy(Space.s),
-    ) {
-        around.forEachIndexed { index, line ->
-            Column(Modifier.fillMaxWidth().activeBar(palette.accent, index == at), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-                (line.speakerName ?: me.takeIf { line.me })?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = palette.textMuted) }
-                Text(line.text, style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content), color = palette.text)
-            }
-        }
+            // As tall as its words, 16 at the sides and 8 above and below (2026-10-31): the touch minimum made a list
+            // of one-line items read double-spaced. The time's target reaches past its words without the room.
+            horizontal = Space.m,
+            vertical = Space.s,
+        )
     }
 }
 
@@ -349,7 +281,6 @@ internal fun NotesPane(
     onRetry: () -> Unit,
     scaleSec: Long?,
     onDelete: (NoteItem) -> Unit,
-    lines: suspend (Double) -> List<NoteLine>,
     canSeek: (Double) -> Boolean,
     onSeek: (Double) -> Unit,
     modifier: Modifier = Modifier,
@@ -377,7 +308,7 @@ internal fun NotesPane(
                 ChatGptFailure(failure, R.string.notes_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "notes-retry")
             }
             if (shown != null) {
-                NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, lines = lines, canSeek = canSeek, onSeek = onSeek,
+                NotesBlock(shown, overview = true, scaleSec = scaleSec, onDelete = onDelete, canSeek = canSeek, onSeek = onSeek,
                     changed = changed, overviewChanged = overviewChanged)
                 CopyFooter(notesFooter(shown.model), text.orEmpty(), Modifier.testTag("notes-copy"))
             }

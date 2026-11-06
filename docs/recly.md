@@ -294,7 +294,7 @@ in):
   (§10 "Shared rules for the shells")
 - (2026-11-04) `summaries.undoAsk` (§8 "Ask"), `transcriptVersions` · `restoreTranscript` (§8 "Versions") and
   `TranscriptDocument.segmentRanges` (§9 "Transcript reader")
-- (2026-10-27) `notes` — a recording's organized notes: `observe`, `get`, `deleteItem`, `linesAround`, and the consent
+- (2026-10-27) `notes` — a recording's organized notes: `observe`, `get`, `deleteItem`, and the consent
   (`needsConsent`, `observeNeedsConsent`, `consent`) (§8 "Organizing"); `StepReport.notesOnly` for a job with only its notes left
 
 The shells have only audio capture, transfer APIs, the scheduler and the UI. **Workflow semantics never live in a shell.**
@@ -2419,10 +2419,6 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   same now. A `NoteItem` has `id`, `kind`, `text` (the user's words once edited), `owner`, `due`, `atSec` (null with no evidence), `quote` (empty then), `provisional` and
   `section`; `owner` comes resolved — the name the user gave that speaker in the transcript, the app's word for `Me` for an unnamed
   `me` (2026-10-30, §8 "Me and others"), or null when the speaker has none or the item is provisional, never `S1`. `deleteItem(recordingId, itemId)` removes an item for good (false when there is none).
-  `linesAround(recordingId, atSec)` gives the transcript's lines from 20 seconds before to 40 seconds after (at most 12), for "show
-  the transcript here" under an item — the recording's transcript once there is one, before that the parts' made while recording,
-  since there is no playback while recording (`NoteLine`: `atSec`, `endSec`, `speakerId`, `speakerName`, `me`, `text`,
-  `provisional`).
 - **Copy and share** (2026-10-28). `notes.text(recordingId)` is the notes as text — the overview, then `Decisions`, `To-dos`,
   `Key points`, `Questions` and the user's sections, each a heading over `- ` items with ` — owner`, ` · due` and, when the item has a time, `[HH:MM:SS]` — for `Copy
   all` and Share → `Summary` (§8 "Exports"); the Markdown transcript the share sheet gets carries the same as its own section. The headings
@@ -2467,7 +2463,7 @@ nothing rewrites it, and it is never shown inside the notes.
   text)` keeps it as typed, line breaks and spaces included, cut to 2000 characters (`Memos.MAX`), and writes only when it changed. A
   memo can be written at any time — while recording, while the recording is processed, for a recording of another device — unlike the
   title sheet's `updateTitle`, which refuses once processing started. Emptying it keeps an empty text rather than deleting the file, so the
-  change reaches the other devices; an empty or blank memo shows nothing anywhere.
+  change reaches the other devices; an empty or blank memo is as good as none: nothing reads it, and only the detail's `Notes` chip, always there, shows it.
 - **Storage.** `{base}.memo.v1.json` beside the parts (`spec/memo.schema.json`): the recording id, the text and `updatedAt`. Every change
   also goes to the recording's Drive or iCloud folder as `{base}.memo.json` with the folder's `memoAt` (§3 "Drive layout") five seconds
   after the last change (`Memos.PUBLISH_DELAY_SEC`), so typing does not upload each keystroke — or once the folder exists, for a recording
@@ -2496,7 +2492,7 @@ nothing rewrites it, and it is never shown inside the notes.
   words, so such a fact can also land in an item's text or the overview, and it stays there (2026-11-06, user decision). A try after a wait asks again from the start when the memo changed meanwhile, as when Settings did. Changing
   the memo after the notes are written runs nothing and marks nothing: the next `Summarize again` reads it.
 - **Shells.** The recording screens of the phones, the Mac's popover and the Windows tray popup have a `Notes` row while recording; the
-  detail has a `Notes` view beside the transcript and the notes, and More → `Notes` while there is none (§9 "AI view"). Every memo editor
+  detail has a `Notes` chip beside the transcript and the summary, always there (§9 "AI view"). Every memo editor
   saves as the user types — 0.8 s after the last keystroke and when it closes — and `Done` only closes it, so a popover that closes on
   Escape or a click elsewhere loses nothing. The search finds a memo's lines (§10 "Search").
 - **Logs**: `memo.saved` (recordingId, chars); the storage's `remote.memo.pushed`, `remote.memo.push.failed`, `remote.memo.read` and
@@ -3257,9 +3253,9 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   `Fill in title` answered without a title says the failure sentence alone. A failure says `Could not fill in the title` or `Could not fill in speaker names`
   with the core's sentence under the header for a few seconds, as refused starts do (principle 2, "Detail header and More menu"); on
   iPhone the ChatGPT permission is asked first, as for `Summarize`.
-- **The chips.** Once a recording has notes, or `Summarize` was asked, two chips under the header — at their own width, on the page under the
-  header's line (2026-10-31: Android's filled band gave way to the iPhone's row), compact (2026-11-04, "Component measurements") — switch the body between `Transcript`
-  and `Summary`, and a third, `Notes`, follows once it has a memo (2026-10-30, "Memo" below); a memo alone gives `Transcript` · `Notes` (the detail opens on `Transcript`; no chips while the transcript is edited, and while notes or the memo are edited they step aside only for the keyboard). The `Summary` body is §9 "Notes view": while the recording is
+- **The chips.** Chips under the header — at their own width, on the page under the
+  header's line (2026-10-31: Android's filled band gave way to the iPhone's row), compact (2026-11-04, "Component measurements") — switch the body: `Transcript`,
+  `Summary` once the recording has notes or `Summarize` was asked, and `Notes`, always there (2026-11-06, "Memo" below). The detail opens on `Transcript`; no chips while the transcript is edited, and while notes or the memo are edited they step aside only for the keyboard. The `Summary` body is §9 "Notes view": while the recording is
   organized here, the square loader and `Summarizing…` over the notes there are; a failure of `Summarize` (`RecordingNotes.failure`): a
   centred notice — the `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage`
   (primary) for the usage limit, `Retry` (quiet) for the rest, none when the sentence already says to sign in or that the plan cannot be
@@ -3275,14 +3271,14 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   goes — `Saving updates the summary in your storage, and your other devices show it.`, or `Saving keeps the summary on this device.` for a
   local folder or a recording not uploaded yet. Leaving with changes — Back, closing, the `Transcript` chip — asks `Discard your
   changes?` / `Your edits to this summary will be lost.` (`Keep editing` · `Discard`). Nothing marks an edited item afterwards.
-- **Memo** (2026-10-30, §8 "Memo"). More → `Notes`, the last item of its first group, always enabled, there only while the recording
-  has no memo: it opens the `Notes` chip with its field focused. The chip itself shows the memo without the cursor in it, so a phone's
+- **Memo** (2026-10-30, §8 "Memo"). The `Notes` chip is always there and More has no item for it (2026-11-06, user decision: a memo can be
+  typed or changed and the summary made again, so an empty one is not hidden behind More). On a recording with no memo it opens with its field
+  focused, there being nothing to read; with one it shows the memo without the cursor in it, so a phone's
   keyboard does not come up over what is there to read. The `Notes` body is that field alone — one multi-line plain-text field
   filling the body, the placeholder `Agenda, who's there, what to keep track of` — saved as it is typed, 0.8 s after the last keystroke
   and when it is left (closing, another chip, another recording), so there is no `Save`, no `Cancel` and nothing that says it was saved;
   the field takes no more than the 2000 characters kept. Under it, secondary, `Read along when the summary is made.` — only while
-  signed in to ChatGPT with organizing agreed to, the only time it is true. Emptied, the chip stays until the detail is left; next time
-  More → `Notes` is there again. Nothing in the notes marks what came from the memo.
+  signed in to ChatGPT with organizing agreed to, the only time it is true. Nothing in the notes marks what came from the memo.
 - **While it records** (2026-10-30). The recording screen of both phones, the Mac popover and the Windows tray show a `Notes` row under
   the recording's own lines while it records, there even when the memo is empty, its first line that says anything muted at its end. On
   the phones it opens the same field, focused, and its footnote under the title `Notes` — a bottom sheet on iPhone, as its other sheets there, a
@@ -3290,8 +3286,8 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
   too small for a dialog over them, open the field under the row, focused, and a click on the row folds it again, with no `Done`: the
   field saves as it goes, and Stop or closing the popover keeps what was typed (2026-11-05, user decision). While the field is open, the
   row is only its name, without the box or the memo's first line. A click anywhere else in the popover or the tray, or the popover
-  closing, takes the field's focus, so its box is not left blue (2026-11-05, user); the tray's popup is drawn anew when it opens. The watches have none: a memo is typed, and a watch's recording gets one on the phone or computer once it is there (More →
-  `Notes`, §8 "Memo").
+  closing, takes the field's focus, so its box is not left blue (2026-11-05, user); the tray's popup is drawn anew when it opens. The watches have none: a memo is typed, and a watch's recording gets one on the phone or computer once it is there (the
+  `Notes` chip, §8 "Memo").
 - **Ask** (2026-10-10; 2026-11-04, user decision: one composer for questions and changes, §8 "Ask"). At the foot of the detail, on
   every shell — under the transcript or the summary on the desktops, over the player on the phones — a hairline, then on the surface,
   16 at the sides and 8 above and below: what the last request came to, then the composer. It is there wherever ChatGPT is offered and
@@ -3348,20 +3344,21 @@ says provisional or edited: the notes simply change when a pass lands.
   The time is a target over its words, at least the touch minimum each way and taking no room, as an answer's citation is (§9 "AI view"):
   a tap moves the playhead and leaves playing or paused as it was, as the transcript's does (2026-10-28; until then it also played, the
   citation path), accessibility `Go to 00:12:34`, and on Windows a stop for Tab that Enter or Space seeks with. While the recording records, when its audio is not
-  held, or past the held audio it is only words, and a tap on it is the row's.
-- **A tap on the row** opens the `linesAround` lines under it — the speaker's name only when there is one (`Me` for an unnamed me, part
-  labels never), then the text — with the reader's accent start-edge bar on the note's own line: the line containing the quote, else the
-  one covering its time, else the nearest. One row open at a time; Expand and Collapse are accessibility actions. A row with no time has
-  no line to open, so it does not respond to a tap and has no such action; it still deletes as any row does, and on Windows stays a stop for Tab for its menu keys.
+  held, or past the held audio it is only words.
+- **The words are text to select** (2026-11-06, user decision), the overview's and the rows', as the transcript's are (§9 "Transcript reader"), the time at a
+  row's end among them, so a copy says when. A press on the time still moves the playhead; a drag anywhere else selects, on Android after a long press, as
+  the system's text does. Android and Windows select across the rows, and a copy keeps each on its line. The Mac and the iPhone select within one row, or one
+  transcript paragraph, at a time, SwiftUI's selection being per `Text`; `Copy all` takes the whole. A tap on a row does nothing: until 2026-11-06
+  it opened the transcript's lines around the item under the row, which the Summary does not need, the time and the `Transcript` chip being the way to them. On Windows a row stays a stop for Tab, for its menu keys.
 - **Delete**, no confirmation, and a deleted item never comes back (the core keeps a tombstone). Phones: swipe the row end-to-start
   (Android `SwipeToDismissBox` past 96; iPhone a leading drag of 88 or more — two touch targets each), uncovering, only while pulled, a danger strip
   as wide as the pull, with `Delete` in `onDanger` once it is past that; the row carries
   a `Delete` accessibility action. Desktops: the row's context menu `Delete` (Windows also the menu key and Shift+F10), red — it cannot be
-  undone.
+  undone. On the Mac `Copy`, for what is selected, stands above it: selectable words take the right click for the system's text menu, so the row takes it
+  first. Windows copies with Ctrl+C.
 - **The record screen** (phones only). While recording, the groups (no overview, and no key points, which come after Stop) — the user's
   sections after `Questions` — sit under the live waveform, each newest first, and are hidden while empty;
-  times are plain monospace words by elapsed time (`MM:SS`, `HH:MM:SS` past an hour); a row opens the same way, on the lines transcribed
-  while recording; swipe deletes. Idle shows nothing. The Mac popover, the Windows tray popup and both watches show no notes (the memo row aside, §9 "AI view").
+  times are plain monospace words by elapsed time (`MM:SS`, `HH:MM:SS` past an hour); swipe deletes. Idle shows nothing. The Mac popover, the Windows tray popup and both watches show no notes (the memo row aside, §9 "AI view").
 - **Lists.** A job with only its notes left (`StepReport.notesOnly`) reads `Done`: no reason line, no retry or countdown, and it does not disable the detail's transcript edits or fills. A notes step's error is never shown on a row.
 - **Consent.** A Blueprint dialog `Recly summarizes while you record` / `While you're signed in to ChatGPT, Recly sends each recording's
   transcript text and your notes for it to your ChatGPT plan as you record and after you stop, lists its decisions, to-dos and questions, and fills in a missing
@@ -3377,7 +3374,7 @@ says provisional or edited: the notes simply change when a pass lands.
   off`, the box `I turned off “Improve the model for everyone” in ChatGPT.` and `Permission covers future recordings on this device. You
   can withdraw it in Settings → Privacy.`; §15 "iPhone providers"), and `Continue` stays disabled until the box is ticked; allowed
   already — and on the Mac — it is as above. On Windows a meeting offer waits while it is up.
-- Shell log events: Windows `shell.chatgpt.consent.failed`, `shell.notes.lines.failed`, `shell.notes.delete.failed`,
+- Shell log events: Windows `shell.chatgpt.consent.failed`, `shell.notes.delete.failed`,
   `shell.notes.organize.failed`, `shell.notes.edit.failed`, `shell.notes.copy.failed`, `shell.notes.preferences.failed`; Android
   `shell.notes.organize.failed`, `shell.notes.edit.failed`; Apple `shell.notes.organize.failed`, `shell.notes.edit.failed`,
   `shell.notes.copy.failed`, `shell.notes.preferences.failed`, and `shell.chatgpt.summarize.failed` (kept by name) when granting the ChatGPT

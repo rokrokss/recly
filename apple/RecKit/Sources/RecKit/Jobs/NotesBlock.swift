@@ -3,6 +3,9 @@ import ReclyCore
 #if os(iOS) || os(macOS)
 import SwiftUI
 #endif
+#if os(macOS)
+import AppKit
+#endif
 
 /// One of the notes block's groups (docs/08 "Organizing"): its header and its items in the core's order — a built-in
 /// group, or one of the user's own sections — under the name the notes were made with.
@@ -92,35 +95,14 @@ public enum NoteGroups {
         return due
     }
 
-    /// Which of the lines around an item is its own, to emphasize: the one holding the item's quote, else the one
-    /// that was being said at its time, else the one that began nearest it. Nil when there are no lines.
-    public static func emphasized(_ lines: [NoteLine], for item: NoteItem) -> Int? {
-        let quote = item.quote.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !quote.isEmpty, let quoted = lines.firstIndex(where: { $0.text.localizedCaseInsensitiveContains(quote) }) {
-            return quoted
-        }
-        guard let atSec = item.atSec?.doubleValue else { return nil }
-        if let covering = lines.firstIndex(where: { $0.atSec <= atSec && atSec < max($0.endSec, $0.atSec + 0.001) }) {
-            return covering
-        }
-        return lines.indices.min { abs(lines[$0].atSec - atSec) < abs(lines[$1].atSec - atSec) }
-    }
-
-    /// Who said a line: the name the user gave the speaker, or `Me` for the person who made the recording (docs/08 "Me
-    /// and others"); nothing for an unnamed speaker — a label like `S1` names nobody.
-    public static func speaker(_ line: NoteLine) -> String? {
-        if let name = line.speakerName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty { return name }
-        return line.me ? RecKitStrings.localized("Me") : nil
-    }
 }
 
 #if os(iOS) || os(macOS)
 /// docs/08 "Organizing" · docs/09 "Notes view": a recording's notes — the overview on top where it is shown, then the
-/// groups ([NoteGroups.of]), each a header and its rows. A row is one sentence: the item, its owner and its deadline,
-/// with its time at the end; a tap opens the transcript around it under the row (one at a time) and a second tap closes it. The
-/// time moves the playhead there where [onSeek] is given; while recording it is a plain label. An item no single line
-/// carries has no time and nothing to open. The phone deletes
-/// a row with a swipe, the Mac from its context menu, with no question: the core never brings it back.
+/// groups ([NoteGroups.of]), each a header and its rows. A row is one sentence, its words selectable: the item, its owner
+/// and its deadline, with its time at the end. The time moves the playhead there where [onSeek] is given; while recording
+/// it is a plain label. An item no single line carries has no time. The phone deletes a row with a swipe, the Mac from its
+/// context menu, with no question: the core never brings it back.
 ///
 /// Nothing at all when there is nothing to show ([NoteGroups.isEmpty]); the screen around it leaves it out then.
 public struct NotesBlock: View {
@@ -135,16 +117,12 @@ public struct NotesBlock: View {
     let seekableSec: Double
     /// Nil while the recording cannot be played from a point.
     let onSeek: ((Double) -> Void)?
-    /// The transcript's lines around a moment (`notes.linesAround`).
-    let lines: (Double) async -> [NoteLine]
     let delete: (NoteItem) -> Void
     /// docs/09 "Ask": the items the answer on screen changed or added, and whether it rewrote the overview — their
     /// words tinted as the transcript's are.
     let changed: Set<String>
     let overviewChanged: Bool
 
-    @State private var expanded: String?
-    @State private var shownLines: [NoteLine] = []
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
 
@@ -155,7 +133,6 @@ public struct NotesBlock: View {
         playable: Bool,
         seekableSec: Double,
         onSeek: ((Double) -> Void)?,
-        lines: @escaping (Double) async -> [NoteLine],
         delete: @escaping (NoteItem) -> Void,
         changed: Set<String> = [],
         overviewChanged: Bool = false
@@ -166,7 +143,6 @@ public struct NotesBlock: View {
         self.playable = playable
         self.seekableSec = seekableSec
         self.onSeek = onSeek
-        self.lines = lines
         self.delete = delete
         self.changed = changed
         self.overviewChanged = overviewChanged
@@ -197,33 +173,21 @@ public struct NotesBlock: View {
     }
 
     private func row(_ item: NoteItem) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            let line = words(item)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentDirection(item.text)
-                // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line items read
-                // double-spaced. The time's target reaches past its words instead of taking the room.
-                .padding(.vertical, Space.s)
-                // The whole row takes the swipe that deletes it, past the end of its words too.
-                .contentShape(Rectangle())
-            if item.atSec != nil {
-                line
-                    .onTapGesture { toggle(item) }
-                    .pointerCursor()
-            } else {
-                line
-            }
-            if expanded == item.id {
-                around(item)
-            }
-        }
-        .modifier(NoteDelete(label: RecKitStrings.localized("Delete")) { delete(item) })
-        .accessibilityIdentifier("note-\(item.id)")
+        words(item)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentDirection(item.text)
+            // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line items read
+            // double-spaced. The time's target reaches past its words instead of taking the room.
+            .padding(.vertical, Space.s)
+            // The whole row takes the swipe that deletes it, past the end of its words too.
+            .contentShape(Rectangle())
+            .modifier(NoteDelete(label: RecKitStrings.localized("Delete")) { delete(item) })
+            .accessibilityIdentifier("note-\(item.id)")
     }
 
     /// The row's one text, its time a stretch of it as [CitedText]'s citations are: from iOS 18 / macOS 15 a target laid
     /// over the time, at least [minTouch] each way, and a screen reader's own `Go to 00:12:34` button; on iOS 17 / macOS 14 a
-    /// link inside the text and a named action on it. A tap anywhere else is the row's.
+    /// link inside the text and a named action on it.
     @ViewBuilder
     private func words(_ item: NoteItem) -> some View {
         if let atSec = item.atSec?.doubleValue {
@@ -267,16 +231,15 @@ public struct NotesBlock: View {
     }
 
     /// The item, its owner after a dash, the deadline after them in the secondary colour, and [time] after a no-break
-    /// space. Without a time there is nothing to open, so it is no button.
+    /// space. Selectable as the transcript's words are; the time's target lies over them.
     private func sentence(_ item: NoteItem, time: Text?) -> some View {
         let said = Text(tinted(NoteGroups.text(item), changed.contains(item.id))).foregroundStyle(blueprint.palette.text)
             + Text(verbatim: item.rowDue).foregroundStyle(blueprint.palette.textMuted)
         return (time.map { said + Text(verbatim: "\u{00A0}") + $0 } ?? said)
         .font(blueprint.fonts.bodySmall)
         .tint(blueprint.palette.textMuted)
+        .textSelection(.enabled)
         .fixedSize(horizontal: false, vertical: true)
-        .accessibilityAddTraits(time == nil ? [] : .isButton)
-        .accessibilityAction { toggle(item) }
         // docs/09 trend 4: the swipe's static alternative.
         .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Delete"))) { delete(item) }
     }
@@ -297,57 +260,11 @@ public struct NotesBlock: View {
         return text
     }
 
-    /// The transcript around the item, the line it came from wearing the transcript reader's 2 pt accent bar.
-    private func around(_ item: NoteItem) -> some View {
-        let emphasized = NoteGroups.emphasized(shownLines, for: item)
-        return VStack(alignment: .leading, spacing: Space.s) {
-            ForEach(Array(shownLines.enumerated()), id: \.offset) { index, line in
-                VStack(alignment: .leading, spacing: Space.xxs) {
-                    if let speaker = NoteGroups.speaker(line) {
-                        Text(verbatim: speaker)
-                            .font(blueprint.fonts.label)
-                            .foregroundStyle(blueprint.palette.textMuted)
-                    }
-                    Text(verbatim: line.text)
-                        .font(blueprint.fonts.bodySmall)
-                        .foregroundStyle(blueprint.palette.text)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .contentDirection(line.text)
-                }
-                .padding(.leading, Space.sm)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(alignment: .leading) {
-                    if index == emphasized {
-                        Rectangle().fill(blueprint.palette.accent).frame(width: 2)
-                    }
-                }
-                .accessibilityElement(children: .combine)
-            }
-        }
-        .padding(.bottom, Space.s)
-        .accessibilityIdentifier("note-lines")
-    }
-
-    /// One row open at a time: another tap closes it, a tap on another row moves it there.
-    private func toggle(_ item: NoteItem) {
-        guard let atSec = item.atSec?.doubleValue else { return }
-        if expanded == item.id {
-            expanded = nil
-            shownLines = []
-            return
-        }
-        expanded = item.id
-        shownLines = []
-        Task {
-            let found = await lines(atSec)
-            if expanded == item.id { shownLines = found }
-        }
-    }
 }
 
 /// How a row is deleted: a swipe toward the leading edge on the phone, past which it goes as the finger lifts — the
-/// red `Delete` under it shows how far — and the context menu's `Delete` on the Mac. A screen reader has the action
-/// by name on the row's words, on both.
+/// red `Delete` under it shows how far — and the context menu's `Delete` on the Mac ([NoteContextMenu]). A screen reader
+/// has the action by name on the row's words, on both.
 private struct NoteDelete: ViewModifier {
     let label: String
     let delete: () -> Void
@@ -398,12 +315,58 @@ private struct NoteDelete: ViewModifier {
             )
     }
     #else
+    @Environment(\.blueprint) private var blueprint
+
     func body(content: Content) -> some View {
-        content
-            .contextMenu {
-                Button(label, role: .destructive, action: delete)
-            }
+        content.overlay(NoteContextMenu(label: label, color: NSColor(blueprint.palette.danger), delete: delete).accessibilityHidden(true))
     }
     #endif
 }
+
+#if os(macOS)
+/// A row's context menu: the system's `Copy` for what is selected, then a red `Delete`. Not a `contextMenu`: selectable
+/// words take the right click for the system's text menu, so that one never opens. This view lies over the row, takes
+/// the right click alone, and leaves every other event to what is under it.
+private struct NoteContextMenu: NSViewRepresentable {
+    let label: String
+    let color: NSColor
+    let delete: () -> Void
+
+    func makeNSView(context: Self.Context) -> Catcher { Catcher() }
+
+    func updateNSView(_ view: Catcher, context: Self.Context) {
+        view.label = label
+        view.color = color
+        view.delete = delete
+    }
+
+    final class Catcher: NSView {
+        var label = ""
+        var color = NSColor.systemRed
+        var delete: () -> Void = {}
+
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            NSApp.currentEvent?.type == .rightMouseDown ? super.hitTest(point) : nil
+        }
+
+        override func menu(for event: NSEvent) -> NSMenu? {
+            let menu = NSMenu()
+            let copy = NSTextView.defaultMenu?.items.first { $0.action == #selector(NSText.copy(_:)) }
+            if let copy = copy?.copy() as? NSMenuItem {
+                // The selected words have the window's focus: a context menu looks for its target from this view alone.
+                copy.target = window?.firstResponder
+                menu.addItem(copy)
+                menu.addItem(.separator())
+            }
+            let item = NSMenuItem(title: label, action: #selector(deleteRow), keyEquivalent: "")
+            item.target = self
+            item.attributedTitle = NSAttributedString(string: label, attributes: [.foregroundColor: color])
+            menu.addItem(item)
+            return menu
+        }
+
+        @objc private func deleteRow() { delete() }
+    }
+}
+#endif
 #endif

@@ -27,7 +27,6 @@ import recly.core.model.Track
 import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteKind
-import recly.core.notes.NoteLine
 import recly.core.notes.NoteNames
 import recly.core.notes.NoteSection
 import recly.core.notes.NoteSectionItems
@@ -91,16 +90,6 @@ class NotesTest {
         assertFalse(showsNotes(points, overview = false))
         assertFalse(hasNotes(notes()))
         assertFalse(hasNotes(null))
-    }
-
-    @Test
-    fun `the chips are there once there are notes or Organize was asked, never while the transcript is edited`() {
-        assertTrue(showsNotesChips(notes = true, asked = false, editing = false))
-        assertTrue(showsNotesChips(notes = false, asked = true, editing = false))
-        assertFalse(showsNotesChips(notes = false, asked = false, editing = false))
-        assertFalse(showsNotesChips(notes = true, asked = true, editing = true))
-        // The notes editor's keyboard takes the chips' room until it goes.
-        assertFalse(showsNotesChips(notes = true, asked = false, editing = false, typing = true))
     }
 
     @Test
@@ -262,22 +251,6 @@ class NotesTest {
         assertEquals("Send the quote ·\u00A0Friday", noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), null, Color.Gray).text)
     }
 
-    @Test
-    fun `the note's line is the one its quote is in, whatever the case and punctuation`() {
-        val lines = listOf(line(300.0, 305.0, "So, the release."), line(305.0, 312.0, "Let's move the launch to Friday, then!"), line(312.0, 318.0, "Fine."))
-
-        assertEquals(1, noteLineIndex(lines, atSec = 312.0, quote = "let's move the launch to friday then"))
-    }
-
-    @Test
-    fun `without its quote the note's line is the one its time falls in, else the nearest`() {
-        val lines = listOf(line(300.0, 305.0, "So, the release."), line(305.0, 312.0, "Something else."), line(330.0, 340.0, "Fine."))
-
-        assertEquals(1, noteLineIndex(lines, atSec = 306.0, quote = "words nobody said"))
-        assertEquals(2, noteLineIndex(lines, atSec = 326.0, quote = ""))
-        assertEquals(-1, noteLineIndex(emptyList(), atSec = 1.0, quote = "x"))
-    }
-
     /** docs/08 "Organizing": the notes are not the recording's processing — a job waiting on them is a finished row. */
     @Test
     fun `a job with only its notes left reads as done, not waiting`() {
@@ -331,8 +304,6 @@ class NotesTest {
 
     private fun item(id: String, kind: NoteKind, text: String = "text", owner: String? = null, due: String? = null) =
         NoteItem(id, kind, text, owner, due, atSec = 10.0, quote = "text", provisional = false)
-
-    private fun line(at: Double, end: Double, text: String) = NoteLine(at, end, "S1", null, me = false, text = text, provisional = false)
 
     private fun run(stepId: String, ordinal: Int, status: StepStatus) =
         StepRun("$stepId-run", "j", stepId, ordinal, status, attempts = 0, nextAttemptAt = null, lastError = null, state = null, output = null)

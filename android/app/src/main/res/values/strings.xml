@@ -182,8 +182,6 @@
     <string name="jobs_column_status">Status</string>
     <string name="jobs_summary_waiting">%1$d waiting</string>
     <string name="jobs_summary_failed">%1$d failed</string>
-    <string name="jobs_row_expand">Expand</string>
-    <string name="jobs_row_collapse">Collapse</string>
     <string name="jobs_row_description">%1$s, recorded %2$s, length %3$s, %4$s</string>
 
     <!-- docs/08: the recording detail screen, and what a job that is transcribing says. -->

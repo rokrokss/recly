@@ -223,10 +223,6 @@ class NotesTest {
         assertTrue("decisions, to-dos and open questions" in instructions(0))
         assertTrue(f.fs.exists(f.dirOf(meta) / ".provisional-p001.json"), "the part's transcript is kept beside it")
         assertEquals(1, f.logger.fieldsOf("organize.part.done").single()["items"])
-
-        val lines = notes.linesAround(meta.recordingId, 0.0)
-        assertEquals(listOf(0.0, 20.0), lines.map { it.atSec }, "there is no playback while recording: the part's lines")
-        assertTrue(lines.all { it.provisional && it.speakerId == null })
     }
 
     // --- A watch recording, as it arrives (docs/03 "Watch → phone transfer contract") ---
@@ -539,10 +535,6 @@ class NotesTest {
         assertIs<EditResult.Edited>(f.core.editTranscript(meta.recordingId, TranscriptEdit.RenameSpeaker("S2", "Mina")))
         f.core.awaitPushes()
         assertEquals("Mina", notes.observe(meta.recordingId).first().todos.single().owner)
-        val lines = notes.linesAround(meta.recordingId, 2400.0)
-        assertEquals(listOf(2400.0), lines.map { it.atSec })
-        assertEquals("Mina", lines.single().speakerName)
-        assertFalse(lines.single().provisional)
     }
 
     @Test

@@ -194,11 +194,11 @@ private val EXPORTS = listOf(
 
 /**
  * docs/09 "Screen principles": the detail's ⋯, in groups with a hairline between them (2026-10-10) — Rename ·
- * Edit transcript · Transcribe again · Version history · Memo while the recording has none (docs/08 "Memo"), then
+ * Edit transcript · Transcribe again · Version history, then
  * Organize (or Organize again) · Edit notes · Fill in title · Fill in speaker names where ChatGPT is offered (docs/09
  * "AI view"; a question or a change goes in the composer under the detail, docs/09 "Ask"), then Open in Drive or Open the folder once the recording
  * has a folder there (D24), and last Delete, in red (2026-10-15). What cannot run now stays in its place, disabled, with
- * the reason under it — `Still recording` for every one of them but Memo while the take is being written.
+ * the reason under it — `Still recording` for every one of them while the take is being written.
  */
 @Composable
 internal fun MoreButton(
@@ -206,7 +206,6 @@ internal fun MoreButton(
     detail: RecordingDetail,
     onEdit: () -> Unit,
     onEditNotes: () -> Unit,
-    onMemo: () -> Unit,
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
@@ -247,11 +246,6 @@ internal fun MoreButton(
                 enabled = editBlocked == null,
                 secondary = editBlocked?.let { strings[it] },
             )
-            // docs/08 "Memo": where a recording without one gets its memo — the Memo chip once there is one. A memo can be
-            // written while it records, so nothing waits here.
-            if (detail.memo != null && !hasMemo(detail.memo)) {
-                BlueprintMenuRow(strings[Str.MEMO_TITLE], { open = false; onMemo() })
-            }
             // docs/09 "AI view": asked for here, one recording at a time; not offered where ChatGPT is not — and then
             // the group and its hairline are not there at all.
             val connection = model.chatGpt?.connection

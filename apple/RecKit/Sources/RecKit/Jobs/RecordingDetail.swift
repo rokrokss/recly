@@ -628,11 +628,6 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    /// The transcript's lines around a note's moment, for the row opened under it; none when they cannot be read.
-    public func noteLines(atSec sec: Double) async -> [NoteLine] {
-        (try? await core.notes.linesAround(recordingId: recordingId, atSec: sec)) ?? []
-    }
-
     /// A row's delete: gone for good, with no question — the change arrives through [followNotes].
     public func deleteNote(_ item: NoteItem) {
         let core = core
@@ -1235,7 +1230,7 @@ public struct RecordingDetailView: View {
     @FocusState private var notesFieldFocused: String?
     /// The memo's field has the cursor — the same, for the memo.
     @FocusState private var memoFieldFocused: Bool
-    /// docs/09 "AI view": More's `Notes` asked for the memo — its field takes the cursor once it is on screen.
+    /// docs/09 "AI view": the memo's chip on an empty memo — its field takes the cursor once it is on screen.
     @State private var memoOpensFocused = false
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
@@ -1291,7 +1286,6 @@ public struct RecordingDetailView: View {
                                 },
                                 transcribeAgain: { Task { retranscribeLine = await model.retranscribeLine() } },
                                 versionHistory: openVersions,
-                                memo: { showMemo(focus: true) },
                                 organize: organize,
                                 editNotes: {
                                     if model.hasNotes {
@@ -1370,10 +1364,9 @@ public struct RecordingDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("filling")
             }
-            // docs/09 "AI view": Transcript | Notes | Memo — Notes once there are notes or Organize was asked, Memo once
-            // the memo says something or while it is open — never over the transcript's editor; over the notes',
-            // Transcript and Memo ask before they drop changes.
-            if !model.loading, draft == nil, notesChip || memoChip, !chipsYieldToKeyboard {
+            // docs/09 "AI view": Transcript | Notes | Memo — Notes once there are notes or Organize was asked, Memo always
+            // — never over the transcript's editor; over the notes', Transcript and Memo ask before they drop changes.
+            if !model.loading, draft == nil, !chipsYieldToKeyboard {
                 HStack(spacing: Space.s) {
                     BlueprintChip(loc("Transcript"), selected: pane == .transcript, compact: true, action: showTranscript)
                         .accessibilityIdentifier("detail-transcript-tab")
@@ -1381,10 +1374,8 @@ public struct RecordingDetailView: View {
                         BlueprintChip(loc("Summary"), selected: pane == .notes, compact: true) { pane = .notes }
                             .accessibilityIdentifier("detail-notes-tab")
                     }
-                    if memoChip {
-                        BlueprintChip(loc("Notes"), selected: pane == .memo, compact: true) { showMemo() }
-                            .accessibilityIdentifier("detail-memo-tab")
-                    }
+                    BlueprintChip(loc("Notes"), selected: pane == .memo, compact: true) { showMemo() }
+                        .accessibilityIdentifier("detail-memo-tab")
                 }
                 .padding(.horizontal, Space.m)
                 .padding(.top, Space.s)
@@ -2131,9 +2122,6 @@ public struct RecordingDetailView: View {
     /// The Notes chip: once there are notes, or Organize was asked, or while they are open.
     private var notesChip: Bool { model.hasNotesView || pane == .notes }
 
-    /// The memo's chip: once the memo says something, or while it is open — More's `Notes` opens an empty one.
-    private var memoChip: Bool { model.hasMemo || pane == .memo }
-
     /// docs/09 "AI view": the memo, always open to type in — it saves as it goes, so it has no Save or Cancel.
     private var memoPane: some View {
         GeometryReader { viewport in
@@ -2177,9 +2165,10 @@ public struct RecordingDetailView: View {
         }
     }
 
-    /// The memo's chip, and More's `Notes` with its field focused: from the notes' editor, the same question.
-    private func showMemo(focus: Bool = false) {
-        memoOpensFocused = focus
+    /// The memo's chip: an empty memo opens to be written in, its field focused, one with something in it to be read.
+    /// From the notes' editor, the same question.
+    private func showMemo() {
+        memoOpensFocused = !model.hasMemo
         if notesDraft?.changed == true {
             discarding = .notesForMemo
         } else {

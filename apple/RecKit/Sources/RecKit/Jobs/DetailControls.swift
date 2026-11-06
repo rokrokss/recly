@@ -88,7 +88,6 @@ struct DetailMoreMenu: View {
     let edit: () -> Void
     let transcribeAgain: () -> Void
     let versionHistory: () -> Void
-    let memo: () -> Void
     let organize: () -> Void
     let editNotes: () -> Void
     @Environment(\.locale) private var locale
@@ -115,10 +114,6 @@ struct DetailMoreMenu: View {
         ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
         // docs/08 "Versions": every transcript this device kept of the recording, any of them brought back.
         ReasonedMenuItem(title: RecKitStrings.localized("Version history"), reason: model.versionHistoryReason, action: versionHistory)
-        // docs/08 "Memo": a memo can be written at any time, so the item is never off; once there is one, its chip opens it.
-        if !model.hasMemo {
-            Button(RecKitStrings.localized("Notes"), action: memo)
-        }
         // docs/08 "Organizing" · docs/09 "AI view": asked for here, one recording at a time; not offered where ChatGPT
         // is not.
         if model.chatGptOffered {

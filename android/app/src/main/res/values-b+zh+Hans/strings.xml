@@ -129,8 +129,6 @@
     <string name="jobs_column_status">状态</string>
     <string name="jobs_summary_waiting">%1$d项等待</string>
     <string name="jobs_summary_failed">%1$d项失败</string>
-    <string name="jobs_row_expand">展开</string>
-    <string name="jobs_row_collapse">收起</string>
     <string name="jobs_row_description">%1$s，录制于%2$s，时长%3$s，%4$s</string>
     <string name="detail_rename">重命名</string>
     <string name="detail_loading">正在加载…</string>

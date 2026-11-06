@@ -811,12 +811,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// The parts' lines around a note, transcribed while recording.
-    func liveNoteLines(atSec sec: Double) async -> [NoteLine] {
-        guard let id = recordingId, let core = bridge?.core else { return [] }
-        return (try? await core.notes.linesAround(recordingId: id, atSec: sec)) ?? []
-    }
-
     /// A swipe's delete: gone for good — no later part brings it back.
     func deleteLiveNote(_ item: NoteItem) {
         guard let id = recordingId, let core = bridge?.core else { return }

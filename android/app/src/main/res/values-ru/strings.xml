@@ -129,8 +129,6 @@
     <string name="jobs_column_status">Статус</string>
     <string name="jobs_summary_waiting">%1$d в ожидании</string>
     <string name="jobs_summary_failed">%1$d с ошибкой</string>
-    <string name="jobs_row_expand">Развернуть</string>
-    <string name="jobs_row_collapse">Свернуть</string>
     <string name="jobs_row_description">%1$s, записано %2$s, длительность %3$s, %4$s</string>
     <string name="detail_rename">Переименовать</string>
     <string name="detail_loading">Загрузка…</string>

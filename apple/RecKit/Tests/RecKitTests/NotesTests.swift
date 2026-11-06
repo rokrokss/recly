@@ -128,39 +128,6 @@ final class NoteGroupsTests: XCTestCase {
         XCTAssertNil(NoteGroups.due(bare))
     }
 
-    /// The line the item came from: the one holding its quote first, then the one being said at its time, then the
-    /// nearest.
-    func testTheEmphasizedLineIsTheQuotedOneThenTheOneAtItsTime() {
-        let lines = [
-            Self.line(at: 100, end: 110, "We could try Thursday."),
-            Self.line(at: 110, end: 118, "Let's move the launch to Friday then."),
-            Self.line(at: 118, end: 125, "Fine by me."),
-        ]
-        let quoted = Self.item("d1", .decision, atSec: 101, quote: "move the launch to friday")
-        XCTAssertEqual(NoteGroups.emphasized(lines, for: quoted), 1)
-
-        let unquoted = Self.item("d2", .decision, atSec: 120, quote: "words nobody said")
-        XCTAssertEqual(NoteGroups.emphasized(lines, for: unquoted), 2)
-
-        let between = Self.item("d3", .decision, atSec: 140, quote: "")
-        XCTAssertEqual(NoteGroups.emphasized(lines, for: between), 2)
-        XCTAssertNil(NoteGroups.emphasized([], for: between))
-    }
-
-    /// An item no single line carries: it has no time, and no line to mark.
-    func testAnItemWithNoTimeHasNoLine() {
-        let lines = [Self.line(at: 100, end: 110, "We could try Thursday.")]
-        XCTAssertNil(NoteGroups.emphasized(lines, for: Self.item("p1", .point, atSec: nil)))
-    }
-
-    /// A speaker the user named by that name, the recording's maker as `Me`, and a bare label as nothing.
-    func testALineNamesItsSpeakerOnlyByAName() {
-        XCTAssertEqual(NoteGroups.speaker(Self.line(at: 0, end: 1, "Hi", id: "S1", name: "Minji")), "Minji")
-        XCTAssertEqual(NoteGroups.speaker(Self.line(at: 0, end: 1, "Hi", id: "S2", me: true)), "Me")
-        XCTAssertNil(NoteGroups.speaker(Self.line(at: 0, end: 1, "Hi", id: "S3")))
-        XCTAssertNil(NoteGroups.speaker(Self.line(at: 0, end: 1, "Hi")))
-    }
-
     // MARK: - Pieces
 
     static func notes(
@@ -201,10 +168,6 @@ final class NoteGroupsTests: XCTestCase {
         section: String? = nil
     ) -> NoteItem {
         NoteItem(id: id, kind: kind, text: text, owner: owner, due: due, atSec: atSec.map { KotlinDouble(value: $0) }, quote: quote, provisional: true, section: section)
-    }
-
-    static func line(at start: Double, end: Double, _ text: String, id: String? = nil, name: String? = nil, me: Bool = false) -> NoteLine {
-        NoteLine(atSec: start, endSec: end, speakerId: id, speakerName: name, me: me, text: text, provisional: false)
     }
 }
 
@@ -387,11 +350,6 @@ final class RecordingNotesTests: XCTestCase {
         let todo = try XCTUnwrap(model.notes?.todos.first)
         XCTAssertEqual(NoteGroups.text(todo), "Send the release notes —\u{00A0}Minji", "the owner comes resolved to the name given")
         XCTAssertEqual(NoteGroups.due(todo), "Thursday")
-
-        let lines = await model.noteLines(atSec: try XCTUnwrap(todo.atSec?.doubleValue))
-        XCTAssertEqual(lines.map(\.text), ["Let's move the launch to Friday then.", "I'll send the release notes by Thursday."])
-        XCTAssertEqual(NoteGroups.emphasized(lines, for: todo), 1)
-        XCTAssertEqual(lines.compactMap(NoteGroups.speaker), ["Me", "Minji"])
 
         model.deleteNote(todo)
         try await waitFor { model.notes?.todos.isEmpty == true }

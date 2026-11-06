@@ -129,8 +129,6 @@
     <string name="jobs_column_status">Status</string>
     <string name="jobs_summary_waiting">oczekujące: %1$d</string>
     <string name="jobs_summary_failed">niepowodzenia: %1$d</string>
-    <string name="jobs_row_expand">Rozwiń</string>
-    <string name="jobs_row_collapse">Zwiń</string>
     <string name="jobs_row_description">%1$s, nagrano %2$s, długość %3$s, %4$s</string>
     <string name="detail_rename">Zmień nazwę</string>
     <string name="detail_loading">Wczytywanie…</string>

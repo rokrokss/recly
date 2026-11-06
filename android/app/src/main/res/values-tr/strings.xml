@@ -129,8 +129,6 @@
     <string name="jobs_column_status">Durum</string>
     <string name="jobs_summary_waiting">%1$d bekliyor</string>
     <string name="jobs_summary_failed">%1$d başarısız</string>
-    <string name="jobs_row_expand">Genişlet</string>
-    <string name="jobs_row_collapse">Daralt</string>
     <string name="jobs_row_description">%1$s, kayıt tarihi %2$s, süre %3$s, %4$s</string>
     <string name="detail_rename">Yeniden adlandır</string>
     <string name="detail_loading">Yükleniyor…</string>

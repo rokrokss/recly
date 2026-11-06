@@ -90,7 +90,6 @@ import recly.core.job.JobStatus
 import recly.core.job.StepReport
 import recly.core.model.RecordingStatus
 import recly.core.notes.NoteEdit
-import recly.core.notes.NoteLine
 import recly.core.notes.NotesHeadings
 import recly.core.notes.RecordingNotes
 import recly.core.platform.Logger
@@ -1946,14 +1945,6 @@ class ShellModel(
             runCatching { graph.core.memos.set(recordingId, text) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.memo.save.failed", error = it) }
         }
-    }
-
-    /** docs/08 "Organizing": the transcript's lines around a note, for its row to open on; none when they cannot be read. */
-    suspend fun noteLines(recordingId: String, atSec: Double): List<NoteLine> {
-        val graph = graph ?: return emptyList()
-        return runCatching { graph.core.notes.linesAround(recordingId, atSec) }
-            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.notes.lines.failed", error = it) }
-            .getOrDefault(emptyList())
     }
 
     /** A note's Delete: gone for good, without asking (docs/08 "Organizing"); the detail follows the core's notes. */

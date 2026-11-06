@@ -95,15 +95,13 @@ internal class MoreActions(
     val onFill: (FillHalf) -> Unit,
     /** docs/03 "Deleting in the app": the delete question, about this recording. */
     val onDelete: () -> Unit,
-    /** docs/08 "Memo": the memo view, for a recording whose memo is empty — once it says something, its chip is the way. */
-    val onMemo: () -> Unit = {},
     /** docs/09 "Version history": the versions of the transcript this device kept. */
     val onVersions: () -> Unit = {},
 )
 
 /**
- * docs/09 "Detail header and More menu" · "AI view": Rename · Edit transcript · Transcribe again · Version history · Memo (while it is
- * empty) ─ Organize (Organize again once there are notes) · Edit notes · Fill in title · Fill in speaker names ─ Open in
+ * docs/09 "Detail header and More menu" · "AI view": Rename · Edit transcript · Transcribe again · Version history
+ * ─ Organize (Organize again once there are notes) · Edit notes · Fill in title · Fill in speaker names ─ Open in
  * Drive ─ Delete, in that order and in those groups, a hairline between them — asking is the composer at the foot of the
  * page (docs/09 "Ask"). An item
  * that cannot run is shown disabled with its reason under it — every one of them `Still recording` while the recorder is writing into this take;
@@ -153,10 +151,6 @@ internal fun MoreButton(
             // docs/09 "Version history": by the reasons Edit transcript has — a restore is an edit.
             MenuAction(stringResource(R.string.versions_title), pick(actions.onVersions), enabled = editReason == null, reason = editReason,
                 modifier = Modifier.testTag("more-versions"))
-            // docs/08 "Memo": any time, while it records too — the memo is not a change of the take.
-            if (detail.memo?.isBlank() == true) {
-                MenuAction(stringResource(R.string.memo_title), pick(actions.onMemo), modifier = Modifier.testTag("more-memo"))
-            }
             val offered = chatGpt !is ChatGptConnection.Unavailable
             if (offered) {
                 HairLine()

@@ -1,34 +1,38 @@
-@file:OptIn(androidx.compose.ui.InternalComposeUiApi::class)
+@file:OptIn(androidx.compose.ui.InternalComposeUiApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 
 package app.recly.windows.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.NativeClipboard
 import androidx.compose.ui.unit.Density
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.WORD_JOINER
 import app.recly.windows.ui.theme.ReclyDesktopTheme
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.Transferable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteKind
-import recly.core.notes.NoteLine
 import recly.core.notes.NoteNames
 import recly.core.notes.NoteSectionItems
 import recly.core.notes.NotesStage
@@ -36,8 +40,7 @@ import recly.core.notes.RecordingNotes
 
 /**
  * docs/08 "Organizing" on the PC: the notes block in the Notes chip's body — the groups it shows and hides, what a row
- * says, which line under an opened row is the note's, and the row's click, time and context menu; and what Edit notes
- * sends when it is saved.
+ * says, its selection, and the row's time and context menu; and what Edit notes sends when it is saved.
  */
 class NotesBlockTest {
 
@@ -54,9 +57,6 @@ class NotesBlockTest {
         points: List<NoteItem> = emptyList(),
         sections: List<NoteSectionItems> = emptyList(),
     ) = RecordingNotes("rec-1", NotesStage.FINAL, overview, decisions, todos, questions, organizing = false, points = points, sections = sections)
-
-    private fun line(atSec: Double, text: String, name: String? = null, me: Boolean = false) =
-        NoteLine(atSec, atSec + 4, "S1", name, me, text, provisional = false)
 
     @Test
     fun `the groups come in their order, the user's sections last, and a group with nothing is not there`() {
@@ -128,7 +128,7 @@ class NotesBlockTest {
         val scene = ImageComposeScene(400, 300, Density(1f)) {
             ReclyDesktopTheme(dark = false, highContrast = false) {
                 Box(Modifier.onGloballyPositioned { height = it.size.height }) {
-                    NotesBlock(notes(), canSeek = true, onSeek = {}, linesAround = { emptyList() }, onDelete = {}, strings = StringTable.of(StringTable.BASE))
+                    NotesBlock(notes(), canSeek = true, onSeek = {}, onDelete = {}, strings = StringTable.of(StringTable.BASE))
                 }
             }
         }
@@ -155,30 +155,6 @@ class NotesBlockTest {
     }
 
     @Test
-    fun `a line under an opened row names who said it only when they have a name`() {
-        assertEquals("Minji  Hello", noteLineText(line(1.0, "Hello", name = "Minji"), "Me", Color.Gray).text)
-        assertEquals("Me  Hello", noteLineText(line(1.0, "Hello", me = true), "Me", Color.Gray).text)
-        assertEquals("Hello", noteLineText(line(1.0, "Hello"), "Me", Color.Gray).text)
-    }
-
-    @Test
-    fun `the note's line is the one its quote is in, else the one its time is on`() {
-        val lines = listOf(
-            line(60.4, "We should send it."),
-            line(75.6, "Okay, I'll send the quote by Friday."),
-            line(82.0, "Great, send the quote then."),
-        )
-        // The quote, case and punctuation aside — and of two lines that have it, the one nearest the time.
-        assertEquals(1, notedLine(lines, 75.0, "send the Quote"))
-        assertEquals(2, notedLine(lines, 82.0, "send the quote"))
-        // No quote to find: the line the `[00:01:15]` was read from, whose start is 75.6.
-        assertEquals(1, notedLine(lines, 75.0, "not said here"))
-        assertEquals(1, notedLine(lines, 75.0, ""))
-        assertNull(notedLine(lines, 10.0, ""))
-        assertNull(notedLine(emptyList(), 10.0, "x"))
-    }
-
-    @Test
     fun `the menu key and Shift+F10 open a row's menu`() {
         assertTrue(opensContextMenu(Key.Menu, shift = false))
         assertTrue(opensContextMenu(Key.F10, shift = true))
@@ -187,119 +163,115 @@ class NotesBlockTest {
     }
 
     /**
-     * A click opens the row and asks for the lines around its time; the time moves the playhead there, the transcript's
-     * seek and not the answer's play (2026-10-28); a right click opens the menu and not the row, and its Delete deletes
-     * without asking.
+     * The time moves the playhead there, the transcript's seek and not the answer's play (2026-10-28); a click anywhere
+     * else does nothing; a right click opens the menu, whose Delete deletes without asking.
      */
     @Test
-    fun `a row opens on a click, seeks to its time, and deletes from its context menu`() {
+    fun `a row seeks to its time and deletes from its context menu`() {
         val note = item("n1", NoteKind.TODO, atSec = 75.0)
-        val asked = mutableListOf<Double>()
         val seeks = mutableListOf<Double>()
         val deleted = mutableListOf<String>()
-        var toggles = 0
-        var expanded by mutableStateOf(false)
-        val strings = StringTable.of(StringTable.BASE)
-        val scene = ImageComposeScene(WIDTH, 400, Density(1f)) {
-            ReclyDesktopTheme(dark = false, highContrast = false) {
-                Column {
-                    NoteRow(
-                        item = note,
-                        expanded = expanded,
-                        onToggle = {
-                            toggles++
-                            expanded = !expanded
-                        },
-                        seekable = true,
-                        onSeek = { seeks += it },
-                        linesAround = { at -> asked += at; listOf(line(74.0, "I'll send the quote")) },
-                        onDelete = { deleted += it.id },
-                        strings = strings,
-                        spanSec = 600.0,
-                    )
-                }
-            }
-        }
-        fun click(at: Offset, button: PointerButton = PointerButton.Primary) = click(scene, at, button)
+        val scene = block(notes(todos = listOf(note)), onSeek = { seeks += it }, onDelete = { deleted += it.id })
         try {
             scene.render()
-            // On the text: the row opens and asks for its lines once.
-            click(Offset(40f, ROW_MIDDLE))
-            assertEquals(1, toggles)
-            assertEquals(listOf(75.0), asked)
-            // Again: it closes.
-            click(Offset(40f, ROW_MIDDLE))
-            assertEquals(2, toggles)
-            assertFalse(expanded)
-            // Past the end of the sentence, nothing to seek: the row's click.
-            click(Offset(WIDTH - 6f, ROW_MIDDLE))
-            assertEquals(3, toggles)
+            val row = ROW_MIDDLE
+            click(scene, Offset(40f, row))
+            click(scene, Offset(WIDTH - 6f, row))
             assertEquals(emptyList(), seeks)
-            click(Offset(WIDTH - 6f, ROW_MIDDLE))
-            // The time follows the words: found as a press finds it, it seeks and is not the row's click.
+            // The time follows the words: found as a press finds it.
             val time = (WIDTH - 6 downTo 40 step 4).first { x ->
-                click(Offset(x.toFloat(), ROW_MIDDLE))
+                click(scene, Offset(x.toFloat(), row))
                 seeks.isNotEmpty()
             }.toFloat()
             assertEquals(listOf(75.0), seeks)
-            val before = toggles
             // Its target is the touch minimum though the row is shorter: a press above the row's words still seeks.
-            click(Offset(time - 8f, ROW_MIDDLE - 18f))
+            click(scene, Offset(time - 8f, row - 18f))
             assertEquals(listOf(75.0, 75.0), seeks)
-            assertEquals(before, toggles)
-            if (expanded) click(Offset(40f, ROW_MIDDLE))
-            val open = toggles
-            // A right click: the menu, not the row.
-            val at = Offset(60f, ROW_MIDDLE)
-            click(at, PointerButton.Secondary)
-            assertEquals(open, toggles, "the right click opened the row")
+            // A right click: the menu. Delete is its one row, hung from the click.
+            val at = Offset(60f, row)
+            click(scene, at, PointerButton.Secondary)
             assertEquals(emptyList(), deleted)
-            // Delete is the menu's one row, hung from the click.
-            click(Offset(at.x + 30f, at.y + 22f))
+            click(scene, Offset(at.x + 30f, at.y + 22f))
             assertEquals(listOf("n1"), deleted)
-            assertEquals(open, toggles)
         } finally {
             scene.close()
         }
     }
 
-    /** An item no single line carries: there is no line to open, and its context menu still deletes it. */
+    /** An item no single line carries: nothing to seek to, and its context menu still deletes it. */
     @Test
-    fun `a row with no time opens nothing and deletes from its context menu`() {
+    fun `a row with no time seeks nowhere and deletes from its context menu`() {
         val deleted = mutableListOf<String>()
-        var toggles = 0
-        val strings = StringTable.of(StringTable.BASE)
+        val scene = block(
+            notes(points = listOf(item("n1", NoteKind.POINT, atSec = null))),
+            onSeek = { error("there is no time to seek to") },
+            onDelete = { deleted += it.id },
+        )
+        try {
+            scene.render()
+            val row = ROW_MIDDLE
+            click(scene, Offset(40f, row))
+            click(scene, Offset(WIDTH - 6f, row))
+            val at = Offset(60f, row)
+            click(scene, at, PointerButton.Secondary)
+            click(scene, Offset(at.x + 30f, at.y + 22f))
+            assertEquals(listOf("n1"), deleted)
+        } finally {
+            scene.close()
+        }
+    }
+
+    /** A drag selects across the rows, the group's header among them, and the copy key takes what is selected. */
+    @Test
+    fun `a drag selects the notes across their rows and the copy key copies them`() {
+        var copied: String? = null
+        val clipboard = object : Clipboard {
+            override suspend fun getClipEntry(): ClipEntry? = null
+            override suspend fun setClipEntry(clipEntry: ClipEntry?) {
+                copied = (clipEntry?.nativeClipEntry as? Transferable)?.getTransferData(DataFlavor.stringFlavor) as? String
+            }
+            override val nativeClipboard: NativeClipboard get() = error("not asked for")
+        }
+        val first = item("d1", NoteKind.DECISION, atSec = null).copy(text = "Ship on Friday")
+        val second = item("d2", NoteKind.DECISION, atSec = 75.0).copy(text = "Book the room")
         val scene = ImageComposeScene(WIDTH, 400, Density(1f)) {
             ReclyDesktopTheme(dark = false, highContrast = false) {
-                Column {
-                    NoteRow(
-                        item = item("n1", NoteKind.POINT, atSec = null),
-                        expanded = false,
-                        onToggle = { toggles++ },
-                        seekable = true,
-                        onSeek = { error("there is no time to seek to") },
-                        linesAround = { error("there is no time to ask lines around") },
-                        onDelete = { deleted += it.id },
-                        strings = strings,
-                        spanSec = 600.0,
-                    )
+                CompositionLocalProvider(LocalClipboard provides clipboard) {
+                    NotesBlock(notes(decisions = listOf(first, second)), canSeek = true, onSeek = {}, onDelete = {}, strings = base, spanSec = 600.0)
                 }
             }
         }
         try {
             scene.render()
-            click(scene, Offset(40f, ROW_MIDDLE))
-            click(scene, Offset(WIDTH - 6f, ROW_MIDDLE))
-            assertEquals(0, toggles)
-            val at = Offset(60f, ROW_MIDDLE)
-            click(scene, at, PointerButton.Secondary)
-            click(scene, Offset(at.x + 30f, at.y + 22f))
-            assertEquals(listOf("n1"), deleted)
-            assertEquals(0, toggles)
+            val top = ROW_MIDDLE
+            val press = Offset(2f, top)
+            scene.sendPointerEvent(PointerEventType.Move, press)
+            scene.sendPointerEvent(PointerEventType.Press, press, buttons = PointerButtons(isPrimaryPressed = true), button = PointerButton.Primary)
+            scene.render()
+            for (y in top.toInt()..(top.toInt() + 60) step 6) {
+                scene.sendPointerEvent(PointerEventType.Move, Offset(WIDTH - 4f, y.toFloat()), buttons = PointerButtons(isPrimaryPressed = true))
+                scene.render()
+            }
+            val end = Offset(WIDTH - 4f, top + 60f)
+            scene.sendPointerEvent(PointerEventType.Release, end, buttons = PointerButtons(), button = PointerButton.Primary)
+            scene.render()
+            val mac = System.getProperty("os.name").startsWith("Mac")
+            scene.sendKeyEvent(KeyEvent(Key.C, KeyEventType.KeyDown, isCtrlPressed = !mac, isMetaPressed = mac))
+            scene.render()
+            assertEquals("Ship on Friday\nBook the room\u00A001:15", copied)
         } finally {
             scene.close()
         }
     }
+
+    private fun block(notes: RecordingNotes, onSeek: (Double) -> Unit, onDelete: (NoteItem) -> Unit) =
+        ImageComposeScene(WIDTH, 400, Density(1f)) {
+            ReclyDesktopTheme(dark = false, highContrast = false) {
+                Column {
+                    NotesBlock(notes, canSeek = true, onSeek = onSeek, onDelete = onDelete, strings = base, spanSec = 600.0)
+                }
+            }
+        }
 
     private fun click(scene: ImageComposeScene, at: Offset, button: PointerButton = PointerButton.Primary) {
         val down = if (button == PointerButton.Secondary) PointerButtons(isSecondaryPressed = true) else PointerButtons(isPrimaryPressed = true)
@@ -313,7 +285,7 @@ class NotesBlockTest {
     private companion object {
         const val WIDTH = 500
 
-        /** The row is the time button's 44 target and 4 above and below it. */
-        const val ROW_MIDDLE = 26f
+        /** A group's header, then its first row. */
+        const val ROW_MIDDLE = 52f
     }
 }

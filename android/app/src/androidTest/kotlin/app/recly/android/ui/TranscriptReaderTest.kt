@@ -123,7 +123,7 @@ class TranscriptReaderTest {
         val item = NoteItem("d", NoteKind.DECISION, "Ship it", null, null, atSec = 42.0, quote = "", provisional = false)
         val notes = RecordingNotes("reader-test", NotesStage.FINAL, null, listOf(item), emptyList(), emptyList(), organizing = false)
         ui.setContent { ReclyTheme {
-            NotesBlock(notes, overview = true, scaleSec = 7200, onDelete = {}, lines = { emptyList() }, canSeek = { true }, onSeek = { target = it })
+            NotesBlock(notes, overview = true, scaleSec = 7200, onDelete = {}, canSeek = { true }, onSeek = { target = it })
         } }
         val goTo = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.transcript_seek, hms(42))
         ui.onNodeWithContentDescription(goTo).performClick()
