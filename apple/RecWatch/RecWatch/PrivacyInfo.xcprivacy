@@ -5,7 +5,9 @@
   developer and nothing tracks, so both collection lists are empty — the App Store Connect privacy
   answers must say the same. The required-reason APIs are the ones RecKit and this shell call:
   `UserDefaults` for device-local settings, file modification dates for the recorder's own part
-  files inside the container, and `ProcessInfo.systemUptime` for elapsed time in-app.
+  files inside the container, `ProcessInfo.systemUptime` for elapsed time in-app, and the free space
+  on the recordings' volume, read to refuse a recording's start or stop it when the device is nearly
+  full (docs/03 "Free storage on the device").
 -->
 <plist version="1.0">
 <dict>
@@ -39,6 +41,14 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>35F9.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
 			</array>
 		</dict>
 	</array>
