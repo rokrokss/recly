@@ -2445,7 +2445,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   `organize.final.start` (conversations, model), `organize.final.boundaries` (block, answered, kept), `organize.final.done`
   (conversations, items, tombstoned, dropped, overview, withoutTime), `organize.final.skipped` (`off`, `no_transcript`) and
   `organize.final.failed` (`reason`); `organize.item.deleted`; `organize.edited` (items, deleted, overview); `organize.again.start` and
-  `organize.again.failed` (`reason`); `organize.resumed` (jobs) after a sign-in; the storage's `remote.notes.pushed`,
+  `organize.again.failed` (`reason`); `organize.preferences.read.failed`; `organize.resumed` (jobs) after a sign-in; the storage's `remote.notes.pushed`,
   `remote.notes.push.failed`, `remote.notes.read` and `remote.notes.read.failed`. A sign-in hook that fails
   is `chatgpt.hook.failed`. Ids, counts and codes only — never a word of the transcript or of an item.
 
@@ -5057,9 +5057,9 @@ the basis of proposal A.
 All clients use the same log event names: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `xfer.part`,
 `xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`, `chatgpt.*` (`chatgpt.signin`,
 `chatgpt.signout`, `chatgpt.failed`, `chatgpt.refresh.refused` (with OpenAI's `error` code and `afterExpirySec`, never a token),
-`chatgpt.rejected`, `chatgpt.revoke.failed`), `summary.*` (`summary.ask.start`, `summary.ask.done`, `summary.ask.failed`, and
-`summary.fill.*`, §8 "Titles and speaker names"), `organize.*` (§8 "Organizing" — among them `organize.edited`,
-`organize.again.start` and `organize.again.failed`; the storage's `remote.notes.pushed`, `remote.notes.push.failed`,
+`chatgpt.rejected`, `chatgpt.revoke.failed`), `summary.*` (`summary.ask.start`, `summary.ask.done`, `summary.ask.failed`,
+`summary.preferences.read.failed`, and `summary.fill.*`, §8 "Titles and speaker names"), `organize.*` (§8 "Organizing" — among them `organize.edited`,
+`organize.again.start`, `organize.again.failed` and `organize.preferences.read.failed`; the storage's `remote.notes.pushed`, `remote.notes.push.failed`,
 `remote.notes.read`, `remote.notes.read.failed`), `memo.saved` and the storage's `remote.memo.*` (§8 "Memo"), and the desktop's
 `transcribe.me`, `transcribe.me.skipped` and `transcribe.me.levels.failed` (§8 "Me and others"). **These names are a stable
 contract** (§21). The only way to see what happened on a real device is **"Export logs"** in settings (a file ring buffer),

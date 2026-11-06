@@ -161,6 +161,17 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertTrue(ChatGptText.cancelled((late as? ChatGptResult.Failed)?.reason ?? ""))
     }
 
+    /// The store gone from under an open database: a Swift `for await` over a flow that throws ends the process, so the
+    /// preferences' first read failing is nothing to show, and nothing the fields could save over what is stored.
+    func testPreferencesThatWillNotBeReadLeaveTheFieldsAsTheyAre() async throws {
+        let bridge = try await bridge()
+        try FileManager.default.removeItem(at: directory)
+        let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
+        try await Task.sleep(for: .milliseconds(500))
+        XCTAssertEqual(model.notesPreferences, NotesPreferences(instructions: "", sections: []))
+        XCTAssertEqual(model.preferences, SummaryPreferences(aboutMe: ""))
+    }
+
     /// No browser came up for the authorization page. That is not the user cancelling — nothing on screen would
     /// say what happened — so it is said, in Windows' words: `Could not sign in to ChatGPT` and `no browser opened`.
     func testABrowserThatNeverOpenedIsAFailureToSay() async throws {

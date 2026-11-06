@@ -246,9 +246,20 @@ class Summaries internal constructor(
 
     // --- Preferences (About you in Settings → Notes; the fills' boxes in the title sheet) ---
 
-    /** What Settings shows; read from this device's store the first time. */
+    /**
+     * What Settings shows; read from this device's store the first time. Never fails, as `Notes.observePreferences`:
+     * a Swift `for await` over a flow that throws ends the app.
+     */
     fun observePreferences(): Flow<SummaryPreferences> = flow {
-        emit(preferences())
+        val stored = try {
+            preferences()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            deps.logger.log(Logger.Level.WARN, "summary.preferences.read.failed", error = e)
+            null
+        }
+        if (stored != null) emit(stored)
         emitAll(prefs.filterNotNull())
     }.distinctUntilChanged()
 

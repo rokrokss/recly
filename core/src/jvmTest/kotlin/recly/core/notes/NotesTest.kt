@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -772,6 +773,14 @@ class NotesTest {
         assertTrue("\"owner\": for a todo, the speaker label of the person who will do it" in asked, asked)
         assertTrue(rule in NotesPrompts.provisional("English"), "while recording too")
         assertTrue(rule in NotesPrompts.overview("English"), "and the overview of a recording of several conversations")
+    }
+
+    @Test
+    fun `preferences that will not be read are nothing to observe, not a failure`() = runBlocking {
+        f.driver.execute(null, "DROP TABLE kv", 0)
+
+        assertNull(withTimeoutOrNull(200) { notes.observePreferences().first() })
+        assertNull(withTimeoutOrNull(200) { f.core.summaries.observePreferences().first() })
     }
 
     @Test

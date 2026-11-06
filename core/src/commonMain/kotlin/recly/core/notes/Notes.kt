@@ -414,9 +414,20 @@ class Notes internal constructor(
 
     // --- Preferences (Settings → Notes) ---
 
-    /** What Settings shows; read from this device's store the first time. */
+    /**
+     * What Settings shows; read from this device's store the first time. Never fails, for the same reason as
+     * [observeNeedsConsent]: a store that will not be read shows nothing yet, and the next observer reads it again.
+     */
     fun observePreferences(): Flow<NotesPreferences> = flow {
-        emit(preferences())
+        val stored = try {
+            preferences()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            deps.logger.log(Logger.Level.WARN, "organize.preferences.read.failed", error = e)
+            null
+        }
+        if (stored != null) emit(stored)
         emitAll(prefs.filterNotNull())
     }.distinctUntilChanged()
 
