@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.NativeClipboard
 import androidx.compose.ui.unit.Density
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.WORD_JOINER
+import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.ReclyDesktopTheme
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -184,9 +185,14 @@ class NotesBlockTest {
                 seeks.isNotEmpty()
             }.toFloat()
             assertEquals(listOf(75.0), seeks)
-            // Its target is the touch minimum though the row is shorter: a press above the row's words still seeks.
-            click(scene, Offset(time - 8f, row - 18f))
-            assertEquals(listOf(75.0, 75.0), seeks)
+            // Its target is the touch minimum though the row is shorter. Measured from the top rather than pressed at one
+            // point: where the row stands depends on this machine's fonts.
+            val reached = (0 until 120).count { y ->
+                val before = seeks.size
+                click(scene, Offset(time - 8f, y.toFloat()))
+                seeks.size > before
+            }
+            assertTrue(reached >= MinTouch.value.toInt(), "the time's target is $reached tall")
             // A right click: the menu. Delete is its one row, hung from the click.
             val at = Offset(60f, row)
             click(scene, at, PointerButton.Secondary)
