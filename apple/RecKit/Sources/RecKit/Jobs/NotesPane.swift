@@ -141,8 +141,8 @@ struct ChatGptFailureNotice: View {
 ///
 /// The text stays one `Text`, because SwiftUI selects within one `Text`, so a citation cannot be a button beside
 /// it. From iOS 18 / macOS 15 its target is laid over it instead: at least [minTouch] each way, centred on the
-/// citation, placed from the text's own line layout ([CitationTarget]), and a screen reader reaches each citation
-/// as its own `Play from 00:12:34` button. A press or a drag anywhere else selects as before. On iOS 17 / macOS 14
+/// citation, placed from the line layout of an unseen copy of the text ([CitationTarget]), and a screen reader reaches
+/// each citation as its own `Play from 00:12:34` button. A press or a drag anywhere else selects as before. On iOS 17 / macOS 14
 /// a citation is only a link inside the text: its target is its own glyphs, and a screen reader reaches it as a
 /// named action on the text.
 struct CitedText: View {
@@ -160,8 +160,11 @@ struct CitedText: View {
         let playable = Self.playable(runs, seekableSec: onSeek == nil ? 0 : seekableSec)
         Group {
             if #available(iOS 18, macOS 15, *) {
-                selectable(marked(runs, playable: playable))
+                selectable(Text(attributed(runs, playable: playable)))
                     .accessibilitySortPriority(1)
+                    // An unseen copy carries the marks that place the targets: on the words that are selected, a text
+                    // attribute of our own makes the iPhone's Copy fail, its pasteboard being unable to encode it.
+                    .background { styled(marked(runs, playable: playable)).hidden() }
                     .overlayPreferenceValue(Text.LayoutKey.self) { layouts in
                         CitationTargets(layouts: layouts, playable: playable, label: { ChatGptText.playFrom($0.text) }) { onSeek?($0) }
                     }
@@ -188,11 +191,14 @@ struct CitedText: View {
 
     /// 2026-10-10 (A-A4): the transcript's size, 14, with citations in the 14 mono.
     private func selectable(_ text: Text) -> some View {
+        styled(text).textSelection(.enabled)
+    }
+
+    private func styled(_ text: Text) -> some View {
         text
             .font(blueprint.fonts.bodySmall)
             .foregroundStyle(blueprint.palette.text)
             .tint(blueprint.palette.accent)
-            .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
     }
 
