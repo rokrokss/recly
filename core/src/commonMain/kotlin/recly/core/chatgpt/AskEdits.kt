@@ -51,7 +51,7 @@ object AskRequest {
  * item may be added to: the built-in groups, then the user's own the notes were made with. Final notes only.
  */
 internal class AskSummary(val notes: RecordingNotes, fileSections: List<NoteSection>) {
-    val items: List<NoteItem> = notes.points + notes.decisions + notes.todos + notes.questions + notes.sections.flatMap { it.items }
+    val items: List<NoteItem> = notes.decisions + notes.todos + notes.points + notes.questions + notes.sections.flatMap { it.items }
 
     val sections: List<NoteSection> = NoteSection.DEFAULTS + fileSections.filter { !it.builtIn }
 

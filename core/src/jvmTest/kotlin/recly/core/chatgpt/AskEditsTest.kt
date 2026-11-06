@@ -368,7 +368,7 @@ class AskEditsTest {
         assertTrue("#1 [00:00:00] S1: hello 1\n#2 [00:00:01] S2: hello 2\n\n" in input, input)
         assertTrue("#3" !in input, "a segment that says nothing is not sent")
         assertTrue("S1: Mina\nS2: no name\nS3: Me — the person who made the recording" in input, input)
-        assertTrue("Overview: Sync.\nSection point — Key points\n(none)\nSection decision — Decisions\n@1 Ship it. [00:00:00]\n" in input, input)
+        assertTrue("Overview: Sync.\nSection decision — Decisions\n@1 Ship it. [00:00:00]\n" in input, input)
         assertTrue("@2 Write it. (owner: Mina; due: Friday) [00:00:01]" in input, input)
         assertTrue("Section risks — Risks: What could go wrong\n(none)" in input, input)
         assertTrue("Agenda: launch" in input)

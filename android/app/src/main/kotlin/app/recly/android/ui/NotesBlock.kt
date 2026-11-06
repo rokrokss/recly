@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,19 +34,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.withStyle
 import app.recly.android.R
-import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintField
-import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.component.SectionHeader
 import app.recly.android.ui.component.focusRing
@@ -55,6 +52,7 @@ import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import recly.core.chatgpt.SummaryCitation
 import recly.core.notes.NoteEdit
 import recly.core.notes.NoteItem
 import recly.core.notes.NoteLine
@@ -63,21 +61,20 @@ import recly.core.storage.StorageKind
 
 /**
  * docs/08 "Organizing": one group of a recording's notes — its [name], the user's own for one of their sections or the
- * one they gave a built-in group, else the app's word for it, [header] — and its items, newest first as the core gives
- * them.
+ * one they gave a built-in group, else the app's word for it, [header] — and its items in the core's order.
  */
 internal data class NoteGroup(@param:StringRes val header: Int?, val items: List<NoteItem>, val name: String? = null)
 
 /**
- * docs/09 "Notes view": Key points · Decisions · To-dos · Questions, then the user's sections in the order the notes
+ * docs/09 "Notes view": Decisions · To-dos · Key points · Questions, then the user's sections in the order the notes
  * were made with. A group with nothing in it is left out, header and all. Without [keyPoints] — the record screen —
  * there are none: they come after Stop.
  */
 internal fun noteGroups(notes: RecordingNotes, keyPoints: Boolean = true): List<NoteGroup> = (
     listOfNotNull(
-        NoteGroup(R.string.notes_key_points, notes.points, notes.names.points).takeIf { keyPoints },
         NoteGroup(R.string.notes_decisions, notes.decisions, notes.names.decisions),
         NoteGroup(R.string.notes_todos, notes.todos, notes.names.todos),
+        NoteGroup(R.string.notes_key_points, notes.points, notes.names.points).takeIf { keyPoints },
         NoteGroup(R.string.notes_questions, notes.questions, notes.names.questions),
     ) + notes.sections.map { NoteGroup(null, it.items, it.name) }
 ).filter { it.items.isNotEmpty() }
@@ -150,14 +147,17 @@ internal data class NotesDraft(val original: RecordingNotes, val overview: Strin
 }
 
 /**
- * A row's words: the item, its owner after a dash (`Send the quote — Minji`), then its deadline as it was said, [muted].
- * With [tint] — an item the answer on screen changed or added (docs/09 "Ask") — the item and its owner are on it.
+ * A row's one text: the item, its owner after a dash (`Send the quote — Minji`), then its deadline as it was said,
+ * [muted], and last its time [stamp], in [monospace] and [muted], after a no-break space. With [tint] — an item the answer
+ * on screen changed or added (docs/09 "Ask") — the item and its owner are on it.
  */
-internal fun noteText(item: NoteItem, muted: Color, tint: Color? = null): AnnotatedString = buildAnnotatedString {
+internal fun noteText(item: NoteItem, stamp: String, muted: Color, monospace: FontFamily? = null, tint: Color? = null): AnnotatedString = buildAnnotatedString {
     append(item.text.trim())
-    item.owner?.trim()?.takeIf { it.isNotEmpty() }?.let { append(" — "); append(it) }
+    append(item.rowOwner)
     tint?.let { addStyle(SpanStyle(background = it), 0, length) }
-    item.due?.trim()?.takeIf { it.isNotEmpty() }?.let { withStyle(SpanStyle(color = muted)) { append(" · "); append(it) } }
+    withStyle(SpanStyle(color = muted)) { append(item.rowDue) }
+    append('\u00A0')
+    withStyle(SpanStyle(fontFamily = monospace, color = muted)) { append(stamp) }
 }
 
 /**
@@ -177,13 +177,13 @@ private fun letters(text: String): String = text.lowercase().filter { it.isLette
 
 /**
  * docs/08 "Organizing" · docs/09: a recording's notes — on the detail, the overview and then the groups; on the record
- * screen, the groups alone, without key points. Each group is its section header over table rows: the item's words, and at the end its
- * time in monospace. A tap on a row opens the transcript around it under the row, the note's own line marked as the
+ * screen, the groups alone, without key points. Each group is its section header over rows of one sentence: the item's words, and at the end
+ * its time in monospace. A tap on a row opens the transcript around it under the row, the note's own line marked as the
  * reader marks the line it plays; a second tap closes it, and opening another closes the first. A swipe from the end
  * deletes the item for good, with no question; a screen reader has the same Delete as an action of the row.
  *
- * [onSeek] makes the time a button that moves the playhead to it — a transcript time's way, playing or paused as it
- * was — where [canSeek] allows; without it (while recording) the time is a label. [scaleSec] picks the time format
+ * [onSeek] makes the time a target that moves the playhead to it — a transcript time's way, playing or paused as it
+ * was — where [canSeek] allows; without it (while recording) the time is only text. [scaleSec] picks the time format
  * ([clock]). [changed] — the items the answer on screen changed or added — and the overview when [overviewChanged] have the
  * transcript's tint behind their words (docs/09 "Ask").
  */
@@ -277,48 +277,30 @@ private fun NoteRow(
         },
     ) {
         Column(Modifier.fillMaxWidth()) {
-            Row(
-                Modifier
+            val stamp = clock(item.atSec.toLong(), scaleSec)
+            val text = noteText(item, stamp, palette.textMuted, mono.body.fontFamily, tint)
+            // The time moves the playhead, as a transcript time does (2026-10-28); a tap anywhere else is the row's.
+            TargetedText(
+                text,
+                listOf(TextRun(text.length - stamp.length, text.length, SummaryCitation(text.length - stamp.length, stamp.length, item.atSec))),
+                canSeek = { onSeek != null && canSeek(it) },
+                onSeek = { onSeek?.invoke(it) },
+                label = { stringResource(R.string.transcript_seek, hms(item.atSec.toLong())) },
+                modifier = Modifier
                     .fillMaxWidth()
                     .focusRing(palette)
                     .clickable(onClick = onToggle)
                     .semantics {
                         if (expanded) collapse(label = toggle) { onToggle(); true } else expand(label = toggle) { onToggle(); true }
                         customActions = listOf(CustomAccessibilityAction(delete) { onDelete(item); true })
-                    }
-                    // As tall as its words, 16 at the sides and 8 above and below (2026-10-31): the touch minimum made a
-                    // list of one-line items read double-spaced. The time on the first line of the words; the touch
-                    // layer takes the row and its time to the minimum without the room.
-                    .padding(horizontal = Space.m, vertical = Space.s),
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    noteText(item, palette.textMuted, tint),
-                    Modifier.weight(1f).alignByBaseline(),
-                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
-                    color = palette.text,
-                )
-                Box(Modifier.alignByBaseline()) { NoteTime(item.atSec, scaleSec, canSeek, onSeek) }
-            }
+                    },
+                // As tall as its words, 16 at the sides and 8 above and below (2026-10-31): the touch minimum made a list
+                // of one-line items read double-spaced. The time's target reaches past its words without the room.
+                horizontal = Space.m,
+                vertical = Space.s,
+            )
             if (expanded) NoteLines(item, lines)
         }
-    }
-}
-
-/**
- * The note's time at the row's end: a quiet, compact monospace button that moves the playhead to it, as a transcript
- * time does (2026-10-28), or a label.
- */
-@Composable
-private fun NoteTime(atSec: Double, scaleSec: Long?, canSeek: (Double) -> Boolean, onSeek: ((Double) -> Unit)?) {
-    val stamp = clock(atSec.toLong(), scaleSec)
-    if (onSeek == null) {
-        Text(stamp, style = mono.bodySmall, color = blueprint.textMuted, modifier = Modifier.clearAndSetSemantics { contentDescription = hms(atSec.toLong()) })
-    } else {
-        val label = stringResource(R.string.transcript_seek, hms(atSec.toLong()))
-        BlueprintButton(stamp, { onSeek(atSec) }, enabled = canSeek(atSec), tone = ButtonTone.QUIET, monospace = true, compact = true,
-            tight = true, modifier = Modifier.semantics { contentDescription = label })
     }
 }
 

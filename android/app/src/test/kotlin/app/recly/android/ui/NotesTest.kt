@@ -67,7 +67,7 @@ class NotesTest {
         )
 
         val groups = noteGroups(notes)
-        assertEquals(listOf(R.string.notes_key_points, R.string.notes_decisions, R.string.notes_questions, null, null), groups.map { it.header })
+        assertEquals(listOf(R.string.notes_decisions, R.string.notes_key_points, R.string.notes_questions, null, null), groups.map { it.header })
         assertEquals(listOf(null, null, null, "Risks", "Budget"), groups.map { it.name })
         // The record screen has no key points: they come after Stop. The user's sections still follow Questions.
         assertEquals(listOf(R.string.notes_decisions, R.string.notes_questions, null, null), noteGroups(notes, keyPoints = false).map { it.header })
@@ -120,7 +120,7 @@ class NotesTest {
         val edited = draft.type("t1", "Send the signed quote").type("p1", "").copy(overview = "")
         assertTrue(edited.changed)
         assertEquals("", edited.overviewEdit(), "an emptied overview is removed")
-        assertEquals(listOf(NoteEdit("p1", ""), NoteEdit("t1", "Send the signed quote")), edited.edits())
+        assertEquals(listOf(NoteEdit("t1", "Send the signed quote"), NoteEdit("p1", "")), edited.edits())
     }
 
     @Test
@@ -168,18 +168,18 @@ class NotesTest {
     fun `a built-in group shows its own words, and sends them as empty`() {
         val drafts = sectionDrafts(NoteSection.DEFAULTS + NoteSection("s1", "Risks", "What could slip"), WORDS)
 
-        assertEquals(listOf("Key points", "Decisions", "To-dos", "Questions", "Risks"), drafts.map { it.name })
-        assertEquals("What was agreed or decided.", drafts[1].description)
+        assertEquals(listOf("Decisions", "To-dos", "Key points", "Questions", "Risks"), drafts.map { it.name })
+        assertEquals("What was agreed or decided.", drafts[0].description)
         // Untouched, the groups are as they come: nothing to save, nothing to restore.
         assertEquals(NoteSection.DEFAULTS + NoteSection("s1", "Risks", "What could slip"), keptSections(drafts, WORDS))
         assertFalse(NoteSection.changed(keptSections(drafts, WORDS)))
 
         // A new name is sent trimmed; typed back as it was, it is the group's own again.
         val renamed = drafts.map { if (it.kind == NoteKind.DECISION) it.copy(name = " Agreed ") else it }
-        assertEquals(NoteSection("decision", "Agreed", "", NoteKind.DECISION), keptSections(renamed, WORDS)[1])
+        assertEquals(NoteSection("decision", "Agreed", "", NoteKind.DECISION), keptSections(renamed, WORDS)[0])
         assertTrue(NoteSection.changed(keptSections(renamed, WORDS)))
         val back = renamed.map { if (it.kind == NoteKind.DECISION) it.copy(name = "Decisions ") else it }
-        assertEquals(NoteSection.default(NoteKind.DECISION), keptSections(back, WORDS)[1])
+        assertEquals(NoteSection.default(NoteKind.DECISION), keptSections(back, WORDS)[0])
         // A name the user gave it is what its field shows.
         assertEquals("Agreed", sectionDrafts(listOf(NoteSection("decision", "Agreed", "", NoteKind.DECISION)), WORDS).single().name)
     }
@@ -191,11 +191,11 @@ class NotesTest {
 
         assertEquals(NoteSection.DEFAULTS, keptSections(drafts, WORDS), "the blank group is sent as its own, the unnamed section not at all")
         val ended = endEditing(drafts, key = null, WORDS)
-        assertEquals(listOf("Key points", "Decisions", "To-dos", "Questions"), ended.map { it.name })
-        assertEquals("What someone will do.", ended[2].description)
+        assertEquals(listOf("Decisions", "To-dos", "Key points", "Questions"), ended.map { it.name })
+        assertEquals("What someone will do.", ended[1].description)
         // Only the row whose editing ended changes.
-        val todo = endEditing(drafts, key = 2, WORDS)
-        assertEquals("To-dos", todo[2].name)
+        val todo = endEditing(drafts, key = 1, WORDS)
+        assertEquals("To-dos", todo[1].name)
         assertEquals("half written", todo.last().description)
     }
 
@@ -245,17 +245,15 @@ class NotesTest {
 
     @Test
     fun `a row is the item, its owner after a dash, then its deadline`() {
-        assertEquals("Send the quote", noteText(item("t", NoteKind.TODO, text = "Send the quote"), Color.Gray).text)
-        assertEquals("Send the quote — Minji", noteText(item("t", NoteKind.TODO, text = "Send the quote", owner = "Minji"), Color.Gray).text)
-        assertEquals(
-            "Send the quote — Minji · Friday",
-            noteText(item("t", NoteKind.TODO, text = "Send the quote", owner = "Minji", due = "Friday"), Color.Gray).text,
-        )
-        assertEquals("Send the quote · Friday", noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), Color.Gray).text)
-        // docs/09 "Notes view": the deadline is the muted part, as on the iPhone, the Mac and Windows.
-        val due = noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), Color.Gray).spanStyles.single()
-        assertEquals(Color.Gray, due.item.color)
-        assertEquals(" · Friday", noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), Color.Gray).text.substring(due.start, due.end))
+        fun text(owner: String? = null, due: String? = null) =
+            noteText(item("t", NoteKind.TODO, text = "Send the quote", owner = owner, due = due), "01:15", Color.Gray).text
+        assertEquals("Send the quote\u00A001:15", text())
+        assertEquals("Send the quote —\u00A0Minji\u00A001:15", text(owner = "Minji"))
+        assertEquals("Send the quote —\u00A0Minji\u00A0·\u00A0Friday\u00A001:15", text(owner = "Minji", due = "Friday"))
+        assertEquals("Send the quote ·\u00A0Friday\u00A001:15", text(due = "Friday"))
+        // docs/09 "Notes view": the deadline and the time are the muted parts, as on the iPhone, the Mac and Windows.
+        val written = noteText(item("t", NoteKind.TODO, text = "Send the quote", due = "Friday"), "01:15", Color.Gray)
+        assertEquals(listOf(" ·\u00A0Friday", "01:15"), written.spanStyles.filter { it.item.color == Color.Gray }.map { written.text.substring(it.start, it.end) })
     }
 
     @Test

@@ -62,9 +62,12 @@ internal object NotesPrompts {
     /** Anything at all to ask for: a built-in group or a section of the user's own. */
     private fun asksItems(ask: NotesAsk, points: Boolean) = builtIns(ask, points).isNotEmpty() || ask.own.isNotEmpty()
 
+    /** The order the request names the groups in, which the order the notes list them in ([NoteSection.BUILT_IN]) does not change. */
+    private val ASKED = listOf(NoteKind.POINT, NoteKind.DECISION, NoteKind.TODO, NoteKind.QUESTION)
+
     /** "its key points, decisions, to-dos and open questions, and the items of the user's own sections". */
     private fun asked(ask: NotesAsk, points: Boolean): String {
-        val groups = builtIns(ask, points).sortedBy { NoteSection.BUILT_IN.indexOf(it.kind) }.map {
+        val groups = builtIns(ask, points).sortedBy { ASKED.indexOf(it.kind) }.map {
             when (it.kind) {
                 NoteKind.POINT -> "key points"
                 NoteKind.DECISION -> "decisions"

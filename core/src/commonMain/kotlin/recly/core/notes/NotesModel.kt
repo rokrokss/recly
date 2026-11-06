@@ -55,7 +55,23 @@ data class NoteItem(
     val quote: String,
     val provisional: Boolean,
     val section: String? = null,
-)
+) {
+    /**
+     * docs/09 "Notes view": what a row says after the item's words, ` — Minji`, or nothing without an owner. A line may break
+     * only before the dash, so the owner, the deadline and the time wrap as one block and no dash or dot ends a line.
+     */
+    val rowOwner: String
+        get() = glued(owner)?.let { " —$GLUE$it" }.orEmpty()
+
+    /** The deadline after [rowOwner], held to it the same way: ` · Friday`, or nothing without a deadline. */
+    val rowDue: String
+        get() = glued(due)?.let { (if (rowOwner.isEmpty()) " " else GLUE) + "·$GLUE$it" }.orEmpty()
+
+    private fun glued(words: String?): String? = words?.trim()?.takeIf { it.isNotEmpty() }?.replace(" ", GLUE)
+}
+
+/** A no-break space. */
+private const val GLUE = " "
 
 /** One of the user's own sections in a recording's notes, under the name it had when its items were made. */
 data class NoteSectionItems(val id: String, val name: String, val items: List<NoteItem>)
@@ -132,8 +148,8 @@ data class NoteSection(val id: String, val name: String, val description: String
     val builtIn: Boolean get() = kind != NoteKind.SECTION
 
     companion object {
-        /** The built-in groups, in the order the notes list them. */
-        val BUILT_IN: List<NoteKind> = listOf(NoteKind.POINT, NoteKind.DECISION, NoteKind.TODO, NoteKind.QUESTION)
+        /** The built-in groups, in the order the notes list them: what was settled and what is left to do come first. */
+        val BUILT_IN: List<NoteKind> = listOf(NoteKind.DECISION, NoteKind.TODO, NoteKind.POINT, NoteKind.QUESTION)
 
         /** The built-in groups as they come: all four, in their own words. */
         val DEFAULTS: List<NoteSection> = BUILT_IN.map(::default)

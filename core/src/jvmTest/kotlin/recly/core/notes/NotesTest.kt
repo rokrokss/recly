@@ -512,9 +512,9 @@ class NotesTest {
         val final = notes.get(meta.recordingId)
         assertEquals(NotesStage.FINAL, final.stage)
         assertEquals("Alpha shipped, bravo planned, charlie reviewed.", final.overview)
-        assertEquals(listOf("Plan bravo", "Ship alpha"), final.decisions.map { it.text })
-        assertEquals(shipped.id, final.decisions.last().id, "the provisional item the final pass made again keeps its id")
-        assertFalse(final.decisions.last().provisional)
+        assertEquals(listOf("Ship alpha", "Plan bravo"), final.decisions.map { it.text }, "as the pass wrote them")
+        assertEquals(shipped.id, final.decisions.first().id, "the provisional item the final pass made again keeps its id")
+        assertFalse(final.decisions.first().provisional)
         assertEquals(listOf("Order able parts"), final.todos.map { it.text }, "the deleted item does not come back")
         assertEquals("Friday", final.todos.single().due)
         assertNull(final.todos.single().owner, "an unnamed speaker is no owner")
@@ -819,7 +819,7 @@ class NotesTest {
 
     @Test
     fun `Settings keep the built-in groups as the user left them, each once in its place, and nothing for them as they come`() = runBlocking {
-        val (points, _, todos, questions) = NoteSection.DEFAULTS
+        val (_, todos, points, questions) = NoteSection.DEFAULTS
         val kept = notes.setPreferences(
             NotesPreferences(
                 sections = listOf(
@@ -832,9 +832,9 @@ class NotesTest {
             ),
         )
 
-        assertEquals(listOf(NoteKind.POINT, NoteKind.TODO, NoteKind.QUESTION, NoteKind.SECTION), kept.sections.map { it.kind }, "Decisions removed")
-        assertEquals(listOf("point", "todo", "question"), kept.sections.take(3).map { it.id })
-        assertEquals(NoteSection("todo", "Action items", "Anything someone promised.", NoteKind.TODO), kept.sections[1])
+        assertEquals(listOf(NoteKind.TODO, NoteKind.POINT, NoteKind.QUESTION, NoteKind.SECTION), kept.sections.map { it.kind }, "Decisions removed")
+        assertEquals(listOf("todo", "point", "question"), kept.sections.take(3).map { it.id })
+        assertEquals(NoteSection("todo", "Action items", "Anything someone promised.", NoteKind.TODO), kept.sections[0])
         assertEquals(questions, kept.sections[2], "a name left empty is the group's own")
         assertTrue(kept.builtInsChanged)
         assertEquals(kept, notes.preferences())
@@ -856,7 +856,7 @@ class NotesTest {
     @Test
     fun `a built-in group is asked for in the user's words with its own rules, and one the user removed is not asked for or kept`() = runBlocking {
         ready()
-        val (points, _, todos, questions) = NoteSection.DEFAULTS
+        val (_, todos, points, questions) = NoteSection.DEFAULTS
         notes.setPreferences(NotesPreferences(sections = listOf(points, todos.copy(name = "Action items", description = "Anything someone promised."), questions)))
         engine.answer = { meeting }
         answer(
@@ -904,6 +904,22 @@ class NotesTest {
     }
 
     @Test
+    fun `final notes stay in the order the pass wrote them, whatever their times`() = runBlocking {
+        ready()
+        engine.answer = { meeting }
+        answer(
+            conversation(
+                "Alpha.",
+                item("decision", "Said later", "00:00:30", "able1 able2 able3"),
+                item("decision", "Said first", "00:00:00", "alpha1 alpha2 alpha3"),
+            ),
+        )
+        val meta = f.recordAndRun()
+
+        assertEquals(listOf("Said later", "Said first"), notes.get(meta.recordingId).decisions.map { it.text })
+    }
+
+    @Test
     fun `with every group removed, the final pass asks for the summary alone`() = runBlocking {
         ready()
         notes.setPreferences(NotesPreferences(sections = emptyList()))
@@ -937,24 +953,24 @@ class NotesTest {
 
         assertEquals(
             "We met.\nWe shipped.\n\n" +
-                "Key points\n- Costs doubled [00:00:30]\n\n" +
                 "Decisions\n- Ship on Friday [00:00:01]\n\n" +
                 "To-dos\n- Send the deck — Mina · Monday [00:01:05]\n\n" +
+                "Key points\n- Costs doubled [00:00:30]\n\n" +
                 "Questions\n- Who pays? [01:02:03]\n\n" +
                 "Risks\n- May slip [00:00:40]\n",
             NotesText.plain(all, NotesHeadings()),
         )
         assertEquals(
             "## Notes\n\nWe met.  \nWe shipped.\n\n" +
-                "### Key points\n\n- Costs doubled [00:00:30]\n\n" +
                 "### Decisions\n\n- Ship on Friday [00:00:01]\n\n" +
                 "### To-dos\n\n- Send the deck — Mina · Monday [00:01:05]\n\n" +
+                "### Key points\n\n- Costs doubled [00:00:30]\n\n" +
                 "### Questions\n\n- Who pays? [01:02:03]\n\n" +
                 "### Risks\n\n- May slip [00:00:40]\n",
             NotesText.markdown(all, NotesHeadings()),
         )
         val korean = NotesHeadings(notes = "노트", keyPoints = "핵심", decisions = "결정", todos = "할 일", questions = "질문")
-        assertTrue(NotesText.plain(all, korean)!!.startsWith("We met.\nWe shipped.\n\n핵심\n- Costs doubled"))
+        assertTrue(NotesText.plain(all, korean)!!.startsWith("We met.\nWe shipped.\n\n결정\n- Ship on Friday"))
         assertTrue("\n\n질문\n- Who pays? [01:02:03]\n\nRisks\n" in NotesText.plain(all, korean)!!, "a section is headed by its own name")
         assertTrue(NotesText.markdown(all, korean)!!.startsWith("## 노트\n\n"))
         val renamed = all.copy(names = NoteNames(decisions = "Calls"))

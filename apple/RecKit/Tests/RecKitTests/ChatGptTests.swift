@@ -206,8 +206,8 @@ final class ChatGptSettingsTests: XCTestCase {
         // The saved preferences arrive first, as they do long before anyone types on a screen.
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertEqual(model.instructions, "")
-        XCTAssertEqual(model.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions"])
-        XCTAssertEqual(model.sections.map(\.sectionId), ["point", "decision", "todo", "question"])
+        XCTAssertEqual(model.sections.map(\.name), ["Decisions", "To-dos", "Key points", "Questions"])
+        XCTAssertEqual(model.sections.map(\.sectionId), ["decision", "todo", "point", "question"])
 
         model.instructions = "Group to-dos by owner.  "
         model.saveNotes()
@@ -237,13 +237,13 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertEqual(model.sections.count, 7)
         model.saveNotes(droppingNameless: true)
         XCTAssertEqual(
-            model.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions", " Risks "],
+            model.sections.map(\.name), ["Decisions", "To-dos", "Key points", "Questions", " Risks "],
             "the screen goes, and the nameless ones with it"
         )
 
         let reopened = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
         try await until { reopened.sections.count == 5 }
-        XCTAssertEqual(reopened.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions", "Risks"])
+        XCTAssertEqual(reopened.sections.map(\.name), ["Decisions", "To-dos", "Key points", "Questions", "Risks"])
         XCTAssertEqual(reopened.instructions, "Group to-dos by owner.")
 
         model.removeSection(model.sections[4].key)
@@ -264,9 +264,9 @@ final class ChatGptSettingsTests: XCTestCase {
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertEqual(model.sections.map(\.description), [
-            "Facts, numbers, ideas and conclusions worth remembering.",
             "What was agreed or decided.",
             "Who will do what, and by when.",
+            "Facts, numbers, ideas and conclusions worth remembering.",
             "Questions still without an answer.",
         ])
         XCTAssertEqual(model.shownNotes.sections.map(\.name), ["", "", "", ""], "untouched, a group is its own")
@@ -274,17 +274,17 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertEqual(model.shownNotes, model.notesPreferences, "nothing to save")
         XCTAssertFalse(model.restoresDefaults)
 
-        let decisions = model.sections[1].key
-        model.sections[1].name = "  "
-        model.sections[1].description = ""
+        let decisions = model.sections[0].key
+        model.sections[0].name = "  "
+        model.sections[0].description = ""
         XCTAssertEqual(model.shownNotes.sections.map(\.name), ["", "", "", ""], "a blank name is the group's own")
-        XCTAssertEqual(model.shownNotes.sections[1].description_, "")
+        XCTAssertEqual(model.shownNotes.sections[0].description_, "")
         model.saveNotes()
-        XCTAssertEqual(model.sections[1].name, "  ", "editing is still in the row")
+        XCTAssertEqual(model.sections[0].name, "  ", "editing is still in the row")
         model.saveNotes(leaving: decisions)
         XCTAssertEqual(model.sections.count, 4, "a built-in group left blank stays")
-        XCTAssertEqual(model.sections[1].name, "Decisions")
-        XCTAssertEqual(model.sections[1].description, "What was agreed or decided.")
+        XCTAssertEqual(model.sections[0].name, "Decisions")
+        XCTAssertEqual(model.sections[0].description, "What was agreed or decided.")
         XCTAssertEqual(model.shownNotes, model.notesPreferences, "still nothing to save")
 
         model.sections[0].name = "Highlights "
@@ -309,9 +309,9 @@ final class ChatGptSettingsTests: XCTestCase {
         let risks = try XCTUnwrap(model.addSection())
         model.sections[4].name = "Risks"
         model.saveNotes(leaving: risks)
-        model.sections[2].description = "Only what the team owns."
-        model.saveNotes(leaving: model.sections[2].key)
-        model.removeSection(model.sections[0].key)
+        model.sections[1].description = "Only what the team owns."
+        model.saveNotes(leaving: model.sections[1].key)
+        model.removeSection(model.sections[2].key)
         XCTAssertEqual(model.sections.map(\.name), ["Decisions", "To-dos", "Questions", "Risks"])
         XCTAssertTrue(model.restoresDefaults)
         try await until { model.notesPreferences.sections.map { $0.kind } == [.decision, .todo, .question, .section] }
@@ -320,8 +320,8 @@ final class ChatGptSettingsTests: XCTestCase {
 
         let unnamed = try XCTUnwrap(model.addSection())
         model.restoreDefaults()
-        XCTAssertEqual(model.sections.map(\.name), ["Key points", "Decisions", "To-dos", "Questions", "Risks", ""], "the user's own stay")
-        XCTAssertEqual(model.sections[2].description, "Who will do what, and by when.")
+        XCTAssertEqual(model.sections.map(\.name), ["Decisions", "To-dos", "Key points", "Questions", "Risks", ""], "the user's own stay")
+        XCTAssertEqual(model.sections[1].description, "Who will do what, and by when.")
         XCTAssertEqual(model.sections.last?.key, unnamed)
         XCTAssertFalse(model.restoresDefaults)
         try await until { model.notesPreferences.sections.count == 5 && !model.notesPreferences.builtInsChanged }
@@ -356,13 +356,13 @@ final class ChatGptSettingsTests: XCTestCase {
         let bridge = try await bridge()
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
         try await Task.sleep(for: .milliseconds(300))
-        model.sections[1].name = "Agreed"
+        model.sections[0].name = "Agreed"
         AppLanguage.current = .ko
         NotificationCenter.default.post(name: AppLanguage.didChange, object: nil)
-        try await until { model.sections[0].name == "핵심" }
-        XCTAssertEqual(model.sections.map(\.name), ["핵심", "Agreed", "할 일", "질문"])
+        try await until { model.sections[2].name == "핵심" }
+        XCTAssertEqual(model.sections.map(\.name), ["Agreed", "할 일", "핵심", "질문"])
         XCTAssertEqual(model.sections[3].description, "아직 답이 나오지 않은 질문.")
-        XCTAssertEqual(model.shownNotes.sections.map(\.name), ["", "Agreed", "", ""])
+        XCTAssertEqual(model.shownNotes.sections.map(\.name), ["Agreed", "", "", ""])
         XCTAssertEqual(model.shownNotes.sections.map(\.description_), ["", "", "", ""])
     }
 

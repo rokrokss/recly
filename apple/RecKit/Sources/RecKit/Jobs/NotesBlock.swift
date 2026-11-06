@@ -4,8 +4,8 @@ import ReclyCore
 import SwiftUI
 #endif
 
-/// One of the notes block's groups (docs/08 "Organizing"): its header and its items, newest first as the core gives
-/// them — a built-in group, or one of the user's own sections — under the name the notes were made with.
+/// One of the notes block's groups (docs/08 "Organizing"): its header and its items in the core's order — a built-in
+/// group, or one of the user's own sections — under the name the notes were made with.
 public struct NoteGroup: Identifiable, Equatable {
     public let kind: NoteKind
     public let items: [NoteItem]
@@ -41,16 +41,16 @@ public struct NoteGroup: Identifiable, Equatable {
 /// docs/08 "Organizing": what the notes block makes of a recording's notes — the rules the detail and the iPhone's
 /// recording screen draw by, apart from the drawing so a test can hold them.
 public enum NoteGroups {
-    /// docs/09 "Notes view": Key points · Decisions · To-dos · Questions — each under the name the user gave it, if
+    /// docs/09 "Notes view": Decisions · To-dos · Key points · Questions — each under the name the user gave it, if
     /// they did — then the user's sections in the order the notes were made with. A group with no items is not there,
     /// header and all. [keyPoints] false leaves the key points out — the recording screen's, as they come after Stop.
     public static func of(_ notes: RecordingNotes?, keyPoints: Bool = true) -> [NoteGroup] {
         guard let notes else { return [] }
         let names = notes.names
         let builtIn = [
-            NoteGroup(kind: .point, items: keyPoints ? notes.points : [], name: names.points),
             NoteGroup(kind: .decision, items: notes.decisions, name: names.decisions),
             NoteGroup(kind: .todo, items: notes.todos, name: names.todos),
+            NoteGroup(kind: .point, items: keyPoints ? notes.points : [], name: names.points),
             NoteGroup(kind: .question, items: notes.questions, name: names.questions),
         ]
         let sections = notes.sections.map { NoteGroup(kind: .section, items: $0.items, sectionId: $0.id, name: $0.name) }
@@ -84,12 +84,9 @@ public enum NoteGroups {
     }
 
     /// The row's words: the item, and its owner after a dash when the speaker has a name — `Send the quote — Minji`.
-    public static func text(_ item: NoteItem) -> String {
-        guard let owner = item.owner?.trimmingCharacters(in: .whitespacesAndNewlines), !owner.isEmpty else { return item.text }
-        return "\(item.text) — \(owner)"
-    }
+    public static func text(_ item: NoteItem) -> String { item.text + item.rowOwner }
 
-    /// The deadline as it was said, shown after the text; nil when none was.
+    /// The deadline as it was said; nil when none was.
     public static func due(_ item: NoteItem) -> String? {
         guard let due = item.due?.trimmingCharacters(in: .whitespacesAndNewlines), !due.isEmpty else { return nil }
         return due
@@ -118,9 +115,9 @@ public enum NoteGroups {
 
 #if os(iOS) || os(macOS)
 /// docs/08 "Organizing" · docs/09 "Notes view": a recording's notes — the overview on top where it is shown, then the
-/// groups ([NoteGroups.of]), each a header and its rows. A row is the item, its owner and its deadline, and its
-/// time at the end; a tap opens the transcript around it under the row (one at a time) and a second tap closes it. The
-/// time plays the recording from there where [onSeek] is given; while recording it is a plain label. The phone deletes
+/// groups ([NoteGroups.of]), each a header and its rows. A row is one sentence: the item, its owner and its deadline,
+/// with its time at the end; a tap opens the transcript around it under the row (one at a time) and a second tap closes it. The
+/// time moves the playhead there where [onSeek] is given; while recording it is a plain label. The phone deletes
 /// a row with a swipe, the Mac from its context menu, with no question: the core never brings it back.
 ///
 /// Nothing at all when there is nothing to show ([NoteGroups.isEmpty]); the screen around it leaves it out then.
@@ -199,18 +196,15 @@ public struct NotesBlock: View {
 
     private func row(_ item: NoteItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline, spacing: Space.s) {
-                words(item)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentDirection(item.text)
-                time(item)
-            }
-            // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line items read
-            // double-spaced. The time's target reaches past its box instead of taking the room.
-            .padding(.vertical, Space.s)
-            .contentShape(Rectangle())
-            .onTapGesture { toggle(item) }
-            .pointerCursor()
+            words(item)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentDirection(item.text)
+                // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line items read
+                // double-spaced. The time's target reaches past its words instead of taking the room.
+                .padding(.vertical, Space.s)
+                .contentShape(Rectangle())
+                .onTapGesture { toggle(item) }
+                .pointerCursor()
             if expanded == item.id {
                 around(item)
             }
@@ -219,40 +213,73 @@ public struct NotesBlock: View {
         .accessibilityIdentifier("note-\(item.id)")
     }
 
-    /// The item, its owner after a dash, and the deadline after them in the secondary colour.
+    /// The row's one text, its time a stretch of it as [CitedText]'s citations are: from iOS 18 / macOS 15 a target laid
+    /// over the time, at least [minTouch] each way, and a screen reader's own `Go to 00:12:34` button; on iOS 17 / macOS 14 a
+    /// link inside the text and a named action on it. A tap anywhere else is the row's.
+    @ViewBuilder
     private func words(_ item: NoteItem) -> some View {
-        var text = Text(tinted(NoteGroups.text(item), changed.contains(item.id))).foregroundStyle(blueprint.palette.text)
-        if let due = NoteGroups.due(item) {
-            text = text + Text(verbatim: " · \(due)").foregroundStyle(blueprint.palette.textMuted)
+        let label = RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(item.atSec)))
+        let seekable = playable && onSeek != nil && item.atSec < seekableSec
+        let time = timeText(item, seekable: seekable)
+        Group {
+            if #available(iOS 18, macOS 15, *) {
+                sentence(item, time: seekable ? time.customAttribute(CitationMark(run: 0)) : time)
+                    .accessibilitySortPriority(1)
+                    .overlayPreferenceValue(Text.LayoutKey.self) { layouts in
+                        CitationTargets(
+                            layouts: layouts,
+                            playable: seekable ? [(run: 0, text: stamp(item.atSec), atSec: item.atSec)] : [],
+                            label: { _ in label }
+                        ) { onSeek?($0) }
+                    }
+                    .accessibilityElement(children: .contain)
+            } else {
+                sentence(item, time: time)
+                    .accessibilityActions {
+                        if seekable {
+                            Button(label) { onSeek?(item.atSec) }
+                        }
+                    }
+            }
         }
-        return text
-            .font(blueprint.fonts.bodySmall)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction { toggle(item) }
-            // docs/09 trend 4: the swipe's static alternative.
-            .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Delete"))) { delete(item) }
+        .environment(\.openURL, OpenURLAction { url in
+            guard let sec = CitedText.second(url) else { return .systemAction }
+            onSeek?(sec)
+            return .handled
+        })
+    }
+
+    /// The item, its owner after a dash, the deadline after them in the secondary colour, and [time] after a no-break space.
+    private func sentence(_ item: NoteItem, time: Text) -> some View {
+        (
+            Text(tinted(NoteGroups.text(item), changed.contains(item.id))).foregroundStyle(blueprint.palette.text)
+                + Text(verbatim: item.rowDue).foregroundStyle(blueprint.palette.textMuted)
+                + Text(verbatim: "\u{00A0}")
+                + time
+        )
+        .font(blueprint.fonts.bodySmall)
+        .tint(blueprint.palette.textMuted)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { toggle(item) }
+        // docs/09 trend 4: the swipe's static alternative.
+        .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Delete"))) { delete(item) }
+    }
+
+    /// Monospace and muted, a time the recording here can reach also a link: it moves the playhead and leaves playing or
+    /// paused as it was, the transcript time button's path (docs/09 "AI view", 2026-10-28).
+    private func timeText(_ item: NoteItem, seekable: Bool) -> Text {
+        var part = AttributedString(stamp(item.atSec))
+        part.font = blueprint.fonts.monoBodySmall
+        part.foregroundColor = blueprint.palette.textMuted
+        if seekable { part.link = CitedText.url(item.atSec) }
+        return Text(part)
     }
 
     private func tinted(_ words: String, _ tint: Bool) -> AttributedString {
         var text = AttributedString(words)
         if tint { text.backgroundColor = blueprint.palette.accent.opacity(0.16) }
         return text
-    }
-
-    @ViewBuilder
-    private func time(_ item: NoteItem) -> some View {
-        if playable {
-            // The transcript time button's path: it moves the playhead and leaves playing or paused as it was
-            // (docs/09 "AI view", 2026-10-28).
-            BlueprintButton(stamp(item.atSec), tone: .quiet, mono: true, compact: true, tight: true) { onSeek?(item.atSec) }
-                .disabled(onSeek == nil || item.atSec >= seekableSec)
-                .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(item.atSec)))))
-        } else {
-            Text(verbatim: stamp(item.atSec))
-                .font(blueprint.fonts.monoBodySmall)
-                .foregroundStyle(blueprint.palette.textMuted)
-        }
     }
 
     /// The transcript around the item, the line it came from wearing the transcript reader's 2 pt accent bar.

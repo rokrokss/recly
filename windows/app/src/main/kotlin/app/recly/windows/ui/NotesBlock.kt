@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -37,11 +36,11 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
@@ -49,16 +48,15 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
-import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintMenu
 import app.recly.windows.ui.component.BlueprintMenuColumn
 import app.recly.windows.ui.component.BlueprintMenuRow
-import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.SectionHeader
 import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.component.pressCursor
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
+import app.recly.windows.ui.theme.mono
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -67,10 +65,10 @@ import recly.core.notes.NoteLine
 import recly.core.notes.RecordingNotes
 
 /**
- * docs/09 "Notes view": a recording's notes in the Notes chip's body — the overview, then Key points, Decisions,
- * To-dos and Questions, then the user's own sections under their names, each only while it has items, and nothing at
+ * docs/09 "Notes view": a recording's notes in the Notes chip's body — the overview, then Decisions, To-dos, Key
+ * points and Questions, then the user's own sections under their names, each only while it has items, and nothing at
  * all when there is nothing (no empty state, no label for how far they have come). A row opens the transcript's lines
- * around its moment under itself, one row at a time ([linesAround]); its time moves the playhead there ([onSeek]) while
+ * around its moment under itself, one row at a time ([linesAround]); the time at its sentence's end moves the playhead there ([onSeek]) while
  * [canSeek]; its context menu — a right click, the menu key or Shift+F10 — has Delete, which asks nothing ([onDelete]).
  */
 @Composable
@@ -131,9 +129,9 @@ internal fun NotesBlock(
 internal fun noteGroups(notes: RecordingNotes, strings: Strings): List<Pair<String, List<NoteItem>>> =
     (
         listOf(
-            (notes.names.points ?: strings[Str.NOTES_KEY_POINTS]) to notes.points,
             (notes.names.decisions ?: strings[Str.NOTES_DECISIONS]) to notes.decisions,
             (notes.names.todos ?: strings[Str.NOTES_TODOS]) to notes.todos,
+            (notes.names.points ?: strings[Str.NOTES_KEY_POINTS]) to notes.points,
             (notes.names.questions ?: strings[Str.NOTES_QUESTIONS]) to notes.questions,
         ) + notes.sections.map { it.name to it.items }
     ).filter { it.second.isNotEmpty() }
@@ -157,9 +155,16 @@ internal fun NoteRow(
     // Where the context menu hangs: the click, or the row's foot for a key.
     var menuAt by remember(item.id) { mutableStateOf<Offset?>(null) }
     var size by remember { mutableStateOf(IntSize.Zero) }
+    val stamp = LedgerFormat.clock(item.atSec, spanSec)
+    var pressed by remember(item.id) { mutableStateOf(false) }
+    var layout by remember(item.id) { mutableStateOf<TextLayoutResult?>(null) }
+    val text = noteText(
+        item, stamp, palette.textMuted, mono.body.fontFamily, tint,
+        time = if (pressed) palette.textMuted.copy(alpha = PRESSED_ALPHA) else palette.textMuted,
+    )
     Column(Modifier.fillMaxWidth()) {
         Box {
-            Row(
+            Box(
                 Modifier
                     .fillMaxWidth()
                     .onSizeChanged { size = it }
@@ -185,28 +190,26 @@ internal fun NoteRow(
                     // As tall as its words, 8 above and below (2026-10-31): the touch minimum made a list of one-line
                     // items read double-spaced.
                     .padding(vertical = Space.s),
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    noteText(item, palette.textMuted, tint),
-                    modifier = Modifier.weight(1f),
+                    text,
+                    modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = palette.text,
+                    onTextLayout = { layout = it },
                 )
-                // The transcript's time button, at the status badge's size, which only moves the playhead as the
-                // transcript's does (2026-10-28): playing or paused stays as it was. An answer's time still plays.
-                val label = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((item.atSec * 1000).toLong())]
-                BlueprintButton(
-                    LedgerFormat.clock(item.atSec, spanSec),
-                    { onSeek(item.atSec) },
-                    modifier = Modifier.semantics { contentDescription = label },
-                    tone = ButtonTone.QUIET,
-                    enabled = seekable,
-                    monospace = true,
-                    compact = true,
-                    tight = true,
-                )
+                // The time only moves the playhead, as the transcript's does (2026-10-28): playing or paused stays as it
+                // was. An answer's time still plays. A time it cannot reach is only words, whose click is the row's.
+                layout?.takeIf { seekable }?.let { lines ->
+                    val label = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((item.atSec * 1000).toLong())]
+                    CitationBoxes(
+                        citationTargets(lines, 0, text.length - stamp.length, text.length),
+                        label = { label },
+                        onPressed = { pressed = it != null },
+                        onPlay = { onSeek(item.atSec) },
+                        keys = true,
+                    )
+                }
             }
             menuAt?.let { at ->
                 // A point of the window, not of the reading order: placed from the left whatever the language.
@@ -255,13 +258,23 @@ private fun NoteLines(item: NoteItem, linesAround: suspend (Double) -> List<Note
 }
 
 /**
- * A note as its row says it: the text, the owner after a dash, and the deadline after that, quieter — the text and the
- * owner on [tint] where an answer changed it (docs/09 "Ask").
+ * A note as its row says it: the text, the owner after a dash, the deadline after that, quieter, and last its time
+ * [stamp] in [monospace] and [time] after a no-break space — the text and the owner on [tint] where an answer changed it
+ * (docs/09 "Ask").
  */
-internal fun noteText(item: NoteItem, muted: Color, tint: Color? = null): AnnotatedString = buildAnnotatedString {
-    val words = item.text + item.owner?.let { " — $it" }.orEmpty()
+internal fun noteText(
+    item: NoteItem,
+    stamp: String,
+    muted: Color,
+    monospace: FontFamily? = null,
+    tint: Color? = null,
+    time: Color = muted,
+): AnnotatedString = buildAnnotatedString {
+    val words = item.text + item.rowOwner
     if (tint != null) withStyle(SpanStyle(background = tint)) { append(words) } else append(words)
-    item.due?.let { withStyle(SpanStyle(color = muted)) { append(" · $it") } }
+    withStyle(SpanStyle(color = muted)) { append(item.rowDue) }
+    append('\u00A0')
+    withStyle(SpanStyle(fontFamily = monospace, color = time)) { append(stamp) }
 }
 
 /** [text] on [tint] whole: the overview an answer rewrote (docs/09 "Ask"). */

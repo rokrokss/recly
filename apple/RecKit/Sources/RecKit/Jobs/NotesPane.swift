@@ -164,7 +164,7 @@ struct CitedText: View {
                 selectable(marked(runs, playable: playable))
                     .accessibilitySortPriority(1)
                     .overlayPreferenceValue(Text.LayoutKey.self) { layouts in
-                        CitationTargets(layouts: layouts, playable: playable) { onSeek?($0) }
+                        CitationTargets(layouts: layouts, playable: playable, label: { ChatGptText.playFrom($0.text) }) { onSeek?($0) }
                     }
                     .accessibilityElement(children: .contain)
             } else {
@@ -253,7 +253,7 @@ struct CitedText: View {
 }
 
 /// Which of a [CitedText]'s runs a stretch of its laid-out text is.
-private struct CitationMark: TextAttribute {
+struct CitationMark: TextAttribute {
     let run: Int
 }
 
@@ -298,12 +298,13 @@ struct CitationTarget: Equatable {
 }
 
 /// The targets over a [CitedText] (iOS 18 / macOS 15), placed by the text's layout. One layer takes a tap or a
-/// click anywhere in a target and plays what [CitationTarget.hit] picks; each citation is its own `Play from`
+/// click anywhere in a target and plays what [CitationTarget.hit] picks; each citation is its own [label]
 /// button for a screen reader. Nothing here draws.
 @available(iOS 18, macOS 15, *)
-private struct CitationTargets: View {
+struct CitationTargets: View {
     let layouts: Text.LayoutKey.Value
     let playable: [CitedText.Playable]
+    let label: (CitedText.Playable) -> String
     let onSeek: (Double) -> Void
 
     var body: some View {
@@ -327,7 +328,7 @@ private struct CitationTargets: View {
                             .frame(width: target.area.width, height: target.area.height)
                             .position(x: target.area.midX, y: target.area.midY)
                             .accessibilityElement()
-                            .accessibilityLabel(Text(verbatim: ChatGptText.playFrom(citation.text)))
+                            .accessibilityLabel(Text(verbatim: label(citation)))
                             .accessibilityAddTraits(.isButton)
                             .accessibilityAction { onSeek(citation.atSec) }
                     }

@@ -517,8 +517,9 @@ class Notes internal constructor(
         } else {
             emptyMap()
         }
-        val items = file.items
-            .sortedWith(compareByDescending<StoredNote> { it.evidence.atSec }.thenByDescending { it.createdAt })
+        // Final notes as the pass wrote them, to read through; running ones newest first, the new one on top (docs/09 "Notes view").
+        val ordered = if (file.isFinal) file.items else file.items.sortedWith(compareByDescending<StoredNote> { it.evidence.atSec }.thenByDescending { it.createdAt })
+        val items = ordered
             .map { note ->
                 NoteItem(
                     id = note.id, kind = note.kind, text = note.shown,

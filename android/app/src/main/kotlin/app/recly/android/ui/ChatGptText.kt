@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -43,8 +42,8 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import app.recly.android.R
 import app.recly.android.core.CoreMessages
 import app.recly.android.core.coreMessage
@@ -267,12 +266,9 @@ internal fun ChatGptFailure(reason: String, @StringRes generic: Int, onRetry: ()
 
 /**
  * docs/09 "AI view": an answer's text with every citation in it a way to play from its time —
- * the citation in monospace and the accent, with no underline (a dotted one is a web page). Each citation is a target
- * on every line it sits on, its glyphs grown to at least [MinTouch] each way; where two targets overlap — a citation
- * on each of two lines — a tap plays the one whose glyphs are nearest it ([citationAt], the iPhone and Mac's rule).
- * The taps are read by one layer over the text that takes only a tap inside a target, so the text stays one
- * selectable text and a long press anywhere selects as before. A citation the player cannot reach now ([canSeek]) is
- * drawn muted and is no target. For a screen reader each citation is its own `Play from {time}` button.
+ * the citation in monospace and the accent, with no underline (a dotted one is a web page). A citation the player
+ * cannot reach now ([canSeek]) is drawn muted and is no target ([TargetedText]); for a screen reader each one it can
+ * reach is its own `Play from {time}` button.
  *
  * The words take their direction from themselves: an English answer in an Arabic app still reads left to right.
  * [padding] is inside the tap layer, so a target reaches into it.
@@ -294,14 +290,48 @@ internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Doub
             }
         }
     }
-    var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
+    TargetedText(
+        styled,
+        runs,
+        canSeek,
+        onSeek,
+        label = { stringResource(R.string.citation_play_from, citationTime(text, it)) },
+        modifier = modifier,
+        horizontal = padding,
+        vertical = padding,
+    )
+}
+
+/**
+ * [styled] with its [runs]' citations a way to [onSeek] their times. Each is a target on every line it sits on, its glyphs
+ * grown to at least [MinTouch] each way; where two targets overlap — a citation on each of two lines — a tap plays the
+ * one whose glyphs are nearest it ([citationAt], the iPhone and Mac's rule). The taps are read by one layer over the
+ * text that takes only a tap inside a target, so the text stays one text, a long press anywhere selects as before and
+ * a tap anywhere else is whatever's around it. A citation not [canSeek] is no target. For a screen reader each target
+ * is its own [label] button. [horizontal] and [vertical] are the text's padding, inside the tap layer, so a target
+ * reaches into it.
+ */
+@Composable
+internal fun TargetedText(
+    styled: AnnotatedString,
+    runs: List<TextRun>,
+    canSeek: (Double) -> Boolean,
+    onSeek: (Double) -> Unit,
+    label: @Composable (SummaryCitation) -> String,
+    modifier: Modifier = Modifier,
+    horizontal: Dp = Space.m,
+    vertical: Dp = Space.m,
+) {
+    val palette = blueprint
+    var layout by remember(styled.text) { mutableStateOf<TextLayoutResult?>(null) }
     val density = LocalDensity.current
     val reach = with(density) { MinTouch.toPx() }
-    val inset = with(density) { padding.toPx() }
-    // In the tap layer's own coordinates: the text sits [padding] in from its top-left corner whatever the direction.
+    val insetX = with(density) { horizontal.toPx() }
+    val insetY = with(density) { vertical.toPx() }
+    // In the tap layer's own coordinates: the text sits inset from its top-left corner whatever the direction.
     val targets = layout?.let { lines -> citationTargets(lines, runs) }.orEmpty()
         .filter { target -> runs[target.run].citation?.let { canSeek(it.atSec) } == true }
-        .map { it.copy(glyphs = it.glyphs.translate(inset, inset)) }
+        .map { it.copy(glyphs = it.glyphs.translate(insetX, insetY)) }
     val play by rememberUpdatedState { target: CitationTarget -> runs[target.run].citation?.let { onSeek(it.atSec) } }
     Box(
         modifier.pointerInput(targets, reach) {
@@ -324,23 +354,27 @@ internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Doub
             }
         },
     ) {
-        Text(styled, Modifier.fillMaxWidth().padding(padding), style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+        Text(styled, Modifier.fillMaxWidth().padding(horizontal = horizontal, vertical = vertical), style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
             color = palette.text, onTextLayout = { layout = it })
         // A citation the layout cut over two lines is one button, on its first line. Placed by the layout's own
         // left-to-right coordinates, so a right-to-left page does not mirror it away from its citation.
         targets.distinctBy { it.run }.forEach { target ->
             val cited = runs[target.run].citation ?: return@forEach
             val area = target.area(reach)
-            val label = stringResource(R.string.citation_play_from, citationTime(text, cited))
+            val named = label(cited)
             Box(
                 Modifier
                     .align(AbsoluteAlignment.TopLeft)
-                    .absoluteOffset { IntOffset(area.left.roundToInt(), area.top.roundToInt()) }
-                    .size(with(density) { area.width.toDp() }, with(density) { area.height.toDp() })
-                    .semantics {
-                        contentDescription = label
+                    // Over the words and taking no room: a one-line row stays as tall as its words.
+                    .layout { measurable, _ ->
+                        val box = measurable.measure(Constraints.fixed(area.width.roundToInt(), area.height.roundToInt()))
+                        layout(0, 0) { box.place(area.left.roundToInt(), area.top.roundToInt()) }
+                    }
+                    // A node of its own, or a row that opens on a tap would take it in.
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = named
                         role = Role.Button
-                        onClick(label) { onSeek(cited.atSec); true }
+                        onClick(named) { onSeek(cited.atSec); true }
                     },
             )
         }

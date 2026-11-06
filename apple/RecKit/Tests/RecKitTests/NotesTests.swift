@@ -29,7 +29,7 @@ final class NoteGroupsTests: XCTestCase {
         let groups = NoteGroups.of(notes)
         XCTAssertEqual(groups.map(\.title), ["Decisions", "To-dos", "Questions"])
         XCTAssertEqual(groups.map(\.kind), [.decision, .todo, .question])
-        XCTAssertEqual(groups[1].items.map(\.id), ["t1", "t2"], "the core's order, newest first, is kept")
+        XCTAssertEqual(groups[1].items.map(\.id), ["t1", "t2"], "the core's order is kept")
     }
 
     func testAGroupWithNoItemsIsNotThere() {
@@ -38,9 +38,9 @@ final class NoteGroupsTests: XCTestCase {
         XCTAssertFalse(NoteGroups.isEmpty(notes, showsOverview: false))
     }
 
-    /// docs/09 "Notes view": Key points first, then Decisions · To-dos · Questions, then the user's sections under their
+    /// docs/09 "Notes view": Decisions · To-dos · Key points · Questions, then the user's sections under their
     /// own names in the order the notes were made with — an empty one gone like any group.
-    func testKeyPointsLeadAndTheUsersSectionsFollowUnderTheirNames() {
+    func testDecisionsLeadAndTheUsersSectionsFollowUnderTheirNames() {
         let notes = Self.notes(
             points: [Self.item("p1", .point)],
             decisions: [Self.item("d1", .decision)],
@@ -52,7 +52,7 @@ final class NoteGroupsTests: XCTestCase {
             ]
         )
         let groups = NoteGroups.of(notes)
-        XCTAssertEqual(groups.map(\.title), ["Key points", "Decisions", "Questions", "Risks", "Next steps"])
+        XCTAssertEqual(groups.map(\.title), ["Decisions", "Key points", "Questions", "Risks", "Next steps"])
         XCTAssertEqual(groups.suffix(2).map(\.id), ["section-s1", "section-s3"])
         XCTAssertEqual(Set(groups.map(\.id)).count, groups.count, "each group is its own in a list")
         XCTAssertEqual(groups[3].items.map(\.id), ["r1"])
@@ -82,8 +82,8 @@ final class NoteGroupsTests: XCTestCase {
             todos: [Self.item("t1", .todo)],
             names: NoteNames(points: nil, decisions: "Agreed", todos: nil, questions: "Unused")
         )
-        XCTAssertEqual(NoteGroups.of(notes).map(\.title), ["Key points", "Agreed", "To-dos"])
-        XCTAssertEqual(NoteGroups.of(notes).map(\.kind), [.point, .decision, .todo], "a name does not change which group it is")
+        XCTAssertEqual(NoteGroups.of(notes).map(\.title), ["Agreed", "To-dos", "Key points"])
+        XCTAssertEqual(NoteGroups.of(notes).map(\.kind), [.decision, .todo, .point], "a name does not change which group it is")
     }
 
     /// docs/08 "Organizing" — "Copy and share": the headings the core writes the notes' text under, in the app's
@@ -119,8 +119,9 @@ final class NoteGroupsTests: XCTestCase {
 
     func testAnOwnerFollowsTheTextAfterADashAndTheDueIsItsOwn() {
         let owned = Self.item("t1", .todo, text: "Send the quote", owner: "Minji", due: "Friday")
-        XCTAssertEqual(NoteGroups.text(owned), "Send the quote — Minji")
+        XCTAssertEqual(NoteGroups.text(owned), "Send the quote —\u{00A0}Minji", "a line may break before the dash, not after it")
         XCTAssertEqual(NoteGroups.due(owned), "Friday")
+        XCTAssertEqual(owned.rowDue, "\u{00A0}·\u{00A0}Friday", "held to the owner")
 
         let bare = Self.item("t2", .todo, text: "Book the room", owner: " ", due: nil)
         XCTAssertEqual(NoteGroups.text(bare), "Book the room")
@@ -378,7 +379,7 @@ final class RecordingNotesTests: XCTestCase {
         XCTAssertEqual(NoteGroups.overview(model.notes, shown: true), "The launch moved to Friday.")
         XCTAssertEqual(NoteGroups.of(model.notes).map(\.title), ["Decisions", "To-dos"])
         let todo = try XCTUnwrap(model.notes?.todos.first)
-        XCTAssertEqual(NoteGroups.text(todo), "Send the release notes — Minji", "the owner comes resolved to the name given")
+        XCTAssertEqual(NoteGroups.text(todo), "Send the release notes —\u{00A0}Minji", "the owner comes resolved to the name given")
         XCTAssertEqual(NoteGroups.due(todo), "Thursday")
 
         let lines = await model.noteLines(atSec: todo.atSec)

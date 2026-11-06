@@ -72,7 +72,7 @@ type memoDoc struct {
 // builtIns are the built-in groups in the app's order, with the app's English names, which head
 // a group the user did not rename (docs/recly.md §8 "Organizing" — Settings).
 var builtIns = []struct{ kind, name string }{
-	{"point", "Key points"}, {"decision", "Decisions"}, {"todo", "To-dos"}, {"question", "Questions"},
+	{"decision", "Decisions"}, {"todo", "To-dos"}, {"point", "Key points"}, {"question", "Questions"},
 }
 
 // parseNotes reads a summary file; one that does not parse, still being written, counts as absent.

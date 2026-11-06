@@ -1,7 +1,9 @@
 package app.recly.windows.ui
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
@@ -11,9 +13,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -32,6 +40,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.ui.component.focusRing
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -79,7 +88,6 @@ internal fun CitedText(
         }
     }
     var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
-    val reach = with(LocalDensity.current) { MinTouch.toPx() }
     Box {
         SelectionContainer {
             Text(
@@ -95,35 +103,70 @@ internal fun CitedText(
         val targets = remember(lines, playable) {
             runs.indices.filter { playable[it] }.flatMap { index -> citationTargets(lines, index, starts[index], starts[index + 1]) }
         }
-        targets.forEach { target ->
-            val area = target.area(reach)
-            val label = strings[Str.SUMMARY_PLAY_FROM, runs[target.run].time!!]
-            val play = { hit: CitationTarget? -> hit?.let { runs[it.run].atSec }?.let(onPlay) }
-            Box(
-                Modifier
-                    // Over the words and taking no room: the lines keep their height.
-                    .layout { measurable, _ ->
-                        val box = measurable.measure(Constraints.fixed(area.width.roundToInt(), area.height.roundToInt()))
-                        layout(0, 0) { box.place(area.left.roundToInt(), area.top.roundToInt()) }
-                    }
-                    .pointerHoverIcon(PointerIcon.Hand)
-                    .pointerInput(targets) {
-                        detectTapGestures(
-                            onPress = { at ->
-                                pressed = citationHit(at + area.topLeft, targets, reach)?.run
-                                tryAwaitRelease()
-                                pressed = null
-                            },
-                            onTap = { at -> play(citationHit(at + area.topLeft, targets, reach)) },
-                        )
-                    }
-                    .semantics {
-                        contentDescription = label
-                        role = Role.Button
-                        onClick { play(target); true }
+        CitationBoxes(
+            targets,
+            label = { strings[Str.SUMMARY_PLAY_FROM, runs[it].time!!] },
+            onPressed = { pressed = it },
+            onPlay = { run -> runs[run].atSec?.let(onPlay) },
+        )
+    }
+}
+
+/**
+ * The invisible boxes over [targets], laid over the text in this box and taking no room. A press in one plays the run
+ * [citationHit] picks; each is also a screen reader's [label] button, and with [keys] a stop for Tab that Enter or Space plays.
+ */
+@Composable
+internal fun BoxScope.CitationBoxes(
+    targets: List<CitationTarget>,
+    label: (Int) -> String,
+    onPressed: (Int?) -> Unit,
+    onPlay: (Int) -> Unit,
+    keys: Boolean = false,
+) {
+    val reach = with(LocalDensity.current) { MinTouch.toPx() }
+    targets.forEach { target ->
+        val area = target.area(reach)
+        val named = label(target.run)
+        Box(
+            Modifier
+                // From the text's own left, whatever the page's direction: the layout's coordinates are.
+                .align(AbsoluteAlignment.TopLeft)
+                // Over the words and taking no room: the lines keep their height.
+                .layout { measurable, _ ->
+                    val box = measurable.measure(Constraints.fixed(area.width.roundToInt(), area.height.roundToInt()))
+                    layout(0, 0) { box.place(area.left.roundToInt(), area.top.roundToInt()) }
+                }
+                .pointerHoverIcon(PointerIcon.Hand)
+                .pointerInput(targets) {
+                    detectTapGestures(
+                        onPress = { at ->
+                            onPressed(citationHit(at + area.topLeft, targets, reach)?.run)
+                            tryAwaitRelease()
+                            onPressed(null)
+                        },
+                        onTap = { at -> citationHit(at + area.topLeft, targets, reach)?.let { onPlay(it.run) } },
+                    )
+                }
+                // A node of its own, or a row that opens on a click would take it in.
+                .semantics(mergeDescendants = true) {
+                    contentDescription = named
+                    role = Role.Button
+                    onClick { onPlay(target.run); true }
+                }
+                .then(
+                    if (!keys) {
+                        Modifier
+                    } else {
+                        Modifier
+                            .onKeyEvent { event ->
+                                (event.type == KeyEventType.KeyDown && event.key in PLAY_KEYS).also { if (it) onPlay(target.run) }
+                            }
+                            .focusRing()
+                            .focusable()
                     },
-            )
-        }
+                ),
+        )
     }
 }
 
@@ -156,7 +199,7 @@ internal fun citationHit(point: Offset, targets: List<CitationTarget>, reach: Fl
  * and the time's monospace face is not the line's sans one: centred on it, a target reached 20 above the line and 23
  * below on Windows (2026-10-27, Consolas in Segoe UI). The line is the same box whatever the two faces are.
  */
-private fun citationTargets(layout: TextLayoutResult, run: Int, start: Int, end: Int): List<CitationTarget> =
+internal fun citationTargets(layout: TextLayoutResult, run: Int, start: Int, end: Int): List<CitationTarget> =
     (start until end).groupBy(layout::getLineForOffset).map { (line, offsets) ->
         val characters = offsets.map(layout::getBoundingBox)
         CitationTarget(
@@ -166,4 +209,6 @@ private fun citationTargets(layout: TextLayoutResult, run: Int, start: Int, end:
     }
 
 /** Pressed, a time fades as a text link does. */
-private const val PRESSED_ALPHA = 0.6f
+internal const val PRESSED_ALPHA = 0.6f
+
+private val PLAY_KEYS = setOf(Key.Enter, Key.NumPadEnter, Key.Spacebar)

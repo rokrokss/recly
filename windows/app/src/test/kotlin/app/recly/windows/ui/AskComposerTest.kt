@@ -110,11 +110,11 @@ class AskComposerTest {
     @Test
     fun `the summary tints the words an answer changed, and not the deadline`() {
         val item = NoteItem("t1", NoteKind.TODO, "Send the quote", "Minji", "Friday", 75.0, "", provisional = false)
-        val tinted = noteText(item, Color.Gray, Color.Red)
-        assertEquals("Send the quote — Minji · Friday", tinted.text)
+        val tinted = noteText(item, "01:15", Color.Gray, tint = Color.Red)
+        assertEquals("Send the quote —\u00A0Minji\u00A0·\u00A0Friday\u00A001:15", tinted.text)
         val background = tinted.spanStyles.single { it.item.background == Color.Red }
-        assertEquals(0 to "Send the quote — Minji".length, background.start to background.end)
-        assertTrue(noteText(item, Color.Gray).spanStyles.none { it.item.background != Color.Unspecified })
+        assertEquals(0 to "Send the quote —\u00A0Minji".length, background.start to background.end)
+        assertTrue(noteText(item, "01:15", Color.Gray).spanStyles.none { it.item.background != Color.Unspecified })
     }
 
     @Test

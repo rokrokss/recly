@@ -66,7 +66,7 @@ class NotesBlockTest {
         val risk = item("r", NoteKind.SECTION).copy(section = "s1")
 
         assertEquals(
-            listOf("Key points" to listOf(point), "Decisions" to listOf(decision), "Questions" to listOf(question), "Risks" to listOf(risk)),
+            listOf("Decisions" to listOf(decision), "Key points" to listOf(point), "Questions" to listOf(question), "Risks" to listOf(risk)),
             noteGroups(
                 notes(
                     points = listOf(point),
@@ -141,11 +141,12 @@ class NotesBlockTest {
     }
 
     @Test
-    fun `a row says the text, then its owner, then its deadline`() {
-        assertEquals("Send the quote", noteText(item("a", NoteKind.TODO), Color.Gray).text)
-        assertEquals("Send the quote — Minji", noteText(item("a", NoteKind.TODO, owner = "Minji"), Color.Gray).text)
-        assertEquals("Send the quote — Minji · Friday", noteText(item("a", NoteKind.TODO, owner = "Minji", due = "Friday"), Color.Gray).text)
-        assertEquals("Send the quote · Friday", noteText(item("a", NoteKind.TODO, due = "Friday"), Color.Gray).text)
+    fun `a row says the text, then its owner, then its deadline, then its time`() {
+        fun text(owner: String? = null, due: String? = null) = noteText(item("a", NoteKind.TODO, owner = owner, due = due), "01:15", Color.Gray).text
+        assertEquals("Send the quote\u00A001:15", text())
+        assertEquals("Send the quote —\u00A0Minji\u00A001:15", text(owner = "Minji"))
+        assertEquals("Send the quote —\u00A0Minji\u00A0·\u00A0Friday\u00A001:15", text(owner = "Minji", due = "Friday"))
+        assertEquals("Send the quote ·\u00A0Friday\u00A001:15", text(due = "Friday"))
     }
 
     @Test
@@ -232,22 +233,33 @@ class NotesBlockTest {
             click(Offset(40f, ROW_MIDDLE))
             assertEquals(2, toggles)
             assertFalse(expanded)
-            // The time at the row's end seeks, and is not the row's click.
+            // Past the end of the sentence, nothing to seek: the row's click.
             click(Offset(WIDTH - 6f, ROW_MIDDLE))
+            assertEquals(3, toggles)
+            assertEquals(emptyList(), seeks)
+            click(Offset(WIDTH - 6f, ROW_MIDDLE))
+            // The time follows the words: found as a press finds it, it seeks and is not the row's click.
+            val time = (WIDTH - 6 downTo 40 step 4).first { x ->
+                click(Offset(x.toFloat(), ROW_MIDDLE))
+                seeks.isNotEmpty()
+            }.toFloat()
             assertEquals(listOf(75.0), seeks)
-            // Its target is the touch minimum though its box is the status badge's: a press above the box still seeks.
-            click(Offset(WIDTH - 6f, ROW_MIDDLE - 18f))
+            val before = toggles
+            // Its target is the touch minimum though the row is shorter: a press above the row's words still seeks.
+            click(Offset(time - 8f, ROW_MIDDLE - 18f))
             assertEquals(listOf(75.0, 75.0), seeks)
-            assertEquals(2, toggles)
+            assertEquals(before, toggles)
+            if (expanded) click(Offset(40f, ROW_MIDDLE))
+            val open = toggles
             // A right click: the menu, not the row.
             val at = Offset(60f, ROW_MIDDLE)
             click(at, PointerButton.Secondary)
-            assertEquals(2, toggles, "the right click opened the row")
+            assertEquals(open, toggles, "the right click opened the row")
             assertEquals(emptyList(), deleted)
             // Delete is the menu's one row, hung from the click.
             click(Offset(at.x + 30f, at.y + 22f))
             assertEquals(listOf("n1"), deleted)
-            assertEquals(2, toggles)
+            assertEquals(open, toggles)
         } finally {
             scene.close()
         }

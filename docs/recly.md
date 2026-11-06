@@ -2326,7 +2326,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   up to 1,000 characters, trimmed: the user's own words on how to write the notes ("to-dos grouped by owner", "keep technical terms in
   English"), which every request follows where they do not change the answer's format, the kinds or the evidence rules. `Sections`
   (2026-10-29, the user's decision: the user sees every section the notes are made of, and edits them all): one list (`NoteSection(id,
-  name, description, kind)`) — the built-in groups first, in their order `Key points` · `Decisions` · `To-dos` · `Questions`, then up to
+  name, description, kind)`) — the built-in groups first, in their order `Decisions` · `To-dos` · `Key points` · `Questions`, then up to
   three sections of the user's own. Each has a name (up to 40 characters, one line) and what goes in it (up to 200).
   - A built-in group's id is its kind (`point`, `decision`, `todo`, `question`). An empty name or description is its own: the app's
     words, in the app's language (the `Key points` heading; `Facts, numbers, ideas and conclusions worth remembering.`, `What was agreed or decided.`,
@@ -2412,7 +2412,7 @@ stays as they left it. For anyone not signed in nothing in this section happens.
 - **What the shells read** (`ReclyCore.notes`). `observe(recordingId)` — never failing — gives a `RecordingNotes` that changes as
   items arrive, after a final pass, an edit or a pull, and when a speaker is named: `stage` (`NONE`, `PROVISIONAL`, `FINAL`), `overview`,
   `points`, `decisions`, `todos`, `questions` and `sections` (`NoteSectionItems(id, name, items)`, in the order the notes were made with),
-  each newest first (latest time first); `organizing` while a part or a final pass of it is being worked on here; `failure`, the last
+  final notes in the order the pass wrote them, which an item Ask or a pass adds later follows, and provisional ones newest first (latest time first, 2026-11-06); `organizing` while a part or a final pass of it is being worked on here; `failure`, the last
   `Summarize again` of it that failed here; and `model`, the plan's name for the model they were made with. `get(recordingId)` is the
   same now. A `NoteItem` has `id`, `kind`, `text` (the user's words once edited), `owner`, `due`, `atSec`, `quote`, `provisional` and
   `section`; `owner` comes resolved — the name the user gave that speaker in the transcript, the app's word for `Me` for an unnamed
@@ -2421,8 +2421,8 @@ stays as they left it. For anyone not signed in nothing in this section happens.
   the transcript here" under an item — the recording's transcript once there is one, before that the parts' made while recording,
   since there is no playback while recording (`NoteLine`: `atSec`, `endSec`, `speakerId`, `speakerName`, `me`, `text`,
   `provisional`).
-- **Copy and share** (2026-10-28). `notes.text(recordingId)` is the notes as text — the overview, then `Key points`, `Decisions`,
-  `To-dos`, `Questions` and the user's sections, each a heading over `- ` items with ` — owner`, ` · due` and `[HH:MM:SS]` — for `Copy
+- **Copy and share** (2026-10-28). `notes.text(recordingId)` is the notes as text — the overview, then `Decisions`, `To-dos`,
+  `Key points`, `Questions` and the user's sections, each a heading over `- ` items with ` — owner`, ` · due` and `[HH:MM:SS]` — for `Copy
   all` and Share → `Summary` (§8 "Exports"); the Markdown transcript the share sheet gets carries the same as its own section. The headings
   are the app's: each shell passes its resources' words with `notes.setHeadings(NotesHeadings(…))` at start and whenever the app's
   language changes, as it passes the locale — except a built-in group the user renamed, which is headed by that name
@@ -3330,16 +3330,20 @@ unprompted (trend 1): there is no banner, and no button outside the More menu an
 says provisional or edited: the notes simply change when a pass lands.
 
 - **The detail** (Android phone, iPhone, Mac, Windows). The `Summary` chip's body (§9 "AI view"). The overview comes first (plain
-  text), then the groups in the order `Key points` · `Decisions` · `To-dos` · `Questions` — under the name the user gave a group, if
+  text), then the groups in the order `Decisions` · `To-dos` · `Key points` · `Questions` (2026-11-06, user decision: the Summary is a document to read,
+  so what was settled and what is left to do come first, and its items are not sorted by time) — under the name the user gave a group, if
   they did — then the user's sections under their names, each a section header over its rows, on the page: no table fill and no
   lines between rows, the section headers part the groups (2026-10-31, the iPhone's on both phones). A group with no items is absent, header included; with no overview and no items there is no
   block and no empty state. The `Summarizing…` line or the failure notice stays on top.
-- **A row** is as tall as its words, 16 at the sides and 8 above and below (2026-10-31: at the touch minimum a list of one-line items
-  read double-spaced), its time on the item's first line: `<item> — <owner> · <due>`, the owner (a speaker's given name, never a label) and the due date only when
-  present, the due date muted. At its end the item's time in the recording's time format, as the transcript's quiet monospace time button:
+- **A row** is one sentence, as tall as its words, 16 at the sides and 8 above and below (2026-10-31: at the touch minimum a list of one-line items
+  read double-spaced): `<item> — <owner> · <due> <time>`, the owner (a speaker's given name, never a label) and the due date only when
+  present, the due date muted. Last comes the item's time at the end of the sentence (2026-11-06, user decision; until then a button in a column of its own), in
+  the recording's time format, monospace and muted. No-break spaces hold the owner, the due date and the time together, so they wrap
+  as one block after the item's words and no dash or dot ends a line; with neither, the time holds to the last word (`NoteItem.rowOwner`, `rowDue`).
+  The time is a target over its words, at least the touch minimum each way and taking no room, as an answer's citation is (§9 "AI view"):
   a tap moves the playhead and leaves playing or paused as it was, as the transcript's does (2026-10-28; until then it also played, the
-  citation path), accessibility `Go to 00:12:34`; disabled while the recording records, when its audio is not
-  held, or past the held audio.
+  citation path), accessibility `Go to 00:12:34`, and on Windows a stop for Tab that Enter or Space seeks with. While the recording records, when its audio is not
+  held, or past the held audio it is only words, and a tap on it is the row's.
 - **A tap on the row** opens the `linesAround` lines under it — the speaker's name only when there is one (`Me` for an unnamed me, part
   labels never), then the text — with the reader's accent start-edge bar on the note's own line: the line containing the quote, else the
   one covering its time, else the nearest. One row open at a time; Expand and Collapse are accessibility actions.
@@ -3349,8 +3353,8 @@ says provisional or edited: the notes simply change when a pass lands.
   a `Delete` accessibility action. Desktops: the row's context menu `Delete` (Windows also the menu key and Shift+F10), red — it cannot be
   undone.
 - **The record screen** (phones only). While recording, the groups (no overview, and no key points, which come after Stop) — the user's
-  sections after `Questions` — sit under the live waveform and are hidden while empty;
-  times are plain monospace labels by elapsed time (`MM:SS`, `HH:MM:SS` past an hour); a row opens the same way, on the lines transcribed
+  sections after `Questions` — sit under the live waveform, each newest first, and are hidden while empty;
+  times are plain monospace words by elapsed time (`MM:SS`, `HH:MM:SS` past an hour); a row opens the same way, on the lines transcribed
   while recording; swipe deletes. Idle shows nothing. The Mac popover, the Windows tray popup and both watches show no notes (the memo row aside, §9 "AI view").
 - **Lists.** A job with only its notes left (`StepReport.notesOnly`) reads `Done`: no reason line, no retry or countdown, and it does not disable the detail's transcript edits or fills. A notes step's error is never shown on a row.
 - **Consent.** A Blueprint dialog `Recly summarizes while you record` / `While you're signed in to ChatGPT, Recly sends each recording's

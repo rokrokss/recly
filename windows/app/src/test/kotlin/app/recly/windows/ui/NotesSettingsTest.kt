@@ -34,7 +34,7 @@ import recly.core.notes.NotesPreferences
  */
 class NotesSettingsTest {
 
-    private val defaultNames = listOf("Key points", "Decisions", "To-dos", "Questions")
+    private val defaultNames = listOf("Decisions", "To-dos", "Key points", "Questions")
 
     /** A PC of its own: [window] opens Settings → Notes over it, in the language [strings] is in then. */
     private class Pc(val graph: AppGraph, val scope: CoroutineScope) {
@@ -113,9 +113,9 @@ class NotesSettingsTest {
         notes.setPreferences(NotesPreferences(sections = NoteSection.DEFAULTS + NoteSection("", "Risks", "What could go wrong.")))
         val settings = window()
         until { settings.sections.size == 5 }
-        val (point, decision, todo, question) = settings.sections
-        assertEquals(NoteSection.BUILT_IN, listOf(point, decision, todo, question).map { it.kind })
-        assertEquals(defaultNames, listOf(point, decision, todo, question).map { it.name })
+        val (decision, todo, point, question) = settings.sections
+        assertEquals(NoteSection.BUILT_IN, listOf(decision, todo, point, question).map { it.kind })
+        assertEquals(defaultNames, listOf(decision, todo, point, question).map { it.name })
         assertEquals("What was agreed or decided.", decision.description)
         assertFalse(settings.builtInsChanged)
 
@@ -126,12 +126,12 @@ class NotesSettingsTest {
         // Renamed: saved trimmed; the description it kept is still its own, and so is the untouched one's.
         settings.endSection(decision.key, " Agreed ", decision.description)
         assertTrue(settings.builtInsChanged)
-        until { settings.sections[1].name == "Agreed" }
+        until { settings.sections[0].name == "Agreed" }
         assertEquals(
             listOf(
-                NoteSection.default(NoteKind.POINT),
                 NoteSection("decision", "Agreed", "", NoteKind.DECISION),
                 NoteSection.default(NoteKind.TODO),
+                NoteSection.default(NoteKind.POINT),
                 NoteSection.default(NoteKind.QUESTION),
             ),
             notes.preferences().sections.filter { it.builtIn },
@@ -140,12 +140,12 @@ class NotesSettingsTest {
         // Left without a name: still there, its own name shown again and saved as its own.
         assertEquals("Decisions", settings.endSection(decision.key, "  ", " Things settled ")?.name)
         assertEquals(defaultNames, settings.sections.filter { it.builtIn }.map { it.name })
-        until { settings.sections[1].description == "Things settled" }
-        assertEquals(NoteSection("decision", "", "Things settled", NoteKind.DECISION), notes.preferences().sections[1])
+        until { settings.sections[0].description == "Things settled" }
+        assertEquals(NoteSection("decision", "", "Things settled", NoteKind.DECISION), notes.preferences().sections[0])
 
         // Removed at once.
         settings.removeSection(todo.key)
-        assertEquals(listOf(NoteKind.POINT, NoteKind.DECISION, NoteKind.QUESTION, NoteKind.SECTION), settings.sections.map { it.kind })
+        assertEquals(listOf(NoteKind.DECISION, NoteKind.POINT, NoteKind.QUESTION, NoteKind.SECTION), settings.sections.map { it.kind })
         until { notes.preferences().sections.none { it.kind == NoteKind.TODO } }
         assertTrue(settings.builtInsChanged)
 
@@ -153,7 +153,7 @@ class NotesSettingsTest {
         val risks = own(settings).single()
         settings.restoreSections()
         assertEquals(defaultNames + "Risks", settings.sections.map { it.name })
-        assertEquals("What was agreed or decided.", settings.sections[1].description)
+        assertEquals("What was agreed or decided.", settings.sections[0].description)
         assertEquals(risks, own(settings).single())
         assertFalse(settings.builtInsChanged)
         until { notes.preferences().sections.filter { it.builtIn } == NoteSection.DEFAULTS }
@@ -165,25 +165,25 @@ class NotesSettingsTest {
         val settings = window()
         until { settings.sections.size == 4 }
         // One renamed: the user's words stay as they are in any language.
-        settings.endSection(settings.sections[1].key, "Agreed ", settings.sections[1].description)
-        until { settings.sections[1].name == "Agreed" }
+        settings.endSection(settings.sections[0].key, "Agreed ", settings.sections[0].description)
+        until { settings.sections[0].name == "Agreed" }
 
         val english = strings
         strings = StringTable.of(StringTable.KOREAN)
         settings.languageChanged(english)
-        assertEquals(listOf("핵심", "Agreed", "할 일", "질문"), settings.sections.map { it.name })
-        assertEquals(builtInWords(NoteKind.POINT, strings).second, settings.sections[0].description)
+        assertEquals(listOf("Agreed", "할 일", "핵심", "질문"), settings.sections.map { it.name })
+        assertEquals(builtInWords(NoteKind.POINT, strings).second, settings.sections[2].description)
         assertFalse(settings.sections.any { WORD_JOINER in it.name || WORD_JOINER in it.description }, "no joiner a field would carry on")
 
         // Saved after the switch: the words the fields show are the groups' own, not text of the user's.
-        settings.endSection(settings.sections[0].key, settings.sections[0].name, settings.sections[0].description)
-        settings.endSection(settings.sections[2].key, settings.sections[2].name, " Who does what ")
-        until { settings.sections[2].description == "Who does what" }
+        settings.endSection(settings.sections[2].key, settings.sections[2].name, settings.sections[2].description)
+        settings.endSection(settings.sections[1].key, settings.sections[1].name, " Who does what ")
+        until { settings.sections[1].description == "Who does what" }
         assertEquals(
             listOf(
-                NoteSection.default(NoteKind.POINT),
                 NoteSection("decision", "Agreed", "", NoteKind.DECISION),
                 NoteSection("todo", "", "Who does what", NoteKind.TODO),
+                NoteSection.default(NoteKind.POINT),
                 NoteSection.default(NoteKind.QUESTION),
             ),
             notes.preferences().sections,

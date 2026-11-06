@@ -10,6 +10,17 @@ import recly.core.transcribe.TranscriptWord
 /** docs/08 "Organizing": the text rules, as the long-recording evaluation measured them. */
 class NoteTextTest {
     @Test
+    fun `a row's owner and deadline can only wrap as one block after the item's words`() {
+        fun row(owner: String?, due: String?) = NoteItem("n", NoteKind.TODO, "Send it", owner, due, 0.0, "", provisional = false).let { it.rowOwner + it.rowDue }
+
+        assertEquals("", row(null, null))
+        assertEquals("", row(" ", " "), "blank is none")
+        assertEquals(" —\u00A0Kim\u00A0Minji", row(" Kim Minji ", null))
+        assertEquals(" ·\u00A0next\u00A0Friday", row(null, "next Friday"))
+        assertEquals(" —\u00A0Minji\u00A0·\u00A0Friday", row("Minji", "Friday"))
+    }
+
+    @Test
     fun `ratios are difflib's`() {
         // Values from Python 3: difflib.SequenceMatcher(None, a, b, autojunk=False).ratio().
         assertEquals(0.75, NoteText.ratio("abcd", "bcde"))
