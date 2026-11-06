@@ -315,8 +315,8 @@ gives the `recording` name as the `recordingId`, which `get_transcript` takes as
 - **`get_summary`** separates the AI's words from the user's. `aiSummary` is what Recly's AI wrote
   from the transcript (`{recording}.notes.json`): `overview`, `sections` (`id`, `kind`, `name`,
   `description`, `items`), `model`, `updatedAt`. An item has `text`, `atSec` and `clock` (the time
-  it rests on), `owner` (a speaker's id), `ownerName` and `due` for a to-do, and `editedByUser` when
-  the user changed it. `ownerIsUser: true` marks a to-do of the person who made the recording, the
+  it rests on; neither where no single line carries the item), `owner` (a speaker's id), `ownerName`
+  and `due` for a to-do, and `editedByUser` when the user changed it. `ownerIsUser: true` marks a to-do of the person who made the recording, the
   speaker the transcript marks `me` and the app shows as "Me": the user, not the agent. It comes
   with `ownerName` when that speaker has a name too. `userNotes` (`text`, `updatedAt`) is the notes
   the user wrote in Recly (`{recording}.memo.json`). Each is absent when there is none.
@@ -360,8 +360,8 @@ recly-events mcp --print-config --folder ~/Notes/Recly
 - `search_recordings` (`query`, `limit`): recordings whose title, transcript, AI summary or the
   user's notes contain the query, ignoring case. Each result has `matchedIn` (`title`,
   `transcript`, `summary`, `notes`) and up to 3 `snippets` from each place, each with `in`, `text`,
-  and `atSec` and `clock` for a transcript or summary match; `truncated` when more recordings matched
-  than fit in 24,000 bytes.
+  and `atSec` and `clock` for a transcript match or a summary item that has a time; `truncated` when
+  more recordings matched than fit in 24,000 bytes.
 - `get_audio_files` (`recordingId`): the absolute paths of its `.m4a` parts on this computer.
 - Summaries and notes are in iCloud, not in a local folder: Recly keeps them on the device there
   (`docs/recly.md` §8 "Organizing" and "Memo"), so `get_summary` answers without them.
