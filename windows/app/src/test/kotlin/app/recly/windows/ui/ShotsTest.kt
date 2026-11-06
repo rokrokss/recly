@@ -552,7 +552,7 @@ class ShotsTest {
         const val FRAMES = 12
         const val FRAME_MS = 60L
         // Where the controls are in the 1000×680 window, in dp — read off the plain shot.
-        val EXPORT = Offset(890f, 38f)
+        val EXPORT = Offset(910f, 38f)
         val MORE = Offset(966f, 38f)
         val SPEED = Offset(560f, 150f)
         val BADGE = Offset(420f, 215f)

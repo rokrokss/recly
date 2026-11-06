@@ -2979,8 +2979,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - **Import**: phones put an `Import` icon button at the end of the list header (accessibility `Import audio`), which opens the system picker for audio
      and video; the share sheet reaches it too (Android lists `Recly` for audio and video, iPhone has the share extension `Import to Recly`, which only saves the file into the app group's inbox, says `Open Recly to import.` and closes — it does
      not open the app; Recly imports the inbox when it next opens or becomes active). The Mac's
-     Details list header has `Import audio…` (⌘I — a menu-bar app has no File menu) and takes dropped files; Windows has `Import audio…` in the Details list
-     header and the tray menu, and takes files dropped on the window. The recording appears at once as a ledger row in `IMPORTING` (accent + the square
+     Details list header has `Import audio…` (⌘I — a menu-bar app has no File menu) and takes dropped files; Windows has it as an icon button in the Details list
+     header (`Import audio…` on hover) and in the tray menu, and takes files dropped on the window. The recording appears at once as a ledger row in `IMPORTING` (accent + the square
      loader), titled with the file name without its extension, and then goes on like any recording — no title dialog. A failure says
      `Could not import this file` with the core's reason, on the row or, without one, as a notice. Several files are imported one after another, each
      its own row.
@@ -2993,7 +2993,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      bar only from search; on the desktops ⌘F / Ctrl+F also opens it for the open transcript, with a query field of its own (2026-10-15, both desktops), or else
      focuses the list's field. No results: the centred
      `No recordings match` over the dimmed `Search looks in titles and in transcripts on this device.`
-   - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
+   - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: `Export…` and `More`, each named on hover; the Mac
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in two groups parted by a hairline (2026-10-10, the same
      on every shell): `Rename` · `Edit transcript` · `Transcribe again` · `Version history` (2026-11-04, §9 "Transcript reader"); `Summarize` (`Summarize again` once there are notes) · `Edit summary` · `Fill in title` ·
      `Fill in speaker names` (§9 "AI view"; the group is absent where ChatGPT is not offered). Asking about the recording, and changing it

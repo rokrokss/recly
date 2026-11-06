@@ -9,6 +9,8 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import app.recly.windows.ui.component.Glyph
+import app.recly.windows.ui.component.GlyphButton
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.pressCursor
 import kotlinx.coroutines.launch
@@ -345,7 +347,7 @@ private fun Sidebar(
                     waitingWord = { strings[Str.LIST_WAITING, it] },
                     failedWord = { strings[Str.LIST_FAILED, it] },
                 ),
-                trailing = { BlueprintButton(strings[Str.IMPORT_AUDIO], model::chooseImport, tone = ButtonTone.QUIET, enabled = model.ready) },
+                trailing = { GlyphButton(Glyph.IMPORT, strings[Str.IMPORT_AUDIO], model::chooseImport, enabled = model.ready) },
             )
             HairLine()
             // What the last delete or retry had to say, above the list (D9); a click puts it away.

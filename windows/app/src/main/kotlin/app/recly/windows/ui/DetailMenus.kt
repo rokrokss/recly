@@ -47,6 +47,8 @@ import app.recly.windows.ui.component.BlueprintMenuRow
 import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.CompactControl
+import app.recly.windows.ui.component.Glyph
+import app.recly.windows.ui.component.GlyphButton
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SwitchTrack
@@ -132,7 +134,7 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
     val scope = rememberCoroutineScope()
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
     Box {
-        BlueprintButton(if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.EXPORT], { open = true }, tone = ButtonTone.QUIET)
+        GlyphButton(if (copied) Glyph.CHECK else Glyph.EXPORT, strings[if (copied) Str.TRANSCRIPT_COPIED else Str.EXPORT], { open = true })
         val notes = model.chatGpt?.connection != ChatGptConnection.Unavailable
         BlueprintMenu(open, { if (preparing == null) open = false }, end = true, maxHeight = DETAIL_MENU_HEIGHT) { BlueprintMenuColumn {
             EXPORTS.filter { (format) -> format != ExportFormat.NOTES || notes }.forEach { (format, label, kind) ->
@@ -209,14 +211,7 @@ internal fun MoreButton(
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
-        BlueprintButton(
-            MORE_MARK,
-            { open = true },
-            modifier = Modifier.semantics { contentDescription = strings[Str.DETAIL_MORE] },
-            tone = ButtonTone.QUIET,
-            // A mark, not a word (docs/09 "Shape").
-            minWidth = MinTouch,
-        )
+        GlyphButton(Glyph.MORE, strings[Str.DETAIL_MORE], { open = true })
         BlueprintMenu(open, { open = false }, end = true, maxHeight = DETAIL_MENU_HEIGHT) { BlueprintMenuColumn {
             // A take still being written: every item waits for it, and says so (2026-10-10).
             val recording = Str.DETAIL_STILL_RECORDING.takeIf { detail.writing }
@@ -545,9 +540,6 @@ internal fun speedLabel(speed: Float): String =
     (if (speed % 1f == 0f) speed.toInt().toString() else speed.toString().trimEnd('0')) + "×"
 
 internal val SPEEDS = listOf(0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
-
-/** The detail's More button: a mark, with "More" for whoever cannot see it. */
-private const val MORE_MARK = "⋯"
 
 private const val COPIED_MS = 3_000L
 
