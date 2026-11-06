@@ -3347,8 +3347,9 @@ says provisional or edited: the notes simply change when a pass lands.
   held, or past the held audio it is only words.
 - **The words are text to select** (2026-11-06, user decision), the overview's and the rows', as the transcript's are (§9 "Transcript reader"), the time at a
   row's end among them, so a copy says when. A press on the time still moves the playhead; a drag anywhere else selects, on Android after a long press, as
-  the system's text does. Android and Windows select across the rows, and a copy keeps each on its line. The Mac and the iPhone select within one row, or one
-  transcript paragraph, at a time, SwiftUI's selection being per `Text`; `Copy all` takes the whole. A tap on a row does nothing: until 2026-11-06
+  the system's text does. Android and Windows select across the rows, and a copy keeps each on its line. The Mac selects within one row, or one
+  transcript paragraph, at a time, SwiftUI's selection being per `Text`. On the iPhone SwiftUI offers no range: a long press gives the system's `Copy` and
+  `Share` for that whole row or paragraph. `Copy all` takes the whole. A tap on a row does nothing: until 2026-11-06
   it opened the transcript's lines around the item under the row, which the Summary does not need, the time and the `Transcript` chip being the way to them. On Windows a row stays a stop for Tab, for its menu keys.
 - **Delete**, no confirmation, and a deleted item never comes back (the core keeps a tombstone). Phones: swipe the row end-to-start
   (Android `SwipeToDismissBox` past 96; iPhone a leading drag of 88 or more — two touch targets each), uncovering, only while pulled, a danger strip

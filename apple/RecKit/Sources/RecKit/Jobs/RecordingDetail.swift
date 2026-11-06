@@ -2127,7 +2127,7 @@ public struct RecordingDetailView: View {
         GeometryReader { viewport in
             ScrollView {
                 VStack(spacing: 0) {
-                    MemoField(memo: model.memo, agreed: model.notesAgreed, lines: 8...30, focused: $memoFieldFocused, save: model.saveMemo)
+                    MemoField(memo: model.memo, agreed: model.notesAgreed, lines: memoLines(viewport.size.height), focused: $memoFieldFocused, save: model.saveMemo)
                         .padding([.horizontal, .top], Space.m)
                         .onAppear(perform: focusMemoIfAsked)
                         .onChange(of: memoOpensFocused) { focusMemoIfAsked() }
@@ -2144,6 +2144,20 @@ public struct RecordingDetailView: View {
         }
         .id(model.recordingId)
         .accessibilityIdentifier("detail-memo")
+    }
+
+    /// The memo's lines: 8 to 30, and on the iPhone no more than the page shows. Past them the field scrolls its own
+    /// words and keeps the caret in sight, which the page, behind the keyboard, does not do.
+    private func memoLines(_ height: CGFloat) -> ClosedRange<Int> {
+        #if os(iOS)
+        let line = UIFont.systemFont(ofSize: TypeSize.bodySmall * blueprint.fonts.scale).lineHeight
+        // The page's margins and the field's, and room for the line under it when it has one.
+        let room = height - (Space.m + Space.s) * 2 - (model.notesAgreed ? line * 3 : 0)
+        let fit = max(1, Int(room / line))
+        return min(8, fit)...min(30, fit)
+        #else
+        8...30
+        #endif
     }
 
     /// Cancel or Done: straight back to reading when nothing changed, else the question first.

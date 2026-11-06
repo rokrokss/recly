@@ -204,8 +204,13 @@ public struct NotesBlock: View {
         let time = timeText(atSec, seekable: seekable)
         Group {
             if #available(iOS 18, macOS 15, *) {
-                sentence(item, time: seekable ? time.customAttribute(CitationMark(run: 0)) : time)
+                sentence(item, time: time)
                     .accessibilitySortPriority(1)
+                    // An unseen copy carries the mark that places the target: on the words that are selected, a text
+                    // attribute of our own makes the iPhone's Copy fail, its pasteboard being unable to encode it.
+                    .background {
+                        if seekable { styled(said(item) + spaced(time.customAttribute(CitationMark(run: 0)))).hidden() }
+                    }
                     .overlayPreferenceValue(Text.LayoutKey.self) { layouts in
                         CitationTargets(
                             layouts: layouts,
@@ -233,15 +238,24 @@ public struct NotesBlock: View {
     /// The item, its owner after a dash, the deadline after them in the secondary colour, and [time] after a no-break
     /// space. Selectable as the transcript's words are; the time's target lies over them.
     private func sentence(_ item: NoteItem, time: Text?) -> some View {
-        let said = Text(tinted(NoteGroups.text(item), changed.contains(item.id))).foregroundStyle(blueprint.palette.text)
+        styled(time.map { said(item) + spaced($0) } ?? said(item))
+            .textSelection(.enabled)
+            // docs/09 trend 4: the swipe's static alternative.
+            .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Delete"))) { delete(item) }
+    }
+
+    private func said(_ item: NoteItem) -> Text {
+        Text(tinted(NoteGroups.text(item), changed.contains(item.id))).foregroundStyle(blueprint.palette.text)
             + Text(verbatim: item.rowDue).foregroundStyle(blueprint.palette.textMuted)
-        return (time.map { said + Text(verbatim: "\u{00A0}") + $0 } ?? said)
-        .font(blueprint.fonts.bodySmall)
-        .tint(blueprint.palette.textMuted)
-        .textSelection(.enabled)
-        .fixedSize(horizontal: false, vertical: true)
-        // docs/09 trend 4: the swipe's static alternative.
-        .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Delete"))) { delete(item) }
+    }
+
+    private func spaced(_ time: Text) -> Text { Text(verbatim: "\u{00A0}") + time }
+
+    private func styled(_ text: Text) -> some View {
+        text
+            .font(blueprint.fonts.bodySmall)
+            .tint(blueprint.palette.textMuted)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     /// Monospace and muted, a time the recording here can reach also a link: it moves the playhead and leaves playing or

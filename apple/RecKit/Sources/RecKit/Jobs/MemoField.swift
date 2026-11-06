@@ -36,6 +36,9 @@ public struct MemoField: View {
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.text)
                 .fieldBox(focused: focused.wrappedValue, inset: EdgeInsets())
+                // The box's own height, never less: a stack short of room, as the page is with the keyboard up, would
+                // otherwise shrink the box and leave the words running out of its top and bottom.
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Notes")))
                 .accessibilityIdentifier("memo-field")
             if agreed {
