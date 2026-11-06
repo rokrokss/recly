@@ -300,8 +300,8 @@ in):
 The shells have only audio capture, transfer APIs, the scheduler and the UI. **Workflow semantics never live in a shell.**
 
 Every `suspend` entry point exposed to the shells carries `@Throws(Throwable::class)` — Kotlin/Native kills the process when
-an undeclared exception escapes an exported suspend function. A flow the Apple shells iterate never fails, for the same reason — a
-Swift `for await` over a flow that throws ends the app. A read that fails emits nothing, or what the flow says a failed read is
+an undeclared exception escapes an exported suspend function. A flow the shells observe never fails, for the same reason — a
+Swift `for await` over a flow that throws ends the app, and so does a throw in an Android `viewModelScope`. A read that fails emits nothing, or what the flow says a failed read is
 (`UNAVAILABLE` for `observeResults`, no grants for `transferConsents.observe`), and the next change reads again.
 
 ---
@@ -5057,7 +5057,7 @@ the basis of proposal A.
 ### Instrumentation
 
 All clients use the same log event names: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `rec.observe.read.failed`, `xfer.part`,
-`xfer.ack`, `job.step.start/ok/fail`, `job.observe.read.failed`, `privacy.consents.read.failed`, `sync.pull/push/merge`, `secrets.*`, `detect.*`, `chatgpt.*` (`chatgpt.signin`,
+`xfer.ack`, `job.step.start/ok/fail`, `job.observe.read.failed`, `privacy.consents.read.failed`, `processing.observe.read.failed`, `sync.pull/push/merge`, `secrets.*`, `detect.*`, `chatgpt.*` (`chatgpt.signin`,
 `chatgpt.signout`, `chatgpt.failed`, `chatgpt.refresh.refused` (with OpenAI's `error` code and `afterExpirySec`, never a token),
 `chatgpt.rejected`, `chatgpt.revoke.failed`), `summary.*` (`summary.ask.start`, `summary.ask.done`, `summary.ask.failed`,
 `summary.preferences.read.failed`, and `summary.fill.*`, §8 "Titles and speaker names"), `organize.*` (§8 "Organizing" — among them `organize.edited`,

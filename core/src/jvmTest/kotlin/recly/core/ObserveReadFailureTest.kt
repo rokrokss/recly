@@ -17,11 +17,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import recly.core.notes.NotesStage
+import recly.core.processing.ProcessingSettingsState
 import recly.core.testing.CoreFixture
 import recly.core.transcribe.TranscriptAvailability
 
 /**
- * docs/01: a Swift `for await` over a flow that throws ends the app, so the flows the Apple shells iterate survive a read
+ * docs/01: a Swift `for await` over a flow that throws ends the app, so the flows the shells observe survive a read
  * that fails and read again at the next change. A table renamed away is the failure; renamed back, the next write wakes it.
  */
 class ObserveReadFailureTest {
@@ -124,6 +125,21 @@ class ObserveReadFailureTest {
             f.driver.notifyListeners("recording")
             assertEquals(TranscriptAvailability.UNAVAILABLE, results.next().availability)
         } finally { results.stop() }
+    }
+
+    @Test
+    fun `settings that will not be read emit nothing, not that there are none, and the next change reads again`() = runBlocking {
+        f.core.processingSettings.initialize()
+        away("sync_state")
+        val settings = watch(f.core.processingSettings.observe())
+        try {
+            settings.nothing()
+            assertTrue("processing.observe.read.failed" in f.logger.events)
+
+            back("sync_state")
+            f.driver.notifyListeners("sync_state")
+            assertTrue(settings.next() is ProcessingSettingsState.Ready)
+        } finally { settings.stop() }
     }
 
     @Test

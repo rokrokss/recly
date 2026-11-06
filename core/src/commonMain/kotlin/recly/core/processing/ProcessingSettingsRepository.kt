@@ -3,16 +3,17 @@
 package recly.core.processing
 
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToOneOrNull
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import recly.core.db.RecDatabase
 import recly.core.model.isoUtc
 import recly.core.platform.CoreDeps
+import recly.core.platform.Logger
 import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.transcribe.installed
@@ -126,8 +127,20 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
         (readStored() as? ProcessingSettingsState.Ready)?.document?.let(ProcessingSettingsParser::serialize)
     }
 
-    fun observe(): Flow<ProcessingSettingsState> = queries.syncGet(KEY).asFlow().mapToOneOrNull(deps.io)
-        .map(::decode).distinctUntilChanged()
+    /**
+     * Never fails: a read that fails emits nothing — not [ProcessingSettingsState.NotInitialized], which says there
+     * are no settings — and the next change reads again.
+     */
+    fun observe(): Flow<ProcessingSettingsState> = queries.syncGet(KEY).asFlow().mapNotNull {
+        try {
+            decode(withContext(deps.io) { it.executeAsOneOrNull() })
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            deps.logger.log(Logger.Level.WARN, "processing.observe.read.failed", error = e)
+            null
+        }
+    }.distinctUntilChanged()
 
     /** Freeze preferences at capture start — a watch recording's first in-progress meta — or at verified watch receipt. Never replace a snapshot. */
     @Throws(Throwable::class)
