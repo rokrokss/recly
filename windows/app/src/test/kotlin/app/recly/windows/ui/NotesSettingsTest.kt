@@ -65,7 +65,7 @@ class NotesSettingsTest {
         // What this PC kept is read when the window opens, and only then is anything typed.
         notes.setPreferences(NotesPreferences(instructions = "Long answers."))
         val settings = window()
-        until { settings.notesInstructions == "Long answers." }
+        until { settings.notesInstructions == "Long answers." && settings.sections.isNotEmpty() }
         assertEquals(defaultNames, settings.sections.map { it.name })
         settings.saveNotesInstructions("  Short lines.  ")
         until { notes.preferences().instructions == "Short lines." && settings.notesInstructions == "Short lines." }
