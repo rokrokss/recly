@@ -7,6 +7,8 @@ import okio.Path
  * chunk uploads to a background `URLSession` without the core knowing.
  */
 interface Transport {
+    /** Declared for the phone's transport, which is Swift and calls back into the Kotlin one (docs/01). */
+    @Throws(Throwable::class)
     suspend fun execute(plan: HttpPlan): HttpResult
 }
 

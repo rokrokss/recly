@@ -300,7 +300,9 @@ in):
 The shells have only audio capture, transfer APIs, the scheduler and the UI. **Workflow semantics never live in a shell.**
 
 Every `suspend` entry point exposed to the shells carries `@Throws(Throwable::class)` — Kotlin/Native kills the process when
-an undeclared exception escapes an exported suspend function. A flow the shells observe never fails, for the same reason — a
+an undeclared exception escapes an exported suspend function, even under a Swift `try?`. That includes a member of a core
+interface that Swift calls: `Transport.execute`, which the phone's `BackgroundTransport` calls back into, so a request that
+fails reaches the core instead of ending the app. A flow the shells observe never fails, for the same reason — a
 Swift `for await` over a flow that throws ends the app, and so does a throw in an Android `viewModelScope`. A read that fails emits nothing, or what the flow says a failed read is
 (`UNAVAILABLE` for `observeResults`, no grants for `transferConsents.observe`), and the next change reads again.
 

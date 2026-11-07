@@ -25,7 +25,8 @@ interface UbiquityContainer {
 
     suspend fun isDirectory(path: String): Boolean
 
-    /** Makes [path] and every missing folder above it. */
+    /** Makes [path] and every missing folder above it. Declared because the settings screen calls it from Swift (docs/01). */
+    @Throws(Throwable::class)
     suspend fun makeDirectories(path: String)
 
     /** Copies the local file [source], an absolute path, to [path], replacing what is there. */
