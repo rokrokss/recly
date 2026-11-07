@@ -409,7 +409,9 @@ final class ChatGptSettingsTests: XCTestCase {
     private func bridge() async throws -> CoreBridge {
         try await CoreBridge.make(
             deviceName: "ChatGptSettingsTests", dataDirectory: directory,
-            databaseName: "chatgpt-settings-tests.db", secureStore: InMemorySecureStore()
+            databaseName: "chatgpt-settings-tests.db", secureStore: InMemorySecureStore(),
+            // Not StoreKit's answer: a new simulator's first `Storefront.current` took 76 s, past every wait here.
+            transcriptionPolicy: TranscriptionPolicy(region: nil)
         )
     }
 
