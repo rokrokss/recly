@@ -394,7 +394,10 @@ final class ChatGptSettingsTests: XCTestCase {
     /// docs/08 "Titles and speaker names": signed out, a publication fills nothing in, so the title sheet says
     /// `Untitled`; the Mac needs no permission for the plan as a destination.
     func testSignedOutTheTitleSheetSaysUntitled() async throws {
-        let bridge = try await bridge()
+        let bridge = try await CoreBridge.make(
+            platform: .macos, deviceName: "ChatGptSettingsTests", dataDirectory: directory,
+            databaseName: "chatgpt-settings-tests.db", secureStore: InMemorySecureStore()
+        )
         let model = ChatGptSettingsModel(core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }))
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertTrue(model.fillAllowed, "the Mac needs no permission")

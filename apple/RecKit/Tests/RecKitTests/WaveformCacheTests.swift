@@ -115,12 +115,16 @@ final class WaveformCacheTests: XCTestCase {
     }
 
     // MARK: - Precompute
+    //
+    // At user-initiated priority, not the background one the apps run it at. The scheduler paces background work: on a
+    // simulator this 2 s of audio took 2 s warm and 92 s cold against 0.03 s here, past any wait a test can name, and
+    // past the 300 ms the capture test watches for a decode that should not have started.
 
     @MainActor
     func testAFinalizedRecordingGetsItsPeaksKept() async throws {
         let bridge = try await makeBridge()
         let id = try await seed(bridge, durationSec: 2, audio: .tone)
-        let precompute = WaveformPrecompute(core: bridge.core)
+        let precompute = WaveformPrecompute(core: bridge.core, priority: .userInitiated)
 
         precompute.enqueue(recordingId: id)
 
@@ -133,7 +137,7 @@ final class WaveformCacheTests: XCTestCase {
     func testACaptureHoldsThePrecomputeUntilItEnds() async throws {
         let bridge = try await makeBridge()
         let id = try await seed(bridge, durationSec: 2, audio: .tone)
-        let precompute = WaveformPrecompute(core: bridge.core)
+        let precompute = WaveformPrecompute(core: bridge.core, priority: .userInitiated)
         precompute.capturing = true
 
         precompute.enqueue(recordingId: id)

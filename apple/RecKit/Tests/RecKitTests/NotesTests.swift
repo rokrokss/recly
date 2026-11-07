@@ -249,7 +249,7 @@ final class OrganizeConsentTests: XCTestCase {
         try await until { model.organizePermission.map(\.id) == [chatGpt.id] }
 
         let mac = try await CoreBridge.make(
-            deviceName: "RecKitTests",
+            platform: .macos, deviceName: "RecKitTests",
             dataDirectory: directory.appendingPathComponent("mac", isDirectory: true),
             databaseName: "organize-training.db", secureStore: InMemorySecureStore()
         )

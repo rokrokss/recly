@@ -12,6 +12,7 @@ import ReclyCore
 @MainActor
 public final class WaveformPrecompute {
     private let core: ReclyCore_
+    private let priority: TaskPriority
     private var queue: [String] = []
     private var worker: Task<Void, Never>?
 
@@ -23,8 +24,10 @@ public final class WaveformPrecompute {
         }
     }
 
-    public init(core: ReclyCore_) {
+    /// The apps keep the default [priority]; `WaveformCacheTests` says why it asks for another.
+    public init(core: ReclyCore_, priority: TaskPriority = .background) {
         self.core = core
+        self.priority = priority
     }
 
     public func enqueue(recordingId: String) {
@@ -36,7 +39,7 @@ public final class WaveformPrecompute {
     private func drain() {
         guard worker == nil, !capturing, let recordingId = queue.first else { return }
         let core = self.core
-        worker = Task(priority: .background) { [weak self] in
+        worker = Task(priority: priority) { [weak self] in
             let settled = await Self.compute(core: core, recordingId: recordingId)
             guard let self else { return }
             self.worker = nil
