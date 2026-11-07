@@ -205,6 +205,48 @@ final class ChatGptSettingsTests: XCTestCase {
         XCTAssertFalse(timed.waitingForBrowser)
     }
 
+    /// docs/15 "China mainland App Store": the iPhone asks StoreKit for the region before the browser opens, and StoreKit
+    /// can take its time. Cancel holds all the same: at once, with no browser, and no failure for what the user chose.
+    func testCancelWhileTheRegionIsAskedEndsAtOnceAndOpensNothing() async throws {
+        let region = HeldRegion()
+        let bridge = try await CoreBridge.make(
+            platform: .ios, deviceName: "ChatGptSettingsTests", dataDirectory: directory,
+            databaseName: "chatgpt-settings-tests.db", secureStore: InMemorySecureStore(),
+            transcriptionPolicy: TranscriptionPolicy(region: region)
+        )
+        let browser = FakeBrowser(answer: { _ in .page("connected") })
+        let model = ChatGptSettingsModel(core: bridge.core, browser: browser)
+        model.signIn()
+        try await until { region.asked }
+        model.cancelSignIn()
+        try await until { model.signInState != .processing }
+        XCTAssertEqual(model.signInState, .idle)
+        XCTAssertNil(model.failure)
+        XCTAssertFalse(model.waitingForBrowser)
+
+        region.answer()
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertFalse(browser.opened, "the answer comes after Cancel, and nothing is left to open a browser for")
+    }
+
+    /// The same for the limit: the time ran out while the region was still being asked.
+    func testTheLimitHoldsWhileTheRegionIsAsked() async throws {
+        let region = HeldRegion()
+        let bridge = try await CoreBridge.make(
+            platform: .ios, deviceName: "ChatGptSettingsTests", dataDirectory: directory,
+            databaseName: "chatgpt-settings-tests.db", secureStore: InMemorySecureStore(),
+            transcriptionPolicy: TranscriptionPolicy(region: region)
+        )
+        let model = ChatGptSettingsModel(
+            core: bridge.core, browser: FakeBrowser(answer: { _ in .page("connected") }), timeout: .milliseconds(200)
+        )
+        model.signIn()
+        try await until { model.signInState != .processing }
+        XCTAssertEqual(model.signInState, .idle)
+        XCTAssertNil(model.failure)
+        region.answer()
+    }
+
     /// docs/09 "AI view" — Settings → Notes: the fields save when editing ends, trimmed, and what is being typed stays
     /// as typed; Sections are the four built-in groups in their own words, then the user's own — a section editing
     /// leaves without a name goes from the list, the rest go when the screen does; three of their own at most; Remove
@@ -800,6 +842,32 @@ final class SummaryTransferTests: XCTestCase {
 }
 
 /// A browser that does what the test says when the sign-in opens it.
+/// StoreKit taking its time: answers `USA` when told to, and no cancellation reaches the wait for it.
+private final class HeldRegion: AppStoreRegion, @unchecked Sendable {
+    private let lock = NSLock()
+    private var held: CheckedContinuation<Void, Never>?
+    private var released = false
+    private(set) var asked = false
+
+    func __countryCode() async throws -> String? {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            lock.withLock {
+                asked = true
+                if released { continuation.resume() } else { held = continuation }
+            }
+        }
+        return "USA"
+    }
+
+    func answer() {
+        lock.withLock {
+            released = true
+            held?.resume()
+            held = nil
+        }
+    }
+}
+
 private final class FakeBrowser: ChatGptBrowser, @unchecked Sendable {
     let answer: @Sendable (URLComponents) -> ChatGptLoopback.Answer
     var onOpen: ((URL, @escaping @MainActor () -> Void) async throws -> Void)?
@@ -811,7 +879,11 @@ private final class FakeBrowser: ChatGptBrowser, @unchecked Sendable {
     /// False is a browser that never opened (the Mac's `NSWorkspace.open`, the iPhone's `session.start()`).
     var opens = true
 
+    /// Whether anything asked for the browser, open or not.
+    var opened = false
+
     @MainActor func open(_ url: URL, dismissed: @escaping @MainActor () -> Void) -> Bool {
+        opened = true
         guard opens else { return false }
         if let onOpen { Task { try? await onOpen(url, dismissed) } }
         return true

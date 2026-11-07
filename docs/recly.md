@@ -4644,10 +4644,10 @@ Response to App Review on 2026-09-14: on iPhone/iPad, OpenAI transcription is di
 - That provider is hidden from the provider list in settings and validated again on save and on import confirmation. The same policy applies to saved settings, restored databases and jobs already in the queue, right before execution and right before every transcription request. Saved settings and keys are not deleted automatically.
 - An unconfirmed region or a failed lookup is not treated as allowed. That transcription waits 60 seconds with `STOREFRONT_UNAVAILABLE` and does not use up retries. If China mainland is confirmed, it fails with `PROVIDER_REGION_RESTRICTED`. Other steps and the `onError` contract stay as they are.
 - In the restricted or region-unconfirmed state, transcription HTTP redirects are not followed automatically. The transcription provider's final endpoint must be used; this prevents audio from being delivered through a redirect to a destination that was never checked.
-- StoreKit's current country information is read right before use, and the settings screen subscribes to `Storefront.updates`. A previous country is not stored on disk and reused as grounds for allowing.
+- StoreKit's current country information is read right before use, and the settings screen subscribes to `Storefront.updates`. A previous country is not stored on disk and reused as grounds for allowing. A read waits at most 5 seconds; an answer after that is dropped, and that use counts as unconfirmed.
 - Sign in with ChatGPT (§10) follows the same rule (2026-10-09): while the storefront is China mainland or unconfirmed the core reports
   `ChatGptConnection.Unavailable`, the shells show neither Settings → ChatGPT, Settings → Summary nor the detail's ChatGPT items, and the core refuses its OpenAI
-  requests.
+  requests. The region is read before the browser opens, and `Cancel` and the sign-in's time limit end the sign-in during that read too.
 - Additional system service path: the app asks Apple StoreKit for App Store country information. Recly passes no recordings, transcripts, processing settings or external provider API keys to this lookup. Apple's system service manages the account/storefront information, and the app does not call a separate IP geolocation server.
 
 ### iPhone providers

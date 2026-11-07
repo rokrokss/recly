@@ -2,6 +2,10 @@ package recly.core.transcribe
 
 import io.ktor.http.Url
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -35,6 +39,7 @@ class TranscriptionPolicy(private val region: AppStoreRegion? = null) {
     val enabled: Boolean get() = region != null
     private val state = MutableStateFlow(if (enabled) OpenAiAvailability.UNKNOWN else OpenAiAvailability.ALLOWED)
     private val mutex = Mutex()
+    private val lookups = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val availability: OpenAiAvailability get() = state.value
     fun observe() = state.asStateFlow()
 
@@ -42,7 +47,7 @@ class TranscriptionPolicy(private val region: AppStoreRegion? = null) {
     suspend fun refresh(): OpenAiAvailability = mutex.withLock {
         state.value = if (region == null) OpenAiAvailability.ALLOWED else {
             val country = try {
-                withTimeoutOrNull(5_000) { region.countryCode() }?.uppercase()
+                lookUp(region)?.uppercase()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -55,6 +60,18 @@ class TranscriptionPolicy(private val region: AppStoreRegion? = null) {
             }
         }
         state.value
+    }
+
+    /**
+     * Beside the caller, so that the limit and the caller's own cancellation end the wait: across the Swift border
+     * the answer cannot be cancelled, and a timeout around the call itself waits for it, however long StoreKit takes.
+     * An answer after the limit goes nowhere, and the next use asks again. In a scope of its own and not the caller's
+     * context: a call from Swift runs on a SKIE dispatcher that stops when the call ends, and a late answer dispatched
+     * to it ends the process.
+     */
+    private suspend fun lookUp(region: AppStoreRegion): String? {
+        val answer = lookups.async { region.countryCode() }
+        return withTimeoutOrNull(5_000) { answer.await() }
     }
 
     fun providerAvailable(provider: String): Boolean =

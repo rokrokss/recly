@@ -70,6 +70,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     private let browser: ChatGptBrowser
     private let timeout: Duration
     private var loopback: ChatGptLoopback?
+    private var signing: Task<Void, Never>?
     private var observer: Task<Void, Never>?
     private var preferencesObserver: Task<Void, Never>?
     private var notesObserver: Task<Void, Never>?
@@ -160,12 +161,13 @@ public final class ChatGptSettingsModel: ObservableObject {
         signInState = .processing
         let loopback = ChatGptLoopback(matched: browser.answer)
         self.loopback = loopback
-        Task { await run(loopback) }
+        signing = Task { await run(loopback) }
     }
 
     /// The user's Cancel: the wait ends as if the browser had never come back.
     public func cancelSignIn() {
         loopback?.stop()
+        signing?.cancel()
     }
 
     public func signOut() {
@@ -381,7 +383,7 @@ public final class ChatGptSettingsModel: ObservableObject {
         let timeout = self.timeout
         let clock = Task {
             guard (try? await Task.sleep(for: timeout)) != nil else { return }
-            loopback.stop()
+            cancelSignIn()
         }
         waitingForBrowser = true
         defer {
@@ -390,10 +392,12 @@ public final class ChatGptSettingsModel: ObservableObject {
             browser.close()
             waitingForBrowser = false
             self.loopback = nil
+            signing = nil
         }
         do {
             let port = try await loopback.start()
             let started = try await core.chatGpt.beginSignIn(redirectUri: ChatGptLoopback.redirectUri(port: port))
+            try Task.checkCancellation()
             loopback.expect(state: started.state)
             guard let url = URL(string: started.authorizationUrl) else { throw URLError(.badURL) }
             guard browser.open(url, dismissed: { [weak loopback] in loopback?.stop() }) else {
@@ -432,6 +436,11 @@ public final class ChatGptSettingsModel: ObservableObject {
             }
         } catch {
             core.chatGpt.cancelSignIn()
+            // Cancel or the limit, wherever the sign-in had got to: as if the browser had never come back.
+            if Task.isCancelled {
+                signInState = .idle
+                return
+            }
             // The domain and code only: a message could carry the callback, and with it the code.
             let cause = error as NSError
             logger.error("shell.chatgpt.signin.failed domain=\(cause.domain, privacy: .public) code=\(cause.code, privacy: .public)")

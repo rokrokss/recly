@@ -4,7 +4,13 @@ package recly.core.job
 
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import recly.core.message.CoreMessage
@@ -18,6 +24,44 @@ class TranscriptionRegionTest {
     private fun sttStep() = Step.Transcribe(id = "stt", provider = "assemblyai", secretRef = "stt_key")
     private class Region(var code: String?) : AppStoreRegion {
         override suspend fun countryCode(): String? = code
+    }
+
+    /** Like StoreKit across the Swift border: nothing here can cancel the wait for its answer. */
+    private class SlowRegion(val ms: Long) : AppStoreRegion {
+        override suspend fun countryCode(): String? = withContext(NonCancellable) {
+            delay(ms)
+            "USA"
+        }
+    }
+
+    @Test
+    fun `a region that cannot be cancelled is given up on at the limit`() = runBlocking<Unit> {
+        val asked = TimeSource.Monotonic.markNow()
+        assertEquals(OpenAiAvailability.UNKNOWN, TranscriptionPolicy(SlowRegion(12_000)).refresh())
+        assertTrue(asked.elapsedNow() < 7.seconds, "took ${asked.elapsedNow()}")
+    }
+
+    @Test
+    fun `a region that cannot be cancelled holds nobody up once the caller is`() = runBlocking<Unit> {
+        val policy = TranscriptionPolicy(SlowRegion(12_000))
+        val asked = TimeSource.Monotonic.markNow()
+        val refresh = launch { policy.refresh() }
+        delay(100)
+        refresh.cancelAndJoin()
+        assertTrue(asked.elapsedNow() < 3.seconds, "took ${asked.elapsedNow()}")
+    }
+
+    @Test
+    fun `an answer inside the limit counts`() = runBlocking<Unit> {
+        assertEquals(OpenAiAvailability.ALLOWED, TranscriptionPolicy(SlowRegion(100)).refresh())
+    }
+
+    @Test
+    fun `a lookup that fails is an unknown region`() = runBlocking<Unit> {
+        val policy = TranscriptionPolicy(object : AppStoreRegion {
+            override suspend fun countryCode(): String? = error("no storefront")
+        })
+        assertEquals(OpenAiAvailability.UNKNOWN, policy.refresh())
     }
 
     @Test
