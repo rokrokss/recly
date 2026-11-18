@@ -535,7 +535,10 @@ Examples:
   transcodes into ADR-006 parts on this device (`platform` is this device's, one `mono` track). `ReclyCore.importAudio(sourcePath,
   displayName, startedAt, importer)` names it after the file without its extension, starts it at the file's own date when the shell
   passes one (else now — the `recordingId` carries the same instant, §1 "Identifiers · time"; every shell passes the file's creation date
-  where the platform has one, else its modification date, 2026-10-15), and queues the fixed plan once it is
+  where the platform has one, else its modification date, 2026-10-15) — moved on a second at a time while a recording here,
+  or another import in flight, already has that base name (files copied together share one date to the second, and the base
+  name keeps only that second and the first 8 characters of the id, which tell no two ids of one second apart: such imports
+  wrote into one directory and overwrote each other, 2026-11-18) — and queues the fixed plan once it is
   complete; afterwards it is a recording like any other. While the shell's `AudioImporter` transcodes, the row is in the list with
   `status: recording` and no parts (`RecordingRecord.importing`; the shells show `IMPORTING`), and the parts are written to
   `{dataDir}/import-tmp/{recordingId}/` — beside the recordings, so nothing that scans a recording directory meets half of them. Only

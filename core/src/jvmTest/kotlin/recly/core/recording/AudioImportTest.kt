@@ -8,6 +8,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.CompletableDeferred
@@ -36,6 +37,7 @@ class AudioImportTest {
         private val answer: TranscodeResult? = null,
         private val failure: Throwable? = null,
         private val hold: CompletableDeferred<Unit>? = null,
+        private val content: String = "audio",
     ) : AudioImporter {
         val started = CompletableDeferred<String>()
 
@@ -48,7 +50,7 @@ class AudioImportTest {
             return TranscodeResult.Done(
                 (1..count).map { index ->
                     val name = "out-$index.m4a"
-                    f.fs.write(outDir.toPath() / name) { writeUtf8("audio") }
+                    f.fs.write(outDir.toPath() / name) { writeUtf8(content) }
                     ImportedPart(name, if (index < count) 300.0 else 61.5)
                 },
             )
@@ -80,6 +82,35 @@ class AudioImportTest {
         assertEquals(JobStatus.DONE, f.core.jobs.list().single { it.recordingId == id && !it.retranscription }.status)
         assertTrue(f.drive.byName("${base}_p002_mono.m4a") != null, "uploaded like any recording")
         assertTrue(f.drive.byName(MetaWriter.metaFileName(base)) != null)
+    }
+
+    @Test
+    fun `files dated in the same second each get a recording of their own`() = runBlocking<Unit> {
+        // Files copied together carry one date to the second, and the base name keeps only that second and the
+        // id's first eight characters: two imports of that second shared one directory and overwrote each other.
+        val dates = listOf(fileDate, fileDate, fileDate + 400.milliseconds)
+        val ids = dates.mapIndexed { index, date ->
+            val imported = f.core.importAudio("/picked/$index.m4a", "$index.m4a", date, FakeImporter(count = 1, content = "file $index"))
+            assertIs<ImportResult.Imported>(imported).recordingId
+        }
+
+        val records = ids.map { f.core.recordings.get(it)!! }
+        val bases = records.map { MetaWriter.baseName(it.meta) }
+        assertEquals(3, bases.toSet().size, "one base name each: $bases")
+        assertEquals(3, records.map { it.dir }.toSet().size)
+        assertEquals(
+            listOf("2026-08-20T09:30:00.000Z", "2026-08-20T09:30:01.000Z", "2026-08-20T09:30:02.400Z"),
+            records.map { it.meta.startedAt },
+            "the first keeps the file's date; each one after it starts a second later until its name is free",
+        )
+        records.forEachIndexed { index, record ->
+            assertEquals(Instant.parse(record.meta.startedAt), recly.core.ids.Ulid.timestamp(record.meta.recordingId), "the id carries the start")
+            assertEquals("file $index", f.fs.read(record.dir / record.meta.parts.single().file) { readUtf8() })
+        }
+
+        f.drain()
+
+        bases.forEach { assertTrue(f.drive.byName("${it}_p001_mono.m4a") != null, "$it uploaded") }
     }
 
     @Test

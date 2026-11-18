@@ -4,6 +4,7 @@ package recly.core.recording
 
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.NonCancellable
@@ -85,30 +86,30 @@ internal class AudioImport(
     private val gate = Mutex()
     private val running = mutableSetOf<String>()
 
+    /** The base names of the imports in flight, so two at once never pick the same one. Under [gate]. */
+    private val names = mutableSetOf<String>()
+
     suspend fun import(sourcePath: String, displayName: String, startedAt: Instant?, importer: AudioImporter): ImportResult {
-        val start = startedAt ?: deps.clock.now()
-        val id = Ulid.generate(object : kotlin.time.Clock {
-            override fun now(): Instant = start
-        })
-        val meta = RecordingMeta(
-            schema = 1,
-            recordingId = id,
-            source = Source.IMPORT,
-            platform = deps.device.platform,
-            deviceId = deps.device.deviceId,
-            deviceName = deps.device.name,
-            title = titleOf(displayName),
-            startedAt = start.isoUtc(),
-            timezone = TimeZone.currentSystemDefault().id,
-            audio = AudioSettings(Codec.AAC_LC, Container.M4A, 16_000, 1, 32, SEGMENT_SEC),
-            tracks = listOf(Track.MONO),
-            parts = emptyList(),
-            status = RecordingStatus.RECORDING,
-        )
+        var start = startedAt ?: deps.clock.now()
+        val title = titleOf(displayName)
+        // docs/03 "Naming rules": files copied together carry one date to the second, and the base name keeps only that
+        // second and the id's first eight characters, which tell no two ids of one second apart — so an import whose
+        // name a recording here already has starts a second later, as often as it takes, and its id carries that instant.
+        val meta = gate.withLock {
+            val known = recordings.ids()
+            var candidate = metaAt(start, title)
+            while (MetaWriter.baseName(candidate).let { it in names || taken(it, candidate.recordingId, known) }) {
+                start += 1.seconds
+                candidate = metaAt(start, title)
+            }
+            running += candidate.recordingId
+            names += MetaWriter.baseName(candidate)
+            candidate
+        }
+        val id = meta.recordingId
         val base = MetaWriter.baseName(meta)
         val dir = deps.dataDir / RecordingRepository.RECORDINGS / base
         val staging = deps.dataDir / STAGING / id
-        gate.withLock { running += id }
         try {
             sweepStaging()
             withContext(deps.io) { deps.fileSystem.createDirectories(staging) }
@@ -136,7 +137,7 @@ internal class AudioImport(
             withContext(NonCancellable) { discard(id, staging) }
             throw e
         } finally {
-            withContext(NonCancellable) { gate.withLock { running -= id } }
+            withContext(NonCancellable) { gate.withLock { running -= id; names -= base } }
         }
         // Complete from here on: a queue that cannot take it now is a recording waiting for its job,
         // which the recorders' recovery queues, not an import to undo.
@@ -196,6 +197,32 @@ internal class AudioImport(
     private suspend fun discard(id: String, staging: Path) {
         recordings.delete(id)
         withContext(deps.io) { deps.fileSystem.deleteRecursively(staging, mustExist = false) }
+    }
+
+    /** The meta of an import starting at [start], its id dated at the same instant (§1 "Identifiers · time"). */
+    private fun metaAt(start: Instant, title: String?): RecordingMeta = RecordingMeta(
+        schema = 1,
+        recordingId = Ulid.generate(object : kotlin.time.Clock {
+            override fun now(): Instant = start
+        }),
+        source = Source.IMPORT,
+        platform = deps.device.platform,
+        deviceId = deps.device.deviceId,
+        deviceName = deps.device.name,
+        title = title,
+        startedAt = start.isoUtc(),
+        timezone = TimeZone.currentSystemDefault().id,
+        audio = AudioSettings(Codec.AAC_LC, Container.M4A, 16_000, 1, 32, SEGMENT_SEC),
+        tracks = listOf(Track.MONO),
+        parts = emptyList(),
+        status = RecordingStatus.RECORDING,
+    )
+
+    /** Whether a recording here already has [base]: its directory is there, or a row of the same id prefix names it. */
+    private suspend fun taken(base: String, id: String, known: Set<String>): Boolean {
+        if (withContext(deps.io) { deps.fileSystem.exists(deps.dataDir / RecordingRepository.RECORDINGS / base) }) return true
+        val prefix = id.take(8)
+        return known.any { it.startsWith(prefix) && recordings.get(it)?.meta?.let(MetaWriter::baseName) == base }
     }
 
     /** Staging directories no import of this process owns: left by a kill. */
