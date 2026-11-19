@@ -36,14 +36,16 @@
 
         <!-- docs/11 W5: "Recly Quick Rec", the launcher entry for Samsung's "Double press home key"
              setting — it can name an app but cannot pass an extra, so this one forwards to
-             MainActivity with the tile's auto-start extra and finishes. Its own icon (docs/09
-             "App icon") keeps it from looking like a second copy of the app. -->
+             MainActivity with the tile's auto-start extra and finishes. Keep this entry alone in
+             its task: if MainActivity stays in the Quick Rec task, the next launcher invocation
+             just brings that screen back without running QuickStartActivity. -->
         <activity
             android:name=".entry.QuickStartActivity"
             android:excludeFromRecents="true"
             android:exported="true"
             android:icon="@mipmap/ic_quick_start"
             android:label="@string/quick_start_label"
+            android:launchMode="singleInstance"
             android:noHistory="true"
             android:roundIcon="@mipmap/ic_quick_start"
             android:theme="@android:style/Theme.NoDisplay">

@@ -19,8 +19,7 @@ class QuickStartActivity : Activity() {
         startActivity(
             Intent(this, MainActivity::class.java)
                 .putExtra(MainActivity.EXTRA_AUTO_START, true)
-                // The existing instance, if there is one, gets `onNewIntent` (`singleTop` alone
-                // would not: this activity, not MainActivity, is the top of the task).
+                // Deliver the request to the existing recorder screen if its task is still alive.
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
         )
         finish()
