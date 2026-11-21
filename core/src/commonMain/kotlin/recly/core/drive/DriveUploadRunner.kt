@@ -21,11 +21,15 @@ import recly.core.job.type
 import recly.core.message.CoreMessage
 import recly.core.model.Part
 import recly.core.model.Step
+import recly.core.model.Workflow
+import recly.core.model.recJson
 import recly.core.model.wire
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
+import recly.core.processing.ProcessingPlan
 import recly.core.recording.MetaWriter
 import recly.core.recording.PartHasher
+import recly.core.recording.RecordingRecord
 import recly.core.recording.RecordingRepository
 import recly.core.storage.CloudFiles
 import recly.core.storage.CloudStorage
@@ -68,6 +72,30 @@ class DriveUploadRunner(
                 retryable = false,
                 reason = CoreMessage.STEP_FAILED.code("$TYPE runner got a ${ctx.step::class.simpleName}"),
             )
+        return runUpload(UploadContext(ctx.recording, ctx.workflow, step, ctx.state, ctx.saveState, ctx.saveOutput))
+    }
+
+    /** The same folder and audio files as the final job, with an independent in-progress manifest. */
+    internal suspend fun checkpoint(
+        recording: RecordingRecord,
+        workflow: Workflow,
+        step: Step.DriveUpload,
+        state: JsonObject?,
+        saveState: suspend (JsonObject) -> Unit,
+    ): StepOutcome = runUpload(UploadContext(recording, workflow, step, state, saveState, {}, checkpoint = true))
+
+    private class UploadContext(
+        val recording: RecordingRecord,
+        val workflow: Workflow,
+        val step: Step.DriveUpload,
+        val state: JsonObject?,
+        val saveState: suspend (JsonObject) -> Unit,
+        val saveOutput: suspend (JsonObject) -> Unit,
+        val checkpoint: Boolean = false,
+    )
+
+    private suspend fun runUpload(ctx: UploadContext): StepOutcome {
+        val step = ctx.step
         val rendered = renderFolder(step, ctx)
         val files = api.forKind(step.store) ?: return unavailable(ctx, step.store)
         return try {
@@ -78,17 +106,23 @@ class DriveUploadRunner(
     }
 
     /** iCloud or the local folder cannot be used from this device right now: looked at again later, not failed. */
-    private fun unavailable(ctx: StepContext, kind: StorageKind): StepOutcome =
+    private fun unavailable(ctx: UploadContext, kind: StorageKind): StepOutcome =
         StepOutcome.Waiting(UNAVAILABLE_WAIT_SEC, ctx.state ?: JsonObject(emptyMap()), unavailableReason(kind))
 
     private suspend fun uploaded(
-        ctx: StepContext,
+        ctx: UploadContext,
         step: Step.DriveUpload,
         rendered: String,
         files: CloudFiles,
-    ): StepOutcome =
-        try {
-            attempt(ctx, step, rendered, DriveUploadState.from(ctx.state), files)
+    ): StepOutcome {
+        val saved = DriveUploadState.from(ctx.state)
+        val checkpoint = if (!ctx.checkpoint && ctx.workflow.id == ProcessingPlan.ID && saved.folderId == null) {
+            store.checkpointState(ctx.recording.id).takeIf { state ->
+                state.folderId?.let(StorageKind::ofId) == step.store
+            }
+        } else null
+        return try {
+            attempt(ctx, step, rendered, checkpoint ?: saved, files, finishingCheckpoint = checkpoint != null)
         } catch (e: DriveNotFound) {
             // A folder we had an id for is gone. Everything we remember about it — the cached path
             // ids and the per-file ids that lived inside it — is worthless, so drop it and resolve
@@ -110,13 +144,15 @@ class DriveUploadRunner(
                 )
             }
         }
+    }
 
     private suspend fun attempt(
-        ctx: StepContext,
+        ctx: UploadContext,
         step: Step.DriveUpload,
         rendered: String,
         initial: DriveUploadState,
         files: CloudFiles,
+        finishingCheckpoint: Boolean = false,
     ): StepOutcome {
         val meta = ctx.recording.meta
         val base = MetaWriter.baseName(meta)
@@ -134,18 +170,24 @@ class DriveUploadRunner(
         val folder = folder(ctx, state, rendered, base, files)
         state = state.copy(folderId = folder.id, folderWebViewLink = folder.webViewLink)
         ctx.saveState(state.toJson())
-        store.rememberRecordingFolder(ctx.recording.id, folder.id)
-        // Into `meta.json` as well, before the meta is uploaded below: the copy that lands in Drive
-        // (and every device that adopts it, docs/03 "Recordings from other devices") then knows its own folder link.
-        folder.webViewLink?.let { recordings.setDriveFolder(ctx.recording.id, folder.id, it) }
+        if (!ctx.checkpoint) {
+            store.rememberRecordingFolder(ctx.recording.id, folder.id)
+            // The published meta and any device that adopts it will know the Drive folder's link.
+            folder.webViewLink?.let { recordings.setDriveFolder(ctx.recording.id, folder.id, it) }
+            if (finishingCheckpoint && resumed) {
+                meta.title?.let { files.updateDescription(folder.id, it) }
+            }
+        }
         // The folder exists before the first byte does, and it is the only thing another device can
         // see while this one uploads (docs/03 "Recordings from other devices"): what comes after this step goes on it
         // now, so a list elsewhere can say "Transcribing on another device" instead of showing a finished recording.
         // In iCloud a resumed attempt is one waiting for the system's upload, every 30 seconds, and its
         // folder was marked when it was made: the same marker again would only send every device to
         // read the folder file again (docs/03 "Storage location").
-        if (!resumed || step.store == StorageKind.DRIVE) {
-            marker.mark(folder.id, ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type })
+        if (!resumed || finishingCheckpoint || step.store == StorageKind.DRIVE) {
+            val pending = if (ctx.checkpoint) listOf(TYPE)
+            else ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type }
+            marker.mark(folder.id, pending)
         }
         // Before the first byte goes out, and into the output rather than the state: a NEEDS_SPACE
         // park drops `state_json` (docs/10), and "Also delete from Drive" (docs/03) still has to know which
@@ -171,7 +213,18 @@ class DriveUploadRunner(
             uploaded += entry(part.part, part.track.wire, part.file, bytes, part.sha256, file)
         }
 
-        if (step.includeMeta) {
+        if (ctx.checkpoint) {
+            // This name is separate from the final completion signal. Publish only after the audio
+            // in this snapshot has been uploaded to Drive or copied to the iCloud container.
+            val name = "$base.progress.json"
+            val bytes = recJson.encodeToString(meta).encodeToByteArray()
+            val existing = files.findChild(folder.id, name, META_MIME)
+            if (existing == null) {
+                files.multipartUpload(DriveFileMeta(name = name, parents = listOf(folder.id), mimeType = META_MIME), bytes)
+            } else {
+                files.updateMedia(existing.id, bytes, META_MIME, emptyMap())
+            }
+        } else if (step.includeMeta) {
             val name = MetaWriter.metaFileName(base)
             val path = ctx.recording.dir / name
             val (file, bytes) = upload(
@@ -206,7 +259,7 @@ class DriveUploadRunner(
         )
     }
 
-    private fun renderFolder(step: Step.DriveUpload, ctx: StepContext): String =
+    private fun renderFolder(step: Step.DriveUpload, ctx: UploadContext): String =
         try {
             Template.render(step.folder, TemplateContext.of(ctx.recording.meta, ctx.workflow.name))
         } catch (e: IllegalArgumentException) {
@@ -225,7 +278,7 @@ class DriveUploadRunner(
      * or, in iCloud, when an earlier attempt made the folder and stopped before its property file.
      */
     private suspend fun folder(
-        ctx: StepContext,
+        ctx: UploadContext,
         state: DriveUploadState,
         rendered: String,
         base: String,
@@ -236,7 +289,7 @@ class DriveUploadRunner(
         val description = ctx.recording.meta.title
         val appProperties = buildMap {
             put("recordingId", ctx.recording.id)
-            put("workflowId", ctx.job.workflowId)
+            put("workflowId", ctx.workflow.id)
         }
         val existing = files.findChild(parent, base, DriveApi.FOLDER_MIME)
         if (existing != null) {
@@ -248,7 +301,7 @@ class DriveUploadRunner(
 
     /** Returns the Drive file and the byte count that was uploaded. */
     private suspend fun upload(
-        ctx: StepContext,
+        ctx: UploadContext,
         state: DriveUploadState,
         key: String,
         folderId: String,
@@ -318,7 +371,7 @@ class DriveUploadRunner(
     }
 
     /** Computed once per part and kept in `part.md5`, so a retry never re-hashes the segment. */
-    private suspend fun partMd5(ctx: StepContext, part: Part): String {
+    private suspend fun partMd5(ctx: UploadContext, part: Part): String {
         store.md5(ctx.recording.id, part.part, part.track)?.let { return it }
         val md5 = PartHasher.md5(deps.fileSystem, ctx.recording.dir / part.file)
         store.putMd5(ctx.recording.id, part.part, part.track, md5)
@@ -360,8 +413,10 @@ class DriveUploadRunner(
         internal fun unavailableReason(kind: StorageKind): String =
             if (kind == StorageKind.FOLDER) CoreMessage.FOLDER_UNAVAILABLE.code() else CoreMessage.ICLOUD_UNAVAILABLE.code()
 
-        fun create(db: RecDatabase, deps: CoreDeps): DriveUploadRunner {
-            val api = CloudStorage.of(deps)
+        fun create(db: RecDatabase, deps: CoreDeps): DriveUploadRunner = create(db, deps, DriveApi(deps))
+
+        internal fun create(db: RecDatabase, deps: CoreDeps, drive: DriveApi): DriveUploadRunner {
+            val api = CloudStorage.of(deps, drive)
             val store = DriveStore(db, deps)
             return DriveUploadRunner(
                 api,

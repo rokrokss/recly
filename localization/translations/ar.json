@@ -607,5 +607,6 @@
   "Check for updates automatically?": "هل تريد التحقق من التحديثات تلقائيًا؟",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "عند التشغيل وكل ست ساعات، يسأل Recly موقع GitHub عن أحدث إصدار ولا يرسل سوى رقم إصداره.",
   "Check automatically": "التحقق تلقائيًا",
-  "Don't check": "عدم التحقق"
+  "Don't check": "عدم التحقق",
+  "Back up during recording": "النسخ الاحتياطي أثناء التسجيل"
 }

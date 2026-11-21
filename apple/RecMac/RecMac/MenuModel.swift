@@ -236,6 +236,9 @@ final class MenuModel: ObservableObject {
                 self?.captureFailed(error)
             }
             recorder.onEvent = { [notices] event in notices.apply(event) }
+            recorder.onPartFiled = { [core = bridge.core] recordingId in
+                Task { await RecordingBackupInterval.upload(recordingId: recordingId, core: core) }
+            }
             self.recorder = recorder
             recorder.preferMicrophone(nil)
             let recovery = RecordingRecovery(core: bridge.core)

@@ -94,8 +94,10 @@ class CloudStorage(
          * Drive always; iCloud where the shell handed the core a container, and a local folder where
          * it handed one (docs/01 `CoreDeps`).
          */
-        fun of(deps: CoreDeps): CloudStorage = CloudStorage(
-            DriveApi(deps),
+        fun of(deps: CoreDeps): CloudStorage = of(deps, DriveApi(deps))
+
+        internal fun of(deps: CoreDeps, drive: DriveApi): CloudStorage = CloudStorage(
+            drive,
             deps.ubiquity?.let { ICloudFiles(it, deps) },
             deps.localFolder?.let { FolderFiles(it, deps) },
         )

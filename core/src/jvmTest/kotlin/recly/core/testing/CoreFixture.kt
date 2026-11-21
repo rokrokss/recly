@@ -25,6 +25,7 @@ import recly.core.platform.DeviceInfo
 import recly.core.platform.TokenProvider
 import recly.core.recording.MetaWriter
 import recly.core.storage.LocalFolder
+import recly.core.storage.UbiquityContainer
 import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.transcribe.LocalTranscriptionEngine
@@ -45,6 +46,7 @@ class CoreFixture(
     tokenProvider: TokenProvider = ScriptedTokenProvider(),
     platform: Platform = Platform.MACOS,
     localFolder: ((FakeFileSystem) -> LocalFolder)? = null,
+    ubiquity: ((FakeFileSystem, FakeClock) -> UbiquityContainer)? = null,
     /** Where requests to OpenAI go (docs/15 §10); everything else goes to the fake Drive. */
     chatGpt: recly.core.platform.Transport? = null,
 ) {
@@ -68,6 +70,7 @@ class CoreFixture(
         io = kotlinx.coroutines.Dispatchers.Unconfined,
         localTranscription = engine ?: recly.core.transcribe.UnavailableLocalTranscriptionEngine(),
         localFolder = localFolder?.invoke(fs),
+        ubiquity = ubiquity?.invoke(fs, clock),
     )
     val driver: SqlDriver = inMemoryDriver()
     val core = ReclyCore(deps, object : DriverFactory {

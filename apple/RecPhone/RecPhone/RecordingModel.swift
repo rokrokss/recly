@@ -308,6 +308,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 self?.captureFailed(error)
             }
             recorder.onEvent = { [notices] event in notices.apply(event) }
+            recorder.onPartFiled = { [core = bridge.core] recordingId in
+                Task { await RecordingBackupInterval.upload(recordingId: recordingId, core: core) }
+            }
             self.recorder = recorder
             let recovery = RecordingRecovery(core: bridge.core)
             let session = RecorderSession(

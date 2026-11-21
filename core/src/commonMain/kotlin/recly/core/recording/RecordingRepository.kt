@@ -18,7 +18,9 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
 import recly.core.db.RecDatabase
+import recly.core.drive.DriveStore
 import recly.core.drive.DriveUploadState
+import recly.core.drive.RecordingBackup
 import recly.core.job.JobStatus
 import recly.core.model.Context
 import recly.core.model.DriveLocation
@@ -703,6 +705,7 @@ class RecordingRepository(
                     .any { it.status == JobStatus.RUNNING.name }
                 if (running && !stopped) return@transactionWithResult Removal.Busy
                 val folderId = driveFolderId(recordingId) ?: row.drive_folder_id
+                    ?: DriveStore.checkpointState(db, recordingId).folderId
                 if (!deleteDrive && folderId != null) queries.kvSet(IGNORED_PREFIX + recordingId, folderId)
                 // A rename or an edit that never reached Drive goes with the recording: pushed
                 // later, they would land on whatever another device has since put in the folder.
@@ -712,6 +715,7 @@ class RecordingRepository(
                 // opens a new row.
                 TransferReceiver.markers(recordingId).forEach(queries::kvDelete)
                 queries.syncDelete("processing/recording/" + recordingId)
+                RecordingBackup.keys(recordingId).forEach(queries::kvDelete)
                 queries.deleteStepRunsByRecording(recordingId)
                 queries.deleteJobsByRecording(recordingId)
                 queries.deletePartsByRecording(recordingId)

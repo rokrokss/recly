@@ -392,7 +392,7 @@ final class CoreWatchTransfer: WatchTransferCore {
         sha256: String,
         file: URL
     ) async throws -> Ack {
-        try await core.transfer.acceptPart(
+        let ack = try await core.transfer.acceptPart(
             recordingId: recordingId,
             part: Int32(part),
             track: track,
@@ -400,10 +400,23 @@ final class CoreWatchTransfer: WatchTransferCore {
             // RecKit's own `URL.okioPath` is internal to it; this is the same call.
             tmpPath: OkioPath.companion.toPath(file.path, normalize: true)
         )
+        if ack.ok { backUp(recordingId) }
+        return ack
     }
 
     func acceptProgress(recordingId: String, json: String) async throws -> Bool {
-        try await core.transfer.acceptProgress(recordingId: recordingId, json: json).boolValue
+        let accepted = try await core.transfer.acceptProgress(recordingId: recordingId, json: json).boolValue
+        if accepted { backUp(recordingId) }
+        return accepted
+    }
+
+    /// Upload independently of the watch's acknowledgement and the next incoming part.
+    private func backUp(_ recordingId: String) {
+        Task { @MainActor [core] in
+            let hold = BackgroundHold(UIApplication.shared, name: "watch-recording-backup")
+            defer { hold.release() }
+            await RecordingBackupInterval.upload(recordingId: recordingId, core: core)
+        }
     }
 
     func acceptMeta(json: String) async throws -> AcceptMetaResult {

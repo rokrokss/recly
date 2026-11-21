@@ -20,6 +20,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.longOrNull
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveUploadRunner
+import recly.core.drive.RecordingBackup
 import recly.core.drive.uploadsToDrive
 import recly.core.ids.Ulid
 import recly.core.message.CoreMessage
@@ -122,9 +123,9 @@ class JobStore(
             null,
         )
         if (workflow.steps.any { it.uploadsToDrive }) {
-            queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()?.let {
-                queries.bindJobDriveAccount(it, jobId)
-            }
+            val account = queries.kvGet(RecordingBackup.driveAccountKey(recordingId)).executeAsOneOrNull()
+                ?: queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()
+            account?.let { queries.bindJobDriveAccount(it, jobId) }
         }
         workflow.steps.forEachIndexed { index, step ->
             queries.insertStepRun(
