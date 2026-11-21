@@ -607,5 +607,6 @@
   "Check for updates automatically?": "¿Buscar actualizaciones automáticamente?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Al abrir y cada seis horas, Recly consulta a GitHub la versión más reciente y solo envía su número de versión.",
   "Check automatically": "Buscar automáticamente",
-  "Don't check": "No buscar"
+  "Don't check": "No buscar",
+  "Back up during recording": "Hacer copias durante la grabación"
 }

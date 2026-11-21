@@ -607,5 +607,6 @@
   "Check for updates automatically?": "要自动检查更新吗？",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Recly 会在启动时及每六小时向 GitHub 查询最新版本，只发送应用的版本号。",
   "Check automatically": "自动检查",
-  "Don't check": "不检查"
+  "Don't check": "不检查",
+  "Back up during recording": "录音期间备份"
 }

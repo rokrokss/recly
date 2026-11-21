@@ -14,8 +14,10 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -85,6 +87,7 @@ class Executor(
      */
     private val runs = Mutex()
     private var current: Run? = null
+    private val checkpoints = mutableMapOf<String, Deferred<Unit>>()
     private val deleting = mutableListOf<String>()
 
     /** One job's run ([run]). [stopped] is set by [stopping], under [runs], when the run is let go. */
@@ -98,6 +101,24 @@ class Executor(
 
     internal suspend fun runLocalJobs(now: Instant): RunSummary = runFiltered(now, true)
 
+    /** A checkpoint excludes work on the same recording while unrelated queue jobs can still run. */
+    internal suspend fun checkpoint(recordingId: String, block: suspend () -> Unit): Unit = coroutineScope {
+        val task = async(start = CoroutineStart.LAZY) { block() }
+        val admitted = runs.withLock {
+            val busy = recordingId in deleting || recordingId in checkpoints || current?.job?.recordingId == recordingId
+            (!disconnecting && !busy).also { if (it) checkpoints[recordingId] = task }
+        }
+        if (!admitted) {
+            task.cancel()
+            return@coroutineScope
+        }
+        try {
+            task.await()
+        } finally {
+            withContext(NonCancellable) { runs.withLock { checkpoints.remove(recordingId) } }
+        }
+    }
+
     private suspend fun runFiltered(now: Instant, localOnly: Boolean): RunSummary {
         if (!mutex.tryLock()) return RunSummary(alreadyRunning = true)
         try {
@@ -105,14 +126,14 @@ class Executor(
             if (!localOnly) prepare()
             store.recoverRunning(deps.clock.now())
             val ran = mutableListOf<String>()
+            var deferred = false
             for (job in store.selectDue(now)) {
                 if (disconnecting) break
                 currentCoroutineContext().ensureActive()
                 if (localOnly && !isLocalNext(job)) continue
-                run(job, now, localOnly)
-                ran += job.id
+                if (run(job, now, localOnly)) ran += job.id else deferred = true
             }
-            return RunSummary(jobIds = ran)
+            return RunSummary(alreadyRunning = deferred, jobIds = ran)
         } finally {
             mutex.unlock()
         }
@@ -128,9 +149,13 @@ class Executor(
      * only handed over once that run has returned. A [runDueJobs] that arrives meanwhile finds the
      * gate taken and reports [RunSummary.alreadyRunning].
      */
-    internal suspend fun <T> quiesced(block: suspend () -> T): T {
+    internal suspend fun <T> quiesced(cancelCheckpoints: Boolean = false, block: suspend () -> T): T {
         disconnecting = true
         try {
+            if (cancelCheckpoints) {
+                val cancelled = runs.withLock { checkpoints.values.toList().onEach { it.cancel() } }
+                withTimeoutOrNull(STOP_GRACE) { cancelled.joinAll() }
+            }
             return mutex.withLock { block() }
         } finally {
             disconnecting = false
@@ -145,15 +170,17 @@ class Executor(
      * deletes are nobody's, `RUNNING` or not.
      */
     internal suspend fun <T> stopping(recordingId: String, body: suspend () -> T): T {
-        val run = runs.withLock {
+        val (run, checkpoint) = runs.withLock {
             deleting += recordingId
-            current?.takeIf { it.job.recordingId == recordingId }?.also {
+            val job = current?.takeIf { it.job.recordingId == recordingId }?.also {
                 it.stopped = true
                 it.task.cancel()
                 it.done.complete(Unit)
             }
+            job to checkpoints[recordingId]?.also { it.cancel() }
         }
         try {
+            if (checkpoint != null) withTimeoutOrNull(STOP_GRACE) { checkpoint.join() }
             if (run != null) {
                 val settled = withTimeoutOrNull(STOP_GRACE) { run.task.join() } != null
                 deps.logger.log(
@@ -185,16 +212,18 @@ class Executor(
      * itself cancelled (WorkManager, a background task's expiry) cancels the run and returns only
      * once the run has, leaving the job row `RUNNING` for [JobStore.recoverRunning].
      */
-    private suspend fun run(job: Job, now: Instant, localOnly: Boolean) {
+    private suspend fun run(job: Job, now: Instant, localOnly: Boolean): Boolean {
         val task = CoroutineScope(currentCoroutineContext().minusKey(kotlinx.coroutines.Job))
             .async(start = CoroutineStart.LAZY) { runJob(job, now, localOnly) }
         val done = CompletableDeferred<Unit>()
         task.invokeOnCompletion { done.complete(Unit) }
         val run = Run(job, task, done)
-        val admitted = runs.withLock { (job.recordingId !in deleting).also { if (it) current = run } }
+        val admitted = runs.withLock {
+            (job.recordingId !in deleting && job.recordingId !in checkpoints).also { if (it) current = run }
+        }
         if (!admitted) {
             task.cancel()
-            return
+            return false
         }
         try {
             task.start()
@@ -209,6 +238,7 @@ class Executor(
             withContext(NonCancellable) { runs.withLock { if (current === run) current = null } }
         }
         if (!run.stopped) task.await()
+        return true
     }
 
     internal suspend fun isLocalNext(job: Job): Boolean {

@@ -7,9 +7,11 @@ import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.jsonObject
 import recly.core.db.RecDatabase
 import recly.core.model.Track
 import recly.core.model.isoUtc
+import recly.core.model.recJson
 import recly.core.model.wire
 import recly.core.platform.CoreDeps
 
@@ -53,6 +55,18 @@ class DriveStore(
     /** The recording's own `{base}/` folder, on its row (docs/03): survives the queue rows. */
     suspend fun rememberRecordingFolder(recordingId: String, folderId: String): Unit = locked {
         queries.updateRecordingFolder(folderId, recordingId)
+    }
+
+    internal suspend fun checkpointState(recordingId: String): DriveUploadState = locked {
+        checkpointState(db, recordingId)
+    }
+
+    companion object {
+        internal fun checkpointState(db: RecDatabase, recordingId: String): DriveUploadState =
+            DriveUploadState.from(
+                db.recQueries.kvGet(RecordingBackup.stateKey(recordingId)).executeAsOneOrNull()
+                    ?.let { recJson.parseToJsonElement(it).jsonObject }
+            )
     }
 
     private suspend fun <T> locked(body: () -> T): T = withContext(deps.io) { mutex.withLock { body() } }

@@ -1033,6 +1033,15 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
 - **Fixed per recording**: the storage is `storage.provider` of the recording processing settings, and it is fixed along with the settings when the recording starts (§5). Recordings already
   started and recordings being uploaded go to their original storage. Uploaded recordings are not moved (no migration). A retry the user presses
   does the remaining work with the current settings (§5), so a failed upload retried after switching storage goes to the new storage.
+- **Back up during recording**: on iPhone and Mac, cloud storage backs up closed audio parts at the first filed
+  part at or after each chosen interval, measured from the start of the recording. Settings → Storage offers
+  15 or 30 minutes and 1, 2, 4, 8, 12 or 24 hours (default 1 hour). The iPhone can also back up an
+  Apple Watch recording as it receives verified parts. Timing depends on the device being able to run and
+  reach the selected storage. After writing the batch's audio to the recording's own folder, each backup
+  updates `{base}.progress.json` with recording metadata and the parts in that snapshot. iCloud can deliver the
+  files in a different order. Stop writes the authoritative `{base}.meta.json` and starts final processing; the
+  final upload reuses matching files and alone makes the recording eligible for local retention. Drive progress
+  stays bound to the verified account.
 - **The place on the iCloud side**: under `Documents` of the container `iCloud.app.recly` (the "Recly" folder in the Files app · Finder), the same
   layout as Drive — parts, `{base}.meta.json` and result files inside `{folder template}/{base}/`. What Drive keeps on the folder itself (the title in
   `description`; `recordingId` · `workflowId` · `pending` · `pendingAt` in `appProperties`) is kept in `{base}.folder.json` inside the folder, and
@@ -4708,7 +4717,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | Item | Details |
 |---|---|
 | Scope | Only `drive.file` (ADR-009). Non-sensitive. **The full `drive` scope is not requested** — the app cannot read the user's other files that it did not create |
-| What is uploaded | Inside the recording folder `{folder template}/{base}/` (default `recly/{yyyy}/{yyyy}-{MM}/`): the part `.m4a` files, `{base}.meta.json`, and, if transcription is on (local or external API), `{base}.transcript.json/.txt`; `{base}.notes.json` once the recording's notes are organized (§8 "Organizing", 2026-10-28); `{base}.memo.json` once the user wrote a memo for it (§8 "Memo", 2026-10-30) |
+| What is uploaded | Inside the recording folder `{folder template}/{base}/` (default `recly/{yyyy}/{yyyy}-{MM}/`): the part `.m4a` files, `{base}.meta.json`, `{base}.progress.json` when an iPhone or Mac backs up during recording, and, if transcription is on (local or external API), `{base}.transcript.json/.txt`; `{base}.notes.json` once the recording's notes are organized (§8 "Organizing", 2026-10-28); `{base}.memo.json` once the user wrote a memo for it (§8 "Memo", 2026-10-30) |
 | Metadata on the folder | The title in the folder `description`, `recordingId` · `workflowId` · the `pending` marker · `transcriptAt` (the version of the newest transcript, 2026-10-07) · `notesAt` (the notes', 2026-10-28) · `memoAt` (the memo's, 2026-10-30) in `appProperties`; `reclyTranscript` (`transcribed` / `edited`) in the `appProperties` of the `.transcript.json/.txt` files (§8 "Result files") |
 | appDataFolder | **Not used.** Recording processing settings and secret values both exist only on the device (§5), and the only way to move them between devices is a settings export/import that the user does by hand |
 | What is received | `md5Checksum` · file metadata for upload verification. The list of the user's other files is not requested. The list's pull (§3 "Recordings from other devices") also reads `{base}.transcript.json` of the account's recordings — once for another device's recording never read here, and again when the folder's `transcriptAt` says a newer one is there; at most 10 files a pass (2026-10-07, §8 "Result files") — and `{base}.notes.json` when the folder's `notesAt` says newer notes are there (2026-10-28, §8 "Organizing"), `{base}.memo.json` when its `memoAt` says a newer memo is there, or once a run when a recording with none here is opened (2026-10-30, §8 "Memo") |
@@ -4718,7 +4727,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 The only Google endpoints Recly calls are the Drive API (`www.googleapis.com`) and
 OAuth (`accounts.google.com` · `oauth2.googleapis.com`). Apple's direct OAuth path is
 `accounts.google.com/o/oauth2/v2/auth`, `oauth2.googleapis.com/token` and `oauth2.googleapis.com/revoke`,
-and it calls no profile lookup API. To confirm the account on reconnect, it calls
+and it calls no profile lookup API. To confirm the account on reconnect or before a recording checkpoint, it calls
 `GET https://www.googleapis.com/drive/v3/about?fields=user(permissionId)`.
 Only Drive's opaque identifier, not the name or email, is stored in the device DB, and the identifier of unfinished jobs stays after disconnecting so they can resume.
 Account confirmation for earlier jobs uses only the `owners(permissionId)` field of the existing `files.get`. Deleting the job records also deletes that identifier.
@@ -4738,7 +4747,7 @@ None of it is sent to Recly (there is no server to receive it). It is a local va
 | Item | Details |
 |---|---|
 | When | Only recordings on an iPhone · Mac where iCloud was chosen as the storage location in settings (§3 "Storage location"). Does not apply to Android · Windows · the watches |
-| What is uploaded | Same as Drive — inside `{folder template}/{base}/` in the app's iCloud Drive folder ("Recly" in the Files app · Finder): the part `.m4a` files, `{base}.meta.json`, `{base}.transcript.json/.txt` if transcription is on, `{base}.notes.json` once the recording's notes are organized, `{base}.memo.json` once the user wrote a memo for it, and the folder attributes file `{base}.folder.json` (title · recording id · progress markers · the transcript version `transcriptAt` · the notes' version `notesAt` · the memo's `memoAt`) |
+| What is uploaded | Same as Drive — inside `{folder template}/{base}/` in the app's iCloud Drive folder ("Recly" in the Files app · Finder): the part `.m4a` files, `{base}.meta.json`, `{base}.progress.json` when a recording is backed up in progress, `{base}.transcript.json/.txt` if transcription is on, `{base}.notes.json` once the recording's notes are organized, `{base}.memo.json` once the user wrote a memo for it, and the folder attributes file `{base}.folder.json` (title · recording id · progress markers · the transcript version `transcriptAt` · the notes' version `notesAt` · the memo's `memoAt`) |
 | Who sends it | **The app makes no network request.** The app writes files into the device's iCloud container, and Apple's system service uploads them. The user's iCloud account and Apple's terms and policies apply, and for accounts with Advanced Data Protection turned on, iCloud Drive is end-to-end encrypted (Apple) |
 | Who sees it | The user, and the user's devices signed in with the same Apple ID. **Recly cannot access it** — it has neither a server nor any permission to this data |
 | Control | Switch the app's storage location back to Drive (later recordings only), turn off Recly's iCloud use in system settings, delete the folder in the Files app · Finder, delete Recly's data in iCloud storage management |

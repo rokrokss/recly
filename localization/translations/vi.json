@@ -607,5 +607,6 @@
   "Check for updates automatically?": "Tự động kiểm tra cập nhật?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Khi khởi động và mỗi sáu giờ, Recly hỏi GitHub về bản phát hành mới nhất và chỉ gửi số phiên bản của ứng dụng.",
   "Check automatically": "Tự động kiểm tra",
-  "Don't check": "Không kiểm tra"
+  "Don't check": "Không kiểm tra",
+  "Back up during recording": "Sao lưu trong khi ghi âm"
 }

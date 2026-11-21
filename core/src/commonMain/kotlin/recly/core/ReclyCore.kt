@@ -20,6 +20,7 @@ import recly.core.message.CoreMessageRef
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveFolderMarker
 import recly.core.drive.DriveStore
+import recly.core.drive.RecordingBackup
 import recly.core.job.EnqueueResult
 import recly.core.job.Executor
 import recly.core.job.JobService
@@ -230,6 +231,14 @@ class ReclyCore(
         )
 
     private val driveStore: DriveStore = DriveStore(db, deps)
+
+    private val recordingBackup = RecordingBackup(db, deps, recordings, processingSettings, jobStore)
+
+    /** Called when a recorder or watch receiver files audio. Network errors leave it for the next part. */
+    @Throws(Throwable::class)
+    suspend fun backUpRecording(recordingId: String, intervalMinutes: Int) {
+        jobs.checkpoint(recordingId) { recordingBackup.run(recordingId, intervalMinutes) }
+    }
 
     private val results: RecordingResults = RecordingResults(storage, deps)
 
@@ -844,7 +853,7 @@ class ReclyCore(
      * cannot pull the queue rows or the tokens out from under a job that is still using them.
      */
     @Throws(Throwable::class)
-    suspend fun disconnect(alsoDeleteRecordings: Boolean): DisconnectResult = jobs.quiesced {
+    suspend fun disconnect(alsoDeleteRecordings: Boolean): DisconnectResult = jobs.quiesced(cancelCheckpoints = true) {
         localTranscription.cancelAll()
         remote.disconnected {
             // The recordings first, and one at a time through the transactional [RecordingRepository

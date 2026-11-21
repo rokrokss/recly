@@ -85,11 +85,15 @@ class JobService(
 
     internal suspend fun runLocalJobs(now: Instant): RunSummary = executor.runLocalJobs(now)
 
+    internal suspend fun checkpoint(recordingId: String, block: suspend () -> Unit) =
+        executor.checkpoint(recordingId, block)
+
     internal suspend fun localJobs(): List<Job> = store.list().filter { executor.isLocalNext(it) }
 
     /** "Disconnect" (docs/03) runs in here; see [Executor.quiesced]. Internal: the shells never
      * quiesce the queue themselves, they call `ReclyCore.disconnect`. */
-    internal suspend fun <T> quiesced(block: suspend () -> T): T = executor.quiesced(block)
+    internal suspend fun <T> quiesced(cancelCheckpoints: Boolean = false, block: suspend () -> T): T =
+        executor.quiesced(cancelCheckpoints, block)
 
     /**
      * Manual re-run from the list, and what an app calls after a successful sign-in.

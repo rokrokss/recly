@@ -25,6 +25,7 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
 import recly.core.platform.HttpResult
+import recly.core.platform.TokenProvider
 import recly.core.storage.CloudFiles
 import recly.core.storage.StorageKind
 
@@ -33,10 +34,13 @@ import recly.core.storage.StorageKind
  * Every non-2xx answer becomes a [StepFailure] the executor already knows how to route, so the
  * runners above only ever deal with files.
  */
-class DriveApi(
+class DriveApi private constructor(
     private val deps: CoreDeps,
-    private val random: Random = Random.Default,
+    private val random: Random,
+    private val tokens: TokenProvider,
 ) : CloudFiles {
+    constructor(deps: CoreDeps, random: Random = Random.Default) : this(deps, random, deps.tokenProvider)
+
     /** Bigger than this and a single request is a bad bet on a phone connection (docs/10). */
     override val multipartLimit: Long get() = MULTIPART_LIMIT
 
@@ -412,10 +416,10 @@ class DriveApi(
         raw: Boolean = false,
         plan: (String) -> HttpPlan,
     ): HttpResult {
-        var result = deps.transport.execute(plan(deps.tokenProvider.accessToken()))
+        var result = deps.transport.execute(plan(tokens.accessToken()))
         if (result.status == 401) {
-            deps.tokenProvider.invalidate()
-            result = deps.transport.execute(plan(deps.tokenProvider.accessToken()))
+            tokens.invalidate()
+            result = deps.transport.execute(plan(tokens.accessToken()))
         }
         // Before [check], because the resumable calls read their own answers and would otherwise
         // turn a full Drive into an ordinary non-retryable failure.
@@ -482,6 +486,13 @@ class DriveApi(
             ?.let { runCatching { driveJson.parseToJsonElement(it) as? JsonObject }.getOrNull() }
 
     companion object {
+        /** A checkpoint may span an OAuth account switch. Every request uses the verified credential. */
+        internal fun pinned(deps: CoreDeps, token: String): DriveApi =
+            DriveApi(deps, Random.Default, object : TokenProvider {
+                override suspend fun accessToken(): String = token
+                override suspend fun invalidate() = Unit
+            })
+
         const val FOLDER_MIME = "application/vnd.google-apps.folder"
         internal const val FILES_URL = "https://www.googleapis.com/drive/v3/files"
         internal const val FOLDER_FIELDS = "id,name,mimeType,webViewLink"
