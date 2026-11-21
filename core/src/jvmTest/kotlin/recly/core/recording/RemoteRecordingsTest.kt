@@ -275,6 +275,25 @@ class RemoteRecordingsTest {
         assertTrue(inFlight.folderId in h.drive.files.keys)
     }
 
+    /** docs/03 "Storage location": a recording backed up while it runs marks its folder at every backup. */
+    @Test
+    fun `a folder whose backups keep marking it stays in flight past a day`() = runBlocking {
+        val h = Harness()
+        val inFlight = h.uploaded(id = PHONE_1, withMeta = false)
+        h.remote.pull()
+        assertNotNull(h.recordings.get(PHONE_1))
+
+        h.clock.advance(RemoteRecordings.ABANDONED_AFTER)
+        h.mark(inFlight.folderId, "drive.upload")
+        h.clock.advance(1.minutes)
+        assertEquals(0, h.remote.pull(force = true).dropped)
+        assertTrue(assertNotNull(h.recordings.get(PHONE_1)).remoteUploading)
+
+        h.clock.advance(RemoteRecordings.ABANDONED_AFTER)
+        assertEquals(1, h.remote.pull(force = true).dropped)
+        assertNull(h.recordings.get(PHONE_1))
+    }
+
     /** The upload was cancelled, or the user deleted the half-written folder: same drop path. */
     @Test
     fun `a provisional row whose folder Drive no longer lists is dropped`() = runBlocking {

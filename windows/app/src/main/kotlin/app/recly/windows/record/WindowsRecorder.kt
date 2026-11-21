@@ -335,6 +335,9 @@ class WindowsRecorder(
                         // Only a part that is actually in the meta counts towards the length: the
                         // duration handed to `finalize` has to be one the parts can account for.
                         open.recordedSec = maxOf(open.recordedSec, part.startOffsetSec + part.durationSec)
+                        // docs/03 "Storage location": backed up to the recording's Drive folder at once, without
+                        // holding up the next event; a failure leaves it for the next part or Stop's upload.
+                        scope.launch { runCatching { core.backUpRecording(open.recordingId) } }
                     }
                     .onFailure { failure ->
                         // The audio is on disk; a marker beside it carries everything the row would

@@ -183,8 +183,9 @@ class DriveUploadRunner(
         // now, so a list elsewhere can say "Transcribing on another device" instead of showing a finished recording.
         // In iCloud a resumed attempt is one waiting for the system's upload, every 30 seconds, and its
         // folder was marked when it was made: the same marker again would only send every device to
-        // read the folder file again (docs/03 "Storage location").
-        if (!resumed || finishingCheckpoint || step.store == StorageKind.DRIVE) {
+        // read the folder file again (docs/03 "Storage location"). A backup during recording marks it every
+        // time: the marker's time is what keeps other devices from taking a long recording for an abandoned upload.
+        if (!resumed || ctx.checkpoint || finishingCheckpoint || step.store == StorageKind.DRIVE) {
             val pending = if (ctx.checkpoint) listOf(TYPE)
             else ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type }
             marker.mark(folder.id, pending)

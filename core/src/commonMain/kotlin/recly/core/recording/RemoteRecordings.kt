@@ -808,10 +808,13 @@ class RemoteRecordings(
     }
 
     /** A folder that has held nothing but itself for [ABANDONED_AFTER] is not an upload in flight.
+     * The clock runs from its `createdTime` or, when later, its marker's `pendingAt`: a recording backed up
+     * while it runs marks its folder at every backup (docs/03 "Storage location"), so a long one stays listed.
      * A `createdTime` Drive did not give, or one that will not parse, is left alone. */
     private fun abandoned(folder: Folder?, now: Instant): Boolean {
         val created = folder?.createdTime?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return false
-        return now - created > ABANDONED_AFTER
+        val marked = folder.pendingAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        return now - maxOf(created, marked ?: created) > ABANDONED_AFTER
     }
 
     /**

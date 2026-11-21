@@ -607,6 +607,5 @@
   "Check for updates automatically?": "Awtomatikong tingnan ang mga update?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Sa pagbukas at bawat anim na oras, tinatanong ng Recly sa GitHub ang pinakabagong release at bersyon lang nito ang ipinapadala.",
   "Check automatically": "Awtomatikong tingnan",
-  "Don't check": "Huwag tingnan",
-  "Back up during recording": "Mag-back up habang nagre-record"
+  "Don't check": "Huwag tingnan"
 }

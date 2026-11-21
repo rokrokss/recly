@@ -607,6 +607,5 @@
   "Check for updates automatically?": "Проверять обновления автоматически?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "При запуске и каждые шесть часов Recly запрашивает у GitHub последнюю версию и отправляет только номер своей версии.",
   "Check automatically": "Проверять автоматически",
-  "Don't check": "Не проверять",
-  "Back up during recording": "Резервное копирование во время записи"
+  "Don't check": "Не проверять"
 }

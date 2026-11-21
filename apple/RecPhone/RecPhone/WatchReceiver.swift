@@ -415,7 +415,7 @@ final class CoreWatchTransfer: WatchTransferCore {
         Task { @MainActor [core] in
             let hold = BackgroundHold(UIApplication.shared, name: "watch-recording-backup")
             defer { hold.release() }
-            await RecordingBackupInterval.upload(recordingId: recordingId, core: core)
+            try? await core.backUpRecording(recordingId: recordingId)
         }
     }
 

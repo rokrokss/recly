@@ -607,6 +607,5 @@
   "Check for updates automatically?": "ตรวจหาอัปเดตโดยอัตโนมัติไหม?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "เมื่อเปิดแอปและทุกหกชั่วโมง Recly จะถามหารีลีสล่าสุดจาก GitHub และส่งเพียงหมายเลขเวอร์ชันของแอปเท่านั้น",
   "Check automatically": "ตรวจหาโดยอัตโนมัติ",
-  "Don't check": "ไม่ตรวจหา",
-  "Back up during recording": "สำรองข้อมูลระหว่างบันทึกเสียง"
+  "Don't check": "ไม่ตรวจหา"
 }

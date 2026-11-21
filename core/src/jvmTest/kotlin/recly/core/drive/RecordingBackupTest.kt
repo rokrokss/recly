@@ -6,9 +6,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import recly.core.model.RecordingMeta
 import recly.core.model.RecordingStatus
 import recly.core.model.recJson
@@ -26,17 +33,12 @@ import recly.core.testing.testPart
 
 class RecordingBackupTest {
     @Test
-    fun `backs up completed parts on schedule and reuses them at stop`() = runBlocking {
+    fun `backs up each filed part and reuses them at stop`() = runBlocking {
         val fixture = CoreFixture(engine = null)
         val meta = fixture.startRecording()
         val part = meta.parts.single()
 
-        fixture.clock.advance(59.minutes)
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 60)
-        assertFalse(fixture.drive.files.values.any { it.name == part.file })
-
-        fixture.clock.advance(1.minutes)
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 60)
+        fixture.core.backUpRecording(meta.recordingId)
         val audio = fixture.drive.files.entries.single { it.value.name == part.file }
         val folderId = audio.value.parents.single()
         val base = MetaWriter.baseName(meta)
@@ -51,20 +53,20 @@ class RecordingBackupTest {
         assertTrue(fixture.core.jobs.list().isEmpty())
 
         fixture.drive.requests.clear()
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 60)
-        assertTrue(fixture.drive.requests.isEmpty())
+        fixture.core.backUpRecording(meta.recordingId)
+        assertTrue(fixture.drive.requests.isEmpty(), "no new part, nothing to send")
 
         val nextPart = testPart(meta, 2).copy(bytes = SEEDED_AUDIO.length.toLong(), sha256 = SEEDED_AUDIO_SHA256)
         seedFiles(fixture.fs, fixture.dirOf(meta), meta.copy(parts = listOf(part, nextPart)))
         fixture.core.recordings.addPart(meta.recordingId, nextPart)
-        fixture.clock.advance(60.minutes)
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 60)
+        fixture.clock.advance(5.minutes)
+        fixture.core.backUpRecording(meta.recordingId)
         val updated = fixture.drive.files.entries.single { it.value.name == progressName }
         assertEquals(progress.key, updated.key)
         assertEquals(listOf(part, nextPart), updated.value.manifest().parts)
 
         fixture.drive.files.getValue(folderId).name = "Renamed in Drive"
-        fixture.core.recordings.finalize(meta.recordingId, fixture.clock.now(), durationSec = 7200.0)
+        fixture.core.recordings.finalize(meta.recordingId, fixture.clock.now(), durationSec = 600.0)
         fixture.core.enqueue(meta.recordingId)
         fixture.drain()
         assertEquals(audio.key, fixture.drive.files.entries.single { it.value.name == part.file }.key)
@@ -75,7 +77,7 @@ class RecordingBackupTest {
     }
 
     @Test
-    fun `stages iCloud audio at the selected interval and leaves completion to the final upload`() = runBlocking {
+    fun `stages iCloud audio as parts are filed and leaves completion to the final upload`() = runBlocking {
         val fixture = CoreFixture(engine = null, ubiquity = ::FakeUbiquityContainer)
         fixture.core.initializeProcessing()
         fixture.core.processingSettings.setStorage(StorageKind.ICLOUD)
@@ -83,8 +85,7 @@ class RecordingBackupTest {
         val part = meta.parts.single()
         val container = fixture.deps.ubiquity as FakeUbiquityContainer
 
-        fixture.clock.advance(15.minutes)
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 15)
+        fixture.core.backUpRecording(meta.recordingId)
         val partPath = container.entries.keys.single { it.endsWith(part.file) }
         val copy = container.entries.getValue(partPath)
         val progress = container.entries.keys.single { it.endsWith(".progress.json") }
@@ -95,7 +96,7 @@ class RecordingBackupTest {
 
         container.settle()
         fixture.clock.advance(1.minutes)
-        fixture.core.recordings.finalize(meta.recordingId, fixture.clock.now(), durationSec = 900.0)
+        fixture.core.recordings.finalize(meta.recordingId, fixture.clock.now(), durationSec = 300.0)
         fixture.core.enqueue(meta.recordingId)
         fixture.drain(1)
         container.settle()
@@ -110,8 +111,7 @@ class RecordingBackupTest {
         val fixture = CoreFixture(engine = null)
         val meta = fixture.startRecording()
 
-        fixture.clock.advance(60.minutes)
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 60)
+        fixture.core.backUpRecording(meta.recordingId)
         val part = meta.parts.single()
         assertTrue(fixture.drive.files.values.any { it.name == part.file })
 
@@ -121,12 +121,12 @@ class RecordingBackupTest {
         seedFiles(fixture.fs, fixture.dirOf(meta), meta.copy(parts = listOf(part, nextPart)))
         fixture.core.recordings.addPart(meta.recordingId, nextPart)
         fixture.drive.requests.clear()
-        fixture.clock.advance(60.minutes)
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 60)
+        fixture.clock.advance(5.minutes)
+        fixture.core.backUpRecording(meta.recordingId)
         assertTrue(fixture.drive.requests.all { it.method == "GET" })
         assertFalse(fixture.drive.files.values.any { it.name == nextPart.file })
 
-        fixture.core.recordings.finalize(meta.recordingId, fixture.clock.now(), durationSec = 7200.0)
+        fixture.core.recordings.finalize(meta.recordingId, fixture.clock.now(), durationSec = 600.0)
         fixture.core.enqueue(meta.recordingId)
         fixture.drain()
         assertFalse(fixture.core.uploaded(meta.recordingId))
@@ -145,12 +145,44 @@ class RecordingBackupTest {
         fixture.drive.hold += { request ->
             if (!request.path.endsWith("/about")) token = "account-b"
         }
-        fixture.clock.advance(60.minutes)
-        fixture.core.backUpRecording(meta.recordingId, intervalMinutes = 60)
+        fixture.core.backUpRecording(meta.recordingId)
 
         assertEquals("account-b", token)
         assertTrue(fixture.drive.files.values.any { it.name == meta.parts.single().file })
         assertTrue(fixture.drive.requests.all { it.headers[HttpHeaders.Authorization] == "Bearer account-a" })
+    }
+
+    /** docs/03 "Storage location": Stop's upload waits for a backup still uploading instead of skipping the job. */
+    @Test
+    fun `a pass that meets a running backup waits for it and then uploads the recording`() = runBlocking {
+        val fixture = CoreFixture(engine = null)
+        val meta = fixture.startRecording()
+        val held = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val first = AtomicBoolean(true)
+        fixture.drive.hold += { request ->
+            if (request.uploadType != null && first.getAndSet(false)) {
+                held.complete(Unit)
+                release.await()
+            }
+        }
+        val backup = async(Dispatchers.Default) { fixture.core.backUpRecording(meta.recordingId) }
+        withTimeout(5.seconds) { held.await() }
+
+        fixture.core.recordings.finalize(meta.recordingId, fixture.clock.now(), durationSec = 300.0)
+        fixture.core.enqueue(meta.recordingId)
+        val pass = async(Dispatchers.Default) { fixture.core.runDueJobs(fixture.clock.now()) }
+        delay(300)
+        assertFalse(pass.isCompleted, "the pass waits for the backup")
+        release.complete(Unit)
+        withTimeout(10.seconds) { backup.await() }
+        val summary = withTimeout(10.seconds) { pass.await() }
+
+        assertFalse(summary.alreadyRunning)
+        assertEquals(1, summary.jobIds.size)
+        fixture.drain()
+        assertTrue(fixture.core.uploaded(meta.recordingId))
+        assertEquals(1, fixture.drive.files.values.count { it.name == meta.parts.single().file })
     }
 
     private fun FakeDrive.Entry.manifest(): RecordingMeta = recJson.decodeFromString(content.decodeToString())

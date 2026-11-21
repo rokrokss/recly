@@ -607,6 +607,5 @@
   "Check for updates automatically?": "স্বয়ংক্রিয়ভাবে আপডেট দেখবেন?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "চালু হলে এবং প্রতি ছয় ঘণ্টায় Recly GitHub-এ সর্বশেষ রিলিজ খোঁজে এবং শুধু নিজের সংস্করণ নম্বর পাঠায়।",
   "Check automatically": "স্বয়ংক্রিয়ভাবে দেখুন",
-  "Don't check": "দেখবেন না",
-  "Back up during recording": "রেকর্ডিং চলাকালীন ব্যাকআপ নিন"
+  "Don't check": "দেখবেন না"
 }

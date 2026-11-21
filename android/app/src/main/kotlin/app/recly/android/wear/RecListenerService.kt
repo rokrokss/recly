@@ -3,6 +3,7 @@
 package app.recly.android.wear
 
 import android.net.Uri
+import app.recly.android.RecApp
 import app.recly.android.core.AndroidLogger
 import app.recly.android.core.CoreModule
 import app.recly.android.work.WorkScheduler
@@ -158,6 +159,7 @@ class RecListenerService : WearableListenerService() {
             tmpPath = file.absolutePath.toPath(),
         )
         send(core, nodeId, WearJson.ACK_PART, WearJson.partAck(path, ack))
+        if (ack.ok) (application as? RecApp)?.backUp(path.recordingId)
     }
 
     /**
@@ -168,7 +170,9 @@ class RecListenerService : WearableListenerService() {
     private suspend fun acceptProgress(core: ReclyCore, path: TransferPath.Progress, file: File) {
         val text = file.readText()
         file.delete()
-        core.transfer.acceptProgress(path.recordingId, text)
+        if (core.transfer.acceptProgress(path.recordingId, text)) {
+            (application as? RecApp)?.backUp(path.recordingId)
+        }
     }
 
     /**

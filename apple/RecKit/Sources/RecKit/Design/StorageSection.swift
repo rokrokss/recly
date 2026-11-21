@@ -8,33 +8,6 @@ import UIKit
 import UniformTypeIdentifiers
 #endif
 
-/// A device-local setting shared by the recorder and its Storage settings.
-public enum RecordingBackupInterval: Int, CaseIterable {
-    case fifteenMinutes = 15
-    case thirtyMinutes = 30
-    case oneHour = 60
-    case twoHours = 120
-    case fourHours = 240
-    case eightHours = 480
-    case twelveHours = 720
-    case oneDay = 1440
-
-    static let key = "recordingBackupIntervalMinutes"
-
-    public static func upload(recordingId: String, core: ReclyCore_) async {
-        let saved = UserDefaults.standard.integer(forKey: key)
-        let interval = Self(rawValue: saved) ?? .oneHour
-        try? await core.backUpRecording(recordingId: recordingId, intervalMinutes: Int32(interval.rawValue))
-    }
-
-    func title(locale: Locale) -> String {
-        let duration = rawValue < 60
-            ? Measurement(value: Double(rawValue), unit: UnitDuration.minutes)
-            : Measurement(value: Double(rawValue / 60), unit: UnitDuration.hours)
-        return duration.formatted(.measurement(width: .wide, usage: .asProvided).locale(locale))
-    }
-}
-
 /// docs/03 "Storage location" (ADR-024): where new recordings go — Google Drive, the app's iCloud folder on
 /// the iPhone and the Mac, or a local folder picked on the device — and whether this device can reach it.
 ///
@@ -177,7 +150,6 @@ public struct StorageSection: View {
     @ObservedObject private var choice: StorageChoice
     private let drive: (Bool) -> DriveConnectionSection
     @Environment(\.locale) private var locale
-    @AppStorage(RecordingBackupInterval.key) private var backupInterval: RecordingBackupInterval = .oneHour
     #if os(iOS)
     /// The Files picker for a folder is up.
     @State private var importing = false
@@ -239,18 +211,6 @@ public struct StorageSection: View {
                 }
             } else {
                 drive(true)
-            }
-            if choice.selected != .folder {
-                SectionRow(title: loc("Back up during recording")) {
-                    Picker(loc("Back up during recording"), selection: $backupInterval) {
-                        ForEach(RecordingBackupInterval.allCases, id: \.rawValue) { interval in
-                            Text(interval.title(locale: locale)).tag(interval)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.menu)
-                    .accessibilityIdentifier("storage-backup-interval")
-                }
             }
         }
         .task { await choice.refresh() }

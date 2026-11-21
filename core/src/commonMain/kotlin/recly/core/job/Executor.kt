@@ -126,14 +126,14 @@ class Executor(
             if (!localOnly) prepare()
             store.recoverRunning(deps.clock.now())
             val ran = mutableListOf<String>()
-            var deferred = false
             for (job in store.selectDue(now)) {
                 if (disconnecting) break
                 currentCoroutineContext().ensureActive()
                 if (localOnly && !isLocalNext(job)) continue
-                if (run(job, now, localOnly)) ran += job.id else deferred = true
+                run(job, now, localOnly)
+                ran += job.id
             }
-            return RunSummary(alreadyRunning = deferred, jobIds = ran)
+            return RunSummary(jobIds = ran)
         } finally {
             mutex.unlock()
         }
@@ -212,18 +212,32 @@ class Executor(
      * itself cancelled (WorkManager, a background task's expiry) cancels the run and returns only
      * once the run has, leaving the job row `RUNNING` for [JobStore.recoverRunning].
      */
-    private suspend fun run(job: Job, now: Instant, localOnly: Boolean): Boolean {
+    private suspend fun run(job: Job, now: Instant, localOnly: Boolean) {
         val task = CoroutineScope(currentCoroutineContext().minusKey(kotlinx.coroutines.Job))
             .async(start = CoroutineStart.LAZY) { runJob(job, now, localOnly) }
         val done = CompletableDeferred<Unit>()
         task.invokeOnCompletion { done.complete(Unit) }
         val run = Run(job, task, done)
-        val admitted = runs.withLock {
-            (job.recordingId !in deleting && job.recordingId !in checkpoints).also { if (it) current = run }
-        }
-        if (!admitted) {
-            task.cancel()
-            return false
+        // A backup of the same recording still uploading (docs/03 "Storage location") is waited for, not skipped:
+        // it is one batch of parts, and this job then picks up where it left off.
+        while (true) {
+            val (admitted, checkpoint) = runs.withLock {
+                val checkpoint = checkpoints[job.recordingId]
+                val admitted = checkpoint == null && job.recordingId !in deleting
+                if (admitted) current = run
+                admitted to checkpoint
+            }
+            if (admitted) break
+            if (checkpoint == null) {
+                task.cancel()
+                return
+            }
+            try {
+                checkpoint.join()
+            } catch (e: CancellationException) {
+                task.cancel()
+                throw e
+            }
         }
         try {
             task.start()
@@ -238,7 +252,6 @@ class Executor(
             withContext(NonCancellable) { runs.withLock { if (current === run) current = null } }
         }
         if (!run.stopped) task.await()
-        return true
     }
 
     internal suspend fun isLocalNext(job: Job): Boolean {

@@ -2,7 +2,7 @@
 
 [한국어](privacy-policy.ko.md)
 
-**Effective date: 2026-11-05**
+**Effective date: 2026-11-22**
 **Contact: q0115643@gmail.com**
 
 The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow).
@@ -36,7 +36,7 @@ Recly is a **recording app**. Recordings are uploaded to **your own Google Drive
 **(1) Your Google Drive.**
 The app writes audio parts and `meta.json` into a recording folder, and, with transcription on, the transcripts — written again when you edit one — and a recording's summary once it is made (§3(4b)), written again when it changes or you edit it, and the notes you write for a recording (§2), written again when you change them. It uses only one permission — `drive.file` (files this app created) — and therefore **cannot see your other Drive files**. These files are yours and are visible only to you unless you share them.
 
-On iPhone and Mac, Recly also backs up closed audio parts while a recording is in progress to the Google Drive or iCloud location selected for it, with an in-progress manifest containing the recording metadata and the list of backed-up parts. You can set the interval under Settings → Storage. It defaults to one hour, and uploads depend on the device and storage being available.
+While a recording is in progress, Recly also uploads each audio part as soon as it is saved to the Google Drive or iCloud location selected for the recording, with an in-progress manifest containing the recording metadata and the list of uploaded parts. The phone does the same for a watch recording as its parts arrive. Uploads depend on the device and storage being available.
 
 **(1b) Your iCloud — iPhone and Mac only.**
 Google Drive is the default. On iPhone and Mac you can choose iCloud instead, under Settings → Storage. New recordings then go to the app's folder in your iCloud Drive, which the Files app and Finder show as "Recly": the same audio parts, `meta.json`, transcripts, summaries and notes as in Drive, plus a small `.folder.json` file with the title, the recording's id, its progress marker and the versions of its newest transcript, summary and notes. The app copies these files into that folder and Apple's system service uploads them; a file counts as uploaded only once iCloud reports it uploaded. Recly makes no network request of its own for iCloud. The files are stored in your own iCloud account under Apple's terms, and the developer has no access to them. Apple states that iCloud Drive is end-to-end encrypted when Advanced Data Protection is turned on.

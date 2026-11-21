@@ -234,10 +234,13 @@ class ReclyCore(
 
     private val recordingBackup = RecordingBackup(db, deps, recordings, processingSettings, jobStore)
 
-    /** Called when a recorder or watch receiver files audio. Network errors leave it for the next part. */
+    /**
+     * docs/03 "Storage location": called each time a recorder or the watch receiver files audio for a recording
+     * still in progress. Network errors leave the parts for the next call; Stop's upload takes whatever is left.
+     */
     @Throws(Throwable::class)
-    suspend fun backUpRecording(recordingId: String, intervalMinutes: Int) {
-        jobs.checkpoint(recordingId) { recordingBackup.run(recordingId, intervalMinutes) }
+    suspend fun backUpRecording(recordingId: String) {
+        jobs.checkpoint(recordingId) { recordingBackup.run(recordingId) }
     }
 
     private val results: RecordingResults = RecordingResults(storage, deps)

@@ -1,10 +1,6 @@
-@file:OptIn(kotlin.time.ExperimentalTime::class)
-
 package recly.core.drive
 
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Instant
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -17,7 +13,6 @@ import recly.core.message.CoreMessage
 import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Step
-import recly.core.model.isoUtc
 import recly.core.model.recJson
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
@@ -26,7 +21,7 @@ import recly.core.processing.ProcessingSettingsRepository
 import recly.core.recording.RecordingRepository
 import recly.core.storage.StorageKind
 
-/** docs/03 "Storage location": upload the closed audio parts of a recording that is still running. */
+/** docs/03 "Storage location": upload each closed audio part of a recording that is still running as it is filed. */
 internal class RecordingBackup(
     private val db: RecDatabase,
     private val deps: CoreDeps,
@@ -37,17 +32,10 @@ internal class RecordingBackup(
     private val queries = db.recQueries
     private val upload = DriveUploadRunner.create(db, deps)
 
-    suspend fun run(id: String, intervalMinutes: Int) = withContext(deps.io) {
-        val interval = intervalMinutes.takeIf { it in intervals } ?: return@withContext
+    suspend fun run(id: String) = withContext(deps.io) {
         val record = recordings.get(id) ?: return@withContext
         if (record.meta.status != RecordingStatus.RECORDING || record.remote || record.meta.parts.isEmpty()) return@withContext
-        val startedAt = Instant.parse(record.meta.startedAt)
-        val elapsedMinutes = (deps.clock.now() - startedAt).inWholeMinutes
-        if (elapsedMinutes < interval) return@withContext
-        val dueAt = startedAt + (elapsedMinutes / interval * interval).minutes
         val last = queries.kvGet(lastKey(id)).executeAsOneOrNull()?.let { recJson.decodeFromString<Checkpoint>(it) }
-        if (last != null && dueAt <= Instant.parse(last.at)) return@withContext
-
         val document = settings.recordingSnapshot(id) ?: return@withContext
         val workflow = ProcessingPlan.compile(document)
         val step = workflow.steps.filterIsInstance<Step.DriveUpload>().first()
@@ -55,7 +43,7 @@ internal class RecordingBackup(
         // A watch delivery can contain a staged part before its progress manifest arrives.
         val parts = if (record.meta.source == Source.WATCH) record.meta.parts.filter { it.durationSec > 0 }
         else record.meta.parts
-        // Watch progress may arrive before the next audio file. Keep this interval open for that file.
+        // Watch progress may arrive before the next audio file; that file comes with a later call.
         if (parts.size <= (last?.partCount ?: 0)) return@withContext
         if (parts.maxOf { it.startOffsetSec + it.durationSec } < workflow.minDurationSec) return@withContext
         val snapshot = record.copy(meta = record.meta.copy(parts = parts))
@@ -81,7 +69,7 @@ internal class RecordingBackup(
                 outcome is StepOutcome.Waiting && outcome.reason == CoreMessage.ICLOUD_UPLOADING.code()
             ) {
                 currentCoroutineContext().ensureActive()
-                queries.kvSet(lastKey(id), recJson.encodeToString(Checkpoint(dueAt.isoUtc(), parts.size)))
+                queries.kvSet(lastKey(id), recJson.encodeToString(Checkpoint(parts.size)))
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -91,10 +79,9 @@ internal class RecordingBackup(
     }
 
     @Serializable
-    private data class Checkpoint(val at: String, val partCount: Int)
+    private data class Checkpoint(val partCount: Int)
 
     companion object {
-        private val intervals = setOf(15, 30, 60, 120, 240, 480, 720, 1440)
         fun driveAccountKey(id: String) = "recording/backup/account/$id"
         fun stateKey(id: String) = "recording/backup/state/$id"
         private fun lastKey(id: String) = "recording/backup/last/$id"

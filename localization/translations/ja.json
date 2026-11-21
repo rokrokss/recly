@@ -607,6 +607,5 @@
   "Check for updates automatically?": "アップデートを自動で確認しますか？",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "起動時と6時間ごとに、ReclyはGitHubで最新リリースを確認します。送信するのはアプリのバージョンだけです。",
   "Check automatically": "自動で確認",
-  "Don't check": "確認しない",
-  "Back up during recording": "録音中にバックアップ"
+  "Don't check": "確認しない"
 }

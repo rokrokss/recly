@@ -117,4 +117,16 @@ class RecApp : Application(), RecorderHost {
         if (!enqueue) return
         if (core().enqueue(recordingId) is EnqueueResult.Enqueued) WorkScheduler(this).onJobsDue()
     }
+
+    /** docs/03 "Storage location": each part this phone files goes to the recording's Drive folder at once. */
+    override suspend fun onPartFiled(recordingId: String) = backUp(recordingId)
+
+    /**
+     * docs/03 "Storage location": a backup of a recording still in progress — this phone's, or a Galaxy Watch's as its
+     * parts arrive. On the app's scope, so the recorder's boundary and the watch's ack never wait for the upload. A
+     * failure is the core's to log; the next part, or Stop's upload, takes what is left.
+     */
+    fun backUp(recordingId: String) {
+        scope.launch { runCatching { core().backUpRecording(recordingId) } }
+    }
 }
