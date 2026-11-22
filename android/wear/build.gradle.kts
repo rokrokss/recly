@@ -25,8 +25,8 @@ android {
         targetSdk = 36
         // Play requires a unique versionCode across every bundle of one app, phone and Wear OS
         // tracks included: the watch takes the phone's code plus 1_000_000.
-        versionCode = 1_000_055
-        versionName = "0.3.4"
+        versionCode = 1_000_056
+        versionName = "0.3.5"
     }
 
     // docs/development.md "Release signing": the upload key, when this machine has one.
