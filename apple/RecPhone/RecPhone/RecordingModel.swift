@@ -169,8 +169,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private let transport: BackgroundTransport
     private lazy var background = BackgroundJobs(pass: { [weak self] in await self?.runOneJobPass() }, localPass: { [weak self] in
         guard let core = self?.bridge?.core else { return }
-        _ = try? await withTaskCancellationHandler { try await core.runLocalJobs() }
-            onCancel: { core.deps.localTranscription.cancel() }
+        _ = try? await CoreJobQueue(core: core).runLocalJobs()
     })
     /// docs/03 "Disconnect" · docs/06: the whole of a disconnect, which is RecKit's and not this
     /// model's — the Mac runs the same one. Lazy because every one of its closures reads `self`.

@@ -21,6 +21,17 @@ public final class CoreJobQueue: JobQueue, @unchecked Sendable {
         return JobPass(alreadyRunning: summary.alreadyRunning, ran: summary.jobIds.count)
     }
 
+    /// The phone's background pass that needs no network. Here rather than in the app target: in a
+    /// Debug build the app target's copy of `withTaskCancellationHandler` was linked with
+    /// ReclyCore's optimized copy's context size and aborted the app in `swift_task_dealloc`.
+    /// RecKit is prelinked, so its copy keeps its own.
+    public func runLocalJobs() async throws -> JobPass {
+        let summary = try await withTaskCancellationHandler {
+            try await core.runLocalJobs()
+        } onCancel: { self.core.deps.localTranscription.cancel() }
+        return JobPass(alreadyRunning: summary.alreadyRunning, ran: summary.jobIds.count)
+    }
+
     public func jobs() async throws -> [JobRunSnapshot] {
         try await core.jobs.list().map {
             JobRunSnapshot(status: JobRunStatus($0.status), nextRunAt: $0.nextRunAt?.date)
