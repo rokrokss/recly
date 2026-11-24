@@ -2,6 +2,11 @@
 
 package recly.core.storage
 
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -10,7 +15,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -37,6 +45,31 @@ class ICloudFilesTest {
     private val container = FakeUbiquityContainer(fs, clock)
     private val deps = testDeps(clock = clock, fileSystem = fs, ubiquity = container)
     private val files = ICloudFiles(container, deps)
+
+    @Test
+    fun `one iCloud settlement read cannot keep another recording waiting`() = runBlocking<Unit> {
+        val hungPath = "recly/memo/2026-08/long/long.m4a"
+        val shortPath = "recly/memo/2026-08/short/short.m4a"
+        container.arrive(shortPath, ByteArray(10))
+        val waiting = CompletableDeferred<Continuation<UbiquityFile?>>()
+        val storage = object : UbiquityContainer by container {
+            override suspend fun file(path: String): UbiquityFile? {
+                return if (path == hungPath) suspendCoroutine { continuation ->
+                    check(waiting.complete(continuation)) { "overlapping polls for one recording" }
+                } else container.file(path)
+            }
+        }
+        val limited = ICloudFiles(storage, deps, ICloudSettlementChecks(deps.io, 250.milliseconds))
+        val long = async { limited.settled(listOf("icloud:$hungPath")) }
+        val pending = withTimeout(5.seconds) { waiting.await() }
+        try {
+            assertFalse(withTimeout(5.seconds) { long.await() })
+            assertFalse(limited.settled(listOf("icloud:$hungPath")))
+            assertTrue(limited.settled(listOf("icloud:$shortPath")))
+        } finally {
+            pending.resume(null)
+        }
+    }
 
     private val base = "20260826T010000Z_desktop_01J9ABCD"
     private val folder = "recly/memo/2026-08/$base"

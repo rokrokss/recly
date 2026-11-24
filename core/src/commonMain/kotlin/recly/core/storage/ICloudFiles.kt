@@ -43,10 +43,13 @@ import recly.core.platform.CoreDeps
  *
  * Every call asks the container first; one that cannot be used is [StorageUnavailableException].
  */
-class ICloudFiles(
+class ICloudFiles internal constructor(
     private val container: UbiquityContainer,
     private val deps: CoreDeps,
+    private val settlementChecks: ICloudSettlementChecks,
 ) : CloudFiles {
+    constructor(container: UbiquityContainer, deps: CoreDeps) :
+        this(container, deps, ICloudSettlementChecks(deps.io))
     /** Every file goes in from its path: a copy in the container, never bytes held in memory. */
     override val multipartLimit: Long = 0
 
@@ -200,20 +203,29 @@ class ICloudFiles(
     }
 
     override suspend fun settled(fileIds: List<String>): Boolean {
-        ready()
+        val folder = fileIds.firstOrNull()?.let { pathOf(it).substringBeforeLast('/', "") }.orEmpty()
+        val available = settlementChecks.check(folder) {
+            ready()
+            true
+        }
+        if (!available) return false
+
         var all = true
         for (id in fileIds) {
             val path = pathOf(id)
-            // Deleted from the folder since this step put it there: the upload starts over.
-            val file = fileAt(path) ?: throw DriveNotFound("icloud: '$path' is gone")
-            if (file.uploadFailure == UbiquityFile.QUOTA) {
-                throw StepFailure(
-                    retryable = false,
-                    reason = CoreMessage.ICLOUD_STORAGE_FULL.code(detail = path),
-                    needsSpace = true,
-                )
+            val uploaded = settlementChecks.check(folder) {
+                // A missing file has to be copied again; a slow check is only a wait.
+                val file = fileAt(path) ?: throw DriveNotFound("icloud: '$path' is gone")
+                if (file.uploadFailure == UbiquityFile.QUOTA) {
+                    throw StepFailure(
+                        retryable = false,
+                        reason = CoreMessage.ICLOUD_STORAGE_FULL.code(detail = path),
+                        needsSpace = true,
+                    )
+                }
+                file.uploaded
             }
-            if (!file.uploaded) all = false
+            if (!uploaded) all = false
         }
         return all
     }
