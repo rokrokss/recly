@@ -49,6 +49,8 @@ class CoreFixture(
     ubiquity: ((FakeFileSystem, FakeClock) -> UbiquityContainer)? = null,
     /** Where requests to OpenAI go (docs/15 §10); everything else goes to the fake Drive. */
     chatGpt: recly.core.platform.Transport? = null,
+    /** docs/15 "iPhone providers": the iPhone's core, which asks before sending anywhere. */
+    requireTransferConsent: Boolean = false,
 ) {
     val drive = FakeDrive()
     val clock = FakeClock()
@@ -71,6 +73,7 @@ class CoreFixture(
         localTranscription = engine ?: recly.core.transcribe.UnavailableLocalTranscriptionEngine(),
         localFolder = localFolder?.invoke(fs),
         ubiquity = ubiquity?.invoke(fs, clock),
+        requireTransferConsent = requireTransferConsent,
     )
     val driver: SqlDriver = inMemoryDriver()
     val core = ReclyCore(deps, object : DriverFactory {

@@ -70,6 +70,11 @@ struct RecordingView: View {
                     model.organizeConsentAnswered($0)
                 }
             }
+            // docs/15 "iPhone providers": why a start was refused — the settings send to destinations not allowed
+            // on this device — and the permission that lets it go ahead. In the screen for the same reason as the reminder.
+            .blueprintDialogOverlay(isPresented: .constant(!model.missingDestinations.isEmpty)) {
+                RecordingDestinationsDialog(targets: model.missingDestinations) { model.destinationsAnswered(allow: $0) }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dotGridBackground()

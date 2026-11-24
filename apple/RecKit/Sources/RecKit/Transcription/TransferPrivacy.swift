@@ -143,6 +143,39 @@ public struct TransferDisclosureList: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
+/// docs/15 "iPhone providers": why a start from the record node is refused — the settings send to destinations
+/// this device has not allowed (`missingRecordingTargets`) — and the permission that lets it go ahead. Cancel records
+/// nothing.
+public struct RecordingDestinationsDialog: View {
+    private let targets: [TransferTarget]
+    private let answer: (Bool) -> Void
+    /// The disclosure's "I turned off …" answer.
+    @State private var trainingOff = false
+    @Environment(\.locale) private var locale
+
+    public init(targets: [TransferTarget], answer: @escaping (Bool) -> Void) {
+        self.targets = targets
+        self.answer = answer
+    }
+
+    public var body: some View {
+        BlueprintDialog(title: loc("Recording can't start")) {
+            BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { answer(false) }
+                .accessibilityIdentifier("destinations-cancel")
+            BlueprintButton(loc("Allow and record"), tone: .primary) { answer(true) }
+                .disabled(TrainingOptOut.required(targets) && !trainingOff)
+                .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("destinations-allow")
+        } content: {
+            BlueprintDialogText(loc("Your settings use services that aren't in Allowed destinations. Allow them to start recording."))
+                .accessibilityIdentifier("destinations-reason")
+            TransferDisclosureList(targets: targets, trainingOff: $trainingOff)
+        }
+    }
+
+    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
 @MainActor
 public final class TransferPrivacyModel: ObservableObject {
     @Published public private(set) var approved: [TransferTarget] = []

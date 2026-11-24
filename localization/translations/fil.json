@@ -607,5 +607,8 @@
   "Check for updates automatically?": "Awtomatikong tingnan ang mga update?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Sa pagbukas at bawat anim na oras, tinatanong ng Recly sa GitHub ang pinakabagong release at bersyon lang nito ang ipinapadala.",
   "Check automatically": "Awtomatikong tingnan",
-  "Don't check": "Huwag tingnan"
+  "Don't check": "Huwag tingnan",
+  "Recording can't start": "Hindi masimulan ang pag-record",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "Gumagamit ang mga setting mo ng mga serbisyong wala sa “Mga pinapayagang destinasyon”. Payagan ang mga ito para simulan ang pag-record.",
+  "Allow and record": "Payagan at i-record"
 }

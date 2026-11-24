@@ -607,5 +607,8 @@
   "Check for updates automatically?": "Automatisch nach Updates suchen?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Beim Start und alle sechs Stunden fragt Recly bei GitHub nach der neuesten Version und sendet nur die eigene Versionsnummer.",
   "Check automatically": "Automatisch suchen",
-  "Don't check": "Nicht suchen"
+  "Don't check": "Nicht suchen",
+  "Recording can't start": "Aufnahme kann nicht starten",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "Die Einstellungen nutzen Dienste, die nicht unter „Erlaubte Ziele“ stehen. Nach dem Erlauben startet die Aufnahme.",
+  "Allow and record": "Erlauben und aufnehmen"
 }

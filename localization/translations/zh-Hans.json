@@ -607,5 +607,8 @@
   "Check for updates automatically?": "要自动检查更新吗？",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Recly 会在启动时及每六小时向 GitHub 查询最新版本，只发送应用的版本号。",
   "Check automatically": "自动检查",
-  "Don't check": "不检查"
+  "Don't check": "不检查",
+  "Recording can't start": "无法开始录音",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "设置中使用的服务不在“允许的目标地址”中。允许后即可开始录音。",
+  "Allow and record": "允许并录音"
 }

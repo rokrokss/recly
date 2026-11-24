@@ -607,5 +607,8 @@
   "Check for updates automatically?": "স্বয়ংক্রিয়ভাবে আপডেট দেখবেন?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "চালু হলে এবং প্রতি ছয় ঘণ্টায় Recly GitHub-এ সর্বশেষ রিলিজ খোঁজে এবং শুধু নিজের সংস্করণ নম্বর পাঠায়।",
   "Check automatically": "স্বয়ংক্রিয়ভাবে দেখুন",
-  "Don't check": "দেখবেন না"
+  "Don't check": "দেখবেন না",
+  "Recording can't start": "রেকর্ডিং শুরু করা যাচ্ছে না",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "আপনার সেটিংস এমন পরিষেবা ব্যবহার করে যা “অনুমোদিত গন্তব্য”-এ নেই। রেকর্ডিং শুরু করতে সেগুলোকে অনুমতি দিন।",
+  "Allow and record": "অনুমতি দিন ও রেকর্ড করুন"
 }

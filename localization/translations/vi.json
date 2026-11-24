@@ -607,5 +607,8 @@
   "Check for updates automatically?": "Tự động kiểm tra cập nhật?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Khi khởi động và mỗi sáu giờ, Recly hỏi GitHub về bản phát hành mới nhất và chỉ gửi số phiên bản của ứng dụng.",
   "Check automatically": "Tự động kiểm tra",
-  "Don't check": "Không kiểm tra"
+  "Don't check": "Không kiểm tra",
+  "Recording can't start": "Không thể bắt đầu ghi âm",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "Cài đặt của bạn dùng các dịch vụ không có trong “Nơi nhận đã cho phép”. Hãy cho phép để bắt đầu ghi âm.",
+  "Allow and record": "Cho phép và ghi âm"
 }

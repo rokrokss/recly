@@ -130,6 +130,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/08 "Organizing": true while the consent to organize is up, before a start from this screen. The recording
     /// starts whatever the answer.
     @Published var organizeConsentPrompt = false
+    /// docs/15 "iPhone providers": the destinations a start from this screen was refused for, while the dialog
+    /// that says so is up; empty otherwise.
+    @Published private(set) var missingDestinations: [TransferTarget] = []
     /// docs/08 "Organizing": the notes of the recording being made, as they arrive — under the waveform.
     @Published private(set) var liveNotes: RecordingNotes?
     /// docs/12 M8 · ADR-011: on until the user turns it off. Switching it back on means "ask me
@@ -549,13 +552,42 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         remindThenStart()
     }
 
-    /// The consent reminder a first recording owes, then the recording.
+    /// The destinations the settings send to, then the consent reminder a first recording owes, then the recording.
     private func remindThenStart() {
-        guard !Defaults.askConsent else {
-            consentPrompt = true
-            return
+        Task {
+            // docs/15 "iPhone providers": a start from this screen is refused while the settings send to a
+            // destination this device has not allowed, and the dialog says why. After the organize question, whose
+            // Continue allows ChatGPT. A store that will not be read refuses nothing: the job waits for the permission
+            // as before.
+            if let missing = try? await bridge?.core.missingRecordingTargets(), !missing.isEmpty {
+                missingDestinations = missing
+                logger.info("shell.recording.start.refused reason=destinations")
+                return
+            }
+            guard !Defaults.askConsent else {
+                consentPrompt = true
+                return
+            }
+            _ = await startRecording()
         }
-        Task { _ = await startRecording() }
+    }
+
+    /// The destinations dialog's answer. Allow grants exactly the destinations shown, resumes the jobs waiting on them and
+    /// goes on with the start — checked again, so one added meanwhile is asked about too. Cancel records nothing.
+    func destinationsAnswered(allow: Bool) {
+        let shown = missingDestinations
+        missingDestinations = []
+        guard allow, !shown.isEmpty, let core = bridge?.core else { return }
+        Task {
+            do {
+                try await core.transferConsents.grant(targets: shown)
+                try await core.resumeConsentedJobs()
+            } catch {
+                statusMessage = .key("Could not save transfer permissions")
+                return
+            }
+            remindThenStart()
+        }
     }
 
     /// The consent sheet's answer: Continue agrees (and allows ChatGPT as a destination), Sign out signs out — and the

@@ -607,5 +607,8 @@
   "Check for updates automatically?": "ตรวจหาอัปเดตโดยอัตโนมัติไหม?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "เมื่อเปิดแอปและทุกหกชั่วโมง Recly จะถามหารีลีสล่าสุดจาก GitHub และส่งเพียงหมายเลขเวอร์ชันของแอปเท่านั้น",
   "Check automatically": "ตรวจหาโดยอัตโนมัติ",
-  "Don't check": "ไม่ตรวจหา"
+  "Don't check": "ไม่ตรวจหา",
+  "Recording can't start": "เริ่มบันทึกเสียงไม่ได้",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "การตั้งค่าของคุณใช้บริการที่ไม่อยู่ใน “ปลายทางที่อนุญาต” อนุญาตบริการเหล่านั้นเพื่อเริ่มบันทึกเสียง",
+  "Allow and record": "อนุญาตและบันทึกเสียง"
 }

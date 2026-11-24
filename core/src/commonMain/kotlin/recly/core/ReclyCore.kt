@@ -814,6 +814,21 @@ class ReclyCore(
         return transferConsents.missing(targets)
     }
 
+    /**
+     * docs/15 "iPhone providers": the destinations a recording started now would send to that this device has
+     * not allowed — the transcription provider the processing settings name, and the ChatGPT plan while organizing is on
+     * (signed in and agreed). Storage (Drive, iCloud, a local folder) and transcription on the device are never one.
+     * Empty where no permission is asked (every shell but the iPhone's).
+     */
+    @Throws(Throwable::class)
+    suspend fun missingRecordingTargets(): List<TransferTarget> {
+        if (!transferConsents.enabled) return emptyList()
+        val plan = ProcessingPlan.compile(processingSettings.initialize().document)
+        val targets = TransferTargets.forWorkflow(plan).toMutableList()
+        if (plan.steps.any { it is Step.OrganizeNotes } && notes.agreed()) targets += TransferTargets.chatGptSummary()
+        return transferConsents.missing(targets)
+    }
+
     /** Permission cannot reset successful steps, failed onError:continue steps, or retry budgets. */
     @Throws(Throwable::class)
     suspend fun resumeConsentedJobs() {

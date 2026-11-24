@@ -607,5 +607,8 @@
   "Check for updates automatically?": "Проверять обновления автоматически?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "При запуске и каждые шесть часов Recly запрашивает у GitHub последнюю версию и отправляет только номер своей версии.",
   "Check automatically": "Проверять автоматически",
-  "Don't check": "Не проверять"
+  "Don't check": "Не проверять",
+  "Recording can't start": "Не удаётся начать запись",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "Настройки используют сервисы, которых нет в «Разрешённых назначениях». Разрешите их, чтобы начать запись.",
+  "Allow and record": "Разрешить и записать"
 }

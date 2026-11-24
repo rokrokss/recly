@@ -607,5 +607,8 @@
   "Check for updates automatically?": "Uangalie masasisho kiotomatiki?",
   "At launch and every six hours, Recly asks GitHub for the newest release and sends only its version.": "Inapofunguliwa na kila baada ya saa sita, Recly huuliza GitHub toleo jipya zaidi na hutuma nambari ya toleo lake pekee.",
   "Check automatically": "Angalia kiotomatiki",
-  "Don't check": "Usiangalie"
+  "Don't check": "Usiangalie",
+  "Recording can't start": "Haiwezi kuanza kurekodi",
+  "Your settings use services that aren't in Allowed destinations. Allow them to start recording.": "Mipangilio yako inatumia huduma ambazo haziko kwenye “Vituo vilivyoruhusiwa”. Ziruhusu ili kuanza kurekodi.",
+  "Allow and record": "Ruhusu na urekodi"
 }
