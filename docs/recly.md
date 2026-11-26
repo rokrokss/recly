@@ -1055,7 +1055,10 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
   find their own storage even when the setting changes.
 - **Upload and completion**: the upload step (`drive.upload`, `store: icloud`) **copies** the files into the container (coordinated writes),
   and the system uploads them. The step ends when iCloud says it has received every file (`ubiquitousItemIsUploaded`). Until then it is
-  `WAITING`, rechecked every 30 seconds, and it does not use up attempts (`ICLOUD_UPLOADING`). In the list it looks the same as a Drive upload —
+  `WAITING`, rechecked every 30 seconds, and it does not use up attempts (`ICLOUD_UPLOADING`).
+  Each read-only confirmation call has a 20-second budget. A timed-out native read pauses only this recording's
+  confirmation. The queue can process other recordings, and another poll of the same folder waits for the native
+  read to return. In the list it looks the same as a Drive upload —
   badge `UPLOADING`, no reason line under the row, top status `UPLOADING`, not counted among pending items. The reason line of `Waiting for iCloud` (`ICLOUD_UNAVAILABLE`)
   is in the warning color of waiting, not the red of failure. The originals' 7-day
   window (ADR-017) starts after that (principle 3) — the reason for copying instead of moving is that if the user signs out of iCloud before the upload without choosing "Keep a
